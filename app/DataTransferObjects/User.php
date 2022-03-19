@@ -6,6 +6,7 @@ namespace App\DataTransferObjects;
 
 use App\ValueObjects\Email;
 use App\ValueObjects\NonEmptyString;
+use App\ValueObjects\PositiveNumber;
 use App\ValueObjects\UserId;
 use App\ValueObjects\Username;
 
@@ -17,4 +18,5 @@ final class User extends DataTransferObject
     public readonly NonEmptyString $lastname;
     public readonly Email $email;
     public readonly string $password;
+    public readonly PositiveNumber $bookmarksCount;
 }

@@ -10,6 +10,7 @@ use App\ValueObjects\NonEmptyString;
 use App\ValueObjects\UserId;
 use App\ValueObjects\Username;
 use App\Models\User as Model;
+use App\ValueObjects\PositiveNumber;
 
 final class UserBuilder extends Builder
 {
@@ -71,6 +72,13 @@ final class UserBuilder extends Builder
     public function password(string $password): self
     {
         $this->attributes['password'] = $password;
+
+        return $this;
+    }
+
+    public function bookmarksCount(int $count): self
+    {
+        $this->attributes['bookmarksCount'] = new PositiveNumber($count);
 
         return $this;
     }

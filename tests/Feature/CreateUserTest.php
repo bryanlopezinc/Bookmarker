@@ -7,6 +7,7 @@ use App\ValueObjects\Username;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\{Arr, Str};
+use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
@@ -91,7 +92,7 @@ class CreateUserTest extends TestCase
         ])
             ->assertCreated()
             ->assertJsonCount(3, 'data')
-            ->assertJsonCount(4, 'data.attributes')
+            ->assertJsonCount(5, 'data.attributes')
             ->assertJsonCount(4, 'data.token')
             ->assertJsonStructure([
                 'data' => [
@@ -100,7 +101,8 @@ class CreateUserTest extends TestCase
                         'id',
                         'firstname',
                         'lastname',
-                        'username'
+                        'username',
+                        'bookmarks_count'
                     ],
                     'token' => [
                         'token_type',
@@ -109,7 +111,10 @@ class CreateUserTest extends TestCase
                         'refresh_token'
                     ]
                 ]
-            ]);
+            ])
+            ->assertJson(function (AssertableJson $assertableJson) {
+                $assertableJson->where('data.attributes.bookmarks_count', 0)->etc();
+            });
 
         $this->assertDatabaseHas(User::class, [
             'email' => $mail,

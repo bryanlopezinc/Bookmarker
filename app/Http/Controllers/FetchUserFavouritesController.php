@@ -1,0 +1,25 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers;
+
+use App\Http\Resources\BookmarkResource;
+use App\Http\Resources\PaginatedResourceCollection;
+use App\PaginationData;
+use App\Repositories\FetchUserFavouritesRepository as Repository;
+use App\ValueObjects\UserId;
+use Illuminate\Http\Request;
+
+final class FetchUserFavouritesController
+{
+    public function __invoke(Request $request, Repository $repository): PaginatedResourceCollection
+    {
+        $request->validate(PaginationData::rules());
+
+        return new PaginatedResourceCollection(
+            $repository->get(UserId::fromAuthUser(), PaginationData::fromRequest($request)),
+            BookmarkResource::class
+        );
+    }
+}

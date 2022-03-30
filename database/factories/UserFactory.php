@@ -19,7 +19,7 @@ class UserFactory extends Factory
     public function definition()
     {
         return [
-            'username' => Str::random(Username::MAX - 2) . '_' . rand(0, 9),
+            'username' => $this->randomUsername(),
             'firstname' => $this->faker->firstName,
             'lastname'  => $this->faker->lastName,
             'email' => $this->faker->unique()->safeEmail(),
@@ -27,6 +27,11 @@ class UserFactory extends Factory
             'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
             'remember_token' => Str::random(10),
         ];
+    }
+
+    public static function randomUsername(): string
+    {
+        return Str::random(Username::MAX - 2) . '_' . rand(0, 9);
     }
 
     /**

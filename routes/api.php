@@ -19,6 +19,10 @@ Route::middleware('auth:api')->group(function () {
         ->withoutMiddleware('auth:api')
         ->name('createUser');
 
+    Route::post('login', Controllers\LoginController::class)
+        ->withoutMiddleware('auth:api')
+        ->name('loginUser');
+
     Route::delete('bookmarks', Controllers\DeleteBookmarkController::class)
         ->middleware([Mw\HandleDbTransactionsMiddleware::class])
         ->name('deleteBookmark');

@@ -31,17 +31,17 @@ final class UpdateBookmarkTitleWithMetaTag
             ->update(['title' => $title]);
     }
 
-    private function getOpenGraphTagContent(DOMXPath $dOMXPath): string|bool
+    private function getOpenGraphTagContent(DOMXPath $dOMXPath): string|false
     {
         return $this->filter($dOMXPath->query('//meta[@name="og:title"]/@content')->item(0)?->nodeValue);
     }
 
-    private function getTitleTagContent(DOMXPath $dOMXPath): string|bool
+    private function getTitleTagContent(DOMXPath $dOMXPath): string|false
     {
         return $this->filter($dOMXPath->query('/html/head/title')->item(0)?->nodeValue);
     }
 
-    private function filter(?string $value): string|bool
+    private function filter(?string $value): string|false
     {
         return blank($value) ? false : e($value);
     }

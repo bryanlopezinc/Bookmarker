@@ -31,21 +31,21 @@ final class UpdateBookmarkDescriptionWithMetaTag
         Model::query()->where('id', $bookmark->id->toInt())->update(['description' => $description]);
     }
 
-    private function getOpenGraphTagContent(DOMXPath $dOMXPath): string|bool
+    private function getOpenGraphTagContent(DOMXPath $dOMXPath): string|false
     {
         return $this->filterValue(
             $dOMXPath->query('//meta[@name="og:description"]/@content')->item(0)?->nodeValue
         );
     }
 
-    private function getDescriptionTagContent(DOMXPath $dOMXPath): string|bool
+    private function getDescriptionTagContent(DOMXPath $dOMXPath): string|false
     {
         return $this->filterValue(
             $dOMXPath->query('//meta[@name="description"]/@content')->item(0)?->nodeValue
         );
     }
 
-    private function filterValue(?string $value): string|bool
+    private function filterValue(?string $value): string|false
     {
         return is_null($value) ? false : e($value);
     }

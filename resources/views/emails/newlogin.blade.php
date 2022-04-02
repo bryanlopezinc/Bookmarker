@@ -10,23 +10,22 @@
 
 <body>
     Their was a new login activity on your account.
-    
-    <div>Device : {{$deviceType}} </div>
+
+    <div>Device: {{$deviceType}}</div>
     @if($deviceNameIsKnown)
-    <div>Device : {{$deviceName}} </div>
+    <div>DeviceName: {{$deviceName}}</div>
     @endif
 
     @if($locationIsUnKnown)
 
     @if($countryisKnown)
-    <div>country : {{$country}} </div>
+    <div>Country: {{$country}}</div>
     @endif
 
     @if($cityisKnown)
-    <div>city : {{$city}} </div>
+    <div>City: {{$city}}</div>
     @endif
 
     @endif
 </body>
-
 </html>

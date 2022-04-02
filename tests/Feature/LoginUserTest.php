@@ -13,9 +13,6 @@ use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
 use Laravel\Passport\Client;
 
-/**
- * @group 109
- */
 class LoginUserTest extends TestCase
 {
     private Client $client;

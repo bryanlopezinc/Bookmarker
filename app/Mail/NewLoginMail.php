@@ -15,13 +15,13 @@ final class NewLoginMail extends Mailable
 
     public function build(): self
     {
-        return $this->view('newLogin', [
+        return $this->view('emails.newlogin', [
             'deviceType'  => $this->getDeviceType(),
             'deviceName' => $this->loginInfo->device->name,
             'deviceNameIsKnown' => $this->loginInfo->device->nameIsKnown(),
-            'locationIsUnKnown' => $this->loginInfo->location->isUnknown(),
+            'locationIsUnKnown' => !$this->loginInfo->location->isUnknown(),
             'country' => $this->loginInfo->location->country,
-            'city'         => $this->loginInfo->location->city,
+            'city' => $this->loginInfo->location->city,
             'countryisKnown' => $this->loginInfo->location->countryIsKnown(),
             'cityisKnown' => $this->loginInfo->location->cityIsKnown()
         ]);
@@ -34,7 +34,7 @@ final class NewLoginMail extends Mailable
         return match ($device) {
             $device::MOBILE => 'Mobile',
             $device::TABLET => 'Tablet',
-            $device::PC          => 'Desktop',
+            $device::PC  => 'Desktop',
             $device::UNKNOWN => 'Unknown',
         };
     }

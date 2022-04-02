@@ -20,7 +20,7 @@ final class NotifyUserAboutNewLoginEventListener implements ShouldQueue
     public function __construct(
         private readonly Mailer $mailer,
         private readonly DeviceDetectorInterface $deviceDetector,
-        private IpGeoLocatorInterface $ipGeoLocator
+        private readonly IpGeoLocatorInterface $ipGeoLocator
     ) {
     }
 

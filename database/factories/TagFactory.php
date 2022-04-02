@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Models\Tag;
+use App\Models\Tag as Model;
+use App\ValueObjects\Tag;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 final class TagFactory extends Factory
 {
-    protected $model = Tag::class;
+    protected $model = Model::class;
 
     /**
      * Define the model's default state.
@@ -19,7 +21,7 @@ final class TagFactory extends Factory
     public function definition()
     {
         return [
-            'name'  => str_shuffle($this->faker->word . $this->faker->word),
+            'name'  =>  Str::limit(str_shuffle($this->faker->word . $this->faker->word), Tag::MAX_LENGTH, '')
         ];
     }
 }

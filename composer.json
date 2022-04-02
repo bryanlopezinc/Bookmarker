@@ -11,10 +11,12 @@
         "php": "^8.0.2",
         "fruitcake/laravel-cors": "^2.0.5",
         "guzzlehttp/guzzle": "^7.2",
+        "jenssegers/agent": "^2.6",
         "laravel/framework": "^9.0",
         "laravel/passport": "^10.3",
         "laravel/sanctum": "^2.14",
-        "laravel/tinker": "^2.7"
+        "laravel/tinker": "^2.7",
+        "mobiledetect/mobiledetectlib": "^2.8"
     },
     "require-dev": {
         "brianium/paratest": "^6.4",

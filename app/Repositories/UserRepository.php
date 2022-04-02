@@ -22,7 +22,7 @@ final class UserRepository
              SQL;
 
         $user =  UserModel::query()
-            ->select(['users.id', 'username', 'firstname', 'lastname', DB::raw($sql)])
+            ->select(['users.id', 'username', 'firstname', 'lastname', 'email', DB::raw($sql)])
             ->join('user_bookmarks_count', 'users.id', '=', 'user_bookmarks_count.user_id', 'left outer')
             ->where('username', $username->value)
             ->first();

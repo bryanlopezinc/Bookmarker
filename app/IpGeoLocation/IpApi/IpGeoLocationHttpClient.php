@@ -17,7 +17,7 @@ final class IpGeoLocationHttpClient implements IpGeoLocatorInterface
             'fields' => 'country,city'
         ]);
 
-        if (!$response->successful()) {
+        if (!$response->successful() || $response->json('status') === 'fail') {
             return Location::unknown();
         }
 

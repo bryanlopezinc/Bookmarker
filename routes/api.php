@@ -19,6 +19,16 @@ Route::middleware('auth:api')->group(function () {
         ->withoutMiddleware('auth:api')
         ->name('createUser');
 
+    Route::post('users/password/request-token', Controllers\RequestPasswordResetTokenController::class)
+        ->middleware([Mw\HandleDbTransactionsMiddleware::class, Laravel\Passport\Http\Middleware\CheckClientCredentials::class])
+        ->withoutMiddleware('auth:api')
+        ->name('requestPasswordResetToken');
+
+    Route::post('users/password/reset', Controllers\ResetPasswordController::class)
+        ->middleware([Mw\HandleDbTransactionsMiddleware::class, Laravel\Passport\Http\Middleware\CheckClientCredentials::class])
+        ->withoutMiddleware('auth:api')
+        ->name('resetPassword');
+
     Route::post('login', Controllers\LoginController::class)
         ->withoutMiddleware('auth:api')
         ->name('loginUser');

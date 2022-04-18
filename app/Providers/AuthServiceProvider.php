@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 use Laravel\Passport\Passport;
 use Laravel\Passport\RouteRegistrar;
 
@@ -25,6 +26,7 @@ class AuthServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->registerPolicies();
+        $this->registerDefaultPasswordRules();
 
         if (!$this->app->routesAreCached()) {
             Passport::routes(function (RouteRegistrar $router) {
@@ -34,5 +36,12 @@ class AuthServiceProvider extends ServiceProvider
 
         Passport::tokensExpireIn(now()->addMinutes(30));
         Passport::refreshTokensExpireIn(now()->addDay());
+    }
+
+    private function registerDefaultPasswordRules(): void
+    {
+        Password::defaults(function () {
+            return Password::min(8)->numbers();
+        });
     }
 }

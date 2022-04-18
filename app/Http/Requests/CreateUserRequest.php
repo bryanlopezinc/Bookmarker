@@ -31,7 +31,7 @@ final class CreateUserRequest extends FormRequest
             'firstname'   => ['required', 'filled'],
             'lastname'    => ['required', 'filled'],
             'email'       => ['required', 'email', Rule::unique(User::class, 'email')],
-            'password'    => ['required', 'confirmed', Password::min(8)->numbers()]
+            'password'    => ['required', 'confirmed', Password::defaults()]
         ];
     }
 

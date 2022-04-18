@@ -8,6 +8,7 @@ use App\Models\User;
 use Database\Factories\UserFactory;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
@@ -79,6 +80,14 @@ class LoginUserTest extends TestCase
             ->assertJsonCount(3, 'data')
             ->assertJsonCount(5, 'data.attributes')
             ->assertJsonCount(4, 'data.token')
+            ->assertJson(function (AssertableJson $json) {
+                $json->where('data.token.expires_in', function (int $expiresAt) {
+                    $this->assertTrue(now()->addSeconds($expiresAt)->isSameHour());
+
+                    return true;
+                });
+                $json->etc();
+            })
             ->assertJsonStructure([
                 'data' => [
                     'type',

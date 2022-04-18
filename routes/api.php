@@ -57,3 +57,7 @@ Route::middleware('auth:api')->group(function () {
         ->middleware([Mw\HandleDbTransactionsMiddleware::class])
         ->name('deleteFavourite');
 });
+
+Route::post('client/oauth/token', Controllers\IssueClientTokenController::class)
+    ->withoutMiddleware('auth:api')
+    ->name('issueClientToken');

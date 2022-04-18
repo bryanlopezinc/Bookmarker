@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Database\Factories\UserFactory;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
@@ -14,8 +13,6 @@ use Laravel\Passport\Passport;
 
 class ResetPasswordTest extends TestCase
 {
-    use WithFaker;
-
     private const NEW_PASSWORD = 'abcdef123';
 
     private static Client $client;

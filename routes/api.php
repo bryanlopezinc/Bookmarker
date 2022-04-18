@@ -36,7 +36,7 @@ Route::post('client/oauth/token', Controllers\IssueClientTokenController::class)
 Route::post('users', Controllers\CreateUserController::class)->middleware([DBTransaction::class])->name('createUser');
 Route::post('login', Controllers\LoginController::class)->name('loginUser');
 
-Route::post('users/password/request-token', Controllers\RequestPasswordResetTokenController::class)
+Route::post('users/password/reset-token', Controllers\RequestPasswordResetTokenController::class)
     ->middleware([DBTransaction::class, CheckClientCredentials::class])
     ->name('requestPasswordResetToken');
 

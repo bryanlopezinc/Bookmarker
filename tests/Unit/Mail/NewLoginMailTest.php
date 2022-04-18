@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Unit\Mail;
 
 use App\DeviceDetector\Device;
 use App\DeviceDetector\DeviceType;

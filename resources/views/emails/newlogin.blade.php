@@ -9,7 +9,7 @@
 </head>
 
 <body>
-    Their was a new login activity on your account.
+    There was a new login activity on your account.
 
     <div>Device: {{$deviceType}}</div>
     @if($deviceNameIsKnown)

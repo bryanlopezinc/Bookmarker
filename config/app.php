@@ -178,7 +178,8 @@ return [
         App\Providers\RouteServiceProvider::class,
 
         App\IpGeoLocation\ServiceProvider::class,
-        App\DeviceDetector\ServiceProvider::class
+        App\DeviceDetector\ServiceProvider::class,
+        App\TwoFA\ServiceProvider::class,
     ],
 
     /*

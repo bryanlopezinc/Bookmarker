@@ -10,9 +10,12 @@ use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
 use Laravel\Passport\Client;
 use Laravel\Passport\Passport;
+use Tests\Traits\ResquestsVerificationCode;
 
 class ResetPasswordTest extends TestCase
 {
+    use ResquestsVerificationCode;
+
     private const NEW_PASSWORD = 'abcdef123';
 
     private static Client $client;
@@ -102,7 +105,12 @@ class ResetPasswordTest extends TestCase
             'client_id' => $client->id,
             'client_secret' => $client->secret,
             'grant_type' => 'password',
-        ])->assertStatus(400);
+            'two_fa_code' => '12345',
+        ])->assertStatus(400)->assertExactJson([
+            "error" => "invalid_grant",
+            "error_description" => "The user credentials were incorrect.",
+            "message" => "The user credentials were incorrect."
+        ]);
 
         $this->postJson(route('loginUser'), [
             'username'  => $user->username,
@@ -110,6 +118,7 @@ class ResetPasswordTest extends TestCase
             'client_id' => $client->id,
             'client_secret' => $client->secret,
             'grant_type' => 'password',
+            'two_fa_code' => (string) $this->getVerificationCode($user->username, self::NEW_PASSWORD),
         ])->assertSuccessful();
     }
 }

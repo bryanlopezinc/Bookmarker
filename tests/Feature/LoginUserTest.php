@@ -13,9 +13,12 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
 use Laravel\Passport\Client;
+use Tests\Traits\ResquestsVerificationCode;
 
 class LoginUserTest extends TestCase
 {
+    use ResquestsVerificationCode;
+
     private Client $client;
     private User $user;
 
@@ -34,26 +37,40 @@ class LoginUserTest extends TestCase
 
     public function testWillReturnValidationErrorsWhenCredentialsAreInvalid(): void
     {
+        $data = [
+            "error" => "invalid_grant",
+            "error_description" => "The user credentials were incorrect.",
+            "message" => "The user credentials were incorrect."
+        ];
+
         $this->getTestResponse([
             'username'  => $this->user->username,
             'password'  => 'wrongPassword',
             'client_id' => $this->client->id,
             'client_secret' => $this->client->secret,
-            'grant_type' => 'password'
-        ])->assertStatus(400);
+            'grant_type' => 'password',
+            'two_fa_code' => '12345',
+        ])->assertStatus(400)->assertExactJson($data);
 
         $this->getTestResponse([
             'username'  =>  UserFactory::randomUsername(),
             'password'  => 'password',
             'client_id' => $this->client->id,
             'client_secret' => $this->client->secret,
-            'grant_type' => 'password'
-        ])->assertStatus(400);
+            'grant_type' => 'password',
+            'two_fa_code' => '12345',
+        ])->assertStatus(400)->assertExactJson($data);
 
         $this->getTestResponse([
             'username'  => $this->user->username,
             'password'  => 'password',
-        ])->assertStatus(400);
+            'two_fa_code' => '12345',
+        ])->assertStatus(400)->assertExactJson([
+            "error" => "unsupported_grant_type",
+            "error_description" => "The authorization grant type is not supported by the authorization server.",
+            "message" => "The authorization grant type is not supported by the authorization server.",
+            "hint" => "Check that all required parameters have been provided"
+        ]);
     }
 
     public function testWillLoginUser(): void
@@ -67,12 +84,15 @@ class LoginUserTest extends TestCase
             }'),
         ]);
 
+        $code = (string)$this->getVerificationCode($this->user->username, 'password');
+
         $this->getTestResponse([
             'username'  => $this->user->username,
             'password'  => 'password',
             'client_id' => $this->client->id,
             'client_secret' => $this->client->secret,
             'grant_type' => 'password',
+            'two_fa_code' => $code,
             'with_ip' => '24.48.0.1',
             'with_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
         ])
@@ -118,18 +138,53 @@ class LoginUserTest extends TestCase
         });
     }
 
+    public function testWillNotLoginUserWhenCodeIsInvalid(): void
+    {
+        $code = $this->getVerificationCode($this->user->username, 'password');
+
+        //wrong code
+        $this->getTestResponse([
+            'username'  => $this->user->username,
+            'password'  => 'password',
+            'client_id' => $this->client->id,
+            'client_secret' => $this->client->secret,
+            'grant_type' => 'password',
+            'two_fa_code' => '12345',
+        ])->assertStatus(400)->assertExactJson([
+            "error" => "invalidVerificationCode",
+            "error_description" => "The given verification code is invalid.",
+            "message" => "The given verification code is invalid.",
+        ]);
+
+        //valid code but different user
+        $this->getTestResponse([
+            'username'  => UserFactory::new()->create()->username,
+            'password'  => 'password',
+            'client_id' => $this->client->id,
+            'client_secret' => $this->client->secret,
+            'grant_type' => 'password',
+            'two_fa_code' => (string) $code,
+        ])->assertStatus(400)->assertExactJson([
+            "error" => "invalidVerificationCode",
+            "error_description" => "The given verification code is invalid.",
+            "message" => "The given verification code is invalid.",
+        ]);
+    }
+
     public function testAttributesMustbeFilledWhenPresent(): void
     {
         $this->getTestResponse([
             'with_ip' => '',
-            'with_agent' => ''
+            'with_agent' => '',
+            'two_fa_code' => ''
         ])->assertUnprocessable()
-            ->assertJsonValidationErrorFor('with_ip')
-            ->assertJsonValidationErrorFor('with_agent');
+            ->assertJsonValidationErrors(['with_ip', 'with_agent', 'two_fa_code']);
     }
 
     public function testLocationWillBeUnknownWhenIpAttributeIsMissing(): void
     {
+        $code = (string)$this->getVerificationCode($this->user->username, 'password');
+
         Mail::fake();
         Http::fake();
 
@@ -139,6 +194,7 @@ class LoginUserTest extends TestCase
             'client_id' => $this->client->id,
             'client_secret' => $this->client->secret,
             'grant_type' => 'password',
+            'two_fa_code' => $code,
             'with_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
         ])
             ->assertSuccessful();
@@ -154,6 +210,8 @@ class LoginUserTest extends TestCase
 
     public function testDeviceWillBeUnknownWhenUserAgentAttributeIsMissing(): void
     {
+        $code = (string)$this->getVerificationCode($this->user->username, 'password');
+
         Mail::fake();
 
         $this->getTestResponse([
@@ -162,6 +220,7 @@ class LoginUserTest extends TestCase
             'client_id' => $this->client->id,
             'client_secret' => $this->client->secret,
             'grant_type' => 'password',
+            'two_fa_code' => $code,
         ])->assertSuccessful();
 
         Mail::assertSent(function (NewLoginMail $mail) {

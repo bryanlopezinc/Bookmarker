@@ -78,11 +78,11 @@ final class User extends Authenticatable
 
         $sql = <<<SQL
                 CASE
-                    WHEN user_bookmarks_count.count IS NULL THEN 0
-                    ELSE user_bookmarks_count.count
+                    WHEN users_bookmarks_count.count IS NULL THEN 0
+                    ELSE users_bookmarks_count.count
                 END as 'bookmarks_count'
              SQL;
 
-        $builder->addSelect(DB::raw($sql))->join('user_bookmarks_count', 'users.id', '=', 'user_bookmarks_count.user_id', 'left outer');
+        $builder->addSelect(DB::raw($sql))->join('users_bookmarks_count', 'users.id', '=', 'users_bookmarks_count.user_id', 'left outer');
     }
 }

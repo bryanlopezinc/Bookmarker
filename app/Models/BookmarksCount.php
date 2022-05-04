@@ -11,7 +11,7 @@ final class BookmarksCount extends Model
     /**
      * {@inheritdoc}
      */
-    protected $table = 'user_bookmarks_count';
+    protected $table = 'users_bookmarks_count';
 
     /**
      * {@inheritdoc}

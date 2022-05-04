@@ -14,6 +14,9 @@ use Illuminate\Testing\TestResponse;
 use Tests\Traits\ResquestsVerificationCode;
 use Laravel\Passport\Database\Factories\ClientFactory;
 
+/**
+ * @group 119
+ */
 class ResetPasswordTest extends TestCase
 {
     use ResquestsVerificationCode;
@@ -62,7 +65,23 @@ class ResetPasswordTest extends TestCase
             'password' => self::NEW_PASSWORD,
             'password_confirmation' => self::NEW_PASSWORD,
             'token' => 'token'
-        ])->assertNotFound();
+        ])->assertNotFound()->assertExactJson([
+            'message' => 'Could not find user with given email'
+        ]);
+    }
+
+    public function testWillReturnErrorResponseWhenTokenIsInvalid(): void
+    {
+        Passport::actingAsClient(static::$client);
+
+        $this->getTestResponse([
+            'email'  => static::$user->email,
+            'password' => self::NEW_PASSWORD,
+            'password_confirmation' => self::NEW_PASSWORD,
+            'token' => 'token'
+        ])->assertNotFound()->assertExactJson([
+            'message' => 'Invalid reset token'
+        ]);
     }
 
     public function testSuccessResponse(): void

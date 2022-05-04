@@ -24,7 +24,7 @@ final class ResetPasswordController
         });
 
         if ($response === PasswordBroker::INVALID_USER) {
-            return response()->json(['message' => ' Could not find user with given email'], Response::HTTP_NOT_FOUND);
+            return response()->json(['message' => 'Could not find user with given email'], Response::HTTP_NOT_FOUND);
         }
 
         if ($response === PasswordBroker::INVALID_TOKEN) {

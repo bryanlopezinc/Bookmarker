@@ -17,6 +17,19 @@ final class Username
         $this->validate();
     }
 
+    /**
+     * @return array<string>
+     */
+    public static function rules(array $merge = []): array
+    {
+        return array_merge([
+            'string',
+            'min:' . self::MIN,
+            'max:' . self::MAX,
+            'regex:' . self::REGEX
+        ], $merge);
+    }
+
     private function validate(): void
     {
         $length = mb_strlen($this->value);

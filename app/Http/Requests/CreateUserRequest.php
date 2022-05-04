@@ -17,17 +17,8 @@ final class CreateUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        $concat = fn (string $rule, string|int $value) => $rule . ':' . $value;
-
         return [
-            'username'    => [
-                'required',
-                'string',
-                $concat('min', Username::MIN),
-                $concat('max', Username::MAX),
-                Rule::unique(User::class, 'username'),
-                $concat('regex', Username::REGEX)
-            ],
+            'username'    => Username::rules(['required', Rule::unique(User::class, 'username')]),
             'firstname'   => ['required', 'filled'],
             'lastname'    => ['required', 'filled'],
             'email'       => ['required', 'email', Rule::unique(User::class, 'email')],

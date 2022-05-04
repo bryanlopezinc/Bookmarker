@@ -6,6 +6,7 @@ namespace App\Http\Requests;
 
 use App\TwoFA\InvalidVerificationCodeException;
 use App\TwoFA\VerificationCode;
+use App\ValueObjects\Username;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -17,6 +18,8 @@ final class LoginUserRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'username' => Username::rules(['required']),
+            'password' => ['required'],
             'with_ip' => ['ip', 'sometimes', 'filled'],
             'with_agent' => ['sometimes', 'filled'],
             'two_fa_code' => ['required', 'string', 'filled']

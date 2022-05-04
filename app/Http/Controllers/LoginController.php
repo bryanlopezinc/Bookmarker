@@ -20,7 +20,7 @@ final class LoginController extends AccessTokenController
     {
         $token = $this->issueToken($serverRequest)->content();
 
-        $user = $repository->findByUsername(new Username($request->input('username')));
+        $user = $repository->findByUsername(Username::fromRequest($request));
 
         event(new LoginEvent(
             $user,

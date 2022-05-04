@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\ValueObjects;
 
 use App\Exceptions\InvalidUsernameException;
+use Exception;
+use Illuminate\Http\Request;
 
 final class Username
 {
@@ -28,6 +30,11 @@ final class Username
             'max:' . self::MAX,
             'regex:' . self::REGEX
         ], $merge);
+    }
+
+    public static function fromRequest(Request $request, string $key = 'username'): self
+    {
+        return new self($request->input($key, fn () => throw new Exception('Could not retrieve username from request with key ' . $key)));
     }
 
     private function validate(): void

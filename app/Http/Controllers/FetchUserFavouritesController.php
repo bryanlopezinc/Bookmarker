@@ -7,7 +7,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\BookmarkResource;
 use App\Http\Resources\PaginatedResourceCollection;
 use App\PaginationData;
-use App\Repositories\FetchUserFavouritesRepository as Repository;
+use App\Repositories\FavouritesRepository as Repository;
 use App\ValueObjects\UserId;
 use Illuminate\Http\Request;
 

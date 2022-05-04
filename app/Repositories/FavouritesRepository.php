@@ -7,6 +7,12 @@ namespace App\Repositories;
 use App\Models\Favourite;
 use App\ValueObjects\ResourceId;
 use App\ValueObjects\UserId;
+use App\BookmarkColumns;
+use App\Models\Bookmark as Model;
+use App\DataTransferObjects\Bookmark;
+use App\DataTransferObjects\Builders\BookmarkBuilder;
+use App\PaginationData;
+use Illuminate\Pagination\Paginator;
 
 final class FavouritesRepository
 {
@@ -34,5 +40,19 @@ final class FavouritesRepository
             'user_id' => $userId->toInt(),
             'bookmark_id' => $bookmarkId->toInt()
         ])->delete();
+    }
+
+    /**
+     * @return Paginator<Bookmark>
+     */
+    public function get(UserId $userId, PaginationData $pagination): Paginator
+    {
+        /** @var Paginator */
+        $favourites = Model::WithQueryOptions(BookmarkColumns::new())
+            ->join('favourites', 'bookmark_id', '=', 'bookmarks.id')
+            ->where('favourites.user_id', $userId->toInt())
+            ->simplePaginate($pagination->perPage(), page: $pagination->page());
+
+        return $favourites->setCollection($favourites->getCollection()->map(fn (Model $bookmark) => BookmarkBuilder::fromModel($bookmark)->build()));
     }
 }

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\BookmarkColumns;
 use App\Policies\EnsureAuthorizedUserOwnsBookmark;
+use App\QueryColumns\BookmarkQueryColumns;
 use App\ValueObjects\ResourceId;
 use App\Repositories\DeleteBookmarksRepository;
 use App\Repositories\FindBookmarksRepository as FindBookmarksRepository;
@@ -21,7 +21,7 @@ final class DeleteBookmarkService
 
     public function delete(ResourceId $bookmarkId): void
     {
-        $bookmark = $this->findBookmarks->findById($bookmarkId, BookmarkColumns::new()->userId()->id());
+        $bookmark = $this->findBookmarks->findById($bookmarkId, BookmarkQueryColumns::new()->userId()->id());
 
         if ($bookmark === false) {
             return;

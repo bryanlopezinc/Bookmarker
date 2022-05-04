@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\BookmarkColumns;
 use App\Policies\EnsureAuthorizedUserOwnsBookmark;
+use App\QueryColumns\BookmarkQueryColumns;
 use App\Repositories\FavouritesRepository;
 use App\Repositories\FindBookmarksRepository;
 use App\ValueObjects\ResourceId;
@@ -22,7 +22,7 @@ final class CreateFavouriteService
 
     public function create(ResourceId $bookmarkId): void
     {
-        $bookmark = $this->bookmarkRepository->findById($bookmarkId, BookmarkColumns::new()->userId()->id());
+        $bookmark = $this->bookmarkRepository->findById($bookmarkId, BookmarkQueryColumns::new()->userId()->id());
 
         $userId = UserId::fromAuthUser();
 

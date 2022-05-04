@@ -32,7 +32,7 @@ final class RequestVerificationCodeService
 
     public function __invoke(Request $request): void
     {
-        $user = $this->userRepository->findByUsername(new Username($request->input('username')));
+        $user = $this->userRepository->findByUsername(Username::fromRequest($request));
 
         $this->ensureValidCrendentials($user, $request);
 

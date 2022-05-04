@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\BookmarkColumns;
 use App\ValueObjects\ResourceId;
 use App\Models\Bookmark as Model;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
+use App\QueryColumns\BookmarkQueryColumns;
 
 final class FindBookmarksRepository
 {
-    public function findById(ResourceId $bookmarkId, BookmarkColumns $columns = new BookmarkColumns): Bookmark|false
+    public function findById(ResourceId $bookmarkId, BookmarkQueryColumns $columns = new BookmarkQueryColumns()): Bookmark|false
     {
         $model = Model::WithQueryOptions($columns)->whereKey($bookmarkId->toInt())->first();
 

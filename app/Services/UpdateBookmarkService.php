@@ -10,9 +10,9 @@ use App\Repositories\FindBookmarksRepository;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Repositories\UpdateBookmarkRepository as Repository;
 use App\DataTransferObjects\Builders\UpdateBookmarkDataBuilder;
-use App\BookmarkColumns;
 use App\Http\Requests\CreateBookmarkRequest;
 use App\Policies\EnsureAuthorizedUserOwnsBookmark;
+use App\QueryColumns\BookmarkQueryColumns;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class UpdateBookmarkService
@@ -25,7 +25,7 @@ final class UpdateBookmarkService
     {
         $data = UpdateBookmarkDataBuilder::fromRequest($request)->build();
 
-        $bookmark = $this->findBookmarks->findById($data->id, BookmarkColumns::new()->userId()->tags());
+        $bookmark = $this->findBookmarks->findById($data->id, BookmarkQueryColumns::new()->userId()->tags());
 
         if ($bookmark === false) {
             throw new NotFoundHttpException();

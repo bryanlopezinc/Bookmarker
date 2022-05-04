@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\BookmarkColumns;
 use App\Collections\TagsCollection;
 use App\Policies\EnsureAuthorizedUserOwnsBookmark;
+use App\QueryColumns\BookmarkQueryColumns;
 use App\ValueObjects\ResourceId;
 use App\Repositories\DeleteBookmarkTagsRepository;
 use App\Repositories\FindBookmarksRepository as FindBookmarksRepository;
@@ -22,7 +22,7 @@ final class DeleteBookmarkTagsService
 
     public function delete(ResourceId $bookmarkId, TagsCollection $tagsCollection): void
     {
-        $bookmark = $this->findBookmarks->findById($bookmarkId, BookmarkColumns::new()->id()->userId());
+        $bookmark = $this->findBookmarks->findById($bookmarkId, BookmarkQueryColumns::new()->id()->userId());
 
         if ($bookmark === false) {
             throw new NotFoundHttpException();

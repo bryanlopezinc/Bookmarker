@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App;
+namespace App\QueryColumns;
 
-final class BookmarkColumns
+final class BookmarkQueryColumns
 {
     public function __construct(private array $columns = [])
     {

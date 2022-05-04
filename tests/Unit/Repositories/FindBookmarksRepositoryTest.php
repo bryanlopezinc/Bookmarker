@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Repositories;
 
-use App\BookmarkColumns;
+use App\QueryColumns\BookmarkQueryColumns as BookmarkColumns;
 use App\Repositories\FindBookmarksRepository;
 use App\ValueObjects\ResourceId;
 use Database\Factories\BookmarkFactory;

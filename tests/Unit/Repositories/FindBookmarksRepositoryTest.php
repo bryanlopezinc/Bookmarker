@@ -25,7 +25,7 @@ class FindBookmarksRepositoryTest extends TestCase
 
         $bookmark = $this->repository->findById(new ResourceId($model->id), BookmarkColumns::new()->userId());
 
-        $bookmark->ownerId;
+        $bookmark->ownerId; // will throw initialization exception if not retrived
         $this->assertCount(1, $bookmark->toArray());
     }
 

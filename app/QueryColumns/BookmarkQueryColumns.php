@@ -4,12 +4,8 @@ declare(strict_types=1);
 
 namespace App\QueryColumns;
 
-final class BookmarkQueryColumns
+final class BookmarkQueryColumns extends QueryColumns
 {
-    public function __construct(private array $columns = [])
-    {
-    }
-
     public static function new(): self
     {
         return new self();
@@ -41,23 +37,5 @@ final class BookmarkQueryColumns
         $this->columns[] = 'tags';
 
         return $this;
-    }
-
-
-    public function has(string $field): bool
-    {
-        return in_array($field, $this->columns, true);
-    }
-
-    public function except(string|array $fields): array
-    {
-        $fields = (array) $fields;
-
-        return collect($this->columns)->reject(fn (string $field) => in_array($field, $fields, true))->all();
-    }
-
-    public function isEmpty(): bool
-    {
-        return empty($this->columns);
     }
 }

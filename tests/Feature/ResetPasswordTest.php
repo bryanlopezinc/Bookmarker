@@ -14,9 +14,6 @@ use Illuminate\Testing\TestResponse;
 use Tests\Traits\ResquestsVerificationCode;
 use Laravel\Passport\Database\Factories\ClientFactory;
 
-/**
- * @group 119
- */
 class ResetPasswordTest extends TestCase
 {
     use ResquestsVerificationCode;

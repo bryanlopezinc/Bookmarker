@@ -37,6 +37,11 @@ final class Username
         return new self($request->input($key, fn () => throw new Exception('Could not retrieve username from request with key ' . $key)));
     }
 
+    public static function fromString(string $value): self
+    {
+        return new self($value);
+    }
+
     private function validate(): void
     {
         $length = mb_strlen($this->value);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\TwoFA\Services;
 
 use App\DataTransferObjects\User;
+use App\QueryColumns\UserQueryColumns;
 use App\Repositories\UserRepository;
 use App\TwoFA\Cache\RecentlySentVerificationCodesRepository;
 use App\TwoFA\Cache\VerificationCodesRepository;
@@ -32,7 +33,7 @@ final class RequestVerificationCodeService
 
     public function __invoke(Request $request): void
     {
-        $user = $this->userRepository->findByUsername(Username::fromRequest($request));
+        $user = $this->userRepository->findByUsername(Username::fromRequest($request), UserQueryColumns::new()->id()->password()->email());
 
         $this->ensureValidCrendentials($user, $request);
 

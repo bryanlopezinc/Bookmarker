@@ -2,15 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use Database\Factories\UserFactory;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
+use App\Models\User;
+use App\Notifications\ResetPasswordNotification;
 use Laravel\Passport\Client;
 use Laravel\Passport\Passport;
+use Database\Factories\UserFactory;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Testing\TestResponse;
 use Tests\Traits\ResquestsVerificationCode;
+use Laravel\Passport\Database\Factories\ClientFactory;
 
 class ResetPasswordTest extends TestCase
 {
@@ -65,15 +67,23 @@ class ResetPasswordTest extends TestCase
 
     public function testSuccessResponse(): void
     {
-        $user = static::$user;
-
+        Notification::fake();
         Passport::actingAsClient(static::$client);
 
+        $user = static::$user;
         $initialPassword = $user->password;
+        $token = '';
 
-        $token = $this->postJson(route('requestPasswordResetToken'), [
+        $this->postJson(route('requestPasswordResetToken'), [
             'email'  => $user->email,
+            'reset_url' => 'https://url.com?token=:token&email=:email'
         ])->assertSuccessful()->json('token');
+
+        Notification::assertSentTo($user, function (ResetPasswordNotification $notification) use (&$token) {
+            $token = $notification->token;
+
+            return true;
+        });
 
         $this->getTestResponse([
             'email'  => $user->email,

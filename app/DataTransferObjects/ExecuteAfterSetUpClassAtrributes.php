@@ -43,7 +43,7 @@ final class ExecuteAfterSetUpClassAtrributes
     }
 
     /**
-     * @return array<AfterMakingValidatorInterface>
+     * @return array<AfterDTOSetUpHookInterface>
      */
     private function getClassAttributesInstances(): array
     {

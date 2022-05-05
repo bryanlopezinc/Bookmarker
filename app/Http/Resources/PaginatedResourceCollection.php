@@ -14,6 +14,10 @@ final class PaginatedResourceCollection extends AnonymousResourceCollection
         parent::__construct($paginator, $collects);
     }
 
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     * @param mixed $paginated
+     */
     public function paginationInformation($request, $paginated, array $default): array
     {
         unset(

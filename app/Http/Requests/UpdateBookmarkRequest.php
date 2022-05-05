@@ -16,7 +16,7 @@ final class UpdateBookmarkRequest extends FormRequest
      */
     public function rules()
     {
-        $rules = collect((new CreateBookmarkRequest())->rules())->except('url')->put('id', ['required', new ResourceIdRule]);
+        $rules = collect((new CreateBookmarkRequest())->rules())->except(['url'])->put('id', ['required', new ResourceIdRule]);
 
         $rules->put('title', collect($rules['title'])->reject('nullable')->push('required_without_all:tags')->values()->all());
         $rules->put('tags', collect($rules['tags'])->reject('nullable')->values()->all());

@@ -7,6 +7,7 @@ namespace App\Repositories;
 use App\ValueObjects\ResourceId;
 use App\Models\Bookmark as Model;
 use App\ValueObjects\UserId;
+use Illuminate\Database\Eloquent\Collection;
 
 final class DeleteBookmarksRepository
 {
@@ -28,13 +29,13 @@ final class DeleteBookmarksRepository
      */
     public function fromSite(ResourceId $siteId, UserId $userId): bool
     {
-        $recordsCount = Model::query()->where([
+        return Model::query()->where([
             'site_id' => $siteId->toInt(),
             'user_id' => $userId->toInt()
-        ])->delete();
+        ])->chunkById(100, function (Collection $chunk) use ($userId) {
+            $chunk->toQuery()->delete();
 
-        $this->bookmarksCountRepository->decrementUserBookmarksCount($userId, $recordsCount);
-
-        return (bool) $recordsCount;
+            $this->bookmarksCountRepository->decrementUserBookmarksCount($userId, $chunk->count());
+        });
     }
 }

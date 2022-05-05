@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\BookmarksCount;
+use App\Models\UserResourcesCount;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\SiteFactory;
 use Database\Factories\UserFactory;
@@ -42,9 +42,10 @@ class DeleteBookmarksFromSiteTest extends TestCase
             'user_id' => $user->id,
         ]);
 
-        BookmarksCount::create([
+        UserResourcesCount::create([
             'user_id' => $user->id,
-            'count' => 10
+            'count' => 10,
+            'type' => UserResourcesCount::BOOKMARKS_TYPE
         ]);
 
         $this->getTestResponse(['site_id' => $siteId])->assertStatus(202);
@@ -57,9 +58,10 @@ class DeleteBookmarksFromSiteTest extends TestCase
             $this->assertModelMissing($model);
         }
 
-        $this->assertDatabaseHas(BookmarksCount::class, [
+        $this->assertDatabaseHas(UserResourcesCount::class, [
             'user_id' => $user->id,
-            'count' => 5
+            'count' => 5,
+            'type' => UserResourcesCount::BOOKMARKS_TYPE
         ]);
     }
 }

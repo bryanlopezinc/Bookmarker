@@ -9,6 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -60,7 +61,7 @@ final class User extends Authenticatable
             $builder->addSelect($this->qualifyColumns($columns->except(['bookmarks_count'])));
         }
 
-        $this->bookmarksCountQuery($builder, $columns);
+        $this->addBookmarksCountQuery($builder, $columns);
 
         return $builder;
     }
@@ -68,7 +69,7 @@ final class User extends Authenticatable
     /**
      * @param Builder $builder
      */
-    private function bookmarksCountQuery(&$builder, UserQueryColumns $options): void
+    private function addBookmarksCountQuery(&$builder, UserQueryColumns $options): void
     {
         $wantsBookmarksCount = $options->has('bookmarks_count') ?: $options->isEmpty();
 
@@ -78,11 +79,14 @@ final class User extends Authenticatable
 
         $sql = <<<SQL
                 CASE
-                    WHEN users_bookmarks_count.count IS NULL THEN 0
-                    ELSE users_bookmarks_count.count
+                    WHEN users_resources_counts.count IS NULL THEN 0
+                    ELSE users_resources_counts.count
                 END as 'bookmarks_count'
              SQL;
 
-        $builder->addSelect(DB::raw($sql))->join('users_bookmarks_count', 'users.id', '=', 'users_bookmarks_count.user_id', 'left outer');
+        $builder->addSelect(DB::raw($sql))->join('users_resources_counts', function (JoinClause $join) {
+            $join->on('users.id', '=', 'users_resources_counts.user_id')
+                ->where('users_resources_counts.type', UserResourcesCount::BOOKMARKS_TYPE);
+        }, type: 'left outer');
     }
 }

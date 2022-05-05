@@ -6,12 +6,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-final class BookmarksCount extends Model
+final class UserResourcesCount extends Model
 {
-    /**
-     * {@inheritdoc}
-     */
-    protected $table = 'users_bookmarks_count';
+    public const BOOKMARKS_TYPE = 3;
+    public const FAVOURITES_TYPE = 4;
 
     /**
      * {@inheritdoc}
@@ -21,5 +19,5 @@ final class BookmarksCount extends Model
     /**
      * {@inheritdoc}
      */
-    public $timestamps = false;
+    protected $table = 'users_resources_counts';
 }

@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\UpdateBookmarkInfo;
-use App\Models\BookmarksCount;
+use App\Models\UserResourcesCount;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Bus;
@@ -80,9 +80,10 @@ class CreateBookmarksTest extends TestCase
             'tags'  => implode(',', [$this->faker->word, $repeat = $this->faker->word, $repeat])
         ])->assertCreated();
 
-        $this->assertDatabaseHas(BookmarksCount::class, [
+        $this->assertDatabaseHas(UserResourcesCount::class, [
             'user_id' => $user->id,
-            'count'   => 3
+            'count'   => 3,
+            'type' => UserResourcesCount::BOOKMARKS_TYPE
         ]);
     }
 

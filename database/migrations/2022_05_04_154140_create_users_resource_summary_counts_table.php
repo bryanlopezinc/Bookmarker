@@ -13,11 +13,12 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('users_bookmarks_count', function (Blueprint $table) {
+        Schema::create('users_resources_counts', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id')->unique();
-            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->integer('count');
+            $table->unsignedTinyInteger('type');
+            $table->unique(['type', 'user_id']);
             $table->timestamps();
         });
     }
@@ -29,6 +30,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('users_bookmarks_count');
+        Schema::dropIfExists('users_resources_counts');
     }
 };

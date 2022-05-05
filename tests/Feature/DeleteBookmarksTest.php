@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Bookmark;
-use App\Models\BookmarksCount;
 use App\Models\BookmarkTag;
+use App\Models\UserResourcesCount;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -39,9 +39,10 @@ class DeleteBookmarksTest extends TestCase
 
         $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
 
-        BookmarksCount::query()->create([
+        UserResourcesCount::query()->create([
             'user_id' => $user->id,
-            'count' => 1
+            'count' => 1,
+            'type' => UserResourcesCount::BOOKMARKS_TYPE
         ]);
 
         BookmarkTag::insert([
@@ -69,9 +70,10 @@ class DeleteBookmarksTest extends TestCase
             'tag_id' => 30
         ]);
 
-        $this->assertDatabaseHas(BookmarksCount::class, [
+        $this->assertDatabaseHas(UserResourcesCount::class, [
             'user_id' => $user->id,
-            'count' => 0
+            'count' => 0,
+            'type' => UserResourcesCount::BOOKMARKS_TYPE
         ]);
     }
 

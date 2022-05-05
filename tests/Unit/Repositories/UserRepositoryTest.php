@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Repositories;
 
-use App\Models\BookmarksCount;
 use App\Models\User as Model;
+use App\Models\UserResourcesCount;
 use App\QueryColumns\UserQueryColumns;
 use App\Repositories\UserRepository;
 use App\ValueObjects\Username;
@@ -25,7 +25,11 @@ class UserRepositoryTest extends TestCase
         /** @var Model */
         $model = UserFactory::new()->create();
 
-        BookmarksCount::query()->create(['user_id' => $model->id, 'count' => 100]);
+        UserResourcesCount::query()->create([
+            'user_id' => $model->id,
+            'count' => 100,
+            'type' => UserResourcesCount::BOOKMARKS_TYPE
+        ]);
 
         $this->assertSame(100, (new UserRepository)->findByUsername(Username::fromString($model->username))->bookmarksCount->value);
     }

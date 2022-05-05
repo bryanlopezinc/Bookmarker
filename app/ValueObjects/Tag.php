@@ -20,16 +20,24 @@ final class Tag
 
         $this->validate();
     }
-    
+
+    /**
+     * @return array<string>
+     */
+    public static function rules(array $merge = []): array
+    {
+        return [
+            'max:' . self::MAX_LENGTH, 'filled', 'alpha_num', ...$merge
+        ];
+    }
+
     private function validate(): void
     {
         if (isset(static::$checked[$this->value])) return;
 
         $attribute = 'tag';
 
-        $rules = [
-            'max:' . self::MAX_LENGTH, 'filled', 'alpha_num', 'bail'
-        ];
+        $rules = $this->rules(['bail']);
 
         $validator = Validator::make([$attribute => $this->value], [$attribute => $rules]);
 

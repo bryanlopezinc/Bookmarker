@@ -11,6 +11,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('bookmarks', Controllers\FetchUserBookmarksController::class)->name('fetchUserBookmarks');
     Route::get('users/favourites', Controllers\FetchUserFavouritesController::class)->name('fetchUserFavourites');
     Route::get('users/sites', Controllers\FetchUserSitesController::class)->name('fetchUserSites');
+    Route::post('tags/suggest', Controllers\SuggestTagsController::class)->name('suggestTags');
 
     Route::middleware(DBTransaction::class)->group(function () {
         Route::post('bookmarks', Controllers\CreateBookmarkController::class)

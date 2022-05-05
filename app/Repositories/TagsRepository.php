@@ -9,6 +9,8 @@ use App\Models\BookmarkTag;
 use App\Models\Bookmark as Model;
 use Illuminate\Support\Collection;
 use App\Collections\TagsCollection;
+use App\ValueObjects\UserId;
+use Illuminate\Database\Query\JoinClause;
 
 final class TagsRepository
 {
@@ -43,5 +45,23 @@ final class TagsRepository
             ->tap(fn (Collection $tags) => Tag::insert($tags->map(fn (string $tag) => ['name' => $tag])->all()));
 
         return $savedTags->merge(Tag::whereIn('name', $newTags->all())->get())->pluck('id')->all();
+    }
+
+    /**
+     * Search for tags that was created by user.
+     */
+    public function search(string $tag, UserId $userId, int $limit): TagsCollection
+    {
+        return Tag::join('bookmarks_tags', function (JoinClause $join) use ($userId) {
+            $join->on('tags.id', '=', 'bookmarks_tags.tag_id')
+                ->join('bookmarks', 'bookmarks.id', '=', 'bookmarks_tags.bookmark_id')
+                ->where('bookmarks.user_id', $userId->toInt());
+        })
+            ->where('tags.name', 'LIKE', "%$tag%")
+            ->orderByDesc('tags.id')
+            ->limit($limit)
+            ->get()
+            ->map(fn (Tag $tag) => $tag->name)
+            ->pipe(fn (Collection $tags) => TagsCollection::createFromStrings($tags->all()));
     }
 }

@@ -20,6 +20,14 @@ class UserRepositoryTest extends TestCase
         $this->assertSame(0, (new UserRepository)->findByUsername(Username::fromString($model->username))->bookmarksCount->value);
     }
 
+    public function testBookmarksCountWillBeZeroWhenUserHasNoFavourites(): void
+    {
+        /** @var Model */
+        $model = UserFactory::new()->create();
+
+        $this->assertSame(0, (new UserRepository)->findByUsername(Username::fromString($model->username))->favouritesCount->value);
+    }
+
     public function testWillReturnCorrectBookmarksCountWhenUserHasBookmarks(): void
     {
         /** @var Model */
@@ -32,6 +40,20 @@ class UserRepositoryTest extends TestCase
         ]);
 
         $this->assertSame(100, (new UserRepository)->findByUsername(Username::fromString($model->username))->bookmarksCount->value);
+    }
+
+    public function testWillReturnCorrectBookmarksCountWhenUserHasFavourites(): void
+    {
+        /** @var Model */
+        $model = UserFactory::new()->create();
+
+        UserResourcesCount::query()->create([
+            'user_id' => $model->id,
+            'count' => 45,
+            'type' => UserResourcesCount::FAVOURITES_TYPE
+        ]);
+
+        $this->assertSame(45, (new UserRepository)->findByUsername(Username::fromString($model->username))->favouritesCount->value);
     }
 
     public function testWillReturnOnlyRequestedColumns(): void

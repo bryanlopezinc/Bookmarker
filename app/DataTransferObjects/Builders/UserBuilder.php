@@ -31,7 +31,8 @@ final class UserBuilder extends Builder
             ->when($keyExists('firstname'), fn (self $sb) => $sb->firstname($model['firstname']))
             ->when($keyExists('lastname'), fn (self $sb) => $sb->lastname($model['lastname']))
             ->when($keyExists('email'), fn (self $sb) => $sb->email($model['email']))
-            ->when($keyExists('bookmarks_count'), fn (self $sb) => $sb->bookmarksCount($model['bookmarks_count']))
+            ->when($keyExists('bookmarks_count'), fn (self $sb) => $sb->bookmarksCount((int)$model['bookmarks_count']))
+            ->when($keyExists('favourites_count'), fn (self $sb) => $sb->favouritesCount((int)$model['favourites_count']))
             ->when($keyExists('password'), fn (self $sb) => $sb->password($model['password']));
     }
 
@@ -80,6 +81,13 @@ final class UserBuilder extends Builder
     public function bookmarksCount(int $count): self
     {
         $this->attributes['bookmarksCount'] = new PositiveNumber($count);
+
+        return $this;
+    }
+
+    public function favouritesCount(int $count): self
+    {
+        $this->attributes['favouritesCount'] = new PositiveNumber($count);
 
         return $this;
     }

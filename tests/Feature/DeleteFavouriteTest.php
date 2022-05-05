@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Favourite;
+use App\Models\UserResourcesCount;
 use App\Repositories\FavouritesRepository;
 use App\ValueObjects\ResourceId;
 use App\ValueObjects\UserId;
@@ -44,6 +45,12 @@ class DeleteFavouriteTest extends TestCase
         $this->assertDatabaseMissing(Favourite::class, [
             'bookmark_id' => $bookmark->id,
             'user_id' => $user->id
+        ]);
+
+        $this->assertDatabaseHas(UserResourcesCount::class, [
+            'user_id' => $user->id,
+            'count'   => 0,
+            'type' => UserResourcesCount::FAVOURITES_TYPE
         ]);
     }
 

@@ -27,6 +27,6 @@ final class CreateUserRepository
             'password' => $user->password
         ]);
 
-        return UserBuilder::fromModel($user)->bookmarksCount(0)->build();
+        return UserBuilder::fromModel($user)->bookmarksCount(0)->favouritesCount(0)->build();
     }
 }

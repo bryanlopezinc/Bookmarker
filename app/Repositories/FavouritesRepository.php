@@ -10,6 +10,7 @@ use App\ValueObjects\UserId;
 use App\Models\Bookmark as Model;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
+use App\Models\UserResourcesCount;
 use App\PaginationData;
 use App\QueryColumns\BookmarkQueryColumns;
 use Illuminate\Pagination\Paginator;
@@ -23,7 +24,23 @@ final class FavouritesRepository
             'bookmark_id' => $bookmarkId->toInt()
         ]);
 
+        $this->incrementFavouritesCount($userId);
+
         return true;
+    }
+
+    private function incrementFavouritesCount(UserId $userId): void
+    {
+        $attributes = [
+            'user_id' => $userId->toInt(),
+            'type' => UserResourcesCount::FAVOURITES_TYPE
+        ];
+
+        $favouritesCount = UserResourcesCount::query()->firstOrCreate($attributes, ['count' => 1, ...$attributes]);
+
+        if (!$favouritesCount->wasRecentlyCreated) {
+            $favouritesCount->increment('count');
+        }
     }
 
     public function exists(ResourceId $bookmarkId, UserId $userId): bool
@@ -36,10 +53,22 @@ final class FavouritesRepository
 
     public function delete(ResourceId $bookmarkId, UserId $userId): bool
     {
-        return (bool) Favourite::query()->where([
+        $deleted = Favourite::query()->where([
             'user_id' => $userId->toInt(),
             'bookmark_id' => $bookmarkId->toInt()
         ])->delete();
+
+        $this->decrementFavouritesCount($userId);
+
+        return (bool) $deleted;
+    }
+
+    private function decrementFavouritesCount(UserId $userId): void
+    {
+        UserResourcesCount::query()->where([
+            'user_id' => $userId->toInt(),
+            'type' => UserResourcesCount::FAVOURITES_TYPE
+        ])->decrement('count');
     }
 
     /**
@@ -53,6 +82,8 @@ final class FavouritesRepository
             ->where('favourites.user_id', $userId->toInt())
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
 
-        return $favourites->setCollection($favourites->getCollection()->map(fn (Model $bookmark) => BookmarkBuilder::fromModel($bookmark)->build()));
+        return $favourites->setCollection(
+            $favourites->getCollection()->map(fn (Model $bookmark) => BookmarkBuilder::fromModel($bookmark)->build())
+        );
     }
 }

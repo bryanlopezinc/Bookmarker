@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Favourite;
+use App\Models\UserResourcesCount;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
@@ -29,7 +30,7 @@ class CreateFavouriteTest extends TestCase
         $this->getTestResponse()->assertJsonValidationErrorFor('bookmark');
     }
 
-    public function testWillAddBookmarkToFavourite(): void
+    public function testWillAddBookmarkToFavourites(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -42,6 +43,12 @@ class CreateFavouriteTest extends TestCase
         $this->assertDatabaseHas(Favourite::class, [
             'bookmark_id' => $bookmark->id,
             'user_id' => $user->id
+        ]);
+
+        $this->assertDatabaseHas(UserResourcesCount::class, [
+            'user_id' => $user->id,
+            'count'   => 1,
+            'type' => UserResourcesCount::FAVOURITES_TYPE
         ]);
     }
 

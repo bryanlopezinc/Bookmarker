@@ -10,7 +10,6 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\JoinClause;
-use Illuminate\Support\Facades\DB;
 
 /**
  * @property int $id
@@ -62,6 +61,7 @@ final class User extends Authenticatable
         }
 
         $this->addBookmarksCountQuery($builder, $columns);
+        $this->addFavouritesCountQuery($builder, $columns);
 
         return $builder;
     }
@@ -77,16 +77,24 @@ final class User extends Authenticatable
             return;
         }
 
-        $sql = <<<SQL
-                CASE
-                    WHEN users_resources_counts.count IS NULL THEN 0
-                    ELSE users_resources_counts.count
-                END as 'bookmarks_count'
-             SQL;
+        $builder->join('users_resources_counts as bc', function (JoinClause $join) {
+            $join->on('users.id', '=', 'bc.user_id')->where('bc.type', UserResourcesCount::BOOKMARKS_TYPE);
+        }, type: 'left outer')->addSelect('bc.count as bookmarks_count');
+    }
 
-        $builder->addSelect(DB::raw($sql))->join('users_resources_counts', function (JoinClause $join) {
-            $join->on('users.id', '=', 'users_resources_counts.user_id')
-                ->where('users_resources_counts.type', UserResourcesCount::BOOKMARKS_TYPE);
-        }, type: 'left outer');
+    /**
+     * @param Builder $builder
+     */
+    private function addFavouritesCountQuery(&$builder, UserQueryColumns $options): void
+    {
+        $wantsFavouritesCount = $options->has('favourites_count') ?: $options->isEmpty();
+
+        if (!$wantsFavouritesCount) {
+            return;
+        }
+
+        $builder->join('users_resources_counts as fc', function (JoinClause $join) {
+            $join->on('users.id', '=', 'fc.user_id')->where('fc.type', UserResourcesCount::FAVOURITES_TYPE);
+        }, type: 'left outer')->addSelect('fc.count as favourites_count');
     }
 }

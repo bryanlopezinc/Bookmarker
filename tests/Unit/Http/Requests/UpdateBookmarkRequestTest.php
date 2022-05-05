@@ -7,7 +7,7 @@ namespace Tests\Unit\Http\Requests;
 use Tests\TestCase;
 use App\Http\Requests\UpdateBookmarkRequest;
 use App\Rules\ResourceIdRule;
-use App\Rules\TagRule;
+use App\ValueObjects\Tag;
 
 class UpdateBookmarkRequestTest extends TestCase
 {
@@ -17,7 +17,7 @@ class UpdateBookmarkRequestTest extends TestCase
 
         $this->assertEquals($request->rules(), [
             'tags' => ['max:15'],
-            'tags.*' => [new TagRule],
+            'tags.*' => Tag::rules(),
             'title' => ["filled", "string", "max:100", "required_without_all:tags",],
             'id' => ["required", new ResourceIdRule],
             'description' => ['nullable', 'max:200', 'filled']

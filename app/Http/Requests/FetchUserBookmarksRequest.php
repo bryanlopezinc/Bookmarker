@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Rules\ResourceIdRule;
-use App\Rules\TagRule;
+use App\ValueObjects\Tag;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class FetchUserBookmarksRequest extends FormRequest
@@ -14,7 +14,7 @@ final class FetchUserBookmarksRequest extends FormRequest
     {
         return [
             'site_id' => ['nullable', new ResourceIdRule],
-            'tag' => ['nullable', new TagRule]
+            'tag' => Tag::rules(['nullable'])
         ];
     }
 }

@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Rules\ResourceIdRule;
-use App\Rules\TagRule;
-use App\ValueObjects\BookmarkTitle;
+use App\ValueObjects\Tag;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class DeleteBookmarkTagsRequest extends FormRequest
@@ -16,7 +15,7 @@ final class DeleteBookmarkTagsRequest extends FormRequest
         return [
             'id'     => ['required', new ResourceIdRule],
             'tags' => ['required', 'filled'],
-            'tags.*'  => [new TagRule],
+            'tags.*'  => Tag::rules(),
         ];
     }
 }

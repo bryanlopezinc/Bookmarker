@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use App\Rules\TagRule;
 use App\ValueObjects\BookmarkTitle;
+use App\ValueObjects\Tag;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class CreateBookmarkRequest extends FormRequest
@@ -23,7 +23,7 @@ final class CreateBookmarkRequest extends FormRequest
             'url'     => ['required', 'url'],
             'description' => ['nullable', 'max:200', 'filled'],
             'tags'    => ['nullable', 'max:' . self::MAX_TAGS],
-            'tags.*'  => [new TagRule],
+            'tags.*'  => Tag::rules(),
             'title'   => ['nullable', ...BookmarkTitle::rules()]
         ];
     }

@@ -5,7 +5,7 @@ namespace Tests\Unit\Repositories;
 use App\Collections\TagsCollection;
 use App\DataTransferObjects\FetchUserBookmarksRequestData as Data;
 use App\Repositories\FetchUserBookmarksRepository;
-use App\Repositories\SaveBookmarkTagsRepository;
+use App\Repositories\TagsRepository;
 use App\ValueObjects\ResourceId;
 use App\ValueObjects\Tag;
 use App\ValueObjects\UserId;
@@ -65,7 +65,7 @@ class FetchUserBookmarksRepositoryTest extends TestCase
             'user_id' => $userId = UserFactory::new()->create()->id,
         ]);
 
-        (new SaveBookmarkTagsRepository)->save($models[0], TagsCollection::createFromStrings(['foobar']));
+        (new TagsRepository)->attach($models[0], TagsCollection::createFromStrings(['foobar']));
 
         $result = $this->repository->get(Data::fromArray([
             'userId' => new UserId($userId),

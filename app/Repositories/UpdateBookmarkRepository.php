@@ -11,7 +11,7 @@ use App\DataTransferObjects\Builders\BookmarkBuilder;
 
 final class UpdateBookmarkRepository
 {
-    public function __construct(private SaveBookmarkTagsRepository $saveBookmarkTags)
+    public function __construct(private TagsRepository $tagsRepository)
     {
     }
 
@@ -20,7 +20,7 @@ final class UpdateBookmarkRepository
         /** @var Model */
         $model = Model::query()->whereKey($data->id->toInt())->first();
 
-        $this->saveBookmarkTags->save($model, $data->tags);
+        $this->tagsRepository->attach($model, $data->tags);
 
         if ($data->hasTitle) {
             $model->title = $data->title->value;

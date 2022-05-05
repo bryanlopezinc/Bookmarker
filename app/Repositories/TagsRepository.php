@@ -10,9 +10,9 @@ use App\Models\Bookmark as Model;
 use Illuminate\Support\Collection;
 use App\Collections\TagsCollection;
 
-final class SaveBookmarkTagsRepository
+final class TagsRepository
 {
-    public function save(Model $bookmark, TagsCollection $tags): void
+    public function attach(Model $bookmark, TagsCollection $tags): void
     {
         if ($tags->isEmpty()) {
             return;

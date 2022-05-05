@@ -7,7 +7,7 @@ use App\Models\Bookmark;
 use App\Models\BookmarkTag;
 use App\Models\Tag;
 use App\Repositories\DeleteBookmarkTagsRepository;
-use App\Repositories\SaveBookmarkTagsRepository;
+use App\Repositories\TagsRepository;
 use App\ValueObjects\ResourceId;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\TagFactory;
@@ -31,7 +31,7 @@ class DeleteBookmarkTagsRepositoryTest extends TestCase
 
         $tags = TagFactory::new()->count(5)->create();
 
-        (new SaveBookmarkTagsRepository)->save($model, TagsCollection::createFromStrings($tags->pluck('name')->all()));
+        (new TagsRepository)->attach($model, TagsCollection::createFromStrings($tags->pluck('name')->all()));
 
         $this->repository->delete(new ResourceId($model->id), TagsCollection::createFromStrings($tags->pluck('name')->all()));
 
@@ -50,7 +50,7 @@ class DeleteBookmarkTagsRepositoryTest extends TestCase
 
         $tags = TagFactory::new()->count(5)->create();
 
-        (new SaveBookmarkTagsRepository)->save($model, TagsCollection::createFromStrings($tags->pluck('name')->all()));
+        (new TagsRepository)->attach($model, TagsCollection::createFromStrings($tags->pluck('name')->all()));
 
         $this->repository->delete(
             new ResourceId($model->id),

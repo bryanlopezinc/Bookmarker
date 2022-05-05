@@ -12,7 +12,7 @@ use App\Models\WebSite;
 final class CreateBookmarkRepository
 {
     public function __construct(
-        private SaveBookmarkTagsRepository $saveBookmarkTags,
+        private TagsRepository $tagsRepository,
         private BookmarksCountRepository $bookmarksCountRepository
     ) {
     }
@@ -35,7 +35,7 @@ final class CreateBookmarkRepository
             'preview_image_url' => $bookmark->hasPreviewImageUrl ? $bookmark->previewImageUrl->value : null
         ])->setRelation('site', $site);
 
-        $this->saveBookmarkTags->save($model, $bookmark->tags);
+        $this->tagsRepository->attach($model, $bookmark->tags);
 
         $this->bookmarksCountRepository->incrementUserBookmarksCount($bookmark->ownerId);
 

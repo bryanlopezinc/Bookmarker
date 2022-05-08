@@ -8,7 +8,7 @@ use App\DataTransferObjects\WebSite;
 use App\Models\WebSite as Model;
 use App\ValueObjects\DomainName;
 use App\ValueObjects\NonEmptyString;
-use App\ValueObjects\ResourceId;
+use App\ValueObjects\ResourceID;
 use App\ValueObjects\TimeStamp;
 
 final class SiteBuilder extends Builder
@@ -34,7 +34,7 @@ final class SiteBuilder extends Builder
 
     public function id(int $id): self
     {
-        $this->attributes['id'] = new ResourceId($id);
+        $this->attributes['id'] = new ResourceID($id);
 
         return $this;
     }

@@ -6,12 +6,12 @@ namespace App\DataTransferObjects;
 
 use App\ValueObjects\DomainName;
 use App\ValueObjects\NonEmptyString as SiteName;
-use App\ValueObjects\ResourceId;
+use App\ValueObjects\ResourceID;
 use App\ValueObjects\TimeStamp;
 
 final class WebSite extends DataTransferObject
 {
-    public readonly ResourceId $id;
+    public readonly ResourceID $id;
     public readonly DomainName $domainName;
     public readonly SiteName $name;
     public readonly TimeStamp $timeCreated;

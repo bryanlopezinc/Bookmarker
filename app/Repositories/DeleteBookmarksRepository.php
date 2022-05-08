@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\ValueObjects\ResourceId;
+use App\ValueObjects\ResourceID;
 use App\Models\Bookmark as Model;
 use App\ValueObjects\UserId;
 use Illuminate\Database\Eloquent\Collection;
@@ -15,7 +15,7 @@ final class DeleteBookmarksRepository
     {
     }
 
-    public function delete(ResourceId $bookmarkId, UserId $userId): bool
+    public function delete(ResourceID $bookmarkId, UserId $userId): bool
     {
         $recordsCount = Model::query()->where(['id' => $bookmarkId->toInt()])->delete();
 
@@ -27,7 +27,7 @@ final class DeleteBookmarksRepository
     /**
      * Delete all bookmarks from a particular site
      */
-    public function fromSite(ResourceId $siteId, UserId $userId): bool
+    public function fromSite(ResourceID $siteId, UserId $userId): bool
     {
         return Model::query()->where([
             'site_id' => $siteId->toInt(),

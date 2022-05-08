@@ -7,7 +7,7 @@ use App\Models\Bookmark;
 use App\Models\BookmarkTag;
 use App\Models\Tag;
 use App\Repositories\TagsRepository;
-use App\ValueObjects\ResourceId;
+use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserId;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\TagFactory;
@@ -48,7 +48,7 @@ class TagsRepositoryTest extends TestCase
 
         $repository->attach(TagsCollection::createFromStrings($tags->pluck('name')->all()), $model);
 
-        $repository->detach(TagsCollection::createFromStrings($tags->pluck('name')->all()), new ResourceId($model->id));
+        $repository->detach(TagsCollection::createFromStrings($tags->pluck('name')->all()), new ResourceID($model->id));
 
         $tags->each(function (Tag $tag) use ($model) {
             $this->assertDatabaseMissing(BookmarkTag::class, [
@@ -71,7 +71,7 @@ class TagsRepositoryTest extends TestCase
 
         $repository->detach(
             TagsCollection::createFromStrings(TagFactory::new()->count(5)->create()->pluck('name')->all()),
-            new ResourceId($model->id)
+            new ResourceID($model->id)
         );
 
         $tags->each(function (Tag $tag) use ($model) {

@@ -10,7 +10,7 @@ use App\DataTransferObjects\WebSite;
 use App\Models\Bookmark as Model;
 use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\WebPageDescription;
-use App\ValueObjects\ResourceId;
+use App\ValueObjects\ResourceID;
 use App\ValueObjects\TimeStamp;
 use App\ValueObjects\Url;
 use App\ValueObjects\UserId;
@@ -32,7 +32,7 @@ final class BookmarkBuilder extends Builder
 
     public function id(int $id): self
     {
-        $this->attributes['id'] = new ResourceId($id);
+        $this->attributes['id'] = new ResourceID($id);
 
         return $this;
     }
@@ -105,7 +105,7 @@ final class BookmarkBuilder extends Builder
 
     public function siteId(int $siteId): self
     {
-        $this->attributes['webPagesiteId'] = new ResourceId($siteId);
+        $this->attributes['webPagesiteId'] = new ResourceID($siteId);
 
         return $this;
     }

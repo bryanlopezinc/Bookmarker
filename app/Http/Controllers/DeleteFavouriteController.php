@@ -6,7 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Rules\ResourceIdRule;
 use App\Services\DeleteUserFavouriteService;
-use App\ValueObjects\ResourceId;
+use App\ValueObjects\ResourceID;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,7 +18,7 @@ final class DeleteFavouriteController
             'bookmark' => ['required', new ResourceIdRule]
         ]);
 
-        $service(ResourceId::fromRequest($request, 'bookmark'));
+        $service(ResourceID::fromRequest($request, 'bookmark'));
 
         return response()->json(status: 204);
     }

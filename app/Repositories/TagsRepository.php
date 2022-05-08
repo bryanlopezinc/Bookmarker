@@ -9,7 +9,7 @@ use App\Models\BookmarkTag;
 use App\Models\Bookmark as Model;
 use Illuminate\Support\Collection;
 use App\Collections\TagsCollection;
-use App\ValueObjects\ResourceId;
+use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserId;
 use Illuminate\Database\Query\JoinClause;
 
@@ -66,7 +66,7 @@ final class TagsRepository
             ->pipe(fn (Collection $tags) => TagsCollection::createFromStrings($tags->all()));
     }
 
-    public function detach(TagsCollection $tags, ResourceId $bookmarkId,): void
+    public function detach(TagsCollection $tags, ResourceID $bookmarkId,): void
     {
         BookmarkTag::query()->where('bookmark_id', $bookmarkId->toInt())
             ->whereIn('tag_id', Tag::select('id')->whereIn('name', $tags->toStringCollection()->all()))

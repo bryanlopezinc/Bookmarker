@@ -7,7 +7,7 @@ namespace App\ValueObjects;
 use Illuminate\Http\Request;
 use App\Exceptions\InvalidResourceIdException;
 
-class ResourceId
+class ResourceID
 {
     public function __construct(protected readonly int $id)
     {
@@ -41,7 +41,7 @@ class ResourceId
         return (int) $request->input($key, fn () => throw $exception);
     }
 
-    protected function equalsId(ResourceId $resourceId): bool
+    protected function equalsId(ResourceID $resourceId): bool
     {
         return $this->toInt() === $resourceId->id;
     }

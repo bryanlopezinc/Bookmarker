@@ -6,7 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Rules\ResourceIdRule;
 use App\Services\CreateFavouriteService;
-use App\ValueObjects\ResourceId;
+use App\ValueObjects\ResourceID;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -19,7 +19,7 @@ final class CreateFavouriteController
             'bookmark' => ['required', new ResourceIdRule]
         ]);
 
-        $service->create(ResourceId::fromRequest($request, 'bookmark'));
+        $service->create(ResourceID::fromRequest($request, 'bookmark'));
 
         return response()->json(status: Response::HTTP_CREATED);
     }

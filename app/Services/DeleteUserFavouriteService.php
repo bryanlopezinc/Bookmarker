@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Repositories\FavouritesRepository;
-use App\ValueObjects\ResourceId;
+use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserId;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -16,7 +16,7 @@ final class DeleteUserFavouriteService
     {
     }
 
-    public function __invoke(ResourceId $bookmarkId): void
+    public function __invoke(ResourceID $bookmarkId): void
     {
         $userId = UserId::fromAuthUser();
 

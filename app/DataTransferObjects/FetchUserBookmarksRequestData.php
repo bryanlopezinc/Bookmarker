@@ -6,14 +6,14 @@ namespace App\DataTransferObjects;
 
 use App\Http\Requests\FetchUserBookmarksRequest;
 use App\PaginationData;
-use App\ValueObjects\ResourceId;
+use App\ValueObjects\ResourceID;
 use App\ValueObjects\Tag;
 use App\ValueObjects\UserId;
 
 final class FetchUserBookmarksRequestData extends DataTransferObject
 {
     public readonly UserId $userId;
-    public readonly ResourceId $siteId;
+    public readonly ResourceID $siteId;
     public readonly bool $hasCustomSite;
     public readonly Tag $tag;
     public readonly bool $hasTag;
@@ -29,7 +29,7 @@ final class FetchUserBookmarksRequestData extends DataTransferObject
         ];
 
         $request->whenHas('site_id', function (int $siteId) use (&$data) {
-            $data['siteId'] = new ResourceId($siteId);
+            $data['siteId'] = new ResourceID($siteId);
         });
 
         $request->whenHas('tag', function (string $tag) use (&$data) {

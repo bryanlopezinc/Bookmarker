@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\ValueObjects\ResourceId;
+use App\ValueObjects\ResourceID;
 use App\Models\Bookmark as Model;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
@@ -15,7 +15,7 @@ use Illuminate\Pagination\Paginator;
 
 final class BookmarksRepository
 {
-    public function findById(ResourceId $bookmarkId, Columns $columns = new Columns()): Bookmark|false
+    public function findById(ResourceID $bookmarkId, Columns $columns = new Columns()): Bookmark|false
     {
         $model = Model::WithQueryOptions($columns)->whereKey($bookmarkId->toInt())->first();
 

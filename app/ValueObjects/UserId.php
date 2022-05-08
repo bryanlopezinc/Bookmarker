@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\ValueObjects;
 
-use App\ValueObjects\ResourceId;
-
-final class UserId extends ResourceId
+final class UserId extends ResourceID
 {
     public static function fromAuthUser(): self
     {

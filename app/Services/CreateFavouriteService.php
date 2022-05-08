@@ -8,7 +8,7 @@ use App\Policies\EnsureAuthorizedUserOwnsBookmark;
 use App\QueryColumns\BookmarkQueryColumns;
 use App\Repositories\FavouritesRepository;
 use App\Repositories\BookmarksRepository;
-use App\ValueObjects\ResourceId;
+use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserId;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -20,7 +20,7 @@ final class CreateFavouriteService
     {
     }
 
-    public function create(ResourceId $bookmarkId): void
+    public function create(ResourceID $bookmarkId): void
     {
         $bookmark = $this->bookmarkRepository->findById($bookmarkId, BookmarkQueryColumns::new()->userId()->id());
 

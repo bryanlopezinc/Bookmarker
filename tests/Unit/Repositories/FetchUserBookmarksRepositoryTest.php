@@ -6,7 +6,7 @@ use App\Collections\TagsCollection;
 use App\DataTransferObjects\FetchUserBookmarksRequestData as Data;
 use App\Repositories\BookmarksRepository;
 use App\Repositories\TagsRepository;
-use App\ValueObjects\ResourceId;
+use App\ValueObjects\ResourceID;
 use App\ValueObjects\Tag;
 use App\ValueObjects\UserId;
 use Database\Factories\BookmarkFactory;
@@ -49,7 +49,7 @@ class FetchUserBookmarksRepositoryTest extends TestCase
 
         $result = $this->repository->userBookmarks(Data::fromArray([
             'userId' => new UserId($userId),
-            'siteId' => new ResourceId($siteId)
+            'siteId' => new ResourceID($siteId)
         ]));
 
         $this->assertCount(5, $result);

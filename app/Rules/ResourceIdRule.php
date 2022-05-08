@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Rules;
 
 use App\Exceptions\InvalidResourceIdException;
-use App\ValueObjects\ResourceId;
+use App\ValueObjects\ResourceID;
 use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Validation\Concerns\ValidatesAttributes;
 
@@ -29,7 +29,7 @@ final class ResourceIdRule implements Rule
         }
 
         try {
-            new ResourceId((int) $value);
+            new ResourceID((int) $value);
 
             return true;
         } catch (InvalidResourceIdException) {

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Models\Favourite;
-use App\ValueObjects\ResourceId;
+use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserId;
 use App\Models\Bookmark as Model;
 use App\DataTransferObjects\Bookmark;
@@ -17,7 +17,7 @@ use Illuminate\Pagination\Paginator;
 
 final class FavouritesRepository
 {
-    public function create(ResourceId $bookmarkId, UserId $userId): bool
+    public function create(ResourceID $bookmarkId, UserId $userId): bool
     {
         Favourite::query()->create([
             'user_id' => $userId->toInt(),
@@ -43,7 +43,7 @@ final class FavouritesRepository
         }
     }
 
-    public function exists(ResourceId $bookmarkId, UserId $userId): bool
+    public function exists(ResourceID $bookmarkId, UserId $userId): bool
     {
         return Favourite::where([
             'user_id' => $userId->toInt(),
@@ -51,7 +51,7 @@ final class FavouritesRepository
         ])->exists();
     }
 
-    public function delete(ResourceId $bookmarkId, UserId $userId): bool
+    public function delete(ResourceID $bookmarkId, UserId $userId): bool
     {
         $deleted = Favourite::query()->where([
             'user_id' => $userId->toInt(),

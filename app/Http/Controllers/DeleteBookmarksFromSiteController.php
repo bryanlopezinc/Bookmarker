@@ -7,7 +7,7 @@ namespace App\Http\Controllers;
 use App\Repositories\DeleteBookmarksRepository;
 use Illuminate\Http\Request;
 use App\Rules\ResourceIdRule;
-use App\ValueObjects\ResourceId;
+use App\ValueObjects\ResourceID;
 use Illuminate\Http\JsonResponse;
 use App\ValueObjects\UserId;
 
@@ -19,7 +19,7 @@ final class DeleteBookmarksFromSiteController
             'site_id' => ['required', new ResourceIdRule]
         ]);
 
-        $repository->fromSite(ResourceId::fromRequest($request, 'site_id'), UserId::fromAuthUser());
+        $repository->fromSite(ResourceID::fromRequest($request, 'site_id'), UserId::fromAuthUser());
 
         return response()->json(status: 202);
     }

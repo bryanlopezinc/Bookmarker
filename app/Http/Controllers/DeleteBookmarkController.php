@@ -6,7 +6,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Rules\ResourceIdRule;
-use App\ValueObjects\ResourceId;
+use App\ValueObjects\ResourceID;
 use Illuminate\Http\JsonResponse;
 use App\Services\DeleteBookmarkService;
 
@@ -18,7 +18,7 @@ final class DeleteBookmarkController
             'id' => ['required', new ResourceIdRule]
         ]);
 
-        $service->delete(ResourceId::fromRequest($request));
+        $service->delete(ResourceID::fromRequest($request));
 
         return response()->json(status: 204);
     }

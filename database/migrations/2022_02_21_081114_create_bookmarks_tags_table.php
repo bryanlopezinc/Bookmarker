@@ -15,8 +15,7 @@ return new class extends Migration
     {
         Schema::create('bookmarks_tags', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('bookmark_id');
-            $table->foreign('bookmark_id')->references('id')->on('bookmarks')->cascadeOnDelete();
+            $table->foreignId('bookmark_id')->constrained('bookmarks')->cascadeOnDelete();
             $table->unsignedBigInteger('tag_id');
             $table->unique(['tag_id', 'bookmark_id']);
             $table->timestamp('created_at')->useCurrent();

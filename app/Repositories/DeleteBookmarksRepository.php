@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Collections\ResourceIDsCollection;
 use App\ValueObjects\ResourceID;
 use App\Models\Bookmark as Model;
 use App\ValueObjects\UserID;
@@ -15,11 +16,13 @@ final class DeleteBookmarksRepository
     {
     }
 
-    public function delete(ResourceID $bookmarkId, UserID $userId): bool
+    public function deleteMany(ResourceIDsCollection $bookmarkIds, UserID $userId): bool
     {
-        $recordsCount = Model::query()->where(['id' => $bookmarkId->toInt()])->delete();
+        $recordsCount = Model::query()->whereIn('id', $bookmarkIds->asIntegers())->delete();
 
-        $this->bookmarksCountRepository->decrementUserBookmarksCount($userId);
+        if ($recordsCount > 0) {
+            $this->bookmarksCountRepository->decrementUserBookmarksCount($userId, $recordsCount);
+        }
 
         return (bool) $recordsCount;
     }

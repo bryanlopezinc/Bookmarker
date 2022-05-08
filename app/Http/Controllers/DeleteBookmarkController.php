@@ -4,21 +4,22 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Collections\ResourceIDsCollection;
 use Illuminate\Http\Request;
 use App\Rules\ResourceIdRule;
-use App\ValueObjects\ResourceID;
 use Illuminate\Http\JsonResponse;
-use App\Services\DeleteBookmarkService;
+use App\Services\DeleteBookmarksService;
 
 final class DeleteBookmarkController
 {
-    public function __invoke(Request $request, DeleteBookmarkService $service): JsonResponse
+    public function __invoke(Request $request, DeleteBookmarksService $service): JsonResponse
     {
         $request->validate([
-            'id' => ['required', new ResourceIdRule]
+            'ids' => ['required'],
+            'ids.*' => [new ResourceIdRule]
         ]);
 
-        $service->delete(ResourceID::fromRequest($request));
+        $service->delete(ResourceIDsCollection::fromNativeTypes($request->input('ids')));
 
         return response()->json(status: 204);
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\ValueObjects;
 
+use App\Collections\ResourceIDsCollection;
 use Illuminate\Http\Request;
 use App\Exceptions\InvalidResourceIdException;
 
@@ -22,6 +23,11 @@ class ResourceID
     public function toInt(): int
     {
         return $this->id;
+    }
+
+    public function toCollection(): ResourceIDsCollection
+    {
+        return new ResourceIDsCollection([$this]);
     }
 
     /**

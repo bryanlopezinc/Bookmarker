@@ -30,7 +30,7 @@ class DeleteBookmarksTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse()->assertJsonValidationErrorFor('id');
+        $this->getTestResponse()->assertJsonValidationErrorFor('ids');
     }
 
     public function testWillDeleteBookmark(): void
@@ -56,7 +56,7 @@ class DeleteBookmarksTest extends TestCase
             ]
         ]);
 
-        $this->getTestResponse(['id' => $model->id])->assertStatus(204);
+        $this->getTestResponse(['ids' => (string)$model->id])->assertStatus(204);
 
         $this->assertDatabaseMissing(Bookmark::class, ['id' => $model->id]);
 
@@ -85,7 +85,7 @@ class DeleteBookmarksTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse(['id' => $model->id + 1])->assertStatus(204);
+        $this->getTestResponse(['ids' => (string)($model->id + 1)])->assertStatus(204);
     }
 
     public function testWillReturnForbiddenWhenUserDoesNotOwnBookmark(): void
@@ -94,6 +94,6 @@ class DeleteBookmarksTest extends TestCase
 
         $model = BookmarkFactory::new()->create();
 
-        $this->getTestResponse(['id' => $model->id])->assertForbidden();
+        $this->getTestResponse(['ids' => (string)$model->id])->assertForbidden();
     }
 }

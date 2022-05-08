@@ -63,12 +63,12 @@ final class FavouritesRepository
         return (bool) $deleted;
     }
 
-    private function decrementFavouritesCount(UserID $userId): void
+    public function decrementFavouritesCount(UserID $userId, int $amount = 1): void
     {
         UserResourcesCount::query()->where([
             'user_id' => $userId->toInt(),
             'type' => UserResourcesCount::FAVOURITES_TYPE
-        ])->decrement('count');
+        ])->decrement('count', $amount);
     }
 
     /**

@@ -4,10 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\Bookmark;
 use App\Models\BookmarkTag;
+use App\Models\Favourite;
 use App\Models\UserResourcesCount;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
@@ -37,43 +39,55 @@ class DeleteBookmarksTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
+        $this->saveBookmark();
 
-        UserResourcesCount::query()->create([
-            'user_id' => $user->id,
-            'count' => 1,
-            'type' => UserResourcesCount::BOOKMARKS_TYPE
-        ]);
+        $bookmark = Bookmark::query()->where('user_id', $user->id)->first();
 
-        BookmarkTag::insert([
-            [
-                'bookmark_id' => $model->id,
-                'tag_id' => 20
-            ],
-            [
-                'bookmark_id' => $model->id,
-                'tag_id' => 30
-            ]
-        ]);
+        $this->getTestResponse(['ids' => (string)$bookmark->id])->assertStatus(204);
 
-        $this->getTestResponse(['ids' => (string)$model->id])->assertStatus(204);
-
-        $this->assertDatabaseMissing(Bookmark::class, ['id' => $model->id]);
-
-        $this->assertDatabaseMissing(BookmarkTag::class, [
-            'bookmark_id' => $model->id,
-            'tag_id' => 20
-        ]);
-
-        $this->assertDatabaseMissing(BookmarkTag::class, [
-            'bookmark_id' => $model->id,
-            'tag_id' => 30
-        ]);
+        $this->assertDatabaseMissing(Bookmark::class, ['id' => $bookmark->id]);
+        $this->assertDatabaseMissing(BookmarkTag::class, ['bookmark_id' => $bookmark->id]);
 
         $this->assertDatabaseHas(UserResourcesCount::class, [
             'user_id' => $user->id,
             'count' => 0,
             'type' => UserResourcesCount::BOOKMARKS_TYPE
+        ]);
+    }
+
+    private function saveBookmark(): void
+    {
+        Bus::fake();
+
+        $this->postJson(route('createBookmark'), [
+            'url' => $this->faker->url,
+            'tags'  => implode(',', [$this->faker->word])
+        ])->assertSuccessful();
+    }
+
+    public function testWillDeleteFavouritesWhenBookmarkIsDeleted(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->saveBookmark();
+
+        $bookmark = Bookmark::query()->where('user_id', $user->id)->first();
+
+        //Add created bookmark to favourites.
+        $this->postJson(route('createFavourite'), ['bookmark' => $bookmark->id])->assertCreated();
+
+        $this->getTestResponse(['ids' => (string)$bookmark->id])->assertStatus(204);
+
+        $this->assertDatabaseMissing(Favourite::class, [
+            'user_id' => $user->id,
+            'bookmark_id' => $bookmark->id
+        ]);
+
+        //Assert favourites count was decremented.
+        $this->assertDatabaseHas(UserResourcesCount::class, [
+            'user_id' => $user->id,
+            'count' => 0,
+            'type' => UserResourcesCount::FAVOURITES_TYPE
         ]);
     }
 

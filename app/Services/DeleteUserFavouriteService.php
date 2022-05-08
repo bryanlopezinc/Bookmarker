@@ -10,13 +10,13 @@ use App\ValueObjects\UserId;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
-final class DeleteFavouriteService
+final class DeleteUserFavouriteService
 {
     public function __construct(private FavouritesRepository $repository)
     {
     }
 
-    public function delete(ResourceId $bookmarkId): void
+    public function __invoke(ResourceId $bookmarkId): void
     {
         $userId = UserId::fromAuthUser();
 

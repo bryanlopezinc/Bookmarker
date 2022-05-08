@@ -25,17 +25,17 @@ final class CreateBookmarkRepository
         ]);
 
         $model = Model::query()->create([
-            'title'       => $bookmark->title->value,
-            'url'         => $bookmark->linkToWebPage->value,
+            'title' => $bookmark->title->value,
+            'url'  => $bookmark->linkToWebPage->value,
             'description' => $bookmark->description->value,
             'description_set_by_user' => $bookmark->descriptionWasSetByUser,
-            'site_id'     => $site->id,
-            'user_id'     => $bookmark->ownerId->toInt(),
+            'site_id' => $site->id,
+            'user_id' => $bookmark->ownerId->toInt(),
             'has_custom_title'  => $bookmark->hasCustomTitle,
             'preview_image_url' => $bookmark->hasPreviewImageUrl ? $bookmark->previewImageUrl->value : null
         ])->setRelation('site', $site);
 
-        $this->tagsRepository->attach($model, $bookmark->tags);
+        $this->tagsRepository->attach($bookmark->tags, $model);
 
         $this->bookmarksCountRepository->incrementUserBookmarksCount($bookmark->ownerId);
 

@@ -9,12 +9,13 @@ use App\Models\BookmarkTag;
 use App\Models\Bookmark as Model;
 use Illuminate\Support\Collection;
 use App\Collections\TagsCollection;
+use App\ValueObjects\ResourceId;
 use App\ValueObjects\UserId;
 use Illuminate\Database\Query\JoinClause;
 
 final class TagsRepository
 {
-    public function attach(Model $bookmark, TagsCollection $tags): void
+    public function attach(TagsCollection $tags, Model $bookmark): void
     {
         if ($tags->isEmpty()) {
             return;
@@ -63,5 +64,12 @@ final class TagsRepository
             ->get()
             ->map(fn (Tag $tag) => $tag->name)
             ->pipe(fn (Collection $tags) => TagsCollection::createFromStrings($tags->all()));
+    }
+
+    public function detach(TagsCollection $tags, ResourceId $bookmarkId,): void
+    {
+        BookmarkTag::query()->where('bookmark_id', $bookmarkId->toInt())
+            ->whereIn('tag_id', Tag::select('id')->whereIn('name', $tags->toStringCollection()->all()))
+            ->delete();
     }
 }

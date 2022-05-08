@@ -3,20 +3,20 @@
 namespace Tests\Unit\Repositories;
 
 use App\QueryColumns\BookmarkQueryColumns as BookmarkColumns;
-use App\Repositories\FindBookmarksRepository;
+use App\Repositories\BookmarksRepository;
 use App\ValueObjects\ResourceId;
 use Database\Factories\BookmarkFactory;
 use Tests\TestCase;
 
-class FindBookmarksRepositoryTest extends TestCase
+class BookmarksRepositoryTest extends TestCase
 {
-    private FindBookmarksRepository $repository;
+    private BookmarksRepository $repository;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->repository = app(FindBookmarksRepository::class);
+        $this->repository = app(BookmarksRepository::class);
     }
 
     public function testWillReturnOnlyUserId(): void

@@ -6,7 +6,7 @@ namespace App\Services;
 
 use Illuminate\Http\Response;
 use App\Http\Requests\UpdateBookmarkRequest;
-use App\Repositories\FindBookmarksRepository;
+use App\Repositories\BookmarksRepository;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Repositories\UpdateBookmarkRepository as Repository;
 use App\DataTransferObjects\Builders\UpdateBookmarkDataBuilder;
@@ -17,7 +17,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class UpdateBookmarkService
 {
-    public function __construct(private Repository $repository, private FindBookmarksRepository $findBookmarks)
+    public function __construct(private Repository $repository, private BookmarksRepository $bookmarksRepository)
     {
     }
 
@@ -25,7 +25,7 @@ final class UpdateBookmarkService
     {
         $data = UpdateBookmarkDataBuilder::fromRequest($request)->build();
 
-        $bookmark = $this->findBookmarks->findById($data->id, BookmarkQueryColumns::new()->userId()->tags());
+        $bookmark = $this->bookmarksRepository->findById($data->id, BookmarkQueryColumns::new()->userId()->tags());
 
         if ($bookmark === false) {
             throw new NotFoundHttpException();

@@ -4,22 +4,34 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\ValueObjects\ResourceId;
 use App\Models\Bookmark as Model;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\FetchUserBookmarksRequestData;
-use App\QueryColumns\BookmarkQueryColumns;
+use App\QueryColumns\BookmarkQueryColumns as Columns;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\Paginator;
 
-final class FetchUserBookmarksRepository
+final class BookmarksRepository
 {
+    public function findById(ResourceId $bookmarkId, Columns $columns = new Columns()): Bookmark|false
+    {
+        $model = Model::WithQueryOptions($columns)->whereKey($bookmarkId->toInt())->first();
+
+        if (!$columns->has('id') && !is_null($model)) {
+            $model->offsetUnset('id');
+        }
+
+        return is_null($model) ? false : BookmarkBuilder::fromModel($model)->build();
+    }
+
     /**
      * @return Paginator<Bookmark>
      */
-    public function get(FetchUserBookmarksRequestData $data): Paginator
+    public function userBookmarks(FetchUserBookmarksRequestData $data): Paginator
     {
-        $query = Model::WithQueryOptions(new BookmarkQueryColumns());
+        $query = Model::WithQueryOptions(new Columns());
 
         if ($data->hasCustomSite) {
             $query->where('site_id', $data->siteId->toInt());

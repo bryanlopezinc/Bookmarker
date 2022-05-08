@@ -4,9 +4,13 @@ namespace Tests\Unit\Repositories;
 
 use App\Collections\TagsCollection;
 use App\Models\Bookmark;
+use App\Models\BookmarkTag;
+use App\Models\Tag;
 use App\Repositories\TagsRepository;
+use App\ValueObjects\ResourceId;
 use App\ValueObjects\UserId;
 use Database\Factories\BookmarkFactory;
+use Database\Factories\TagFactory;
 use Tests\TestCase;
 
 class TagsRepositoryTest extends TestCase
@@ -23,13 +27,58 @@ class TagsRepositoryTest extends TestCase
         $user3Tag = 'like' . rand(0, 1000);
 
         //Bookmarks by different users with similar tags
-        $repository->attach($bookmark, TagsCollection::createFromStrings([$user1Tag]));
-        $repository->attach(BookmarkFactory::new()->create(), TagsCollection::createFromStrings([$user2Tag]));
-        $repository->attach(BookmarkFactory::new()->create(), TagsCollection::createFromStrings([$user3Tag]));
+        $repository->attach(TagsCollection::createFromStrings([$user1Tag]), $bookmark);
+        $repository->attach(TagsCollection::createFromStrings([$user2Tag]), BookmarkFactory::new()->create());
+        $repository->attach(TagsCollection::createFromStrings([$user3Tag]), BookmarkFactory::new()->create());
 
         $result = $repository->search('like', new UserId($bookmark->user_id), 20);
 
         $this->assertCount(1, $result);
         $this->assertEquals($user1Tag, $result->toStringCollection()->sole());
+    }
+
+    public function testWillDetachBookmarkTags(): void
+    {
+        $repository =  new TagsRepository;
+
+        /** @var Bookmark */
+        $model = BookmarkFactory::new()->create();
+
+        $tags = TagFactory::new()->count(5)->create();
+
+        $repository->attach(TagsCollection::createFromStrings($tags->pluck('name')->all()), $model);
+
+        $repository->detach(TagsCollection::createFromStrings($tags->pluck('name')->all()), new ResourceId($model->id));
+
+        $tags->each(function (Tag $tag) use ($model) {
+            $this->assertDatabaseMissing(BookmarkTag::class, [
+                'bookmark_id' => $model->id,
+                'tag_id' => $tag->id
+            ]);
+        });
+    }
+
+    public function testWillNotDetachBookmarkTags(): void
+    {
+        $repository =  new TagsRepository;
+
+        /** @var Bookmark */
+        $model = BookmarkFactory::new()->create();
+
+        $tags = TagFactory::new()->count(5)->create();
+
+        $repository->attach(TagsCollection::createFromStrings($tags->pluck('name')->all()), $model);
+
+        $repository->detach(
+            TagsCollection::createFromStrings(TagFactory::new()->count(5)->create()->pluck('name')->all()),
+            new ResourceId($model->id)
+        );
+
+        $tags->each(function (Tag $tag) use ($model) {
+            $this->assertDatabaseHas(BookmarkTag::class, [
+                'bookmark_id' => $model->id,
+                'tag_id' => $tag->id
+            ]);
+        });
     }
 }

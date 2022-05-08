@@ -20,7 +20,7 @@ final class UpdateBookmarkRepository
         /** @var Model */
         $model = Model::query()->whereKey($data->id->toInt())->first();
 
-        $this->tagsRepository->attach($model, $data->tags);
+        $this->tagsRepository->attach($data->tags,$model);
 
         if ($data->hasTitle) {
             $model->title = $data->title->value;

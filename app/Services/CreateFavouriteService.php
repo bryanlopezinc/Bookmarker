@@ -7,7 +7,7 @@ namespace App\Services;
 use App\Policies\EnsureAuthorizedUserOwnsBookmark;
 use App\QueryColumns\BookmarkQueryColumns;
 use App\Repositories\FavouritesRepository;
-use App\Repositories\FindBookmarksRepository;
+use App\Repositories\BookmarksRepository;
 use App\ValueObjects\ResourceId;
 use App\ValueObjects\UserId;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,7 +16,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class CreateFavouriteService
 {
-    public function __construct(private FavouritesRepository $repository, private FindBookmarksRepository $bookmarkRepository)
+    public function __construct(private FavouritesRepository $repository, private BookmarksRepository $bookmarkRepository)
     {
     }
 

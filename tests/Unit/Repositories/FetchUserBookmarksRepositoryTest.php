@@ -4,7 +4,7 @@ namespace Tests\Unit\Repositories;
 
 use App\Collections\TagsCollection;
 use App\DataTransferObjects\FetchUserBookmarksRequestData as Data;
-use App\Repositories\FetchUserBookmarksRepository;
+use App\Repositories\BookmarksRepository;
 use App\Repositories\TagsRepository;
 use App\ValueObjects\ResourceId;
 use App\ValueObjects\Tag;
@@ -16,13 +16,13 @@ use Tests\TestCase;
 
 class FetchUserBookmarksRepositoryTest extends TestCase
 {
-    private FetchUserBookmarksRepository $repository;
+    private BookmarksRepository $repository;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->repository = app(FetchUserBookmarksRepository::class);
+        $this->repository = app(BookmarksRepository::class);
     }
 
     public function testWillFetchUserBookmarks(): void
@@ -31,7 +31,7 @@ class FetchUserBookmarksRepositoryTest extends TestCase
             'user_id' => $userId = UserFactory::new()->create()->id
         ]);
 
-        foreach ($this->repository->get(Data::fromArray(['userId' => new UserId($userId)])) as $bookmark) {
+        foreach ($this->repository->userBookmarks(Data::fromArray(['userId' => new UserId($userId)])) as $bookmark) {
             $this->assertTrue($userId === $bookmark->ownerId->toInt());
         }
     }
@@ -47,7 +47,7 @@ class FetchUserBookmarksRepositoryTest extends TestCase
             'site_id' => $siteId = SiteFactory::new()->create()->id
         ]);
 
-        $result = $this->repository->get(Data::fromArray([
+        $result = $this->repository->userBookmarks(Data::fromArray([
             'userId' => new UserId($userId),
             'siteId' => new ResourceId($siteId)
         ]));
@@ -65,9 +65,9 @@ class FetchUserBookmarksRepositoryTest extends TestCase
             'user_id' => $userId = UserFactory::new()->create()->id,
         ]);
 
-        (new TagsRepository)->attach($models[0], TagsCollection::createFromStrings(['foobar']));
+        (new TagsRepository)->attach(TagsCollection::createFromStrings(['foobar']), $models[0]);
 
-        $result = $this->repository->get(Data::fromArray([
+        $result = $this->repository->userBookmarks(Data::fromArray([
             'userId' => new UserId($userId),
             'tag' => new Tag('foobar')
         ]));

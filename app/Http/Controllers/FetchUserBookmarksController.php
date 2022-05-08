@@ -9,7 +9,7 @@ use App\Http\Requests\FetchUserBookmarksRequest;
 use App\Http\Resources\BookmarkResource;
 use App\Http\Resources\PaginatedResourceCollection;
 use App\PaginationData;
-use App\Repositories\FetchUserBookmarksRepository as Repository;
+use App\Repositories\BookmarksRepository as Repository;
 
 final class FetchUserBookmarksController
 {
@@ -18,7 +18,7 @@ final class FetchUserBookmarksController
         $request->validate(PaginationData::rules());
 
         return new PaginatedResourceCollection(
-            $repository->get(FetchUserBookmarksRequestData::fromRequest($request)),
+            $repository->userBookmarks(FetchUserBookmarksRequestData::fromRequest($request)),
             BookmarkResource::class
         );
     }

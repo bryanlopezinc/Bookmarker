@@ -8,7 +8,7 @@ use App\Http\Resources\PaginatedResourceCollection;
 use App\Http\Resources\WebSiteResource;
 use App\PaginationData;
 use App\Repositories\FetchUserSitesRepository as Repository;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -19,7 +19,7 @@ final class FetchUserSitesController
         $request->validate(PaginationData::rules());
 
         return new PaginatedResourceCollection(
-            $repository->get(UserId::fromAuthUser(), PaginationData::fromRequest($request)),
+            $repository->get(UserID::fromAuthUser(), PaginationData::fromRequest($request)),
             WebSiteResource::class
         );
     }

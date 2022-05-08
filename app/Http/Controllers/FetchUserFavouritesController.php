@@ -8,7 +8,7 @@ use App\Http\Resources\BookmarkResource;
 use App\Http\Resources\PaginatedResourceCollection;
 use App\PaginationData;
 use App\Repositories\FavouritesRepository as Repository;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use Illuminate\Http\Request;
 
 final class FetchUserFavouritesController
@@ -18,7 +18,7 @@ final class FetchUserFavouritesController
         $request->validate(PaginationData::rules());
 
         return new PaginatedResourceCollection(
-            $repository->get(UserId::fromAuthUser(), PaginationData::fromRequest($request)),
+            $repository->get(UserID::fromAuthUser(), PaginationData::fromRequest($request)),
             BookmarkResource::class
         );
     }

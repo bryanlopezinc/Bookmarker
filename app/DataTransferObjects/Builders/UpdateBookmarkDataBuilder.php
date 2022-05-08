@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects\Builders;
 
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use App\ValueObjects\ResourceID;
 use App\Collections\TagsCollection;
 use App\ValueObjects\BookmarkTitle;
@@ -82,7 +82,7 @@ final class UpdateBookmarkDataBuilder extends Builder
 
     public function UserId(int $userId): self
     {
-        $this->attributes['ownerId'] = new UserId($userId);
+        $this->attributes['ownerId'] = new UserID($userId);
 
         return $this;
     }

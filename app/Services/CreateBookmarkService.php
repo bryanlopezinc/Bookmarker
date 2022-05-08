@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\ValueObjects\Url;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use App\Http\Requests\CreateBookmarkRequest;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\Builders\SiteBuilder;
@@ -29,7 +29,7 @@ final class CreateBookmarkService
             ->previewImageUrl('')
             ->description($request->input('description', ''))
             ->descriptionWasSetByUser($request->has('description'))
-            ->bookmarkedById(UserId::fromAuthUser()->toInt())
+            ->bookmarkedById(UserID::fromAuthUser()->toInt())
             ->site(SiteBuilder::new()->domainName($url->getHostName())->name($url->value)->build())
             ->tags($request->validated('tags', []))
             ->build();

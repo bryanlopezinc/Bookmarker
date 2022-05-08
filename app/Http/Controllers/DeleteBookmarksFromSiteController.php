@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use App\Rules\ResourceIdRule;
 use App\ValueObjects\ResourceID;
 use Illuminate\Http\JsonResponse;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 
 final class DeleteBookmarksFromSiteController
 {
@@ -19,7 +19,7 @@ final class DeleteBookmarksFromSiteController
             'site_id' => ['required', new ResourceIdRule]
         ]);
 
-        $repository->fromSite(ResourceID::fromRequest($request, 'site_id'), UserId::fromAuthUser());
+        $repository->fromSite(ResourceID::fromRequest($request, 'site_id'), UserID::fromAuthUser());
 
         return response()->json(status: 202);
     }

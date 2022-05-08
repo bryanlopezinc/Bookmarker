@@ -8,11 +8,11 @@ use App\Http\Requests\FetchUserBookmarksRequest;
 use App\PaginationData;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\Tag;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 
 final class FetchUserBookmarksRequestData extends DataTransferObject
 {
-    public readonly UserId $userId;
+    public readonly UserID $userId;
     public readonly ResourceID $siteId;
     public readonly bool $hasCustomSite;
     public readonly Tag $tag;
@@ -22,10 +22,10 @@ final class FetchUserBookmarksRequestData extends DataTransferObject
     public static function fromRequest(FetchUserBookmarksRequest $request): self
     {
         $data = [
-            'userId'        => UserId::fromAuthUser(),
-            'hasTag'        => $request->has('tag'),
+            'userId' => UserID::fromAuthUser(),
+            'hasTag'  => $request->has('tag'),
             'hasCustomSite' => $request->has('site_id'),
-            'pagination'    => PaginationData::fromRequest($request)
+            'pagination' => PaginationData::fromRequest($request)
         ];
 
         $request->whenHas('site_id', function (int $siteId) use (&$data) {

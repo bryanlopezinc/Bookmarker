@@ -10,7 +10,7 @@ use App\Models\Bookmark as Model;
 use Illuminate\Support\Collection;
 use App\Collections\TagsCollection;
 use App\ValueObjects\ResourceID;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use Illuminate\Database\Query\JoinClause;
 
 final class TagsRepository
@@ -51,7 +51,7 @@ final class TagsRepository
     /**
      * Search for tags that was created by user.
      */
-    public function search(string $tag, UserId $userId, int $limit): TagsCollection
+    public function search(string $tag, UserID $userId, int $limit): TagsCollection
     {
         return Tag::join('bookmarks_tags', function (JoinClause $join) use ($userId) {
             $join->on('tags.id', '=', 'bookmarks_tags.tag_id')

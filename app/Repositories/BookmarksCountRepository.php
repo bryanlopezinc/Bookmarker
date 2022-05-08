@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Models\UserResourcesCount;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 
 final class BookmarksCountRepository
 {
-    public function incrementUserBookmarksCount(UserId $userId): void
+    public function incrementUserBookmarksCount(UserID $userId): void
     {
         $attributes = [
             'user_id' => $userId->toInt(),
@@ -23,7 +23,7 @@ final class BookmarksCountRepository
         }
     }
 
-    public function decrementUserBookmarksCount(UserId $userId, int $count = 1): void
+    public function decrementUserBookmarksCount(UserID $userId, int $count = 1): void
     {
         UserResourcesCount::query()->where([
             'user_id' => $userId->toInt(),

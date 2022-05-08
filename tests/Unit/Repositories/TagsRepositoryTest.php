@@ -8,7 +8,7 @@ use App\Models\BookmarkTag;
 use App\Models\Tag;
 use App\Repositories\TagsRepository;
 use App\ValueObjects\ResourceID;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\TagFactory;
 use Tests\TestCase;
@@ -31,7 +31,7 @@ class TagsRepositoryTest extends TestCase
         $repository->attach(TagsCollection::createFromStrings([$user2Tag]), BookmarkFactory::new()->create());
         $repository->attach(TagsCollection::createFromStrings([$user3Tag]), BookmarkFactory::new()->create());
 
-        $result = $repository->search('like', new UserId($bookmark->user_id), 20);
+        $result = $repository->search('like', new UserID($bookmark->user_id), 20);
 
         $this->assertCount(1, $result);
         $this->assertEquals($user1Tag, $result->toStringCollection()->sole());

@@ -6,7 +6,7 @@ namespace App\Services;
 
 use App\Repositories\FavouritesRepository;
 use App\ValueObjects\ResourceID;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -18,7 +18,7 @@ final class DeleteUserFavouriteService
 
     public function __invoke(ResourceID $bookmarkId): void
     {
-        $userId = UserId::fromAuthUser();
+        $userId = UserID::fromAuthUser();
 
         if (!$this->repository->exists($bookmarkId, $userId)) {
             throw new HttpException(Response::HTTP_FORBIDDEN);

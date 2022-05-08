@@ -9,7 +9,7 @@ use App\QueryColumns\BookmarkQueryColumns;
 use App\Repositories\FavouritesRepository;
 use App\Repositories\BookmarksRepository;
 use App\ValueObjects\ResourceID;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -24,7 +24,7 @@ final class CreateFavouriteService
     {
         $bookmark = $this->bookmarkRepository->findById($bookmarkId, BookmarkQueryColumns::new()->userId()->id());
 
-        $userId = UserId::fromAuthUser();
+        $userId = UserID::fromAuthUser();
 
         if ($bookmark === false) {
             throw new NotFoundHttpException();

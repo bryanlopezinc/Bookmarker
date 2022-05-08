@@ -13,7 +13,7 @@ use App\ValueObjects\WebPageDescription;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\TimeStamp;
 use App\ValueObjects\Url;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 
 /**
  * Build a bookmarked webPage dataTransferObject
@@ -112,7 +112,7 @@ final class BookmarkBuilder extends Builder
 
     public function bookmarkedById(int $userId): self
     {
-        $this->attributes['ownerId'] = new UserId($userId);
+        $this->attributes['ownerId'] = new UserID($userId);
 
         return $this;
     }

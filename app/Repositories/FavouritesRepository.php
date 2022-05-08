@@ -6,7 +6,7 @@ namespace App\Repositories;
 
 use App\Models\Favourite;
 use App\ValueObjects\ResourceID;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use App\Models\Bookmark as Model;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
@@ -17,7 +17,7 @@ use Illuminate\Pagination\Paginator;
 
 final class FavouritesRepository
 {
-    public function create(ResourceID $bookmarkId, UserId $userId): bool
+    public function create(ResourceID $bookmarkId, UserID $userId): bool
     {
         Favourite::query()->create([
             'user_id' => $userId->toInt(),
@@ -29,7 +29,7 @@ final class FavouritesRepository
         return true;
     }
 
-    private function incrementFavouritesCount(UserId $userId): void
+    private function incrementFavouritesCount(UserID $userId): void
     {
         $attributes = [
             'user_id' => $userId->toInt(),
@@ -43,7 +43,7 @@ final class FavouritesRepository
         }
     }
 
-    public function exists(ResourceID $bookmarkId, UserId $userId): bool
+    public function exists(ResourceID $bookmarkId, UserID $userId): bool
     {
         return Favourite::where([
             'user_id' => $userId->toInt(),
@@ -51,7 +51,7 @@ final class FavouritesRepository
         ])->exists();
     }
 
-    public function delete(ResourceID $bookmarkId, UserId $userId): bool
+    public function delete(ResourceID $bookmarkId, UserID $userId): bool
     {
         $deleted = Favourite::query()->where([
             'user_id' => $userId->toInt(),
@@ -63,7 +63,7 @@ final class FavouritesRepository
         return (bool) $deleted;
     }
 
-    private function decrementFavouritesCount(UserId $userId): void
+    private function decrementFavouritesCount(UserID $userId): void
     {
         UserResourcesCount::query()->where([
             'user_id' => $userId->toInt(),
@@ -74,7 +74,7 @@ final class FavouritesRepository
     /**
      * @return Paginator<Bookmark>
      */
-    public function get(UserId $userId, PaginationData $pagination): Paginator
+    public function get(UserID $userId, PaginationData $pagination): Paginator
     {
         /** @var Paginator */
         $favourites = Model::WithQueryOptions(BookmarkQueryColumns::new())

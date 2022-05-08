@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\DataTransferObjects;
 
 use App\ValueObjects\Url;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use App\ValueObjects\TimeStamp;
 use App\ValueObjects\ResourceID;
 use App\Collections\TagsCollection;
@@ -23,7 +23,7 @@ final class Bookmark extends DataTransferObject
     public readonly WebPageDescription $description;
     public readonly bool $descriptionWasSetByUser;
     public readonly ResourceID $webPagesiteId;
-    public readonly UserId $ownerId;
+    public readonly UserID $ownerId;
     public readonly TimeStamp $timeCreated;
     public readonly TimeStamp $timeupdated;
     public readonly WebSite $fromWebSite;

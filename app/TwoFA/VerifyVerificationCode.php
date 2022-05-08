@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\TwoFA;
 
 use App\TwoFA\Cache\VerificationCodesRepository;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Repositories\UserRepositoryInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
@@ -31,7 +31,7 @@ final class VerifyVerificationCode implements UserRepositoryInterface
             return $user;
         };
 
-        $userID = new UserId($user->getIdentifier());
+        $userID = new UserID($user->getIdentifier());
 
         if (!$this->verificationCodes->has($userID)) {
             $this->throwException();

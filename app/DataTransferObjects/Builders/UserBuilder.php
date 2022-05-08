@@ -7,7 +7,7 @@ namespace App\DataTransferObjects\Builders;
 use App\DataTransferObjects\User;
 use App\ValueObjects\Email;
 use App\ValueObjects\NonEmptyString;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use App\ValueObjects\Username;
 use App\Models\User as Model;
 use App\ValueObjects\PositiveNumber;
@@ -36,9 +36,9 @@ final class UserBuilder extends Builder
             ->when($keyExists('password'), fn (self $sb) => $sb->password($model['password']));
     }
 
-    public function id(int|UserId $id): self
+    public function id(int|UserID $id): self
     {
-        $this->attributes['id'] = $id instanceof UserId ? $id : new UserId($id);
+        $this->attributes['id'] = $id instanceof UserID ? $id : new UserID($id);
 
         return $this;
     }

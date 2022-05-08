@@ -8,7 +8,7 @@ use App\Repositories\BookmarksRepository;
 use App\Repositories\TagsRepository;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\Tag;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\SiteFactory;
 use Database\Factories\UserFactory;
@@ -31,7 +31,7 @@ class FetchUserBookmarksRepositoryTest extends TestCase
             'user_id' => $userId = UserFactory::new()->create()->id
         ]);
 
-        foreach ($this->repository->userBookmarks(Data::fromArray(['userId' => new UserId($userId)])) as $bookmark) {
+        foreach ($this->repository->userBookmarks(Data::fromArray(['userId' => new UserID($userId)])) as $bookmark) {
             $this->assertTrue($userId === $bookmark->ownerId->toInt());
         }
     }
@@ -48,7 +48,7 @@ class FetchUserBookmarksRepositoryTest extends TestCase
         ]);
 
         $result = $this->repository->userBookmarks(Data::fromArray([
-            'userId' => new UserId($userId),
+            'userId' => new UserID($userId),
             'siteId' => new ResourceID($siteId)
         ]));
 
@@ -68,7 +68,7 @@ class FetchUserBookmarksRepositoryTest extends TestCase
         (new TagsRepository)->attach(TagsCollection::createFromStrings(['foobar']), $models[0]);
 
         $result = $this->repository->userBookmarks(Data::fromArray([
-            'userId' => new UserId($userId),
+            'userId' => new UserID($userId),
             'tag' => new Tag('foobar')
         ]));
 

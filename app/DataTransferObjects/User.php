@@ -7,12 +7,12 @@ namespace App\DataTransferObjects;
 use App\ValueObjects\Email;
 use App\ValueObjects\NonEmptyString;
 use App\ValueObjects\PositiveNumber;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use App\ValueObjects\Username;
 
 final class User extends DataTransferObject
 {
-    public readonly UserId $id;
+    public readonly UserID $id;
     public readonly Username $username;
     public readonly NonEmptyString $firstname;
     public readonly NonEmptyString $lastname;

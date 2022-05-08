@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\DataTransferObjects\Builders\SiteBuilder;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use App\DataTransferObjects\WebSite;
 use App\Models\WebSite as Model;
 use App\PaginationData;
@@ -19,7 +19,7 @@ final class FetchUserSitesRepository
     /**
      * @return Paginator<WebSite>
      */
-    public function get(UserId $userId, PaginationData $pagination): Paginator
+    public function get(UserID $userId, PaginationData $pagination): Paginator
     {
         /** @var Paginator */
         $result = Model::select('sites.id', 'host', 'name')

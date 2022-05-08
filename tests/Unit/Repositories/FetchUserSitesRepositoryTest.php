@@ -4,7 +4,7 @@ namespace Tests\Unit\Repositories;
 
 use App\PaginationData;
 use Tests\TestCase;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use Database\Factories\SiteFactory;
 use Database\Factories\UserFactory;
 use Database\Factories\BookmarkFactory;
@@ -22,7 +22,7 @@ class FetchUserSitesRepositoryTest extends TestCase
         BookmarkFactory::new()->count(4)->create(['user_id' => $userId]);
         BookmarkFactory::new()->count(5)->create();
 
-        $result = (new FetchUserSitesRepository)->get(new UserId($userId), new PaginationData());
+        $result = (new FetchUserSitesRepository)->get(new UserID($userId), new PaginationData());
 
         $this->assertCount(5, $result);
     }

@@ -9,7 +9,7 @@ use App\QueryColumns\BookmarkQueryColumns;
 use App\ValueObjects\ResourceID;
 use App\Repositories\DeleteBookmarksRepository;
 use App\Repositories\BookmarksRepository;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 
 final class DeleteBookmarkService
 {
@@ -29,6 +29,6 @@ final class DeleteBookmarkService
 
         (new EnsureAuthorizedUserOwnsBookmark)($bookmark);
 
-        $this->deleteBookmarks->delete($bookmarkId, UserId::fromAuthUser());
+        $this->deleteBookmarks->delete($bookmarkId, UserID::fromAuthUser());
     }
 }

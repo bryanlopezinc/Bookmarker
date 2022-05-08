@@ -6,7 +6,7 @@ use App\Models\Favourite;
 use App\Models\UserResourcesCount;
 use App\Repositories\FavouritesRepository;
 use App\ValueObjects\ResourceID;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
@@ -38,7 +38,7 @@ class DeleteFavouriteTest extends TestCase
 
         $bookmark = BookmarkFactory::new()->create([]);
 
-        (new FavouritesRepository)->create(new ResourceID($bookmark->id), UserId::fromAuthUser());
+        (new FavouritesRepository)->create(new ResourceID($bookmark->id), UserID::fromAuthUser());
 
         $this->withoutExceptionHandling()->getTestResponse(['bookmark' => $bookmark->id])->assertNoContent();
 
@@ -60,7 +60,7 @@ class DeleteFavouriteTest extends TestCase
 
         $bookmark = BookmarkFactory::new()->create();
 
-        (new FavouritesRepository)->create(new ResourceID($bookmark->id), new UserId($user->id + 1));
+        (new FavouritesRepository)->create(new ResourceID($bookmark->id), new UserID($user->id + 1));
 
         $this->getTestResponse(['bookmark' => $bookmark->id])->assertForbidden();
     }

@@ -6,7 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Repositories\TagsRepository;
 use App\ValueObjects\Tag;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,7 +18,7 @@ final class SuggestTagsController
             'tag' => Tag::rules(['required'])
         ]);
 
-        $data =  $tagsRepository->search($request->input('tag'), UserId::fromAuthUser(), 30)
+        $data =  $tagsRepository->search($request->input('tag'), UserID::fromAuthUser(), 30)
             ->toStringCollection()
             ->map(fn (string $tag) => ['name' => $tag])
             ->all();

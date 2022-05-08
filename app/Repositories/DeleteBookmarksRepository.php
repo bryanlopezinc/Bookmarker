@@ -59,9 +59,23 @@ final class DeleteBookmarksRepository
             'site_id' => $siteId->toInt(),
             'user_id' => $userId->toInt()
         ])->chunkById(100, function (Collection $chunk) use ($userId) {
-            $chunk->toQuery()->delete();
 
-            $this->bookmarksCountRepository->decrementUserBookmarksCount($userId, $chunk->count());
+            // Get the count of bookmarks in user favourites table
+            //which will be cascade deleted from user favourites table.
+            $totalFavouritedToBeDeleted = $this->getFavouritedBookmarksCount(
+                ResourceIDsCollection::fromNativeTypes($chunk->pluck('id')->all()),
+                $userId
+            );
+
+            $totalBookmarksDeleted = $chunk->toQuery()->delete();
+
+            if ($totalFavouritedToBeDeleted > 0) {
+                $this->favouritesRepository->decrementFavouritesCount($userId, $totalFavouritedToBeDeleted);
+            }
+
+            if ($totalBookmarksDeleted > 0) {
+                $this->bookmarksCountRepository->decrementUserBookmarksCount($userId, $chunk->count());
+            }
         });
     }
 }

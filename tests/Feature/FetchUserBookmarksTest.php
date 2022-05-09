@@ -2,17 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Models\Bookmark;
 use Database\Factories\BookmarkFactory;
-use Database\Factories\SiteFactory;
 use Database\Factories\UserFactory;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Tests\Traits\CreatesBookmark;
 
 class FetchUserBookmarksTest extends TestCase
 {
-    use WithFaker;
+    use CreatesBookmark;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
@@ -54,38 +54,51 @@ class FetchUserBookmarksTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $site = SiteFactory::new()->create();
+        $this->saveBookmark();
+        $this->saveBookmark();
+        $this->saveBookmark();
 
-        BookmarkFactory::new()->count(5)->create([
-            'user_id' => $user->id,
-            'site_id' => $site->id
-        ]);
-
-        BookmarkFactory::new()->count(10)->create([
-            'user_id' => $user->id,
-        ]);
+        $firstBookmark = Bookmark::query()->where('user_id', $user->id)->first();
 
         $response =  $this->withoutExceptionHandling()
-            ->getTestResponse(['site_id' => $site->id])
+            ->getTestResponse(['site_id' => $firstBookmark->site_id])
             ->assertSuccessful()
-            ->assertJsonCount(5, 'data');
+            ->assertJsonCount(1, 'data');
 
         foreach ($response->json('data') as $resource) {
-            $this->assertSame($site->id, $resource['attributes']['site_id']);
+            $this->assertSame($firstBookmark->site_id, $resource['attributes']['site_id']);
         }
     }
 
     public function testWillFetchOnlyBookmarksWithAParticularTag(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        Passport::actingAs(UserFactory::new()->create());
 
-        BookmarkFactory::new()->count(10)->create([
-            'user_id' => $user->id,
+        $this->saveBookmark();
+        $this->saveBookmark(['tags' => $this->faker->words()]);
+        $this->saveBookmark([
+            'tags' => [$tag = $this->faker->word, $this->faker->word]
         ]);
 
-        $this->withoutExceptionHandling()
-            ->getTestResponse(['tag' => $this->faker->word])
+        $response = $this->withoutExceptionHandling()
+            ->getTestResponse(['tag' => $tag])
             ->assertSuccessful()
-            ->assertJsonCount(0, 'data');
+            ->assertJsonCount(1, 'data');
+
+        $this->assertTrue(in_array($tag, $response->json('data.0.attributes.tags')));
+    }
+
+    public function testWillFetchOnlyBookmarksWithoutTags(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->saveBookmark(['tags' => $this->faker->words()]);
+        $this->saveBookmark();
+        $this->saveBookmark();
+
+        $this->withoutExceptionHandling()
+            ->getTestResponse(['untagged' => true])
+            ->assertSuccessful()
+            ->assertJsonCount(2, 'data');
     }
 }

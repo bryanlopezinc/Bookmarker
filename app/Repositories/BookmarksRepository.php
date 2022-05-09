@@ -44,22 +44,27 @@ final class BookmarksRepository
     /**
      * @return Paginator<Bookmark>
      */
-    public function userBookmarks(FetchUserBookmarksRequestData $data): Paginator
+    public function userBookmarks(FetchUserBookmarksRequestData $userQuery): Paginator
     {
-        $query = Model::WithQueryOptions(new Columns());
+        $builder = Model::WithQueryOptions(new Columns());
 
-        if ($data->hasCustomSite) {
-            $query->where('site_id', $data->siteId->toInt());
+        if ($userQuery->hasCustomSite) {
+            $builder->where('site_id', $userQuery->siteId->toInt());
         }
 
-        if ($data->hasTag) {
-            $query->whereHas('tags', function (Builder $builder) use ($data) {
-                $builder->where('name', $data->tag->value);
+        if ($userQuery->hasTag) {
+            $builder->whereHas('tags', function (Builder $builder) use ($userQuery) {
+                $builder->where('name', $userQuery->tag->value);
             });
         }
 
+        if ($userQuery->wantsUntaggedBookmarks) {
+            $builder->whereDoesntHave('tags');
+        };
+
         /** @var Paginator */
-        $result = $query->where('user_id', $data->userId->toInt())->simplePaginate($data->pagination->perPage(), page: $data->pagination->page());
+        $result = $builder->where('user_id', $userQuery->userId->toInt())
+            ->simplePaginate($userQuery->pagination->perPage(), page: $userQuery->pagination->page());
 
         return $result->setCollection(
             $result->getCollection()->map(fn (Model $bookmark) => BookmarkBuilder::fromModel($bookmark)->build())

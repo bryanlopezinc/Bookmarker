@@ -17,6 +17,7 @@ final class FetchUserBookmarksRequestData extends DataTransferObject
     public readonly bool $hasCustomSite;
     public readonly Tag $tag;
     public readonly bool $hasTag;
+    public readonly bool $wantsUntaggedBookmarks;
     public readonly PaginationData $pagination;
 
     public static function fromRequest(FetchUserBookmarksRequest $request): self
@@ -25,6 +26,7 @@ final class FetchUserBookmarksRequestData extends DataTransferObject
             'userId' => UserID::fromAuthUser(),
             'hasTag'  => $request->has('tag'),
             'hasCustomSite' => $request->has('site_id'),
+            'wantsUntaggedBookmarks' => $request->boolean('untagged'),
             'pagination' => PaginationData::fromRequest($request)
         ];
 
@@ -47,14 +49,16 @@ final class FetchUserBookmarksRequestData extends DataTransferObject
      * @key `siteId` App\ValueObjects\ResourceId
      * @key `page` int
      * @key `per_page` int
+     * @key untagged bool
      */
     public static function fromArray(array $request): self
     {
         $data = [
-            'userId'        => $request['userId'],
-            'hasTag'        => $hasTag = array_key_exists('tag', $request),
+            'userId' => $request['userId'],
+            'hasTag' => $hasTag = array_key_exists('tag', $request),
             'hasCustomSite' => $hasSiteId = array_key_exists('siteId', $request),
-            'pagination'    => new PaginationData($request['page'] ?? 1, $request['per_page'] ?? PaginationData::DEFAULT_PER_PAGE)
+            'wantsUntaggedBookmarks' => $request['untagged'] ?? false,
+            'pagination' => new PaginationData($request['page'] ?? 1, $request['per_page'] ?? PaginationData::DEFAULT_PER_PAGE)
         ];
 
         if ($hasSiteId) {

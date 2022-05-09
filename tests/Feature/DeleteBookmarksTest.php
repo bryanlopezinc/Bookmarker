@@ -8,15 +8,15 @@ use App\Models\Favourite;
 use App\Models\UserResourcesCount;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Tests\Traits\CreatesBookmark;
 
 class DeleteBookmarksTest extends TestCase
 {
-    use WithFaker;
+    use CreatesBookmark;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
@@ -53,16 +53,6 @@ class DeleteBookmarksTest extends TestCase
             'count' => 0,
             'type' => UserResourcesCount::BOOKMARKS_TYPE
         ]);
-    }
-
-    private function saveBookmark(): void
-    {
-        Bus::fake();
-
-        $this->postJson(route('createBookmark'), [
-            'url' => $this->faker->url,
-            'tags'  => implode(',', [$this->faker->word])
-        ])->assertSuccessful();
     }
 
     public function testWillDeleteFavouritesWhenBookmarkIsDeleted(): void

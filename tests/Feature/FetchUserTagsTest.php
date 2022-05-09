@@ -3,15 +3,14 @@
 namespace Tests\Feature;
 
 use Database\Factories\UserFactory;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Support\Facades\Bus;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Tests\Traits\CreatesBookmark;
 
 class FetchUserTagsTest extends TestCase
 {
-    use WithFaker;
+    use CreatesBookmark;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
@@ -27,7 +26,7 @@ class FetchUserTagsTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->saveBookmark($tags = $this->faker->words());
+        $this->saveBookmark(['tags' => $tags = $this->faker->words()]);
 
         $response = $this->getTestResponse()
             ->assertSuccessful()
@@ -56,15 +55,5 @@ class FetchUserTagsTest extends TestCase
         foreach ($response->json('data.*.attributes.name') as $tag) {
             $this->assertContains($tag, $tags);
         }
-    }
-
-    private function saveBookmark(array $tags): void
-    {
-        Bus::fake();
-
-        $this->postJson(route('createBookmark'), [
-            'url' => $this->faker->url,
-            'tags'  => implode(',', $tags)
-        ])->assertSuccessful();
     }
 }

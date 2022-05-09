@@ -4,9 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Favourite;
 use App\Models\UserResourcesCount;
-use App\Repositories\FavouritesRepository;
-use App\ValueObjects\ResourceID;
-use App\ValueObjects\UserID;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
@@ -36,11 +33,13 @@ class DeleteFavouriteTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmark = BookmarkFactory::new()->create([]);
+        $bookmark = BookmarkFactory::new()->create([
+            'user_id' => $user->id
+        ]);
 
-        (new FavouritesRepository)->create(new ResourceID($bookmark->id), UserID::fromAuthUser());
+        $this->postJson(route('createFavourite'), ['bookmarks' => (string) $bookmark->id])->assertCreated();
 
-        $this->withoutExceptionHandling()->getTestResponse(['bookmark' => $bookmark->id])->assertNoContent();
+        $this->getTestResponse(['bookmark' => $bookmark->id])->assertNoContent();
 
         $this->assertDatabaseMissing(Favourite::class, [
             'bookmark_id' => $bookmark->id,
@@ -58,9 +57,13 @@ class DeleteFavouriteTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmark = BookmarkFactory::new()->create();
+        $bookmark = BookmarkFactory::new()->create([
+            'user_id' => $user->id
+        ]);
 
-        (new FavouritesRepository)->create(new ResourceID($bookmark->id), new UserID($user->id + 1));
+        $this->postJson(route('createFavourite'), ['bookmarks' => (string) $bookmark->id])->assertCreated();
+
+        Passport::actingAs(UserFactory::new()->create());
 
         $this->getTestResponse(['bookmark' => $bookmark->id])->assertForbidden();
     }

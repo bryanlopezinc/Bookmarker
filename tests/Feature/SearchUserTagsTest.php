@@ -3,14 +3,14 @@
 namespace Tests\Feature;
 
 use Database\Factories\UserFactory;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Tests\Traits\CreatesBookmark;
 
 class SearchUserTagsTest extends TestCase
 {
-    use WithFaker;
+    use CreatesBookmark;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
@@ -29,12 +29,12 @@ class SearchUserTagsTest extends TestCase
         $this->getTestResponse()->assertJsonValidationErrorFor('tag');
     }
 
-    public function testSuggestTags(): void
+    public function testSearchTags(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
-            'tag' => $this->faker->word,
-        ])->assertSuccessful();
+        $this->saveBookmark(['tags' => [$tag = $this->faker->word]]);
+
+        $this->getTestResponse(['tag' => $tag])->assertJsonCount(1, 'data')->assertSuccessful();
     }
 }

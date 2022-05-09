@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Collections\ResourceIDsCollection;
+use App\DataTransferObjects\Bookmark;
 use App\Policies\EnsureAuthorizedUserOwnsBookmark;
 use App\QueryColumns\BookmarkQueryColumns;
 use App\Repositories\FavouritesRepository;
 use App\Repositories\BookmarksRepository;
-use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\HttpException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class CreateFavouriteService
 {
@@ -20,22 +21,46 @@ final class CreateFavouriteService
     {
     }
 
-    public function create(ResourceID $bookmarkId): void
+    public function create(ResourceIDsCollection $bookmarkIDs): void
     {
-        $bookmark = $this->bookmarkRepository->findById($bookmarkId, BookmarkQueryColumns::new()->userId()->id());
+        $bookmarks = $this->bookmarkRepository->findManyById($bookmarkIDs, BookmarkQueryColumns::new()->userId()->id());
+
+        //throw exception if some bookmarkIDs does not exists.
+        if ($bookmarks->count() !== $bookmarkIDs->count()) {
+            $this->throwException($this->prepareNotFoundResponseMessage($bookmarkIDs, $bookmarks), Response::HTTP_NOT_FOUND);
+        }
+
+        $bookmarks->each(new EnsureAuthorizedUserOwnsBookmark);
 
         $userId = UserID::fromAuthUser();
 
-        if ($bookmark === false) {
-            throw new NotFoundHttpException();
+        $duplicates = $this->repository->duplicates($userId, $bookmarkIDs);
+
+        if ($duplicates->isNotEmpty()) {
+            $this->throwException($this->prepareHttpConflictMessage($duplicates), Response::HTTP_CONFLICT);
         }
 
-        (new EnsureAuthorizedUserOwnsBookmark)($bookmark);
+        $this->repository->createMany($bookmarkIDs, $userId);
+    }
 
-        if ($this->repository->exists($bookmarkId, $userId)) {
-            throw new HttpException(Response::HTTP_CONFLICT);
-        }
+    private function prepareHttpConflictMessage(ResourceIDsCollection $bookmarkIds): string
+    {
+        return sprintf('could not add ids [%s] because they have already been added to favourites', $bookmarkIds->asIntegers()->implode(', '));
+    }
 
-        $this->repository->create($bookmarkId, $userId);
+    /**
+     * @param Collection<Bookmark> $result
+     */
+    private function prepareNotFoundResponseMessage(ResourceIDsCollection $bookmarkIDs, Collection $result): string
+    {
+        return sprintf(
+            "could not add ids [%s] because they do not exists",
+            $bookmarkIDs->asIntegers()->diff($result->map(fn (Bookmark $bookmark) => $bookmark->id->toInt()))->implode(', ')
+        );
+    }
+
+    private function throwException(mixed $message, int $status): void
+    {
+        throw new HttpResponseException(response()->json($message, $status));
     }
 }

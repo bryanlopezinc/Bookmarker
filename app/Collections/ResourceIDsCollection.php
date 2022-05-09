@@ -31,11 +31,4 @@ final class ResourceIDsCollection extends BaseCollection
     {
         return $this->collection->map(fn (ResourceID $resourceID) => $resourceID->toInt());
     }
-
-    public function unique(): ResourceIDsCollection
-    {
-        return new ResourceIDsCollection(
-            $this->collection->uniqueStrict(fn (ResourceID $id) => $id->toInt())
-        );
-    }
 }

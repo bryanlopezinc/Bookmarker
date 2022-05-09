@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Collections\ResourceIDsCollection;
 use App\Models\Favourite;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
@@ -14,32 +15,38 @@ use App\Models\UserResourcesCount;
 use App\PaginationData;
 use App\QueryColumns\BookmarkQueryColumns;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
 
 final class FavouritesRepository
 {
     public function create(ResourceID $bookmarkId, UserID $userId): bool
     {
-        Favourite::query()->create([
-            'user_id' => $userId->toInt(),
-            'bookmark_id' => $bookmarkId->toInt()
-        ]);
+        return $this->createMany($bookmarkId->toCollection(), $userId);
+    }
 
-        $this->incrementFavouritesCount($userId);
+    public function createMany(ResourceIDsCollection $bookmarkIds, UserID $userId): bool
+    {
+        Favourite::insert($bookmarkIds->asIntegers()->map(fn (int $bookmarkID) => [
+            'user_id' => $userId->toInt(),
+            'bookmark_id' => $bookmarkID
+        ])->all());
+
+        $this->incrementFavouritesCount($userId, $bookmarkIds->count());
 
         return true;
     }
 
-    private function incrementFavouritesCount(UserID $userId): void
+    private function incrementFavouritesCount(UserID $userId, int $amount = 1): void
     {
         $attributes = [
             'user_id' => $userId->toInt(),
             'type' => UserResourcesCount::FAVOURITES_TYPE
         ];
 
-        $favouritesCount = UserResourcesCount::query()->firstOrCreate($attributes, ['count' => 1, ...$attributes]);
+        $favouritesCount = UserResourcesCount::query()->firstOrCreate($attributes, ['count' => $amount, ...$attributes]);
 
         if (!$favouritesCount->wasRecentlyCreated) {
-            $favouritesCount->increment('count');
+            $favouritesCount->increment('count', $amount);
         }
     }
 
@@ -49,6 +56,14 @@ final class FavouritesRepository
             'user_id' => $userId->toInt(),
             'bookmark_id' => $bookmarkId->toInt()
         ])->exists();
+    }
+
+    public function duplicates(UserID $userID, ResourceIDsCollection $bookmarkIDs): ResourceIDsCollection
+    {
+        return Favourite::where('user_id', $userID->toInt())
+            ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
+            ->get('bookmark_id')
+            ->pipe(fn (Collection $favourites) => ResourceIDsCollection::fromNativeTypes($favourites->pluck('bookmark_id')->all()));
     }
 
     public function delete(ResourceID $bookmarkId, UserID $userId): bool

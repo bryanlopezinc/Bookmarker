@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Collections\ResourceIDsCollection;
 use App\Rules\ResourceIdRule;
 use App\Services\CreateFavouriteService;
-use App\ValueObjects\ResourceID;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -16,10 +16,11 @@ final class CreateFavouriteController
     public function __invoke(Request $request, CreateFavouriteService $service): JsonResponse
     {
         $request->validate([
-            'bookmark' => ['required', new ResourceIdRule]
-        ]);
+            'bookmarks' => ['required', 'filled', 'max:30'],
+            'bookmarks.*' => [new ResourceIdRule]
+        ], ['max' => 'cannot add more than 30 bookmarks simultaneously']);
 
-        $service->create(ResourceID::fromRequest($request, 'bookmark'));
+        $service->create(ResourceIDsCollection::fromNativeTypes($request->input('bookmarks')));
 
         return response()->json(status: Response::HTTP_CREATED);
     }

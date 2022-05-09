@@ -23,8 +23,11 @@ Route::middleware('auth:api')->group(function () {
             ->middleware([ConvertStringToArray::keys('ids')])
             ->name('deleteBookmark');
 
+        Route::post('favourites', Controllers\CreateFavouriteController::class)
+            ->middleware([ConvertStringToArray::keys('bookmarks')])
+            ->name('createFavourite');
+
         Route::delete('bookmarks/site', Controllers\DeleteBookmarksFromSiteController::class)->name('deleteBookmarksFromSite');
-        Route::post('favourites', Controllers\CreateFavouriteController::class)->name('createFavourite');
         Route::delete('favourites', Controllers\DeleteFavouriteController::class)->name('deleteFavourite');
 
         Route::delete('bookmarks/tags/remove', Controllers\DeleteBookmarkTagsController::class)

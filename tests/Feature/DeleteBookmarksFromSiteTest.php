@@ -78,8 +78,8 @@ class DeleteBookmarksFromSiteTest extends TestCase
         [$firstBookmark, $secondBookmark] = [$userBookmarks->first(), $userBookmarks->last()];
 
         //Add created bookmarks to favourites.
-        $this->postJson(route('createFavourite'), ['bookmark' => $firstBookmark->id])->assertCreated();
-        $this->postJson(route('createFavourite'), ['bookmark' => $secondBookmark->id])->assertCreated();
+        $this->postJson(route('createFavourite'), ['bookmarks' => (string) $firstBookmark->id])->assertCreated();
+        $this->postJson(route('createFavourite'), ['bookmarks' => (string) $secondBookmark->id])->assertCreated();
 
         $this->getTestResponse(['site_id' => $firstBookmark->site_id])->assertStatus(202);
 

@@ -74,7 +74,7 @@ class DeleteBookmarksTest extends TestCase
         $bookmark = Bookmark::query()->where('user_id', $user->id)->first();
 
         //Add created bookmark to favourites.
-        $this->postJson(route('createFavourite'), ['bookmark' => $bookmark->id])->assertCreated();
+        $this->postJson(route('createFavourite'), ['bookmarks' => (string) $bookmark->id])->assertCreated();
 
         $this->getTestResponse(['ids' => (string)$bookmark->id])->assertStatus(204);
 

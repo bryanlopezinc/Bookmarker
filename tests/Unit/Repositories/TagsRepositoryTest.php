@@ -6,6 +6,7 @@ use App\Collections\TagsCollection;
 use App\Models\Bookmark;
 use App\Models\BookmarkTag;
 use App\Models\Tag;
+use App\PaginationData;
 use App\Repositories\TagsRepository;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
@@ -35,6 +36,29 @@ class TagsRepositoryTest extends TestCase
 
         $this->assertCount(1, $result);
         $this->assertEquals($user1Tag, $result->toStringCollection()->sole());
+    }
+
+    public function testGetUserTagsMethodWillReturnOnlyTagsCreatedByUser(): void
+    {
+        $repository = new TagsRepository;
+
+        /** @var Bookmark */
+        $bookmark = BookmarkFactory::new()->create();
+
+        $user1Tag = 'like' . rand(0, 1000);
+        $user2Tag = 'like' . rand(0, 1000);
+        $user3Tag = 'like' . rand(0, 1000);
+
+        //Bookmarks by different users with similar tags
+        $repository->attach(TagsCollection::createFromStrings([$user1Tag]), $bookmark);
+        $repository->attach(TagsCollection::createFromStrings([$user2Tag]), BookmarkFactory::new()->create());
+        $repository->attach(TagsCollection::createFromStrings([$user3Tag]), BookmarkFactory::new()->create());
+
+        /** @var array<\App\ValueObjects\Tag> */
+        $result = $repository->getUsertags(new UserID($bookmark->user_id), new PaginationData)->items();
+
+        $this->assertCount(1, $result);
+        $this->assertEquals($user1Tag, $result[0]->value);
     }
 
     public function testWillDetachBookmarkTags(): void

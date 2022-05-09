@@ -23,7 +23,7 @@ final class DOMReader
 
     public function getPageDescription(): string|false
     {
-        $description =  $this->dOMXPath->query('//meta[@name="og:description"]/@content')->item(0)?->nodeValue;
+        $description =  $this->dOMXPath->query('//meta[@property="og:description"]/@content')->item(0)?->nodeValue;
 
         if (!$description) {
             $description = $this->dOMXPath->query('//meta[@name="description"]/@content')->item(0)?->nodeValue;
@@ -35,13 +35,13 @@ final class DOMReader
     public function getPreviewImageUrl(): Url|false
     {
         return Url::tryFromString(
-            $this->dOMXPath->query('//meta[@name="og:image"]/@content')->item(0)?->nodeValue
+            $this->dOMXPath->query('//meta[@property="og:image"]/@content')->item(0)?->nodeValue
         );
     }
 
     public function getPageTitle(): string|false
     {
-        $title = $this->dOMXPath->query('//meta[@name="og:title"]/@content')->item(0)?->nodeValue;
+        $title = $this->dOMXPath->query('//meta[@property="og:title"]/@content')->item(0)?->nodeValue;
 
         if (!$title) {
             $title = $this->dOMXPath->query('/html/head/title')->item(0)?->nodeValue;
@@ -52,7 +52,7 @@ final class DOMReader
 
     public function getSiteName(): string|false
     {
-        $name = $this->dOMXPath->query('//meta[@name="og:site_name"]/@content')->item(0)?->nodeValue;
+        $name = $this->dOMXPath->query('//meta[@property="og:site_name"]/@content')->item(0)?->nodeValue;
 
         if (!$name) {
             $name = $this->dOMXPath->query('//meta[@name="application-name"]/@content')->item(0)?->nodeValue;

@@ -23,7 +23,7 @@ class UpdateSiteNameWithMetaTagTest extends TestCase
                 <meta charset="UTF-8">
                 <meta http-equiv="X-UA-Compatible" content="IE=edge">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <meta name="og:site_name" content="PlayStation">
+                <meta property="og:site_name" content="PlayStation">
                 <meta name="application-name" content="Xbox">
                 <title>Document</title>
             </head>
@@ -111,7 +111,7 @@ class UpdateSiteNameWithMetaTagTest extends TestCase
                 <meta charset="UTF-8">
                 <meta http-equiv="X-UA-Compatible" content="IE=edge">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <meta name="og:site_name" content="PlayStation">
+                <meta property="og:site_name" content="PlayStation">
                 <title>Document</title>
             </head>
             <body>

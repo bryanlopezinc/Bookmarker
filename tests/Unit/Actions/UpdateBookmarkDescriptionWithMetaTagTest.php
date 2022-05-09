@@ -28,7 +28,7 @@ class UpdateBookmarkDescriptionWithMetaTagTest extends TestCase
                 <meta http-equiv="X-UA-Compatible" content="IE=edge">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <meta name="description" content="A foo bar site">
-                <meta name="og:description" content="$description">
+                <meta property="og:description" content="$description">
                 <title>Document</title>
             </head>
             <body>
@@ -59,7 +59,7 @@ class UpdateBookmarkDescriptionWithMetaTagTest extends TestCase
                 <meta http-equiv="X-UA-Compatible" content="IE=edge">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <meta name="description" content="A foo bar site">
-                <meta name="og:description" content="$description">
+                <meta property="og:description" content="$description">
                 <title>Document</title>
             </head>
             <body>

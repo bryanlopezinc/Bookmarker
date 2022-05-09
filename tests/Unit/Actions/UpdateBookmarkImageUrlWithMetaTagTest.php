@@ -22,7 +22,7 @@ class UpdateBookmarkImageUrlWithMetaTagTest extends TestCase
                 <meta charset="UTF-8">
                 <meta http-equiv="X-UA-Compatible" content="IE=edge">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <meta name="og:image" content="https://image.com/smike.png">
+                <meta property="og:image" content="https://image.com/smike.png">
                 <title>Document</title>
             </head>
             <body>
@@ -76,7 +76,7 @@ class UpdateBookmarkImageUrlWithMetaTagTest extends TestCase
                 <meta charset="UTF-8">
                 <meta http-equiv="X-UA-Compatible" content="IE=edge">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <meta name="og:image" content="<script> alert('hacked') </script>">
+                <meta property="og:image" content="<script> alert('hacked') </script>">
                 <title>Document</title>
             </head>
             <body>

@@ -12,7 +12,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('users/favourites', Controllers\FetchUserFavouritesController::class)->name('fetchUserFavourites');
     Route::get('users/sites', Controllers\FetchUserSitesController::class)->name('fetchUserSites');
     Route::get('users/tags', Controllers\FetchUserTagsController::class)->name('userTags');
-    Route::post('tags/suggest', Controllers\SuggestTagsController::class)->name('suggestTags');
+    Route::post('users/tags/search', Controllers\SearchUserTagsController::class)->name('searchUserTags');
 
     Route::middleware(DBTransaction::class)->group(function () {
         Route::post('bookmarks', Controllers\CreateBookmarkController::class)

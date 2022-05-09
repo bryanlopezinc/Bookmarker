@@ -8,13 +8,13 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 
-class SuggestTagsTest extends TestCase
+class SearchUserTagsTest extends TestCase
 {
     use WithFaker;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
-        return $this->postJson(route('suggestTags'), $parameters);
+        return $this->postJson(route('searchUserTags'), $parameters);
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void

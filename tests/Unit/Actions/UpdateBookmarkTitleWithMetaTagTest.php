@@ -6,6 +6,7 @@ namespace Tests\Unit\Actions;
 
 use App\Actions\UpdateBookmarkTitleWithMetaTag as UpdateBookmarkTitle;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
+use App\DOMReader;
 use App\Models\Bookmark;
 use Database\Factories\BookmarkFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -37,10 +38,7 @@ class UpdateBookmarkTitleWithMetaTagTest extends TestCase
 
         $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->create())->build();
 
-        $document = new \DOMDocument();
-        $document->loadHTML($html);
-
-        (new UpdateBookmarkTitle($document))($bookmark);
+        (new UpdateBookmarkTitle(new DOMReader($html)))($bookmark);
 
         $this->assertDatabaseHas(Bookmark::class, [
             'id'   => $model->id,
@@ -73,10 +71,7 @@ class UpdateBookmarkTitleWithMetaTagTest extends TestCase
             'title' => $customTitle = $this->faker->word
         ]))->build();
 
-        $document = new \DOMDocument();
-        $document->loadHTML($html);
-
-        (new UpdateBookmarkTitle($document))($bookmark);
+        (new UpdateBookmarkTitle(new DOMReader($html)))($bookmark);
 
         $this->assertDatabaseHas(Bookmark::class, [
             'id'   => $model->id,
@@ -104,10 +99,7 @@ class UpdateBookmarkTitleWithMetaTagTest extends TestCase
 
         $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->create())->build();
 
-        $document = new \DOMDocument();
-        $document->loadHTML($html);
-
-        (new UpdateBookmarkTitle($document))($bookmark);
+        (new UpdateBookmarkTitle(new DOMReader($html)))($bookmark);
 
         $this->assertDatabaseHas(Bookmark::class, [
             'id'   => $model->id,
@@ -132,10 +124,7 @@ class UpdateBookmarkTitleWithMetaTagTest extends TestCase
 
         $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->create())->build();
 
-        $document = new \DOMDocument();
-        $document->loadHTML($html);
-
-        (new UpdateBookmarkTitle($document))($bookmark);
+        (new UpdateBookmarkTitle(new DOMReader($html)))($bookmark);
 
         $this->assertDatabaseHas(Bookmark::class, [
             'id'   => $model->id,

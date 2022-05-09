@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\DataTransferObjects\Bookmark;
+use App\DOMReader;
 use App\Models\Bookmark as Model;
-use DOMXPath;
 
 final class UpdateBookmarkTitleWithMetaTag
 {
-    public function __construct(private \DOMDocument $dOMDocument)
+    public function __construct(private DOMReader $dOMReader)
     {
     }
 
@@ -20,29 +20,12 @@ final class UpdateBookmarkTitleWithMetaTag
             return;
         }
 
-        $DOMXPath = new DOMXPath($this->dOMDocument);
-
-        $title = $this->getOpenGraphTagContent($DOMXPath) ?: $this->getTitleTagContent($DOMXPath);
+        $title = $this->dOMReader->getPageTitle();
 
         if ($title === false) return;
 
         Model::query()
             ->where('id', $bookmark->id->toInt())
             ->update(['title' => $title]);
-    }
-
-    private function getOpenGraphTagContent(DOMXPath $dOMXPath): string|false
-    {
-        return $this->filter($dOMXPath->query('//meta[@name="og:title"]/@content')->item(0)?->nodeValue);
-    }
-
-    private function getTitleTagContent(DOMXPath $dOMXPath): string|false
-    {
-        return $this->filter($dOMXPath->query('/html/head/title')->item(0)?->nodeValue);
-    }
-
-    private function filter(?string $value): string|false
-    {
-        return blank($value) ? false : e($value);
     }
 }

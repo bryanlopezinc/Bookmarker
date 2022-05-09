@@ -7,6 +7,7 @@ namespace Tests\Unit\Actions;
 use App\Actions\UpdateSiteNameWithMetaTag as UpdateSiteName;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\Builders\SiteBuilder;
+use App\DOMReader;
 use App\Models\WebSite;
 use Database\Factories\SiteFactory;
 use Tests\TestCase;
@@ -36,10 +37,7 @@ class UpdateSiteNameWithMetaTagTest extends TestCase
             ->site(SiteBuilder::fromModel($site = SiteFactory::new()->create())->build())
             ->build();
 
-        $document = new \DOMDocument();
-        $document->loadHTML($html);
-
-        (new UpdateSiteName($document))($bookmark);
+        (new UpdateSiteName(new DOMReader($html)))($bookmark);
 
         $this->assertDatabaseHas(WebSite::class, [
             'id'   => $site->id,
@@ -68,10 +66,7 @@ class UpdateSiteNameWithMetaTagTest extends TestCase
             ->site(SiteBuilder::fromModel($site = SiteFactory::new()->create())->build())
             ->build();
 
-        $document = new \DOMDocument();
-        $document->loadHTML($html);
-
-        (new UpdateSiteName($document))($bookmark);
+        (new UpdateSiteName(new DOMReader($html)))($bookmark);
 
         $this->assertDatabaseHas(WebSite::class, [
             'id'   => $site->id,
@@ -99,10 +94,7 @@ class UpdateSiteNameWithMetaTagTest extends TestCase
             ->site(SiteBuilder::fromModel($site = SiteFactory::new()->create())->build())
             ->build();
 
-        $document = new \DOMDocument();
-        $document->loadHTML($html);
-
-        (new UpdateSiteName($document))($bookmark);
+        (new UpdateSiteName(new DOMReader($html)))($bookmark);
 
         $this->assertDatabaseHas(WebSite::class, [
             'id'   => $site->id,
@@ -131,10 +123,7 @@ class UpdateSiteNameWithMetaTagTest extends TestCase
             ->site(SiteBuilder::fromModel($site = SiteFactory::new()->create(['name_updated_at' => now(), 'name' => 'foosite']))->build())
             ->build();
 
-        $document = new \DOMDocument();
-        $document->loadHTML($html);
-
-        (new UpdateSiteName($document))($bookmark);
+        (new UpdateSiteName(new DOMReader($html)))($bookmark);
 
         $this->assertDatabaseHas(WebSite::class, [
             'id'   => $site->id,

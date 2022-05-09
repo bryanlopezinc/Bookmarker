@@ -6,6 +6,7 @@ namespace Tests\Unit\Actions;
 
 use App\Actions\UpdateBookmarkImageUrlWithMetaTag as UpdateBookmarkImage;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
+use App\DOMReader;
 use App\Models\Bookmark;
 use Database\Factories\BookmarkFactory;
 use Tests\TestCase;
@@ -32,10 +33,7 @@ class UpdateBookmarkImageUrlWithMetaTagTest extends TestCase
 
         $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->create())->build();
 
-        $document = new \DOMDocument();
-        $document->loadHTML($html);
-
-        (new UpdateBookmarkImage($document))($bookmark);
+        (new UpdateBookmarkImage(new DOMReader($html)))($bookmark);
 
         $this->assertDatabaseHas(Bookmark::class, [
             'id'   => $model->id,
@@ -61,10 +59,7 @@ class UpdateBookmarkImageUrlWithMetaTagTest extends TestCase
 
         $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->create())->build();
 
-        $document = new \DOMDocument();
-        $document->loadHTML($html);
-
-        (new UpdateBookmarkImage($document))($bookmark);
+        (new UpdateBookmarkImage(new DOMReader($html)))($bookmark);
 
         $this->assertDatabaseHas(Bookmark::class, [
             'id'   => $model->id,
@@ -91,10 +86,7 @@ class UpdateBookmarkImageUrlWithMetaTagTest extends TestCase
 
         $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->create())->build();
 
-        $document = new \DOMDocument();
-        $document->loadHTML($html);
-
-        (new UpdateBookmarkImage($document))($bookmark);
+        (new UpdateBookmarkImage(new DOMReader($html)))($bookmark);
 
         $this->assertDatabaseHas(Bookmark::class, [
             'id'   => $model->id,

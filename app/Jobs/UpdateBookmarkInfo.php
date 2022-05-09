@@ -10,10 +10,8 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
-use App\Actions\UpdateBookmarkDescriptionWithMetaTag;
-use App\Actions\UpdateBookmarkImageUrlWithMetaTag;
-use App\Actions\UpdateBookmarkTitleWithMetaTag;
-use App\Actions\UpdateSiteNameWithMetaTag;
+use App\Actions;
+use App\DOMReader;
 
 final class UpdateBookmarkInfo implements ShouldQueue
 {
@@ -33,14 +31,11 @@ final class UpdateBookmarkInfo implements ShouldQueue
             return;
         }
 
-        libxml_use_internal_errors(true);
+        $DOMReader = new DOMReader($response->body());
 
-        $documnet = new \DOMDocument;
-        $documnet->loadHTML($response->body());
-
-        (new UpdateBookmarkImageUrlWithMetaTag($documnet))($this->bookmark);
-        (new UpdateBookmarkDescriptionWithMetaTag($documnet))($this->bookmark);
-        (new UpdateSiteNameWithMetaTag($documnet))($this->bookmark);
-        (new UpdateBookmarkTitleWithMetaTag($documnet))($this->bookmark);
+        (new Actions\UpdateBookmarkImageUrlWithMetaTag($DOMReader))($this->bookmark);
+        (new Actions\UpdateBookmarkDescriptionWithMetaTag($DOMReader))($this->bookmark);
+        (new Actions\UpdateSiteNameWithMetaTag($DOMReader))($this->bookmark);
+        (new Actions\UpdateBookmarkTitleWithMetaTag($DOMReader))($this->bookmark);
     }
 }

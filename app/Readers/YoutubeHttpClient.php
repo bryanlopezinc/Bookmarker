@@ -22,7 +22,7 @@ final class YoutubeHttpClient implements HttpClientInterface
     {
         $response = Http::get('https://www.googleapis.com/youtube/v3/videos', [
             'id' => $this->getVideoID($bookmark->linkToWebPage),
-            'key' => env('GOOGLE_API_KEY', fn () => throw new \Exception('The GOOGLE_API_KEY attribute has not been set in .env file')),
+            'key' => $this->getGoogleApiKey(),
             'part' => 'snippet',
             'fields' => 'items(snippet/title,snippet/description,snippet/thumbnails)'
         ])->onError(function (Response $response) {
@@ -39,6 +39,17 @@ final class YoutubeHttpClient implements HttpClientInterface
             'imageUrl' => new Url($response->json('items.0.snippet.thumbnails.medium.url')),
             'siteName' => self::SITE_NAME
         ]);
+    }
+
+    private function getGoogleApiKey(): string
+    {
+        $key = env('GOOGLE_API_KEY');
+
+        if (blank($key)) {
+            throw new \Exception('The GOOGLE_API_KEY attribute has not been set in .env file');
+        }
+
+        return $key;
     }
 
     private function getVideoID(Url $url): string

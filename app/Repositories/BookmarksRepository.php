@@ -62,6 +62,10 @@ final class BookmarksRepository
             $builder->whereDoesntHave('tags');
         };
 
+        if ($userQuery->hasSortCriteria) {
+            $builder->orderBy('bookmarks.id', $userQuery->sortCriteria->value);
+        }
+
         /** @var Paginator */
         $result = $builder->where('user_id', $userQuery->userId->toInt())
             ->simplePaginate($userQuery->pagination->perPage(), page: $userQuery->pagination->page());

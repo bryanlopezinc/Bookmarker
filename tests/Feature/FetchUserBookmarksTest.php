@@ -101,4 +101,38 @@ class FetchUserBookmarksTest extends TestCase
             ->assertSuccessful()
             ->assertJsonCount(2, 'data');
     }
+
+    public function testWillSortBookmarksByOldest(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->saveBookmark();
+        $this->saveBookmark();
+
+        $bookmarkIDs = Bookmark::query()->where('user_id', $user->id)->oldest('id')->get('id')->pluck('id')->all();
+
+        $response = $this->withoutExceptionHandling()
+            ->getTestResponse(['sort' => 'oldest'])
+            ->assertSuccessful()
+            ->assertJsonCount(2, 'data');
+
+        $this->assertTrue($bookmarkIDs === collect($response->json('data'))->pluck('attributes.id')->all());
+    }
+
+    public function testWillSortBookmarksByLatest(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->saveBookmark();
+        $this->saveBookmark();
+
+        $bookmarkIDs = Bookmark::query()->where('user_id', $user->id)->latest('id')->get('id')->pluck('id')->all();
+
+        $response = $this->withoutExceptionHandling()
+            ->getTestResponse(['sort' => 'newest'])
+            ->assertSuccessful()
+            ->assertJsonCount(2, 'data');
+
+        $this->assertTrue($bookmarkIDs === collect($response->json('data'))->pluck('attributes.id')->all());
+    }
 }

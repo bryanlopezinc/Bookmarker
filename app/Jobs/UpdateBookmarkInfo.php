@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Jobs;
 
 use App\DataTransferObjects\Bookmark;
@@ -9,9 +11,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Http;
 use App\Actions;
-use App\DOMReader;
+use App\Readers\HttpClientInterface;
 
 final class UpdateBookmarkInfo implements ShouldQueue
 {
@@ -21,21 +22,13 @@ final class UpdateBookmarkInfo implements ShouldQueue
     {
     }
 
-    public function handle(): void
+    public function handle(HttpClientInterface $client): void
     {
-        $response = Http::accept('text/html')
-            ->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36')
-            ->get($this->bookmark->linkToWebPage->value);
+        $data = $client->getWebPageData($this->bookmark);
 
-        if (!($response->ok() || $response->redirect())) {
-            return;
-        }
-
-        $DOMReader = new DOMReader($response->body());
-
-        (new Actions\UpdateBookmarkImageUrlWithMetaTag($DOMReader))($this->bookmark);
-        (new Actions\UpdateBookmarkDescriptionWithMetaTag($DOMReader))($this->bookmark);
-        (new Actions\UpdateSiteNameWithMetaTag($DOMReader))($this->bookmark);
-        (new Actions\UpdateBookmarkTitleWithMetaTag($DOMReader))($this->bookmark);
+        (new Actions\UpdateBookmarkImageUrlWithMetaTag($data))($this->bookmark);
+        (new Actions\UpdateBookmarkDescriptionWithMetaTag($data))($this->bookmark);
+        (new Actions\UpdateSiteNameWithMetaTag($data))($this->bookmark);
+        (new Actions\UpdateBookmarkTitleWithMetaTag($data))($this->bookmark);
     }
 }

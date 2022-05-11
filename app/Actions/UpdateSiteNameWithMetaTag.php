@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\DataTransferObjects\Bookmark;
-use App\DOMReader;
 use App\Models\WebSite;
+use App\Readers\WebPageData;
 
 final class UpdateSiteNameWithMetaTag
 {
-    public function __construct(private DOMReader $dOMReader)
+    public function __construct(private WebPageData $pageData)
     {
     }
 
     public function __invoke(Bookmark $bookmark): void
     {
-        $sitename = $this->dOMReader->getSiteName();
+        $sitename = $this->pageData->hostSiteName;
 
         if ($sitename === false || blank($sitename)) {
             return;

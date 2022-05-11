@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App;
+namespace App\Readers;
 
 use App\ValueObjects\Url;
 use DOMXPath;
 
-final class DOMReader
+final class Reader
 {
     private readonly DOMXPath $dOMXPath;
 
@@ -52,10 +52,10 @@ final class DOMReader
 
     public function getSiteName(): string|false
     {
-        $name = $this->dOMXPath->query('//meta[@property="og:site_name"]/@content')->item(0)?->nodeValue;
+        $name = $this->dOMXPath->query('//meta[@name="application-name"]/@content')->item(0)?->nodeValue;
 
         if (!$name) {
-            $name = $this->dOMXPath->query('//meta[@name="application-name"]/@content')->item(0)?->nodeValue;
+            $name = $this->dOMXPath->query('//meta[@property="og:site_name"]/@content')->item(0)?->nodeValue;
         }
 
         return $this->filterValue($name);
@@ -63,6 +63,6 @@ final class DOMReader
 
     private function filterValue(?string $value): string|false
     {
-        return is_null($value) ? false : htmlspecialchars($value, ENT_QUOTES);
+        return blank($value) ? false : htmlspecialchars($value, ENT_QUOTES);
     }
 }

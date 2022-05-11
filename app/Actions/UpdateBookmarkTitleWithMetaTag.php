@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\DataTransferObjects\Bookmark;
-use App\DOMReader;
 use App\Models\Bookmark as Model;
+use App\Readers\WebPageData;
 
 final class UpdateBookmarkTitleWithMetaTag
 {
-    public function __construct(private DOMReader $dOMReader)
+    public function __construct(private WebPageData $pageData)
     {
     }
 
@@ -20,7 +20,7 @@ final class UpdateBookmarkTitleWithMetaTag
             return;
         }
 
-        $title = $this->dOMReader->getPageTitle();
+        $title = $this->pageData->title;
 
         if ($title === false) return;
 

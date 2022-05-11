@@ -6,34 +6,29 @@ namespace Tests\Unit\Actions;
 
 use App\Actions\UpdateBookmarkImageUrlWithMetaTag as UpdateBookmarkImage;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
-use App\DOMReader;
 use App\Models\Bookmark;
+use App\Readers\WebPageData;
+use App\ValueObjects\Url;
 use Database\Factories\BookmarkFactory;
+use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class UpdateBookmarkImageUrlWithMetaTagTest extends TestCase
 {
-    public function testWillUpdateImageUrlIfMetaTagIsPresent(): void
+    use WithFaker;
+    
+    public function testWillUpdateImageUrl(): void
     {
-        $html = <<<HTML
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta http-equiv="X-UA-Compatible" content="IE=edge">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <meta property="og:image" content="https://image.com/smike.png">
-                <title>Document</title>
-            </head>
-            <body>
-
-            </body>
-            </html>
-        HTML;
-
         $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->create())->build();
 
-        (new UpdateBookmarkImage(new DOMReader($html)))($bookmark);
+        $data = WebPageData::fromArray([
+            'imageUrl' => new Url('https://image.com/smike.png'),
+            'description' => implode(' ', $this->faker->sentences()),
+            'title' => $this->faker->sentence,
+            'siteName' => $this->faker->word,
+        ]);
+
+        (new UpdateBookmarkImage($data))($bookmark);
 
         $this->assertDatabaseHas(Bookmark::class, [
             'id'   => $model->id,
@@ -41,52 +36,18 @@ class UpdateBookmarkImageUrlWithMetaTagTest extends TestCase
         ]);
     }
 
-    public function testWillNotUpdateImageUrlIfMetaTagIsAbsent(): void
+    public function testWillNotUpdateImageUrl(): void
     {
-        $html = <<<HTML
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta http-equiv="X-UA-Compatible" content="IE=edge">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Document</title>
-            </head>
-            <body>
-            </body>
-            </html>
-        HTML;
-
         $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->create())->build();
 
-        (new UpdateBookmarkImage(new DOMReader($html)))($bookmark);
-
-        $this->assertDatabaseHas(Bookmark::class, [
-            'id'   => $model->id,
-            'preview_image_url' => $model->preview_image_url
+        $data = WebPageData::fromArray([
+            'imageUrl' => false,
+            'description' => implode(' ', $this->faker->sentences()),
+            'title' => $this->faker->sentence,
+            'siteName' => $this->faker->word,
         ]);
-    }
 
-    public function testWillNotUpdateImageUrlIfOpenGraphTagContentIsInvalid(): void
-    {
-        $html = <<<HTML
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta http-equiv="X-UA-Compatible" content="IE=edge">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <meta property="og:image" content="<script> alert('hacked') </script>">
-                <title>Document</title>
-            </head>
-            <body>
-            </body>
-            </html>
-        HTML;
-
-        $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->create())->build();
-
-        (new UpdateBookmarkImage(new DOMReader($html)))($bookmark);
+        (new UpdateBookmarkImage($data))($bookmark);
 
         $this->assertDatabaseHas(Bookmark::class, [
             'id'   => $model->id,

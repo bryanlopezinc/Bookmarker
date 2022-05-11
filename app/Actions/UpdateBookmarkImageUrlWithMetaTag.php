@@ -6,17 +6,17 @@ namespace App\Actions;
 
 use App\Models\Bookmark as Model;
 use App\DataTransferObjects\Bookmark;
-use App\DOMReader;
+use App\Readers\WebPageData;
 
 final class UpdateBookmarkImageUrlWithMetaTag
 {
-    public function __construct(private DOMReader $dOMReader)
+    public function __construct(private WebPageData $pageData)
     {
     }
 
     public function __invoke(Bookmark $bookmark): void
     {
-        $url = $this->dOMReader->getPreviewImageUrl();
+        $url = $this->pageData->thumbnailUrl;
 
         if ($url === false) {
             return;

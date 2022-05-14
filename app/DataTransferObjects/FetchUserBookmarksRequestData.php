@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects;
 
+use App\Collections\TagsCollection;
 use App\Enums\SortCriteria;
 use App\Http\Requests\FetchUserBookmarksRequest;
 use App\PaginationData;
@@ -16,8 +17,8 @@ final class FetchUserBookmarksRequestData extends DataTransferObject
     public readonly UserID $userId;
     public readonly ResourceID $siteId;
     public readonly bool $hasCustomSite;
-    public readonly Tag $tag;
-    public readonly bool $hasTag;
+    public readonly TagsCollection $tags;
+    public readonly bool $hasTags;
     public readonly bool $wantsUntaggedBookmarks;
     public readonly PaginationData $pagination;
     public readonly bool $hasSortCriteria;
@@ -27,7 +28,7 @@ final class FetchUserBookmarksRequestData extends DataTransferObject
     {
         $data = [
             'userId' => UserID::fromAuthUser(),
-            'hasTag'  => $request->has('tag'),
+            'hasTags'  => $request->has('tags'),
             'hasCustomSite' => $request->has('site_id'),
             'wantsUntaggedBookmarks' => $request->boolean('untagged'),
             'pagination' => PaginationData::fromRequest($request),
@@ -38,8 +39,8 @@ final class FetchUserBookmarksRequestData extends DataTransferObject
             $data['siteId'] = new ResourceID($siteId);
         });
 
-        $request->whenHas('tag', function (string $tag) use (&$data) {
-            $data['tag'] = new Tag($tag);
+        $request->whenHas('tags', function (array $tags) use (&$data) {
+            $data['tags'] = TagsCollection::createFromStrings($tags);
         });
 
         $request->whenHas('sort', function (string $sort) use (&$data) {
@@ -58,7 +59,7 @@ final class FetchUserBookmarksRequestData extends DataTransferObject
      * ```php
      *  $request = [
      *    'userId' => App\ValueObjects\UserId::class,
-     *    'tag' => App\ValueObjects\Tag::class,
+     *    'tag' => array<string>,
      *     'siteId' => App\ValueObjects\ResourceId::class,
      *     'page' => int,
      *     'per_page' => int,
@@ -71,7 +72,7 @@ final class FetchUserBookmarksRequestData extends DataTransferObject
     {
         $data = [
             'userId' => $request['userId'],
-            'hasTag' => $hasTag = array_key_exists('tag', $request),
+            'hasTags' => $hasTag = array_key_exists('tags', $request),
             'hasCustomSite' => $hasSiteId = array_key_exists('siteId', $request),
             'wantsUntaggedBookmarks' => $request['untagged'] ?? false,
             'pagination' => new PaginationData($request['page'] ?? 1, $request['per_page'] ?? PaginationData::DEFAULT_PER_PAGE),
@@ -83,7 +84,7 @@ final class FetchUserBookmarksRequestData extends DataTransferObject
         }
 
         if ($hasTag) {
-            $data['tag'] = $request['tag'];
+            $data['tags'] = TagsCollection::createFromStrings($request['tags']);
         }
 
         if ($hasSortCriteria) {

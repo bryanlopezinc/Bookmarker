@@ -69,7 +69,7 @@ class FetchUserBookmarksRepositoryTest extends TestCase
 
         $result = $this->repository->userBookmarks(Data::fromArray([
             'userId' => new UserID($userId),
-            'tag' => new Tag('foobar')
+            'tags' => ['foobar']
         ]));
 
         $this->assertCount(1, $result);

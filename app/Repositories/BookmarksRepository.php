@@ -52,9 +52,9 @@ final class BookmarksRepository
             $builder->where('site_id', $userQuery->siteId->toInt());
         }
 
-        if ($userQuery->hasTag) {
+        if ($userQuery->hasTags) {
             $builder->whereHas('tags', function (Builder $builder) use ($userQuery) {
-                $builder->where('name', $userQuery->tag->value);
+                $builder->whereIn('name', $userQuery->tags->toStringCollection()->uniqueStrict()->all());
             });
         }
 

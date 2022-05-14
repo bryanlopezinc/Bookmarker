@@ -24,10 +24,29 @@ class FetchUserFavouritesTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['page' => -1])->assertUnprocessable()->assertJsonValidationErrorFor('page');
-        $this->getTestResponse(['page' => 2001])->assertUnprocessable()->assertJsonValidationErrorFor('page');
-        $this->getTestResponse(['per_page' => 14])->assertUnprocessable()->assertJsonValidationErrorFor('per_page');
-        $this->getTestResponse(['per_page' => 40])->assertUnprocessable()->assertJsonValidationErrorFor('per_page');
+        $this->getTestResponse(['page' => -1])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'page' => ['The page must be at least 1.']
+            ]);
+
+        $this->getTestResponse(['page' => 2001])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'page' => ['The page must not be greater than 2000.']
+            ]);
+
+        $this->getTestResponse(['per_page' => 14])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'per_page' => ['The per page must be at least 15.']
+            ]);;
+
+        $this->getTestResponse(['per_page' => 40])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'per_page' => ['The per page must not be greater than 39.']
+            ]);
     }
 
     public function testWillFetchUserFavourites(): void

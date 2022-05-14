@@ -21,6 +21,35 @@ class FetchSitesBookmarkedFromTest extends TestCase
         $this->getTestResponse()->assertUnauthorized();
     }
 
+    public function testPaginationDataMustBeValid(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->getTestResponse(['per_page' => 3])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'per_page' => ['The per page must be at least 15.']
+            ]);
+
+        $this->getTestResponse(['per_page' => 40])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'per_page' => ['The per page must not be greater than 39.']
+            ]);
+
+        $this->getTestResponse(['page' => 2001])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'page' => ['The page must not be greater than 2000.']
+            ]);
+
+        $this->getTestResponse(['page' => -1])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'page' => ['The page must be at least 1.']
+            ]);
+    }
+
     public function testSuccessResponse(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());

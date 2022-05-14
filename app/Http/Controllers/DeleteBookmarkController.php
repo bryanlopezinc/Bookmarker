@@ -15,9 +15,9 @@ final class DeleteBookmarkController
     public function __invoke(Request $request, DeleteBookmarksService $service): JsonResponse
     {
         $request->validate([
-            'ids' => ['required'],
+            'ids' => ['required', 'max:100'],
             'ids.*' => [new ResourceIdRule]
-        ]);
+        ], ['max' => 'cannot delete more than 100 bookmarks in one request']);
 
         $service->delete(ResourceIDsCollection::fromNativeTypes($request->input('ids')));
 

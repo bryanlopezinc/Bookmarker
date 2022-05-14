@@ -35,6 +35,19 @@ class DeleteBookmarksTest extends TestCase
         $this->getTestResponse()->assertJsonValidationErrorFor('ids');
     }
 
+    public function test_cannot_delete_more_than_100_bookmarks_simultaneously(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->getTestResponse(['ids' => collect()->times(101)->implode(',')])
+            ->assertJsonValidationErrorFor('ids')
+            ->assertJsonValidationErrors([
+                'ids' => [
+                    'cannot delete more than 100 bookmarks in one request'
+                ]
+            ]);
+    }
+
     public function testWillDeleteBookmark(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());

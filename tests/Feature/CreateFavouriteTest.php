@@ -32,15 +32,15 @@ class CreateFavouriteTest extends TestCase
         $this->getTestResponse(['bookmarks'])->assertJsonValidationErrorFor('bookmarks');
     }
 
-    public function testCannotAddMoreThan_30_BookmarksSimultaneouslyToFavourites(): void
+    public function testCannotAddMoreThan_100_BookmarksSimultaneouslyToFavourites(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['bookmarks' => collect()->times(31)->implode(',')])
+        $this->getTestResponse(['bookmarks' => collect()->times(101)->implode(',')])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'bookmarks' => [
-                    'cannot add more than 30 bookmarks simultaneously'
+                    'cannot add more than 100 bookmarks simultaneously'
                 ]
             ]);
     }

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Bookmark;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
+use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
@@ -74,9 +75,14 @@ class FetchUserBookmarksTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse()
+        $this->getTestResponse([])
             ->assertSuccessful()
             ->assertJsonCount(10, 'data')
+            ->assertJson(function (AssertableJson $json) {
+                $json->where('links.first', route('fetchUserBookmarks', ['per_page' => 15, 'page' => 1]))->etc();
+            })
+            ->assertJsonCount(2, 'links')
+            ->assertJsonCount(4, 'meta')
             ->assertJsonStructure([
                 "links" => [
                     "first",
@@ -89,6 +95,12 @@ class FetchUserBookmarksTest extends TestCase
                     "has_more_pages",
                 ]
             ]);
+
+        $this->getTestResponse(['per_page' => 20])
+            ->assertSuccessful()
+            ->assertJson(function (AssertableJson $json) {
+                $json->where('links.first', route('fetchUserBookmarks', ['per_page' => 20, 'page' => 1]))->etc();
+            });
     }
 
     public function testWillFetchUserBookmarksFromASpecifiedSite(): void
@@ -103,7 +115,16 @@ class FetchUserBookmarksTest extends TestCase
 
         $response =  $this->getTestResponse(['site_id' => $firstBookmark->site_id])
             ->assertSuccessful()
-            ->assertJsonCount(1, 'data');
+            ->assertJsonCount(1, 'data')
+            ->assertJson(function (AssertableJson $assert) use ($firstBookmark) {
+                $link = route('fetchUserBookmarks', [
+                    'per_page' => 15,
+                    'site_id' => $firstBookmark->site_id,
+                    'page' => 1,
+                ]);
+
+                $assert->where('links.first', $link)->etc();
+            });
 
         foreach ($response->json('data') as $resource) {
             $this->assertSame($firstBookmark->site_id, $resource['attributes']['site_id']);
@@ -122,7 +143,16 @@ class FetchUserBookmarksTest extends TestCase
 
         $response = $this->getTestResponse(['tags' => $tag])
             ->assertSuccessful()
-            ->assertJsonCount(1, 'data');
+            ->assertJsonCount(1, 'data')
+            ->assertJson(function (AssertableJson $assert) use ($tag) {
+                $link = route('fetchUserBookmarks', [
+                    'per_page' => 15,
+                    'tags' => $tag,
+                    'page' => 1,
+                ]);
+
+                $assert->where('links.first', $link)->etc();
+            });
 
         $this->assertTrue(in_array($tag, $response->json('data.0.attributes.tags')));
     }
@@ -144,10 +174,22 @@ class FetchUserBookmarksTest extends TestCase
 
         $response = $this->getTestResponse([
             'tags' => implode(',', $tags),
-            'sort' => 'oldest'
+            'sort' => 'oldest',
         ])
             ->assertSuccessful()
-            ->assertJsonCount(6, 'data');
+            ->assertJsonCount(6, 'data')
+            ->assertJson(function (AssertableJson $json) use ($tags) {
+                $link = route('fetchUserBookmarks', [
+                    'per_page' => 15,
+                    'tags' => implode(',', $tags),
+                    'sort' => 'oldest',
+                    'page' => 1,
+                ]);
+
+                $json->where('links.first', $link);
+                $json->where('links.prev', $link);
+                $json->etc();
+            });
 
         $this->assertContains($tags[0], $response->json('data.0.attributes.tags'));
         $this->assertContains($tags[1], $response->json('data.1.attributes.tags'));
@@ -165,10 +207,18 @@ class FetchUserBookmarksTest extends TestCase
         $this->saveBookmark();
         $this->saveBookmark();
 
-        $this->withoutExceptionHandling()
-            ->getTestResponse(['untagged' => true])
+        $this->getTestResponse(['untagged' => true])
             ->assertSuccessful()
-            ->assertJsonCount(2, 'data');
+            ->assertJsonCount(2, 'data')
+            ->assertJson(function (AssertableJson $assert) {
+                $link = route('fetchUserBookmarks', [
+                    'per_page' => 15,
+                    'untagged' => 1,
+                    'page' => 1,
+                ]);
+
+                $assert->where('links.first', $link)->etc();
+            });
     }
 
     public function testWillSortBookmarksByOldest(): void
@@ -183,7 +233,16 @@ class FetchUserBookmarksTest extends TestCase
         $response = $this->withoutExceptionHandling()
             ->getTestResponse(['sort' => 'oldest'])
             ->assertSuccessful()
-            ->assertJsonCount(2, 'data');
+            ->assertJsonCount(2, 'data')
+            ->assertJson(function (AssertableJson $assert) {
+                $link = route('fetchUserBookmarks', [
+                    'per_page' => 15,
+                    'sort' => 'oldest',
+                    'page' => 1,
+                ]);
+
+                $assert->where('links.first', $link)->etc();
+            });
 
         $this->assertTrue($bookmarkIDs === collect($response->json('data'))->pluck('attributes.id')->all());
     }
@@ -200,7 +259,17 @@ class FetchUserBookmarksTest extends TestCase
         $response = $this->withoutExceptionHandling()
             ->getTestResponse(['sort' => 'newest'])
             ->assertSuccessful()
-            ->assertJsonCount(2, 'data');
+            ->assertJsonCount(2, 'data')
+            ->assertJson(function (AssertableJson $assert) {
+                $link = route('fetchUserBookmarks', [
+                    'per_page' => 15,
+                    'sort' => 'newest',
+                    'page' => 1,
+                ]);
+
+                $assert->where('links.first', $link)->etc();
+            });
+
 
         $this->assertTrue($bookmarkIDs === collect($response->json('data'))->pluck('attributes.id')->all());
     }

@@ -15,11 +15,10 @@ final class FetchUserBookmarksController
 {
     public function __invoke(FetchUserBookmarksRequest $request, Repository $repository): PaginatedResourceCollection
     {
-        $request->validate(PaginationData::new()->asValidationRules());
+        $result = $repository->userBookmarks(FetchUserBookmarksRequestData::fromRequest($request));
 
-        return new PaginatedResourceCollection(
-            $repository->userBookmarks(FetchUserBookmarksRequestData::fromRequest($request)),
-            BookmarkResource::class
-        );
+        $result->appends('per_page', $request->validated('per_page', PaginationData::DEFAULT_PER_PAGE))->withQueryString();
+
+        return new PaginatedResourceCollection($result, BookmarkResource::class);
     }
 }

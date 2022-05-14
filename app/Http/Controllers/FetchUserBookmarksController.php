@@ -15,7 +15,7 @@ final class FetchUserBookmarksController
 {
     public function __invoke(FetchUserBookmarksRequest $request, Repository $repository): PaginatedResourceCollection
     {
-        $request->validate(PaginationData::rules());
+        $request->validate(PaginationData::new()->asValidationRules());
 
         return new PaginatedResourceCollection(
             $repository->userBookmarks(FetchUserBookmarksRequestData::fromRequest($request)),

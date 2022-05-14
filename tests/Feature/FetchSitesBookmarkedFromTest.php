@@ -31,10 +31,10 @@ class FetchSitesBookmarkedFromTest extends TestCase
                 'per_page' => ['The per page must be at least 15.']
             ]);
 
-        $this->getTestResponse(['per_page' => 40])
+        $this->getTestResponse(['per_page' => 51])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'per_page' => ['The per page must not be greater than 39.']
+                'per_page' => ['The per page must not be greater than 50.']
             ]);
 
         $this->getTestResponse(['page' => 2001])

@@ -16,7 +16,7 @@ final class FetchUserSitesController
 {
     public function __invoke(Request $request, Repository $repository): AnonymousResourceCollection
     {
-        $request->validate(PaginationData::rules());
+        $request->validate(PaginationData::new()->maxPerPage(50)->asValidationRules());
 
         return new PaginatedResourceCollection(
             $repository->get(UserID::fromAuthUser(), PaginationData::fromRequest($request)),

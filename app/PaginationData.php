@@ -11,14 +11,19 @@ final class PaginationData
     /** The default items to be returned perPage */
     public const DEFAULT_PER_PAGE = 15;
 
-    /** Maximum items that can be returned perPage */
-    public const MAX_PER_PAGE = 39;
-
     /** The maximum page that can be requested */
     public const MAX_PAGE = 2000;
 
+    /** Maximum items that can be returned perPage */
+    private int $maxPerPage = 39;
+
     public function __construct(private readonly int $page = 1, private readonly int $perPage = self::DEFAULT_PER_PAGE)
     {
+    }
+
+    public static function new(): self
+    {
+        return new self;
     }
 
     public static function fromRequest(Request $request, string $page = 'page', string $perPage = 'per_page'): self
@@ -30,14 +35,26 @@ final class PaginationData
     }
 
     /**
-     * @return array<string,array> where first key is the 'page' rules and second key the 'per_page' rules
+     * @return array<string,array<string>>
      */
-    public static function rules(): array
+    public function asValidationRules(): array
     {
         return [
             'page' => ['nullable', 'int', 'min:1', 'max:' . self::MAX_PAGE],
-            'per_page' => ['nullable', 'int', 'min:' . self::DEFAULT_PER_PAGE, 'max:' . self::MAX_PER_PAGE],
+            'per_page' => ['nullable', 'int', 'min:' . self::DEFAULT_PER_PAGE, 'max:' . $this->getMaxPerPage()],
         ];
+    }
+
+    public function getMaxPerPage(): int
+    {
+        return $this->maxPerPage;
+    }
+
+    public function maxPerPage(int $value): self
+    {
+        $this->maxPerPage = $value;
+
+        return $this;
     }
 
     public function page(): int
@@ -47,7 +64,7 @@ final class PaginationData
 
     public function perPage(): int
     {
-        return ($this->perPage > self::MAX_PER_PAGE || $this->perPage < self::DEFAULT_PER_PAGE)
+        return ($this->perPage > $this->maxPerPage || $this->perPage < self::DEFAULT_PER_PAGE)
             ? self::DEFAULT_PER_PAGE
             : $this->perPage;
     }

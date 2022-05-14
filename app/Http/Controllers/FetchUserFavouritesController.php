@@ -15,7 +15,7 @@ final class FetchUserFavouritesController
 {
     public function __invoke(Request $request, Repository $repository): PaginatedResourceCollection
     {
-        $request->validate(PaginationData::rules());
+        $request->validate(PaginationData::new()->asValidationRules());
 
         return new PaginatedResourceCollection(
             $repository->get(UserID::fromAuthUser(), PaginationData::fromRequest($request)),

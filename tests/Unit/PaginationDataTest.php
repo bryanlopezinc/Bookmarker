@@ -45,7 +45,7 @@ class PaginationDataTest extends TestCase
 
     public function testWillReturnDefaultIfPerPageIsGreaterThanMaxPerPage(): void
     {
-        request()->merge(['per_page' => PaginationData::MAX_PER_PAGE + 1]);
+        request()->merge(['per_page' => PaginationData::new()->getMaxPerPage() + 1]);
 
         $data = PaginationData::fromRequest(request());
         $this->assertEquals($data::DEFAULT_PER_PAGE, $data->perPage());
@@ -54,6 +54,10 @@ class PaginationDataTest extends TestCase
 
         $data = PaginationData::fromRequest(request());
         $this->assertEquals($data::DEFAULT_PER_PAGE, $data->perPage());
+
+        $data = new PaginationData(1, 50);
+        $data->maxPerPage(50);
+        $this->assertEquals(50, $data->perPage());
     }
 
     public function testWillReturnDefaultIfPerPageIsLessThanDefaultPerPage(): void

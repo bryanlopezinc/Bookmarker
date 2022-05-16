@@ -29,6 +29,13 @@ class FetchUserBookmarksTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
+        $this->getTestResponse(['per_page', 'page'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'per_page' => ['The per page field must have a value.'],
+                'page' => ['The page field must have a value.'],
+            ]);
+
         $this->getTestResponse(['per_page' => 3])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([

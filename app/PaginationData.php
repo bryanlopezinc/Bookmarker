@@ -40,8 +40,8 @@ final class PaginationData
     public function asValidationRules(): array
     {
         return [
-            'page' => ['nullable', 'int', 'min:1', 'max:' . self::MAX_PAGE],
-            'per_page' => ['nullable', 'int', 'min:' . self::DEFAULT_PER_PAGE, 'max:' . $this->getMaxPerPage()],
+            'page' => ['nullable', 'filled', 'int', 'min:1', 'max:' . self::MAX_PAGE],
+            'per_page' => ['nullable', 'filled', 'int', 'min:' . self::DEFAULT_PER_PAGE, 'max:' . $this->getMaxPerPage()],
         ];
     }
 

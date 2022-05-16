@@ -28,4 +28,5 @@ final class Bookmark extends DataTransferObject
     public readonly TimeStamp $timeupdated;
     public readonly WebSite $fromWebSite;
     public readonly TagsCollection $tags;
+    public bool $isDeadLink;
 }

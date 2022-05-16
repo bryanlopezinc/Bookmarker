@@ -104,7 +104,7 @@ class FetchUserBookmarksTest extends TestCase
                 ]
             ]);
 
-        $response->assertJsonStructure([
+        $response->assertJsonCount(14, 'data.0.attributes')->assertJsonStructure([
             'type',
             'attributes' => [
                 'id',
@@ -119,6 +119,7 @@ class FetchUserBookmarksTest extends TestCase
                 'tags',
                 'has_tags',
                 'tags_count',
+                'is_dead_link',
                 'created_on' => [
                     'date_readable',
                     'date_time',

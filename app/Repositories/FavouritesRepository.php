@@ -93,7 +93,7 @@ final class FavouritesRepository
     {
         /** @var Paginator */
         $favourites = Model::WithQueryOptions(BookmarkQueryColumns::new())
-            ->join('favourites', 'bookmark_id', '=', 'bookmarks.id')
+            ->join('favourites', 'favourites.bookmark_id', '=', 'bookmarks.id')
             ->where('favourites.user_id', $userId->toInt())
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
 

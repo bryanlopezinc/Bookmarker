@@ -40,7 +40,7 @@ class AppServiceProvider extends ServiceProvider
 
         if ($this->app->environment('testing')) {
             //Prevent faking http responses for  every route that checks bookmarks health during tests
-            HealthChecker::disable();
+            HealthChecker::enable(false);
         }
     }
 }

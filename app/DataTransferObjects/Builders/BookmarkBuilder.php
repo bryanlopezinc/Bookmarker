@@ -131,6 +131,13 @@ final class BookmarkBuilder extends Builder
         return $this;
     }
 
+    public function isDeadlink(bool $value): self
+    {
+        $this->attributes['isDeadLink'] = $value;
+
+        return $this;
+    }
+
     public function build(): Bookmark
     {
         return new Bookmark($this->attributes);

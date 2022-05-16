@@ -19,14 +19,14 @@ final class HealthChecker
     {
     }
 
-    public static function disable(): void
+    public static function isEnabled(): bool
     {
-        static::$enabled = false;
+        return static::$enabled === true;
     }
 
-    public static function enable(): void
+    public static function enable(bool $enable = true): void
     {
-        static::$enabled = true;
+        static::$enabled = $enable;
     }
 
     public function ping(BookmarksCollection $bookmarks): void

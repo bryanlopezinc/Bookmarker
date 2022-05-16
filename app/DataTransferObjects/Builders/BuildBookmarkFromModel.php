@@ -27,7 +27,8 @@ final class BuildBookmarkFromModel
             ->when($keyExists('created_at'), fn (BookmarkBuilder $b) => $b->bookmarkedOn((string)$model->created_at))
             ->when($keyExists('updated_at'), fn (BookmarkBuilder $b) => $b->updatedAt((string)$model->updated_at))
             ->when($keyExists('tags'), $this->tagsBuilderCallback($attributes))
-            ->when($keyExists('site'), $this->siteBuilderCallback($model));
+            ->when($keyExists('site'), $this->siteBuilderCallback($model))
+            ->when($keyExists('is_dead_link'), fn (BookmarkBuilder $b) => $b->isDeadlink($model->is_dead_link));
     }
 
     private function siteBuilderCallback(Bookmark $bookmark): callable

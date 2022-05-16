@@ -30,7 +30,7 @@ final class BookmarksRepository
     public function findManyById(ResourceIDsCollection $IDs, Columns $columns = new Columns()): Collection
     {
         return Model::WithQueryOptions($columns)
-            ->whereIn('id', $IDs->asIntegers()->unique()->all())
+            ->whereIn('bookmarks.id', $IDs->asIntegers()->unique()->all())
             ->get()
             ->map(function (Model $bookmark) use ($columns): Bookmark {
                 if (!$columns->has('id')) {

@@ -24,18 +24,20 @@ class BookmarkResourceTest extends TestCase
         $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->create())
             ->tags(TagsCollection::createFromStrings($this->faker->words()))
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
+            ->isDeadlink(false)
             ->build();
 
         $response = (new BookmarkResource($bookmark))->toResponse(request());
 
         (new TestResponse($response))
-            ->assertJsonCount(13, 'data.attributes')
+            ->assertJsonCount(14, 'data.attributes')
             ->assertJsonCount(2, 'data')
             ->assertJsonCount(3, 'data.attributes.created_on')
             ->assertJson(function (AssertableJson $assert) {
                 $assert->where('data.attributes.has_tags', true);
                 $assert->where('data.attributes.has_description', true);
-                $assert->where('data.attributes.has_preview_image', true);
+                $assert->where('data.attributes.is_dead_link', false);
+                $assert->where('data.attributes.has_tags', true);
                 $assert->has('data.attributes.preview_image_url');
                 $assert->has('data.attributes.description');
                 $assert->etc();
@@ -56,6 +58,7 @@ class BookmarkResourceTest extends TestCase
                         'tags',
                         'has_tags',
                         'tags_count',
+                        'is_dead_link',
                         'created_on' => [
                             'date_readable',
                             'date_time',
@@ -71,6 +74,7 @@ class BookmarkResourceTest extends TestCase
         $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->create())
             ->tags(TagsCollection::createFromStrings([]))
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
+            ->isDeadlink(false)
             ->build();
 
         $response = (new BookmarkResource($bookmark))->toResponse(request());
@@ -89,6 +93,7 @@ class BookmarkResourceTest extends TestCase
         ]))
             ->tags(TagsCollection::createFromStrings($this->faker->words()))
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
+            ->isDeadlink(false)
             ->build();
 
         $response = (new BookmarkResource($bookmark))->toResponse(request());
@@ -108,6 +113,7 @@ class BookmarkResourceTest extends TestCase
         ]))
             ->tags(TagsCollection::createFromStrings($this->faker->words()))
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
+            ->isDeadlink(false)
             ->build();
 
         $response = (new BookmarkResource($bookmark))->toResponse(request());

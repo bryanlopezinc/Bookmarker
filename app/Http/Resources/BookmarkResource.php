@@ -31,6 +31,7 @@ final class BookmarkResource extends JsonResource
                 'tags' => $this->bookmark->tags->toStringCollection()->all(),
                 'has_tags' => $this->bookmark->tags->isNotEmpty(),
                 'tags_count' => $this->bookmark->tags->count(),
+                'is_dead_link' => $this->bookmark->isDeadLink,
                 'created_on' => [
                     'date_readable' => $this->bookmark->timeCreated->timeStamp->diffForHumans(),
                     'date_time' => $this->bookmark->timeCreated->timeStamp->toDateTimeString(),

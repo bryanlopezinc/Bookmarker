@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Collections\BookmarksCollection;
 use App\Collections\ResourceIDsCollection;
 use App\DataTransferObjects\Bookmark;
+use App\Jobs\CheckBookmarksHealth;
 use App\Policies\EnsureAuthorizedUserOwnsBookmark;
 use App\QueryColumns\BookmarkQueryColumns;
 use App\Repositories\FavouritesRepository;
@@ -41,6 +43,8 @@ final class CreateFavouriteService
         }
 
         $this->repository->createMany($bookmarkIDs, $userId);
+
+        CheckBookmarksHealth::dispatch(new BookmarksCollection($bookmarks));
     }
 
     private function prepareHttpConflictMessage(ResourceIDsCollection $bookmarkIds): string

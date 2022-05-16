@@ -79,7 +79,7 @@ final class BookmarkBuilder extends Builder
         return $this;
     }
 
-    public function description(string $description): self
+    public function description(?string $description): self
     {
         $this->attributes['description'] = new WebPageDescription($description);
 

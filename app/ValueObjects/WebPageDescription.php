@@ -6,7 +6,7 @@ namespace App\ValueObjects;
 
 final class WebPageDescription
 {
-    public function __construct(public readonly string $value)
+    public function __construct(public readonly ?string $value)
     {
     }
 

@@ -75,7 +75,7 @@ class FetchUserBookmarksTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse([])
+        $response = $this->getTestResponse([])
             ->assertSuccessful()
             ->assertJsonCount(10, 'data')
             ->assertJson(function (AssertableJson $json) {
@@ -84,6 +84,7 @@ class FetchUserBookmarksTest extends TestCase
             ->assertJsonCount(2, 'links')
             ->assertJsonCount(4, 'meta')
             ->assertJsonStructure([
+                'data',
                 "links" => [
                     "first",
                     "prev",
@@ -95,6 +96,29 @@ class FetchUserBookmarksTest extends TestCase
                     "has_more_pages",
                 ]
             ]);
+
+        $response->assertJsonStructure([
+            'type',
+            'attributes' => [
+                'id',
+                'title',
+                'web_page_link',
+                'has_preview_image',
+                'preview_image_url',
+                'description',
+                'has_description',
+                'site_id',
+                'from_site',
+                'tags',
+                'has_tags',
+                'tags_count',
+                'created_on' => [
+                    'date_readable',
+                    'date_time',
+                    'date',
+                ]
+            ]
+        ], $response->json('data.0'));
 
         $this->getTestResponse(['per_page' => 20])
             ->assertSuccessful()

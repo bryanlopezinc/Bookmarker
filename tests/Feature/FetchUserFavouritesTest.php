@@ -59,7 +59,7 @@ class FetchUserFavouritesTest extends TestCase
 
         $this->postJson(route('createFavourite'), ['bookmarks' => (string) $bookmarks->pluck('id')->implode(',')])->assertCreated();
 
-        $this->getTestResponse()
+        $response = $this->getTestResponse()
             ->assertSuccessful()
             ->assertJsonCount(5, 'data')
             ->assertJsonStructure([
@@ -74,5 +74,28 @@ class FetchUserFavouritesTest extends TestCase
                     "has_more_pages",
                 ]
             ]);
+
+        $response->assertJsonStructure([
+            'type',
+            'attributes' => [
+                'id',
+                'title',
+                'web_page_link',
+                'has_preview_image',
+                'preview_image_url',
+                'description',
+                'has_description',
+                'site_id',
+                'from_site',
+                'tags',
+                'has_tags',
+                'tags_count',
+                'created_on' => [
+                    'date_readable',
+                    'date_time',
+                    'date',
+                ]
+            ]
+        ], $response->json('data.0'));
     }
 }

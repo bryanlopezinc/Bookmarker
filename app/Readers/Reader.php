@@ -23,40 +23,56 @@ final class Reader
 
     public function getPageDescription(): string|false
     {
-        $description =  $this->dOMXPath->query('//meta[@property="og:description"]/@content')->item(0)?->nodeValue;
-
-        if (!$description) {
-            $description = $this->dOMXPath->query('//meta[@name="description"]/@content')->item(0)?->nodeValue;
-        }
+        $description = $this->evalute(
+            '//meta[@property="og:description"]/@content',
+            '//meta[@name="description"]/@content'
+        )->item(0)?->nodeValue;
 
         return $this->filterValue($description);
+    }
+
+    /**
+     * Evaluate the given Xpath Expressions (in order parsed) and return the DOMNodeList when any (or none) expression passes.
+     * The return is false if the expression is malformed or the contextnode is invalid.
+     */
+    private function evalute(string ...$expressions): \DOMNodeList|false
+    {
+        $DOMNodeList = false;
+
+        foreach (func_get_args() as $expression) {
+            $DOMNodeList = $this->dOMXPath->query($expression);
+
+            if ($DOMNodeList->count() > 0) {
+                break;
+            }
+        }
+
+        return $DOMNodeList;
     }
 
     public function getPreviewImageUrl(): Url|false
     {
         return Url::tryFromString(
-            $this->dOMXPath->query('//meta[@property="og:image"]/@content')->item(0)?->nodeValue
+            $this->evalute('//meta[@property="og:image"]/@content')->item(0)?->nodeValue
         );
     }
 
     public function getPageTitle(): string|false
     {
-        $title = $this->dOMXPath->query('//meta[@property="og:title"]/@content')->item(0)?->nodeValue;
-
-        if (!$title) {
-            $title = $this->dOMXPath->query('/html/head/title')->item(0)?->nodeValue;
-        }
+        $title = $this->evalute(
+            '//meta[@property="og:title"]/@content',
+            '/html/head/title'
+        )->item(0)?->nodeValue;
 
         return $this->filterValue($title);
     }
 
     public function getSiteName(): string|false
     {
-        $name = $this->dOMXPath->query('//meta[@name="application-name"]/@content')->item(0)?->nodeValue;
-
-        if (!$name) {
-            $name = $this->dOMXPath->query('//meta[@property="og:site_name"]/@content')->item(0)?->nodeValue;
-        }
+        $name = $this->evalute(
+            '//meta[@name="application-name"]/@content',
+            '//meta[@property="og:site_name"]/@content'
+        )->item(0)?->nodeValue;
 
         return $this->filterValue($name);
     }

@@ -12,9 +12,6 @@ use Illuminate\Validation\Validator;
 
 final class LoginUserRequest extends FormRequest
 {
-    /**
-     * {@inheritdoc}
-     */
     public function rules(): array
     {
         return [

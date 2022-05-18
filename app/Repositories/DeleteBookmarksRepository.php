@@ -19,21 +19,20 @@ final class DeleteBookmarksRepository
     ) {
     }
 
-    public function deleteMany(ResourceIDsCollection $bookmarkIds, UserID $userId): bool
+    public function deleteManyFor(UserID $userId, ResourceIDsCollection $bookmarkIds): bool
     {
         // Get the count of bookmarks in user favourites table
         //which will be cascade deleted from user favourites table.
-        $totalFavouritedToBeDeleted = $this->getFavouritedBookmarksCount($bookmarkIds, $userId);
+        $totalFavouritedToBeDeleted = $this->getFavouritedBookmarksCountFrom($bookmarkIds, $userId);
 
-        $totalBookmarksDeleted = Model::query()->whereIn('id', $bookmarkIds->asIntegers())->delete();
+        $totalBookmarksDeleted = Model::query()->where('user_id', $userId->toInt())->whereIn('id', $bookmarkIds->asIntegers())->delete();
 
-        if ($totalBookmarksDeleted > 0) {
-            $this->bookmarksCountRepository->decrementUserBookmarksCount($userId, $totalBookmarksDeleted);
-        }
+        $this->bookmarksCountRepository->decrementUserBookmarksCount($userId, $totalBookmarksDeleted);
 
-        if ($totalFavouritedToBeDeleted > 0) {
-            $this->favouritesRepository->decrementFavouritesCount($userId, $totalFavouritedToBeDeleted);
-        }
+        $this->favouritesRepository->decrementFavouritesCount(
+            $userId,
+            $totalBookmarksDeleted ? $totalFavouritedToBeDeleted : 0
+        );
 
         return (bool) $totalBookmarksDeleted;
     }
@@ -42,7 +41,7 @@ final class DeleteBookmarksRepository
      * Get  the total amount of bookmarks that was added to favourites by user
      * from the bookmarkIDs to be deleted.
      */
-    private function getFavouritedBookmarksCount(ResourceIDsCollection $bookmarkIds, UserID $userId): int
+    private function getFavouritedBookmarksCountFrom(ResourceIDsCollection $bookmarkIds, UserID $userId): int
     {
         return Favourite::query()
             ->where('user_id', $userId->toInt())
@@ -62,7 +61,7 @@ final class DeleteBookmarksRepository
 
             // Get the count of bookmarks in user favourites table
             //which will be cascade deleted from user favourites table.
-            $totalFavouritedToBeDeleted = $this->getFavouritedBookmarksCount(
+            $totalFavouritedToBeDeleted = $this->getFavouritedBookmarksCountFrom(
                 ResourceIDsCollection::fromNativeTypes($chunk->pluck('id')->all()),
                 $userId
             );

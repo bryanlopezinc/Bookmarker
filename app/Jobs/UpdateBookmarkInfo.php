@@ -26,9 +26,9 @@ final class UpdateBookmarkInfo implements ShouldQueue
     {
         $data = $client->getWebPageData($this->bookmark);
 
-        (new Actions\UpdateBookmarkImageUrlWithMetaTag($data))($this->bookmark);
-        (new Actions\UpdateBookmarkDescriptionWithMetaTag($data))($this->bookmark);
-        (new Actions\UpdateSiteNameWithMetaTag($data))($this->bookmark);
-        (new Actions\UpdateBookmarkTitleWithMetaTag($data))($this->bookmark);
+        (new Actions\UpdateBookmarkThumbnailWithWebPageImage($data))($this->bookmark);
+        (new Actions\UpdateBookmarkDescriptionWithWebPageDescription($data))($this->bookmark);
+        (new Actions\UpdateSiteNameWithWebPageSiteName($data))($this->bookmark);
+        (new Actions\UpdateBookmarkTitleWithWebPageTitle($data))($this->bookmark);
     }
 }

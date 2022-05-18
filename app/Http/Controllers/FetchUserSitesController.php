@@ -12,6 +12,9 @@ use App\ValueObjects\UserID;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
+/**
+ * Fetch all the websites user has bookmarked a page from.
+ */
 final class FetchUserSitesController
 {
     public function __invoke(Request $request, Repository $repository): AnonymousResourceCollection

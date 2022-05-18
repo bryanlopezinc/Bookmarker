@@ -18,13 +18,17 @@ final class BookmarksCountRepository
 
         $bookmarksCount = UserResourcesCount::query()->firstOrCreate($attributes, ['count' => 1, ...$attributes]);
 
-        if ( ! $bookmarksCount->wasRecentlyCreated) {
+        if (!$bookmarksCount->wasRecentlyCreated) {
             $bookmarksCount->increment('count');
         }
     }
 
     public function decrementUserBookmarksCount(UserID $userId, int $count = 1): void
     {
+        if ($count < 1) {
+            return;
+        }
+
         UserResourcesCount::query()->where([
             'user_id' => $userId->toInt(),
             'type' => UserResourcesCount::BOOKMARKS_TYPE

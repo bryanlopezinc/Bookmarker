@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Actions;
 
-use App\Actions\UpdateSiteNameWithMetaTag as UpdateSiteName;
+use App\Actions\UpdateSiteNameWithWebPageSiteName as UpdateSiteName;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\Builders\SiteBuilder;
 use App\Models\WebSite;
@@ -17,7 +17,7 @@ use Tests\TestCase;
 class UpdateSiteNameWithMetaTagTest extends TestCase
 {
     use WithFaker;
-    
+
     public function testWillUpdateName(): void
     {
         $bookmark = BookmarkBuilder::new()

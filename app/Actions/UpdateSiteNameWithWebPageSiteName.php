@@ -8,7 +8,7 @@ use App\DataTransferObjects\Bookmark;
 use App\Models\WebSite;
 use App\Readers\WebPageData;
 
-final class UpdateSiteNameWithMetaTag
+final class UpdateSiteNameWithWebPageSiteName
 {
     public function __construct(private WebPageData $pageData)
     {

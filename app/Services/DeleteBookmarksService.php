@@ -30,6 +30,6 @@ final class DeleteBookmarksService
 
         $bookmarks->each(new EnsureAuthorizedUserOwnsBookmark);
 
-        $this->deleteBookmarks->deleteMany($bookmarkIds, UserID::fromAuthUser());
+        $this->deleteBookmarks->deleteManyFor(UserID::fromAuthUser(), $bookmarkIds);
     }
 }

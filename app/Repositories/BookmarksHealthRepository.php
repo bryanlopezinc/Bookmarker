@@ -10,7 +10,7 @@ use App\ValueObjects\ResourceID;
 
 final class BookmarksHealthRepository
 {
-    /** frequency in days a bookmark should be checked */
+    /** frequency in days a bookmarks health should be checked */
     private const CHECK_FREQUENCY = 6;
 
     /**
@@ -34,7 +34,7 @@ final class BookmarksHealthRepository
 
     /**
      * @param array<int,bool> $records An associative array of health check data
-     *  where each key is the bookmarkID and the value the heathCheck.
+     *  where each key is the bookmarkID and the value a bool indicationg if the heathCheck passed or failed.
      */
     public function update(array $records): void
     {

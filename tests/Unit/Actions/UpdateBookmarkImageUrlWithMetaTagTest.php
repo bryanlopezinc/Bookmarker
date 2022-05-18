@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Actions;
 
-use App\Actions\UpdateBookmarkImageUrlWithMetaTag as UpdateBookmarkImage;
+use App\Actions\UpdateBookmarkThumbnailWithWebPageImage as UpdateBookmarkImage;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\Models\Bookmark;
 use App\Readers\WebPageData;
@@ -16,7 +16,7 @@ use Tests\TestCase;
 class UpdateBookmarkImageUrlWithMetaTagTest extends TestCase
 {
     use WithFaker;
-    
+
     public function testWillUpdateImageUrl(): void
     {
         $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->create())->build();

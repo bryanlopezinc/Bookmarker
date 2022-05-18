@@ -8,7 +8,7 @@ use App\DataTransferObjects\Bookmark;
 use App\Models\Bookmark as Model;
 use App\Readers\WebPageData;
 
-final class UpdateBookmarkDescriptionWithMetaTag
+final class UpdateBookmarkDescriptionWithWebPageDescription
 {
     public function __construct(private WebPageData $pageData)
     {

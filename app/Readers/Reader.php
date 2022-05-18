@@ -33,7 +33,7 @@ final class Reader
     }
 
     /**
-     * Evaluate the given Xpath Expressions (in order parsed) and return the DOMNodeList when any (or none) expression passes.
+     * Evaluate the given Xpath Expressions (in order parsed) and return the DOMNodeList when any (or none) of the expression passes.
      * The return is false if the expression is malformed or the contextnode is invalid.
      */
     private function evalute(string ...$expressions): \DOMNodeList|false

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Actions;
 
-use App\Actions\UpdateBookmarkDescriptionWithMetaTag as UpdateBookmarkDescription;
+use App\Actions\UpdateBookmarkDescriptionWithWebPageDescription as UpdateBookmarkDescription;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\Models\Bookmark;
 use App\Readers\WebPageData;

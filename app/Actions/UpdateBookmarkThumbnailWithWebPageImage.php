@@ -8,7 +8,7 @@ use App\Models\Bookmark as Model;
 use App\DataTransferObjects\Bookmark;
 use App\Readers\WebPageData;
 
-final class UpdateBookmarkImageUrlWithMetaTag
+final class UpdateBookmarkThumbnailWithWebPageImage
 {
     public function __construct(private WebPageData $pageData)
     {

@@ -49,7 +49,7 @@ final class HealthChecker
     }
 
     /**
-     * @return array<int,Response>
+     * @return array<int,Response> Each key in the array is the bookmarkID and value the corresponding http response.
      */
     private function getResponse(BookmarksCollection $bookmarks): array
     {

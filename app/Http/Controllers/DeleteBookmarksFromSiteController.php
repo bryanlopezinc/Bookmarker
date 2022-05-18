@@ -11,6 +11,9 @@ use App\ValueObjects\ResourceID;
 use Illuminate\Http\JsonResponse;
 use App\ValueObjects\UserID;
 
+/**
+ * Delete all bookmarks that were added from a particular site.
+ */
 final class DeleteBookmarksFromSiteController
 {
     public function __invoke(Request $request, DeleteBookmarksRepository $repository): JsonResponse

@@ -10,10 +10,11 @@ use App\PaginationData;
 use App\Repositories\TagsRepository;
 use App\ValueObjects\UserID;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 final class FetchUserTagsController
 {
-    public function __invoke(Request $request, TagsRepository $repository)
+    public function __invoke(Request $request, TagsRepository $repository): AnonymousResourceCollection
     {
         $request->validate(PaginationData::new()->maxPerPage(50)->asValidationRules());
 

@@ -80,6 +80,10 @@ final class FavouritesRepository
 
     public function decrementFavouritesCount(UserID $userId, int $amount = 1): void
     {
+        if ($amount < 1) {
+            return;
+        }
+
         UserResourcesCount::query()->where([
             'user_id' => $userId->toInt(),
             'type' => UserResourcesCount::FAVOURITES_TYPE

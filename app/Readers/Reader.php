@@ -25,7 +25,8 @@ final class Reader
     {
         $description = $this->evalute(
             '//meta[@property="og:description"]/@content',
-            '//meta[@name="description"]/@content'
+            '//meta[@name="description"]/@content',
+            '//meta[@name="twitter:description"]/@content'
         )->item(0)?->nodeValue;
 
         return $this->filterValue($description);
@@ -53,7 +54,10 @@ final class Reader
     public function getPreviewImageUrl(): Url|false
     {
         return Url::tryFromString(
-            $this->evalute('//meta[@property="og:image"]/@content')->item(0)?->nodeValue
+            $this->evalute(
+                '//meta[@property="og:image"]/@content',
+                '//meta[@name="twitter:image"]/@content'
+            )->item(0)?->nodeValue
         );
     }
 
@@ -61,7 +65,8 @@ final class Reader
     {
         $title = $this->evalute(
             '//meta[@property="og:title"]/@content',
-            '/html/head/title'
+            '/html/head/title',
+            '//meta[@name="twitter:title"]/@content'
         )->item(0)?->nodeValue;
 
         return $this->filterValue($title);
@@ -71,7 +76,8 @@ final class Reader
     {
         $name = $this->evalute(
             '//meta[@name="application-name"]/@content',
-            '//meta[@property="og:site_name"]/@content'
+            '//meta[@property="og:site_name"]/@content',
+            '//meta[@name="twitter:site"]/@content'
         )->item(0)?->nodeValue;
 
         return $this->filterValue($name);

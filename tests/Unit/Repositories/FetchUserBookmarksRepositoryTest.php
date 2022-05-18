@@ -3,11 +3,10 @@
 namespace Tests\Unit\Repositories;
 
 use App\Collections\TagsCollection;
-use App\DataTransferObjects\FetchUserBookmarksRequestData as Data;
+use App\DataTransferObjects\UserBookmarksFilters as Data;
 use App\Repositories\BookmarksRepository;
 use App\Repositories\TagsRepository;
 use App\ValueObjects\ResourceID;
-use App\ValueObjects\Tag;
 use App\ValueObjects\UserID;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\SiteFactory;

@@ -12,7 +12,7 @@ use App\ValueObjects\ResourceID;
 use App\ValueObjects\Tag;
 use App\ValueObjects\UserID;
 
-final class FetchUserBookmarksRequestData extends DataTransferObject
+final class UserBookmarksFilters extends DataTransferObject
 {
     public readonly UserID $userId;
     public readonly ResourceID $siteId;

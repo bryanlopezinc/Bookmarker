@@ -15,7 +15,7 @@ class ServiceProvider extends Provider implements DeferrableProvider
      */
     public function boot()
     {
-        $this->app->bind(IpGeoLocatorInterface::class, fn () => new IpGeoLocationHttpClient);
+        $this->app->bind(IpGeoLocatorInterface::class, fn () => app(IpGeoLocationHttpClient::class));
     }
 
     public function provides(): array

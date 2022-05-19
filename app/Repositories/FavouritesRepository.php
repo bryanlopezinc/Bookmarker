@@ -102,7 +102,21 @@ final class FavouritesRepository
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
 
         return $favourites->setCollection(
-            $favourites->getCollection()->map(fn (Model $bookmark) => BookmarkBuilder::fromModel($bookmark)->build())
+            $favourites->getCollection()->map(fn (Model $bookmark) => BookmarkBuilder::fromModel($bookmark)->isUserFavourite(true)->build())
         );
+    }
+
+    /**
+     * Get only the bookmark IDs which exists in user favourites record from the given bookmarkIDs.
+     */
+    public function getUserFavouritesFrom(ResourceIDsCollection $bookmarkIDs, UserID $userID): ResourceIDsCollection
+    {
+        return Favourite::query()
+            ->where('user_id', $userID->toInt())
+            ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
+            ->get(['bookmark_id'])
+            ->pluck('bookmark_id')
+            ->map(fn (int $id) => new ResourceID($id))
+            ->pipeInto(ResourceIDsCollection::class);
     }
 }

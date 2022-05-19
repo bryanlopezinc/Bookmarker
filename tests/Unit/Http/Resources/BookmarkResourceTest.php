@@ -25,12 +25,13 @@ class BookmarkResourceTest extends TestCase
             ->tags(TagsCollection::createFromStrings($this->faker->words()))
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
             ->isDeadlink(false)
+            ->isUserFavourite(false)
             ->build();
 
         $response = (new BookmarkResource($bookmark))->toResponse(request());
 
         (new TestResponse($response))
-            ->assertJsonCount(14, 'data.attributes')
+            ->assertJsonCount(15, 'data.attributes')
             ->assertJsonCount(2, 'data')
             ->assertJsonCount(3, 'data.attributes.created_on')
             ->assertJson(function (AssertableJson $assert) {
@@ -59,6 +60,7 @@ class BookmarkResourceTest extends TestCase
                         'has_tags',
                         'tags_count',
                         'is_dead_link',
+                        'is_user_favourite',
                         'created_on' => [
                             'date_readable',
                             'date_time',
@@ -75,6 +77,7 @@ class BookmarkResourceTest extends TestCase
             ->tags(TagsCollection::createFromStrings([]))
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
             ->isDeadlink(false)
+            ->isUserFavourite(false)
             ->build();
 
         $response = (new BookmarkResource($bookmark))->toResponse(request());
@@ -94,6 +97,7 @@ class BookmarkResourceTest extends TestCase
             ->tags(TagsCollection::createFromStrings($this->faker->words()))
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
             ->isDeadlink(false)
+            ->isUserFavourite(false)
             ->build();
 
         $response = (new BookmarkResource($bookmark))->toResponse(request());
@@ -114,6 +118,7 @@ class BookmarkResourceTest extends TestCase
             ->tags(TagsCollection::createFromStrings($this->faker->words()))
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
             ->isDeadlink(false)
+            ->isUserFavourite(false)
             ->build();
 
         $response = (new BookmarkResource($bookmark))->toResponse(request());

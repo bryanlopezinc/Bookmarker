@@ -138,6 +138,13 @@ final class BookmarkBuilder extends Builder
         return $this;
     }
 
+    public function isUserFavourite(bool $value): self
+    {
+        $this->attributes['isUserFavourite'] = $value;
+
+        return $this;
+    }
+
     public function build(): Bookmark
     {
         return new Bookmark($this->attributes);

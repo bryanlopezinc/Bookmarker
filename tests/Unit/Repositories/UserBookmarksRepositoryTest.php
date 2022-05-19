@@ -3,9 +3,11 @@
 namespace Tests\Unit\Repositories;
 
 use App\Collections\TagsCollection;
+use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\UserBookmarksFilters as Data;
-use App\Repositories\BookmarksRepository;
+use App\Models\Favourite;
 use App\Repositories\TagsRepository;
+use App\Repositories\UserBookmarksRepository;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Database\Factories\BookmarkFactory;
@@ -13,15 +15,15 @@ use Database\Factories\SiteFactory;
 use Database\Factories\UserFactory;
 use Tests\TestCase;
 
-class FetchUserBookmarksRepositoryTest extends TestCase
+class UserBookmarksRepositoryTest extends TestCase
 {
-    private BookmarksRepository $repository;
+    private UserBookmarksRepository $repository;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->repository = app(BookmarksRepository::class);
+        $this->repository = app(UserBookmarksRepository::class);
     }
 
     public function testWillFetchUserBookmarks(): void
@@ -32,6 +34,7 @@ class FetchUserBookmarksRepositoryTest extends TestCase
 
         foreach ($this->repository->userBookmarks(Data::fromArray(['userId' => new UserID($userId)])) as $bookmark) {
             $this->assertTrue($userId === $bookmark->ownerId->toInt());
+            $this->assertFalse($bookmark->isUserFavourite);
         }
     }
 
@@ -74,5 +77,25 @@ class FetchUserBookmarksRepositoryTest extends TestCase
         $this->assertCount(1, $result);
 
         $this->assertEquals($models[0]->id, $result[0]->id->toInt());
+    }
+
+    public function testWillSetIsUserFavourite(): void
+    {
+        $bookmarks = BookmarkFactory::new()->count(5)->create([
+            'user_id' => $userId = UserFactory::new()->create()->id
+        ]);
+
+        Favourite::query()->create([
+            'bookmark_id' => $favouriteID = $bookmarks->first()->id,
+            'user_id' => $userId
+        ]);
+
+        /** @var Bookmark */
+        $bookmark = $this->repository->userBookmarks(Data::fromArray(['userId' => new UserID($userId)]))
+            ->getCollection()
+            ->filter(fn (Bookmark $bookmark) => $bookmark->id->toInt() === $favouriteID)
+            ->sole();
+
+        $this->assertTrue($bookmark->isUserFavourite);
     }
 }

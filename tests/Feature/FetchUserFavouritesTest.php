@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
+use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
@@ -62,6 +63,11 @@ class FetchUserFavouritesTest extends TestCase
         $response = $this->getTestResponse()
             ->assertSuccessful()
             ->assertJsonCount(5, 'data')
+            ->assertJson(function (AssertableJson $json) {
+                $json->etc()->fromArray($json->toArray()['data'])->each(function (AssertableJson $json) {
+                    $json->where('attributes.is_user_favourite', true)->etc();
+                })->etc();
+            })
             ->assertJsonStructure([
                 "links" => [
                     "first",

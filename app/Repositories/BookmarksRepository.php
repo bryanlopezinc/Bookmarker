@@ -9,10 +9,7 @@ use App\ValueObjects\ResourceID;
 use App\Models\Bookmark as Model;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
-use App\DataTransferObjects\UserBookmarksFilters;
 use App\QueryColumns\BookmarkQueryColumns as Columns;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 
 final class BookmarksRepository
@@ -39,38 +36,5 @@ final class BookmarksRepository
 
                 return BookmarkBuilder::fromModel($bookmark)->build();
             })->pipeInto(Collection::class);
-    }
-
-    /**
-     * @return Paginator<Bookmark>
-     */
-    public function userBookmarks(UserBookmarksFilters $filters): Paginator
-    {
-        $builder = Model::WithQueryOptions(new Columns());
-
-        if ($filters->hasCustomSite) {
-            $builder->where('site_id', $filters->siteId->toInt());
-        }
-
-        if ($filters->hasTags) {
-            $builder->whereHas('tags', function (Builder $builder) use ($filters) {
-                $builder->whereIn('name', $filters->tags->toStringCollection()->uniqueStrict()->all());
-            });
-        }
-
-        if ($filters->wantsUntaggedBookmarks) {
-            $builder->whereDoesntHave('tags');
-        };
-
-        if ($filters->hasSortCriteria) {
-            $builder->orderBy('bookmarks.id', $filters->sortCriteria->value);
-        }
-
-        /** @var Paginator */
-        $result = $builder->where('user_id', $filters->userId->toInt())->simplePaginate($filters->pagination->perPage(), page: $filters->pagination->page());
-
-        return $result->setCollection(
-            $result->getCollection()->map(fn (Model $bookmark) => BookmarkBuilder::fromModel($bookmark)->build())
-        );
     }
 }

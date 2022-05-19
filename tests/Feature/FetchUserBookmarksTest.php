@@ -86,7 +86,12 @@ class FetchUserBookmarksTest extends TestCase
             ->assertSuccessful()
             ->assertJsonCount(10, 'data')
             ->assertJson(function (AssertableJson $json) {
-                $json->where('links.first', route('fetchUserBookmarks', ['per_page' => 15, 'page' => 1]))->etc();
+                $json->etc()
+                    ->where('links.first', route('fetchUserBookmarks', ['per_page' => 15, 'page' => 1]))
+                    ->fromArray($json->toArray()['data'])
+                    ->each(function (AssertableJson $json) {
+                        $json->where('attributes.is_user_favourite', false)->etc();
+                    });
             })
             ->assertJsonCount(2, 'links')
             ->assertJsonCount(4, 'meta')
@@ -104,7 +109,7 @@ class FetchUserBookmarksTest extends TestCase
                 ]
             ]);
 
-        $response->assertJsonCount(14, 'data.0.attributes')->assertJsonStructure([
+        $response->assertJsonCount(15, 'data.0.attributes')->assertJsonStructure([
             'type',
             'attributes' => [
                 'id',
@@ -120,6 +125,7 @@ class FetchUserBookmarksTest extends TestCase
                 'has_tags',
                 'tags_count',
                 'is_dead_link',
+                'is_user_favourite',
                 'created_on' => [
                     'date_readable',
                     'date_time',
@@ -317,5 +323,33 @@ class FetchUserBookmarksTest extends TestCase
         $this->getTestResponse(['per_page' => 17])
             ->assertSuccessful()
             ->assertJsonCount(17, 'data');
+    }
+
+    public function test_is_user_favourite_attribute_will_be_true(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $bookmarks = BookmarkFactory::new()->count(5)->create([
+            'user_id' => $user->id
+        ]);
+
+        //Add first bookmark to favourites.
+        $this->postJson(route('createFavourite'), ['bookmarks' => (string) $bookmarks->first()->id])->assertCreated();
+
+        $this->getTestResponse([])
+            ->assertSuccessful()
+            ->assertJson(function (AssertableJson $json) {
+                $data = $json->toArray()['data'];
+
+                //The first bookmark 'is_user_favourite 'attribute is equal to true .
+                array_shift($data);
+
+                $json->etc()
+                    ->where('data.0.attributes.is_user_favourite', true)
+                    ->fromArray($data)
+                    ->each(function (AssertableJson $json) {
+                        $json->where('attributes.is_user_favourite', false)->etc();
+                    });
+            });
     }
 }

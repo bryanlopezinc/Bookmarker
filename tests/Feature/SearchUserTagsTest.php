@@ -14,7 +14,7 @@ class SearchUserTagsTest extends TestCase
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
-        return $this->postJson(route('searchUserTags'), $parameters);
+        return $this->getJson(route('searchUserTags', $parameters));
     }
 
     public function testIsAccessibleViaPath(): void
@@ -40,6 +40,13 @@ class SearchUserTagsTest extends TestCase
 
         $this->saveBookmark(['tags' => [$tag = $this->faker->word]]);
 
-        $this->getTestResponse(['tag' => $tag])->assertJsonCount(1, 'data')->assertSuccessful();
+        $this->getTestResponse(['tag' => $tag])
+            ->assertJsonCount(1, 'data')
+            ->assertSuccessful()
+            ->assertExactJson([
+                'data' => [
+                    ['name' => $tag]
+                ]
+            ]);
     }
 }

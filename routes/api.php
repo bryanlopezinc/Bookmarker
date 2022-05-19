@@ -11,7 +11,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('users/favourites', Controllers\FetchUserFavouritesController::class)->name('fetchUserFavourites');
     Route::get('users/sites', Controllers\FetchUserSitesController::class)->name('fetchUserSites');
     Route::get('users/tags', Controllers\FetchUserTagsController::class)->name('userTags');
-    Route::post('users/tags/search', Controllers\SearchUserTagsController::class)->name('searchUserTags');
+    Route::get('users/tags/search', Controllers\SearchUserTagsController::class)->name('searchUserTags');
 
     Route::get('users/bookmarks', Controllers\FetchUserBookmarksController::class)
         ->middleware([ConvertStringToArray::keys('tags')])

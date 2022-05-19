@@ -2,11 +2,11 @@
 
 namespace Tests\Unit\Repositories;
 
-use App\Models\BookmarkHealth;
 use App\QueryColumns\BookmarkQueryColumns as BookmarkColumns;
 use App\Repositories\BookmarksRepository;
 use App\ValueObjects\ResourceID;
 use Database\Factories\BookmarkFactory;
+use Database\Factories\BookmarkHealthFactory;
 use Tests\TestCase;
 
 class BookmarksRepositoryTest extends TestCase
@@ -62,10 +62,8 @@ class BookmarksRepositoryTest extends TestCase
     {
         $model = BookmarkFactory::new()->create();
 
-        BookmarkHealth::query()->create([
+        BookmarkHealthFactory::new()->create([
             'bookmark_id' => $model->id,
-            'is_healthy' => true,
-            'last_checked' => now()
         ]);
 
         $bookmark = $this->repository->findById(new ResourceID($model->id));
@@ -77,10 +75,8 @@ class BookmarksRepositoryTest extends TestCase
     {
         $model = BookmarkFactory::new()->create();
 
-        BookmarkHealth::query()->create([
+        BookmarkHealthFactory::new()->unHealthy()->create([
             'bookmark_id' => $model->id,
-            'is_healthy' => false,
-            'last_checked' => now()
         ]);
 
         $bookmark = $this->repository->findById(new ResourceID($model->id));

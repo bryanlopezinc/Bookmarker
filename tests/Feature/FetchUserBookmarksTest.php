@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Bookmark;
-use App\Models\BookmarkHealth;
 use Database\Factories\BookmarkFactory;
+use Database\Factories\BookmarkHealthFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
@@ -349,10 +349,8 @@ class FetchUserBookmarksTest extends TestCase
 
         $bookmarkWithDeadLink = $userBookmarks->last();
 
-        BookmarkHealth::query()->create([
+        BookmarkHealthFactory::new()->unHealthy()->create([
             'bookmark_id' => $bookmarkWithDeadLink->id,
-            'is_healthy' => false,
-            'last_checked' => today()
         ]);
 
         $this->getTestResponse(['dead_links' => true])

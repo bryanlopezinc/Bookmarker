@@ -8,6 +8,7 @@ use App\Models\BookmarkHealth;
 use App\Repositories\BookmarksHealthRepository;
 use App\ValueObjects\ResourceID;
 use Database\Factories\BookmarkFactory;
+use Database\Factories\BookmarkHealthFactory;
 use Tests\TestCase;
 
 class BookmarksHealthRepositoryTest extends TestCase
@@ -17,22 +18,16 @@ class BookmarksHealthRepositoryTest extends TestCase
         /** @var array<ResourceID> */
         $ids = BookmarkFactory::new()->count(3)->create()->map(fn (Bookmark $model) => new ResourceID($model->id))->all();
 
-        BookmarkHealth::insert([
-            [
-                'bookmark_id' => $ids[0]->toInt(),
-                'is_healthy' => true,
-                'last_checked' => now()->yesterday()
-            ],
-            [
-                'bookmark_id' => $ids[1]->toInt(),
-                'is_healthy' => true,
-                'last_checked' => now()->subDays(6)
-            ],
-            [
-                'bookmark_id' => $ids[2]->toInt(),
-                'is_healthy' => true,
-                'last_checked' => now()->subDays(7)
-            ]
+        BookmarkHealthFactory::new()->create([
+            'bookmark_id' => $ids[0]->toInt(),
+        ]);
+
+        BookmarkHealthFactory::new()->checkedDaysAgo(6)->create([
+            'bookmark_id' => $ids[1]->toInt(),
+        ]);
+
+        BookmarkHealthFactory::new()->checkedDaysAgo(7)->create([
+            'bookmark_id' => $ids[2]->toInt(),
         ]);
 
         $result = (new BookmarksHealthRepository)->whereNotRecentlyChecked(new ResourceIDsCollection($ids));
@@ -46,9 +41,8 @@ class BookmarksHealthRepositoryTest extends TestCase
     {
         $bookmark = BookmarkFactory::new()->create();
 
-        BookmarkHealth::create([
+        BookmarkHealthFactory::new()->create([
             'bookmark_id' => $bookmark->id,
-            'is_healthy' => true,
             'last_checked' => now()->subDays(7)
         ]);
 
@@ -70,10 +64,8 @@ class BookmarksHealthRepositoryTest extends TestCase
 
         $time = now()->toDateString();
 
-        BookmarkHealth::query()->create([
+        BookmarkHealthFactory::new()->create([
             'bookmark_id' => $first->toInt(),
-            'is_healthy' => true,
-            'last_checked' => now(),
         ]);
 
         (new BookmarksHealthRepository)->update([

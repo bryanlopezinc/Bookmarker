@@ -9,6 +9,7 @@ use App\Repositories\DeleteBookmarksRepository;
 use App\ValueObjects\UserID;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
+use Database\Factories\UserResourceCountFactory;
 use Tests\TestCase;
 
 class DeleteBookmarksRepositoryTest extends TestCase
@@ -35,17 +36,14 @@ class DeleteBookmarksRepositoryTest extends TestCase
             'user_id' => $user->id,
         ]);
 
-        UserResourcesCount::insert([
-            [
-                'user_id' => $user->id,
-                'count'   => 1,
-                'type' => UserResourcesCount::FAVOURITES_TYPE
-            ],
-            [
-                'user_id' => $user->id,
-                'count'   => 10,
-                'type' => UserResourcesCount::BOOKMARKS_TYPE
-            ]
+        UserResourceCountFactory::new()->favourite()->create([
+            'user_id' => $user->id,
+            'count'   => 1,
+        ]);
+
+        UserResourceCountFactory::new()->bookmark()->create([
+            'user_id' => $user->id,
+            'count'   => 10,
         ]);
 
         $this->repository->deleteManyFor(
@@ -80,17 +78,14 @@ class DeleteBookmarksRepositoryTest extends TestCase
             'user_id' => $user->id,
         ]);
 
-        UserResourcesCount::insert([
-            [
-                'user_id' => $user->id,
-                'count'   => 1,
-                'type' => UserResourcesCount::FAVOURITES_TYPE
-            ],
-            [
-                'user_id' => $user->id,
-                'count'   => 10,
-                'type' => UserResourcesCount::BOOKMARKS_TYPE
-            ]
+        UserResourceCountFactory::new()->favourite()->create([
+            'user_id' => $user->id,
+            'count'   => 1,
+        ]);
+
+        UserResourceCountFactory::new()->bookmark()->create([
+            'user_id' => $user->id,
+            'count'   => 10,
         ]);
 
         //delete all except last one which was added to favourites

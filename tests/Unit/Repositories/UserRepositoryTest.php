@@ -3,11 +3,11 @@
 namespace Tests\Unit\Repositories;
 
 use App\Models\User as Model;
-use App\Models\UserResourcesCount;
 use App\QueryColumns\UserQueryColumns;
 use App\Repositories\UserRepository;
 use App\ValueObjects\Username;
 use Database\Factories\UserFactory;
+use Database\Factories\UserResourceCountFactory;
 use Tests\TestCase;
 
 class UserRepositoryTest extends TestCase
@@ -33,10 +33,9 @@ class UserRepositoryTest extends TestCase
         /** @var Model */
         $model = UserFactory::new()->create();
 
-        UserResourcesCount::query()->create([
+        UserResourceCountFactory::new()->bookmark()->create([
             'user_id' => $model->id,
             'count' => 100,
-            'type' => UserResourcesCount::BOOKMARKS_TYPE
         ]);
 
         $this->assertSame(100, (new UserRepository)->findByUsername(Username::fromString($model->username))->bookmarksCount->value);
@@ -47,10 +46,9 @@ class UserRepositoryTest extends TestCase
         /** @var Model */
         $model = UserFactory::new()->create();
 
-        UserResourcesCount::query()->create([
+        UserResourceCountFactory::new()->favourite()->create([
             'user_id' => $model->id,
             'count' => 45,
-            'type' => UserResourcesCount::FAVOURITES_TYPE
         ]);
 
         $this->assertSame(45, (new UserRepository)->findByUsername(Username::fromString($model->username))->favouritesCount->value);

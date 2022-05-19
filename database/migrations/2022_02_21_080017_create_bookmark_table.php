@@ -20,8 +20,8 @@ return new class extends Migration
             $table->string('url');
             $table->text('description')->nullable();
             $table->boolean('description_set_by_user');
-            $table->unsignedBigInteger('site_id');
-            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('site_id')->index();
+            $table->unsignedBigInteger('user_id')->index();
             $table->text('preview_image_url')->nullable();
             $table->timestamps();
         });

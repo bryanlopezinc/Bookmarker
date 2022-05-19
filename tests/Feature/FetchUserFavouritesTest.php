@@ -8,9 +8,12 @@ use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Tests\Traits\AssertsBookmarkJson;
 
 class FetchUserFavouritesTest extends TestCase
 {
+    use AssertsBookmarkJson;
+
     protected function getTestResponse(array $parameters = []): TestResponse
     {
         return $this->getJson(route('fetchUserFavourites', $parameters));
@@ -64,9 +67,12 @@ class FetchUserFavouritesTest extends TestCase
             ->assertSuccessful()
             ->assertJsonCount(5, 'data')
             ->assertJson(function (AssertableJson $json) {
-                $json->etc()->fromArray($json->toArray()['data'])->each(function (AssertableJson $json) {
-                    $json->where('attributes.is_user_favourite', true)->etc();
-                })->etc();
+                $json->etc()
+                    ->fromArray($json->toArray()['data'])
+                    ->each(function (AssertableJson $json) {
+                        $json->where('attributes.is_user_favourite', true)->etc();
+                    })
+                    ->etc();
             })
             ->assertJsonStructure([
                 "links" => [
@@ -81,27 +87,6 @@ class FetchUserFavouritesTest extends TestCase
                 ]
             ]);
 
-        $response->assertJsonStructure([
-            'type',
-            'attributes' => [
-                'id',
-                'title',
-                'web_page_link',
-                'has_preview_image',
-                'preview_image_url',
-                'description',
-                'has_description',
-                'site_id',
-                'from_site',
-                'tags',
-                'has_tags',
-                'tags_count',
-                'created_on' => [
-                    'date_readable',
-                    'date_time',
-                    'date',
-                ]
-            ]
-        ], $response->json('data.0'));
+        $this->assertBookmarkJson($response->json('data.0'));
     }
 }

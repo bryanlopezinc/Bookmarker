@@ -9,11 +9,12 @@ use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Tests\Traits\AssertsBookmarkJson;
 use Tests\Traits\CreatesBookmark;
 
 class FetchUserBookmarksTest extends TestCase
 {
-    use CreatesBookmark;
+    use CreatesBookmark, AssertsBookmarkJson;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
@@ -109,30 +110,7 @@ class FetchUserBookmarksTest extends TestCase
                 ]
             ]);
 
-        $response->assertJsonCount(15, 'data.0.attributes')->assertJsonStructure([
-            'type',
-            'attributes' => [
-                'id',
-                'title',
-                'web_page_link',
-                'has_preview_image',
-                'preview_image_url',
-                'description',
-                'has_description',
-                'site_id',
-                'from_site',
-                'tags',
-                'has_tags',
-                'tags_count',
-                'is_dead_link',
-                'is_user_favourite',
-                'created_on' => [
-                    'date_readable',
-                    'date_time',
-                    'date',
-                ]
-            ]
-        ], $response->json('data.0'));
+        $this->assertBookmarkJson($response->json('data.0'));
 
         $this->getTestResponse(['per_page' => 20])
             ->assertSuccessful()

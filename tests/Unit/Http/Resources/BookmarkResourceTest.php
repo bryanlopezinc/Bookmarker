@@ -14,10 +14,11 @@ use Database\Factories\SiteFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
+use Tests\Traits\AssertsBookmarkJson;
 
 class BookmarkResourceTest extends TestCase
 {
-    use WithFaker;
+    use WithFaker, AssertsBookmarkJson;
 
     public function testAttributes(): void
     {
@@ -30,10 +31,8 @@ class BookmarkResourceTest extends TestCase
 
         $response = (new BookmarkResource($bookmark))->toResponse(request());
 
-        (new TestResponse($response))
-            ->assertJsonCount(15, 'data.attributes')
+        $testResponse  = (new TestResponse($response))
             ->assertJsonCount(2, 'data')
-            ->assertJsonCount(3, 'data.attributes.created_on')
             ->assertJson(function (AssertableJson $assert) {
                 $assert->where('data.attributes.has_tags', true);
                 $assert->where('data.attributes.has_description', true);
@@ -44,31 +43,10 @@ class BookmarkResourceTest extends TestCase
                 $assert->etc();
             })
             ->assertJsonStructure([
-                'data' => [
-                    'type',
-                    'attributes' => [
-                        'id',
-                        'title',
-                        'web_page_link',
-                        'has_preview_image',
-                        'preview_image_url',
-                        'description',
-                        'has_description',
-                        'site_id',
-                        'from_site',
-                        'tags',
-                        'has_tags',
-                        'tags_count',
-                        'is_dead_link',
-                        'is_user_favourite',
-                        'created_on' => [
-                            'date_readable',
-                            'date_time',
-                            'date',
-                        ]
-                    ]
-                ]
+                'data'
             ]);
+
+        $this->assertBookmarkJson($testResponse->json('data'));
     }
 
     public function testWillReturnCorrectDataWhenBookmarkHasNoTags(): void

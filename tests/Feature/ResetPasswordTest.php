@@ -39,6 +39,11 @@ class ResetPasswordTest extends TestCase
         return $this->postJson(route('resetPassword'), $parameters, $headers);
     }
 
+    public function testIsAccessibleViaPath(): void
+    {
+        $this->assertRouteIsAccessibeViaPath('v1/users/password/reset', 'resetPassword');
+    }
+
     public function testWillReturnValidationErrorsWhenClientCredentialsAreInvalid(): void
     {
         $this->getTestResponse([])->assertUnauthorized();

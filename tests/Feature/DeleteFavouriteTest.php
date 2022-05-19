@@ -17,6 +17,11 @@ class DeleteFavouriteTest extends TestCase
         return $this->deleteJson(route('deleteFavourite'), $parameters);
     }
 
+    public function testIsAccessibleViaPath(): void
+    {
+        $this->assertRouteIsAccessibeViaPath('v1/favourites', 'deleteFavourite');
+    }
+
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
         $this->getTestResponse()->assertUnauthorized();

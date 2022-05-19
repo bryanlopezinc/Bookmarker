@@ -21,6 +21,11 @@ class CreateBookmarksTest extends TestCase
         return $this->postJson(route('createBookmark'), $parameters);
     }
 
+    public function testIsAccessibleViaPath(): void
+    {
+        $this->assertRouteIsAccessibeViaPath('v1/bookmarks', 'createBookmark');
+    }
+
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
         $this->getTestResponse()->assertUnauthorized();

@@ -20,6 +20,11 @@ class RequestVerificationCodeTest extends TestCase
         return $this->postJson(route('requestVerificationCode'), $parameters, $headers);
     }
 
+    public function testIsAccessibleViaPath(): void
+    {
+        $this->assertRouteIsAccessibeViaPath('v1/users/request-verification-code', 'requestVerificationCode');
+    }
+
     public function testWillReturnValidationErrorsWhenClientCredentialsAreInvalid(): void
     {
         $this->getTestResponse([])->assertUnauthorized();

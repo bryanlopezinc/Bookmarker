@@ -30,6 +30,11 @@ class RequestPasswordResetTest extends TestCase
         return $this->postJson(route('requestPasswordResetToken'), $parameters, $headers);
     }
 
+    public function testIsAccessibleViaPath(): void
+    {
+        $this->assertRouteIsAccessibeViaPath('v1/users/password/reset-token', 'requestPasswordResetToken');
+    }
+
     public function testWillReturnValidationErrorsWhenClientCredentialsAreInvalid(): void
     {
         $this->getTestResponse(['email'  => $this->user->email])->assertUnauthorized();

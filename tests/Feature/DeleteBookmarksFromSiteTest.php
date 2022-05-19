@@ -20,6 +20,11 @@ class DeleteBookmarksFromSiteTest extends TestCase
         return $this->deleteJson(route('deleteBookmarksFromSite'), $parameters);
     }
 
+    public function testIsAccessibleViaPath(): void
+    {
+        $this->assertRouteIsAccessibeViaPath('v1/bookmarks/site', 'deleteBookmarksFromSite');
+    }
+
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
         $this->getTestResponse()->assertUnauthorized();

@@ -21,6 +21,11 @@ class FetchUserBookmarksTest extends TestCase
         return $this->getJson(route('fetchUserBookmarks', $parameters));
     }
 
+    public function testIsAccessibleViaPath(): void
+    {
+        $this->assertRouteIsAccessibeViaPath('v1/users/bookmarks', 'fetchUserBookmarks');
+    }
+
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
         $this->getTestResponse()->assertUnauthorized();

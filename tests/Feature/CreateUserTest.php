@@ -21,6 +21,11 @@ class CreateUserTest extends TestCase
         return $this->postJson(route('createUser'), $parameters);
     }
 
+    public function testIsAccessibleViaPath(): void
+    {
+        $this->assertRouteIsAccessibeViaPath('v1/users', 'createUser');
+    }
+
     public function testWillReturnValidationErrorsWhenRequiredAttrbutesAreMissing(): void
     {
         $attributes = [

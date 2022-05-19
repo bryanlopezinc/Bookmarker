@@ -19,6 +19,11 @@ class CreateFavouriteTest extends TestCase
         return $this->postJson(route('createFavourite'), $parameters);
     }
 
+    public function testIsAccessibleViaPath(): void
+    {
+        $this->assertRouteIsAccessibeViaPath('v1/favourites', 'createFavourite');
+    }
+
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
         $this->getTestResponse()->assertUnauthorized();

@@ -19,6 +19,11 @@ class FetchUserFavouritesTest extends TestCase
         return $this->getJson(route('fetchUserFavourites', $parameters));
     }
 
+    public function testIsAccessibleViaPath(): void
+    {
+        $this->assertRouteIsAccessibeViaPath('v1/users/favourites', 'fetchUserFavourites');
+    }
+
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
         $this->getTestResponse()->assertUnauthorized();

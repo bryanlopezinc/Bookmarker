@@ -17,6 +17,11 @@ class FetchUserTagsTest extends TestCase
         return $this->getJson(route('userTags', $parameters));
     }
 
+    public function testIsAccessibleViaPath(): void
+    {
+        $this->assertRouteIsAccessibeViaPath('v1/users/tags', 'userTags');
+    }
+
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
         $this->getTestResponse()->assertUnauthorized();

@@ -23,6 +23,11 @@ class UpdateBookmarkTest extends TestCase
         return $this->patchJson(route('updateBookmark'), $parameters);
     }
 
+    public function testIsAccessibleViaPath(): void
+    {
+        $this->assertRouteIsAccessibeViaPath('v1/bookmarks', 'updateBookmark');
+    }
+
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
         $this->getTestResponse()->assertUnauthorized();

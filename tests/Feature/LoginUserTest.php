@@ -35,6 +35,11 @@ class LoginUserTest extends TestCase
         return $this->postJson(route('loginUser'), $parameters);
     }
 
+    public function testIsAccessibleViaPath(): void
+    {
+        $this->assertRouteIsAccessibeViaPath('v1/login', 'loginUser');
+    }
+
     public function testWillReturnValidationErrorsWhenCredentialsAreInvalid(): void
     {
         $data = [

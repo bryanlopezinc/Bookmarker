@@ -105,4 +105,18 @@ class TagsRepositoryTest extends TestCase
             ]);
         });
     }
+
+    public function testWillNotDuplicateTags(): void
+    {
+        $tag  = 'like' . rand(0, 1000);
+
+        $repository = new TagsRepository;
+
+        $repository->attach(TagsCollection::createFromStrings([$tag]), BookmarkFactory::new()->create());
+        $repository->attach(TagsCollection::createFromStrings([$tag]), BookmarkFactory::new()->create());
+        $repository->attach(TagsCollection::createFromStrings([$tag]), BookmarkFactory::new()->create());
+        $repository->attach(TagsCollection::createFromStrings([$tag]), BookmarkFactory::new()->create());
+
+        $this->assertEquals(1, Tag::whereIn('name', [$tag])->get(['name'])->count());
+    }
 }

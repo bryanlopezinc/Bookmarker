@@ -12,12 +12,13 @@ use App\Http\Resources\PaginatedResourceCollection;
 use App\Jobs\CheckBookmarksHealth;
 use App\PaginationData;
 use App\Repositories\UserBookmarksRepository as Repository;
+use App\ValueObjects\UserID;
 
 final class FetchUserBookmarksController
 {
     public function __invoke(FetchUserBookmarksRequest $request, Repository $repository): PaginatedResourceCollection
     {
-        $result = $repository->userBookmarks(UserBookmarksFilters::fromRequest($request));
+        $result = $repository->fetch(UserID::fromAuthUser(), UserBookmarksFilters::fromRequest($request));
 
         $result->appends('per_page', $request->validated('per_page', PaginationData::DEFAULT_PER_PAGE))->withQueryString();
 

@@ -32,7 +32,7 @@ class UserBookmarksRepositoryTest extends TestCase
             'user_id' => $userId = UserFactory::new()->create()->id
         ]);
 
-        foreach ($this->repository->userBookmarks(Data::fromArray(['userId' => new UserID($userId)])) as $bookmark) {
+        foreach ($this->repository->fetch(new UserID($userId), Data::fromArray([])) as $bookmark) {
             $this->assertTrue($userId === $bookmark->ownerId->toInt());
             $this->assertFalse($bookmark->isUserFavourite);
         }
@@ -49,8 +49,7 @@ class UserBookmarksRepositoryTest extends TestCase
             'site_id' => $siteId = SiteFactory::new()->create()->id
         ]);
 
-        $result = $this->repository->userBookmarks(Data::fromArray([
-            'userId' => new UserID($userId),
+        $result = $this->repository->fetch(new UserID($userId), Data::fromArray([
             'siteId' => new ResourceID($siteId)
         ]));
 
@@ -69,8 +68,7 @@ class UserBookmarksRepositoryTest extends TestCase
 
         (new TagsRepository)->attach(TagsCollection::createFromStrings(['foobar']), $models[0]);
 
-        $result = $this->repository->userBookmarks(Data::fromArray([
-            'userId' => new UserID($userId),
+        $result = $this->repository->fetch(new UserID($userId), Data::fromArray([
             'tags' => ['foobar']
         ]));
 
@@ -91,7 +89,7 @@ class UserBookmarksRepositoryTest extends TestCase
         ]);
 
         /** @var Bookmark */
-        $bookmark = $this->repository->userBookmarks(Data::fromArray(['userId' => new UserID($userId)]))
+        $bookmark = $this->repository->fetch(new UserID($userId), Data::fromArray([]))
             ->getCollection()
             ->filter(fn (Bookmark $bookmark) => $bookmark->id->toInt() === $favouriteID)
             ->sole();

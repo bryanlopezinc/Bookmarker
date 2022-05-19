@@ -9,11 +9,9 @@ use App\Enums\SortCriteria;
 use App\Http\Requests\FetchUserBookmarksRequest;
 use App\PaginationData;
 use App\ValueObjects\ResourceID;
-use App\ValueObjects\UserID;
 
 final class UserBookmarksFilters extends DataTransferObject
 {
-    public readonly UserID $userId;
     public readonly ResourceID $siteId;
     public readonly bool $wantsOnlyBookmarksFromParticularSite;
     public readonly TagsCollection $tags;
@@ -22,16 +20,17 @@ final class UserBookmarksFilters extends DataTransferObject
     public readonly PaginationData $pagination;
     public readonly bool $hasSortCriteria;
     public readonly SortCriteria $sortCriteria;
+    public readonly bool $wantsBooksmarksWithDeadLinks;
 
     public static function fromRequest(FetchUserBookmarksRequest $request): self
     {
         $data = [
-            'userId' => UserID::fromAuthUser(),
             'wantsBookmarksWithSpecificTags'  => $request->has('tags'),
             'wantsOnlyBookmarksFromParticularSite' => $request->has('site_id'),
             'wantsUntaggedBookmarks' => $request->boolean('untagged'),
             'pagination' => PaginationData::fromRequest($request),
             'hasSortCriteria' => $request->has('sort'),
+            'wantsBooksmarksWithDeadLinks' => $request->boolean('dead_links')
         ];
 
         $request->whenHas('site_id', function (int $siteId) use (&$data) {
@@ -43,10 +42,10 @@ final class UserBookmarksFilters extends DataTransferObject
         });
 
         $request->whenHas('sort', function (string $sort) use (&$data) {
-            $data['sortCriteria'] = match ($sort) {
+            $data['sortCriteria'] = [
                 'oldest' => SortCriteria::OLDEST,
                 'newest' => SortCriteria::NEWEST,
-            };
+            ][$sort];
         });
 
         return new self($data);
@@ -57,25 +56,25 @@ final class UserBookmarksFilters extends DataTransferObject
      *
      * ```php
      *  $request = [
-     *    'userId' => App\ValueObjects\UserId::class,
      *    'tag' => array<string>,
      *     'siteId' => App\ValueObjects\ResourceId::class,
      *     'page' => int,
      *     'per_page' => int,
      *     'untagged' => bool,
-     *      'sortBy' => 'oldest' | 'newest'
+     *      'sortBy' => 'oldest' | 'newest',
+     *      'dead_links' => bool
      *  ]
      * ```
      */
     public static function fromArray(array $request): self
     {
         $data = [
-            'userId' => $request['userId'],
             'wantsBookmarksWithSpecificTags' => $hasTag = array_key_exists('tags', $request),
             'wantsOnlyBookmarksFromParticularSite' => $hasSiteId = array_key_exists('siteId', $request),
             'wantsUntaggedBookmarks' => $request['untagged'] ?? false,
             'pagination' => new PaginationData($request['page'] ?? 1, $request['per_page'] ?? PaginationData::DEFAULT_PER_PAGE),
             'hasSortCriteria' => $hasSortCriteria = array_key_exists('sortBy', $request),
+            'wantsBooksmarksWithDeadLinks' => isset($request['dead_links']),
         ];
 
         if ($hasSiteId) {
@@ -94,5 +93,16 @@ final class UserBookmarksFilters extends DataTransferObject
         }
 
         return new self($data);
+    }
+
+    public function hasAnyFilter(): bool
+    {
+        return count(array_filter([
+            $this->wantsOnlyBookmarksFromParticularSite,
+            $this->wantsBookmarksWithSpecificTags,
+            $this->wantsUntaggedBookmarks,
+            $this->hasSortCriteria,
+            $this->wantsBooksmarksWithDeadLinks
+        ])) > 0;
     }
 }

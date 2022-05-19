@@ -9,6 +9,7 @@ use App\Models\Bookmark as Model;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\UserBookmarksFilters;
+use App\PaginationData;
 use App\QueryColumns\BookmarkQueryColumns as Columns;
 use App\ValueObjects\UserID;
 use Illuminate\Database\Eloquent\Builder;
@@ -24,34 +25,48 @@ final class UserBookmarksRepository
     /**
      * @return Paginator<Bookmark>
      */
-    public function userBookmarks(UserBookmarksFilters $filters): Paginator
+    public function fetch(UserID $userID, UserBookmarksFilters $filters): Paginator
     {
-        $builder = Model::WithQueryOptions(new Columns());
+        $query = Model::WithQueryOptions(new Columns())->where('user_id', $userID->toInt());
+
+        if (!$filters->hasAnyFilter()) {
+            return $this->paginate($query, $userID, $filters->pagination);
+        }
 
         if ($filters->wantsOnlyBookmarksFromParticularSite) {
-            $builder->where('site_id', $filters->siteId->toInt());
+            $query->where('site_id', $filters->siteId->toInt());
         }
 
         if ($filters->wantsBookmarksWithSpecificTags) {
-            $builder->whereHas('tags', function (Builder $builder) use ($filters) {
+            $query->whereHas('tags', function (Builder $builder) use ($filters) {
                 $builder->whereIn('name', $filters->tags->toStringCollection()->uniqueStrict()->all());
             });
         }
 
         if ($filters->wantsUntaggedBookmarks) {
-            $builder->whereDoesntHave('tags');
+            $query->whereDoesntHave('tags');
         };
 
         if ($filters->hasSortCriteria) {
-            $builder->orderBy('bookmarks.id', $filters->sortCriteria->value);
+            $query->orderBy('bookmarks.id', $filters->sortCriteria->value);
         }
 
-        $builder->where('user_id', $filters->userId->toInt());
+        if ($filters->wantsBooksmarksWithDeadLinks) {
+            $query->where('bookmarks_health.is_healthy', false);
+        }
 
+        return $this->paginate($query, $userID, $filters->pagination);
+    }
+
+    /**
+     * @param Builder $query
+     */
+    private function paginate($query, UserID $userID, PaginationData $pagination): Paginator
+    {
         /** @var Paginator */
-        $result = $builder->simplePaginate($filters->pagination->perPage(), page: $filters->pagination->page());
+        $result = $query->simplePaginate($pagination->perPage(), page: $pagination->page());
 
-        $collection = $this->setIsUserFavouriteAttributeOnBookmarks($result->getCollection(), $filters->userId);
+        $collection = $this->setIsUserFavouriteAttributeOnBookmarks($result->getCollection(), $userID);
 
         return $result->setCollection(
             $collection->map(fn (Model $bookmark) => BookmarkBuilder::fromModel($bookmark)->build())

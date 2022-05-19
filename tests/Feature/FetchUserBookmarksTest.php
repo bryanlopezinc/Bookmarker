@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Bookmark;
+use App\Models\BookmarkHealth;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\Fluent\AssertableJson;
@@ -333,6 +334,32 @@ class FetchUserBookmarksTest extends TestCase
                     ->each(function (AssertableJson $json) {
                         $json->where('attributes.is_user_favourite', false)->etc();
                     });
+            });
+    }
+
+    public function testWillFetchOnlyBookmarksWithDeadLinks(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->saveBookmark();
+        $this->saveBookmark();
+        $this->saveBookmark();
+
+        $userBookmarks = Bookmark::query()->where('user_id', $user->id)->get();
+
+        $bookmarkWithDeadLink = $userBookmarks->last();
+
+        BookmarkHealth::query()->create([
+            'bookmark_id' => $bookmarkWithDeadLink->id,
+            'is_healthy' => false,
+            'last_checked' => today()
+        ]);
+
+        $this->getTestResponse(['dead_links' => true])
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data')
+            ->assertJson(function (AssertableJson $assert) use ($bookmarkWithDeadLink) {
+                $assert->where('data.0.attributes.id', $bookmarkWithDeadLink->id)->etc();
             });
     }
 }

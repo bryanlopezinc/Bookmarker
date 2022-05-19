@@ -9,16 +9,15 @@ use App\Enums\SortCriteria;
 use App\Http\Requests\FetchUserBookmarksRequest;
 use App\PaginationData;
 use App\ValueObjects\ResourceID;
-use App\ValueObjects\Tag;
 use App\ValueObjects\UserID;
 
 final class UserBookmarksFilters extends DataTransferObject
 {
     public readonly UserID $userId;
     public readonly ResourceID $siteId;
-    public readonly bool $hasCustomSite;
+    public readonly bool $wantsOnlyBookmarksFromParticularSite;
     public readonly TagsCollection $tags;
-    public readonly bool $hasTags;
+    public readonly bool $wantsBookmarksWithSpecificTags;
     public readonly bool $wantsUntaggedBookmarks;
     public readonly PaginationData $pagination;
     public readonly bool $hasSortCriteria;
@@ -28,8 +27,8 @@ final class UserBookmarksFilters extends DataTransferObject
     {
         $data = [
             'userId' => UserID::fromAuthUser(),
-            'hasTags'  => $request->has('tags'),
-            'hasCustomSite' => $request->has('site_id'),
+            'wantsBookmarksWithSpecificTags'  => $request->has('tags'),
+            'wantsOnlyBookmarksFromParticularSite' => $request->has('site_id'),
             'wantsUntaggedBookmarks' => $request->boolean('untagged'),
             'pagination' => PaginationData::fromRequest($request),
             'hasSortCriteria' => $request->has('sort'),
@@ -72,8 +71,8 @@ final class UserBookmarksFilters extends DataTransferObject
     {
         $data = [
             'userId' => $request['userId'],
-            'hasTags' => $hasTag = array_key_exists('tags', $request),
-            'hasCustomSite' => $hasSiteId = array_key_exists('siteId', $request),
+            'wantsBookmarksWithSpecificTags' => $hasTag = array_key_exists('tags', $request),
+            'wantsOnlyBookmarksFromParticularSite' => $hasSiteId = array_key_exists('siteId', $request),
             'wantsUntaggedBookmarks' => $request['untagged'] ?? false,
             'pagination' => new PaginationData($request['page'] ?? 1, $request['per_page'] ?? PaginationData::DEFAULT_PER_PAGE),
             'hasSortCriteria' => $hasSortCriteria = array_key_exists('sortBy', $request),

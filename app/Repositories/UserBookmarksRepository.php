@@ -28,11 +28,11 @@ final class UserBookmarksRepository
     {
         $builder = Model::WithQueryOptions(new Columns());
 
-        if ($filters->hasCustomSite) {
+        if ($filters->wantsOnlyBookmarksFromParticularSite) {
             $builder->where('site_id', $filters->siteId->toInt());
         }
 
-        if ($filters->hasTags) {
+        if ($filters->wantsBookmarksWithSpecificTags) {
             $builder->whereHas('tags', function (Builder $builder) use ($filters) {
                 $builder->whereIn('name', $filters->tags->toStringCollection()->uniqueStrict()->all());
             });
@@ -46,8 +46,10 @@ final class UserBookmarksRepository
             $builder->orderBy('bookmarks.id', $filters->sortCriteria->value);
         }
 
+        $builder->where('user_id', $filters->userId->toInt());
+
         /** @var Paginator */
-        $result = $builder->where('user_id', $filters->userId->toInt())->simplePaginate($filters->pagination->perPage(), page: $filters->pagination->page());
+        $result = $builder->simplePaginate($filters->pagination->perPage(), page: $filters->pagination->page());
 
         $collection = $this->setIsUserFavouriteAttributeOnBookmarks($result->getCollection(), $filters->userId);
 

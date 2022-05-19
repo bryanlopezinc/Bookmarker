@@ -15,9 +15,9 @@ final class ResourceIDsCollection extends BaseCollection
     }
 
     /**
-     * @param array<int> $ids
+     * @param iterable<int> $ids
      */
-    public static function fromNativeTypes(array $ids): self
+    public static function fromNativeTypes(iterable $ids): self
     {
         return new ResourceIDsCollection(
             collect($ids)->map(fn (int $id) => new ResourceID($id))

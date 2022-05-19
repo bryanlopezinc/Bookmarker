@@ -46,9 +46,4 @@ class ResourceID
 
         return (int) $request->input($key, fn () => throw $exception);
     }
-
-    protected function equalsId(ResourceID $resourceId): bool
-    {
-        return $this->toInt() === $resourceId->id;
-    }
 }

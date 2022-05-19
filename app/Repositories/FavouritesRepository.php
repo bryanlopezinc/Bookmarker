@@ -111,12 +111,12 @@ final class FavouritesRepository
      */
     public function getUserFavouritesFrom(ResourceIDsCollection $bookmarkIDs, UserID $userID): ResourceIDsCollection
     {
-        return Favourite::query()
-            ->where('user_id', $userID->toInt())
-            ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
-            ->get(['bookmark_id'])
-            ->pluck('bookmark_id')
-            ->map(fn (int $id) => new ResourceID($id))
-            ->pipeInto(ResourceIDsCollection::class);
+        return ResourceIDsCollection::fromNativeTypes(
+            Favourite::query()
+                ->where('user_id', $userID->toInt())
+                ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
+                ->get(['bookmark_id'])
+                ->pluck('bookmark_id')
+        );
     }
 }

@@ -10,7 +10,6 @@ use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\UserBookmarksFilters;
 use App\QueryColumns\BookmarkQueryColumns as Columns;
-use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\Paginator;
@@ -60,7 +59,7 @@ final class UserBookmarksRepository
     private function setIsUserFavouriteAttributeOnBookmarks(Collection $bookmarks, UserID $userID): Collection
     {
         $bookmarkIDsFavouritedByUser = $this->favouritesRepository->getUserFavouritesFrom(
-            $bookmarks->pluck('id')->map(fn (int $id) => new ResourceID($id))->pipeInto(ResourceIDsCollection::class),
+            ResourceIDsCollection::fromNativeTypes($bookmarks->pluck('id')),
             $userID
         )->asIntegers();
 

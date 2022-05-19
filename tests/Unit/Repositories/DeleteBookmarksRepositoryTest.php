@@ -6,7 +6,6 @@ use App\Collections\ResourceIDsCollection;
 use App\Models\Favourite;
 use App\Models\UserResourcesCount;
 use App\Repositories\DeleteBookmarksRepository;
-use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
@@ -51,7 +50,7 @@ class DeleteBookmarksRepositoryTest extends TestCase
 
         $this->repository->deleteManyFor(
             new UserID($user->id),
-            $bookmarks->pluck('id')->map(fn (int $id) => new ResourceID($id))->pipeInto(ResourceIDsCollection::class)
+            ResourceIDsCollection::fromNativeTypes($bookmarks->pluck('id'))
         );
 
         $this->assertDatabaseHas(UserResourcesCount::class, [
@@ -97,7 +96,7 @@ class DeleteBookmarksRepositoryTest extends TestCase
         //delete all except last one which was added to favourites
         $this->repository->deleteManyFor(
             new UserID($user->id),
-            $bookmarks->pluck('id')->take(9)->map(fn (int $id) => new ResourceID($id))->pipeInto(ResourceIDsCollection::class)
+            ResourceIDsCollection::fromNativeTypes($bookmarks->pluck('id')->take(9))
         );
 
         $this->assertDatabaseHas(UserResourcesCount::class, [

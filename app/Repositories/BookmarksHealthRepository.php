@@ -6,7 +6,6 @@ namespace App\Repositories;
 
 use App\Collections\ResourceIDsCollection;
 use App\Models\BookmarkHealth;
-use App\ValueObjects\ResourceID;
 
 final class BookmarksHealthRepository
 {
@@ -25,11 +24,11 @@ final class BookmarksHealthRepository
 
         $foundBookmarkIDs->push(...$bookmarks->pluck('bookmark_id')->all());
 
-        return $bookmarks->where('last_checked', '<=', now()->subDays(self::CHECK_FREQUENCY))
-            ->pluck('bookmark_id')
-            ->merge($bookmarkIDs->asIntegers()->diff($foundBookmarkIDs)) // merge bookmark ids that have never been checked.
-            ->map(fn (int $id) => new ResourceID($id))
-            ->pipeInto(ResourceIDsCollection::class);
+        return ResourceIDsCollection::fromNativeTypes(
+            $bookmarks->where('last_checked', '<=', now()->subDays(self::CHECK_FREQUENCY))
+                ->pluck('bookmark_id')
+                ->merge($bookmarkIDs->asIntegers()->diff($foundBookmarkIDs)) // merge bookmark ids that have never been checked.
+        );
     }
 
     /**

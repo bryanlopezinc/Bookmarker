@@ -6,6 +6,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ *  Record of user favourites count and bookmarks count
+ *
+ * @property int $id
+ * @property int $user_id unique foreign key \App\Models\User
+ * @property int $count
+ * @property int $type
+ */
 final class UserResourcesCount extends Model
 {
     public const BOOKMARKS_TYPE = 3;

@@ -13,17 +13,16 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * @property int $id
- * @property string $description
+ * @property string|null $description
  * @property string $title
  * @property bool $has_custom_title
  * @property bool $description_set_by_user
  * @property string $url
  * @property string|null $preview_image_url
- * @property int $user_id
- * @property int $site_id
+ * @property int $user_id foreign key to \App\Models\User
+ * @property int $site_id foreign key to \App\Models\WebSite
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
- * @property bool $is_dead_link
  * @method static Builder WithQueryOptions(BookmarkColumns $queryOptions)
  */
 final class Bookmark extends Model

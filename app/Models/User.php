@@ -18,6 +18,9 @@ use Illuminate\Database\Query\JoinClause;
  * @property bool $lastname
  * @property bool $email
  * @property string $password
+ * @property \Carbon\Carbon $email_verified_at
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  * @method static Builder WithQueryOptions(UserQueryColumns $columns)
  */
 final class User extends Authenticatable

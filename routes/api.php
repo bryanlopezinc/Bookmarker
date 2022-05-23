@@ -9,7 +9,7 @@ use Laravel\Passport\Http\Middleware\CheckClientCredentials;
 Route::middleware('auth:api')->group(function () {
 
     Route::get('users/favourites', Controllers\FetchUserFavouritesController::class)->name('fetchUserFavourites');
-    Route::get('users/sites', Controllers\FetchUserSitesController::class)->name('fetchUserSites');
+    Route::get('users/bookmarks/sources', Controllers\FetchUserBookmarksSourcesController::class)->name('fetchUserSites');
     Route::get('users/tags', Controllers\FetchUserTagsController::class)->name('userTags');
     Route::get('users/tags/search', Controllers\SearchUserTagsController::class)->name('searchUserTags');
 

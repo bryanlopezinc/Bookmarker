@@ -9,7 +9,7 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 
-class FetchSitesBookmarkedFromTest extends TestCase
+class FetchUserBookmarksSourcesTest extends TestCase
 {
     protected function getTestResponse(array $parameters = []): TestResponse
     {
@@ -18,7 +18,7 @@ class FetchSitesBookmarkedFromTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users/sites', 'fetchUserSites');
+        $this->assertRouteIsAccessibeViaPath('v1/users/bookmarks/sources', 'fetchUserSites');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void

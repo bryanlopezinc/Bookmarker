@@ -7,7 +7,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\PaginatedResourceCollection;
 use App\Http\Resources\WebSiteResource;
 use App\PaginationData;
-use App\Repositories\FetchUserSitesRepository as Repository;
+use App\Repositories\FetchUserBookmarksSourcesRepository as Repository;
 use App\ValueObjects\UserID;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -15,7 +15,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 /**
  * Fetch all the websites user has bookmarked a page from.
  */
-final class FetchUserSitesController
+final class FetchUserBookmarksSourcesController
 {
     public function __invoke(Request $request, Repository $repository): AnonymousResourceCollection
     {

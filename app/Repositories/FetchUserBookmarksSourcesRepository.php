@@ -14,7 +14,7 @@ use Illuminate\Pagination\Paginator;
 /**
  * Get all the websites a user has bookmarked a page from.
  */
-final class FetchUserSitesRepository
+final class FetchUserBookmarksSourcesRepository
 {
     /**
      * @return Paginator<WebSite>

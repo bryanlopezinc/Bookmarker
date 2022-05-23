@@ -8,11 +8,11 @@ use App\ValueObjects\UserID;
 use Database\Factories\SiteFactory;
 use Database\Factories\UserFactory;
 use Database\Factories\BookmarkFactory;
-use App\Repositories\FetchUserSitesRepository;
+use App\Repositories\FetchUserBookmarksSourcesRepository as Repository;
 
-class FetchUserSitesRepositoryTest extends TestCase
+class FetchUserBookmarksSourcesRepositoryTest extends TestCase
 {
-    public function testWillFetchUserSites(): void
+    public function testWillFetchUserBookmarksSources(): void
     {
         BookmarkFactory::new()->count(5)->create([
             'user_id' => $userId = UserFactory::new()->create()->id,
@@ -22,7 +22,7 @@ class FetchUserSitesRepositoryTest extends TestCase
         BookmarkFactory::new()->count(4)->create(['user_id' => $userId]);
         BookmarkFactory::new()->count(5)->create();
 
-        $result = (new FetchUserSitesRepository)->get(new UserID($userId), new PaginationData());
+        $result = (new Repository)->get(new UserID($userId), new PaginationData());
 
         $this->assertCount(5, $result);
     }

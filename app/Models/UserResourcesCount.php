@@ -18,6 +18,7 @@ final class UserResourcesCount extends Model
 {
     public const BOOKMARKS_TYPE = 3;
     public const FAVOURITES_TYPE = 4;
+    public const FOLDERS_TYPE = 5;
 
     /**
      * {@inheritdoc}

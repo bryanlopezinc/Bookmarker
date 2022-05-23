@@ -40,6 +40,8 @@ Route::middleware('auth:api')->group(function () {
         Route::patch('bookmarks', Controllers\UpdateBookmarkController::class)
             ->middleware([ConvertStringToArray::keys('tags')])
             ->name('updateBookmark');
+
+        Route::post('folders', Controllers\CreateFolderController::class)->name('createFolder');
     });
 });
 

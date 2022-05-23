@@ -45,15 +45,15 @@ Route::middleware('auth:api')->group(function () {
     });
 });
 
-Route::post('client/oauth/token', Controllers\IssueClientTokenController::class)->name('issueClientToken');
+Route::post('client/oauth/token', Controllers\Auth\IssueClientTokenController::class)->name('issueClientToken');
 Route::post('users', Controllers\CreateUserController::class)->middleware([DBTransaction::class])->name('createUser');
-Route::post('login', Controllers\LoginController::class)->name('loginUser');
+Route::post('login', Controllers\Auth\LoginController::class)->name('loginUser');
 
-Route::post('users/password/reset-token', Controllers\RequestPasswordResetController::class)
+Route::post('users/password/reset-token', Controllers\Auth\RequestPasswordResetController::class)
     ->middleware([DBTransaction::class, CheckClientCredentials::class])
     ->name('requestPasswordResetToken');
 
-Route::post('users/password/reset', Controllers\ResetPasswordController::class)
+Route::post('users/password/reset', Controllers\Auth\ResetPasswordController::class)
     ->middleware([DBTransaction::class, CheckClientCredentials::class])
     ->name('resetPassword');
 

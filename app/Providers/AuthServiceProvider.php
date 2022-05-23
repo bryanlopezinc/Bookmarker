@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Http\Controllers\IssueClientTokenController;
+use App\Http\Controllers\Auth\IssueClientTokenController;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Passport\Passport;

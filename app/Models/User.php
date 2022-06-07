@@ -81,7 +81,7 @@ final class User extends Authenticatable
         }
 
         $builder->join('users_resources_counts as bc', function (JoinClause $join) {
-            $join->on('users.id', '=', 'bc.user_id')->where('bc.type', UserResourcesCount::BOOKMARKS_TYPE);
+            $join->on('users.id', '=', 'bc.user_id')->where('bc.type', UserBookmarksCount::TYPE);
         }, type: 'left outer')->addSelect('bc.count as bookmarks_count');
     }
 
@@ -97,7 +97,7 @@ final class User extends Authenticatable
         }
 
         $builder->join('users_resources_counts as fc', function (JoinClause $join) {
-            $join->on('users.id', '=', 'fc.user_id')->where('fc.type', UserResourcesCount::FAVOURITES_TYPE);
+            $join->on('users.id', '=', 'fc.user_id')->where('fc.type', UserFavouritesCount::TYPE);
         }, type: 'left outer')->addSelect('fc.count as favourites_count');
     }
 }

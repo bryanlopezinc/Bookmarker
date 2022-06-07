@@ -4,12 +4,12 @@ namespace Tests\Unit\Repositories;
 
 use App\Collections\ResourceIDsCollection;
 use App\Models\Favourite;
-use App\Models\UserResourcesCount;
+use App\Models\UserBookmarksCount;
+use App\Models\UserFavouritesCount;
 use App\Repositories\DeleteBookmarksRepository;
 use App\ValueObjects\UserID;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
-use Database\Factories\UserResourceCountFactory;
 use Tests\TestCase;
 
 class DeleteBookmarksRepositoryTest extends TestCase
@@ -36,12 +36,12 @@ class DeleteBookmarksRepositoryTest extends TestCase
             'user_id' => $user->id,
         ]);
 
-        UserResourceCountFactory::new()->favourite()->create([
+        UserFavouritesCount::create([
             'user_id' => $user->id,
             'count'   => 1,
         ]);
 
-        UserResourceCountFactory::new()->bookmark()->create([
+        UserBookmarksCount::create([
             'user_id' => $user->id,
             'count'   => 10,
         ]);
@@ -51,16 +51,16 @@ class DeleteBookmarksRepositoryTest extends TestCase
             ResourceIDsCollection::fromNativeTypes($bookmarks->pluck('id'))
         );
 
-        $this->assertDatabaseHas(UserResourcesCount::class, [
+        $this->assertDatabaseHas(UserFavouritesCount::class, [
             'user_id' => $user->id,
             'count'   => 0,
-            'type' => UserResourcesCount::FAVOURITES_TYPE
+            'type' => UserFavouritesCount::TYPE
         ]);
 
-        $this->assertDatabaseHas(UserResourcesCount::class, [
+        $this->assertDatabaseHas(UserBookmarksCount::class, [
             'user_id' => $user->id,
             'count'   => 0,
-            'type' => UserResourcesCount::BOOKMARKS_TYPE
+            'type' => UserBookmarksCount::TYPE
         ]);
     }
 
@@ -78,12 +78,12 @@ class DeleteBookmarksRepositoryTest extends TestCase
             'user_id' => $user->id,
         ]);
 
-        UserResourceCountFactory::new()->favourite()->create([
+        UserFavouritesCount::create([
             'user_id' => $user->id,
             'count'   => 1,
         ]);
 
-        UserResourceCountFactory::new()->bookmark()->create([
+        UserBookmarksCount::create([
             'user_id' => $user->id,
             'count'   => 10,
         ]);
@@ -94,16 +94,16 @@ class DeleteBookmarksRepositoryTest extends TestCase
             ResourceIDsCollection::fromNativeTypes($bookmarks->pluck('id')->take(9))
         );
 
-        $this->assertDatabaseHas(UserResourcesCount::class, [
+        $this->assertDatabaseHas(UserFavouritesCount::class, [
             'user_id' => $user->id,
             'count'   => 1,
-            'type' => UserResourcesCount::FAVOURITES_TYPE
+            'type' => UserFavouritesCount::TYPE
         ]);
 
-        $this->assertDatabaseHas(UserResourcesCount::class, [
+        $this->assertDatabaseHas(UserBookmarksCount::class, [
             'user_id' => $user->id,
             'count'   => 1,
-            'type' => UserResourcesCount::BOOKMARKS_TYPE
+            'type' => UserBookmarksCount::TYPE
         ]);
     }
 }

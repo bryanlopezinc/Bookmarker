@@ -4,19 +4,14 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Models\UserResourcesCount;
+use App\Models\UserBookmarksCount;
 use App\ValueObjects\UserID;
 
 final class BookmarksCountRepository
 {
     public function incrementUserBookmarksCount(UserID $userId): void
     {
-        $attributes = [
-            'user_id' => $userId->toInt(),
-            'type' => UserResourcesCount::BOOKMARKS_TYPE
-        ];
-
-        $bookmarksCount = UserResourcesCount::query()->firstOrCreate($attributes, ['count' => 1, ...$attributes]);
+        $bookmarksCount = UserBookmarksCount::query()->firstOrCreate(['user_id' => $userId->toInt()], ['count' => 1,]);
 
         if (!$bookmarksCount->wasRecentlyCreated) {
             $bookmarksCount->increment('count');
@@ -29,9 +24,6 @@ final class BookmarksCountRepository
             return;
         }
 
-        UserResourcesCount::query()->where([
-            'user_id' => $userId->toInt(),
-            'type' => UserResourcesCount::BOOKMARKS_TYPE
-        ])->decrement('count', $count);
+        UserBookmarksCount::where('user_id', $userId->toInt())->decrement('count', $count);
     }
 }

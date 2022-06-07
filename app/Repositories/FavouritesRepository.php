@@ -11,7 +11,7 @@ use App\ValueObjects\UserID;
 use App\Models\Bookmark as Model;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
-use App\Models\UserResourcesCount;
+use App\Models\UserFavouritesCount;
 use App\PaginationData;
 use App\QueryColumns\BookmarkQueryColumns;
 use Illuminate\Pagination\Paginator;
@@ -38,12 +38,7 @@ final class FavouritesRepository
 
     private function incrementFavouritesCount(UserID $userId, int $amount = 1): void
     {
-        $attributes = [
-            'user_id' => $userId->toInt(),
-            'type' => UserResourcesCount::FAVOURITES_TYPE
-        ];
-
-        $favouritesCount = UserResourcesCount::query()->firstOrCreate($attributes, ['count' => $amount, ...$attributes]);
+        $favouritesCount = UserFavouritesCount::query()->firstOrCreate(['user_id' => $userId->toInt()], ['count' => $amount]);
 
         if (!$favouritesCount->wasRecentlyCreated) {
             $favouritesCount->increment('count', $amount);
@@ -84,10 +79,7 @@ final class FavouritesRepository
             return;
         }
 
-        UserResourcesCount::query()->where([
-            'user_id' => $userId->toInt(),
-            'type' => UserResourcesCount::FAVOURITES_TYPE
-        ])->decrement('count', $amount);
+        UserFavouritesCount::query()->where('user_id', $userId->toInt())->decrement('count', $amount);
     }
 
     /**

@@ -5,7 +5,8 @@ namespace Tests\Feature;
 use App\Models\Bookmark;
 use App\Models\BookmarkTag;
 use App\Models\Favourite;
-use App\Models\UserResourcesCount;
+use App\Models\UserBookmarksCount;
+use App\Models\UserFavouritesCount;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Support\Facades\Bus;
@@ -66,10 +67,10 @@ class DeleteBookmarksTest extends TestCase
         $this->assertDatabaseMissing(Bookmark::class, ['id' => $bookmark->id]);
         $this->assertDatabaseMissing(BookmarkTag::class, ['bookmark_id' => $bookmark->id]);
 
-        $this->assertDatabaseHas(UserResourcesCount::class, [
+        $this->assertDatabaseHas(UserBookmarksCount::class, [
             'user_id' => $user->id,
             'count' => 0,
-            'type' => UserResourcesCount::BOOKMARKS_TYPE
+            'type' => UserBookmarksCount::TYPE
         ]);
     }
 
@@ -92,10 +93,10 @@ class DeleteBookmarksTest extends TestCase
         ]);
 
         //Assert favourites count was decremented.
-        $this->assertDatabaseHas(UserResourcesCount::class, [
+        $this->assertDatabaseHas(UserFavouritesCount::class, [
             'user_id' => $user->id,
             'count' => 0,
-            'type' => UserResourcesCount::FAVOURITES_TYPE
+            'type' => UserFavouritesCount::TYPE
         ]);
     }
 

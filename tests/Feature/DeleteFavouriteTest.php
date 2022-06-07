@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Favourite;
-use App\Models\UserResourcesCount;
+use App\Models\UserFavouritesCount;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
@@ -51,10 +51,10 @@ class DeleteFavouriteTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->assertDatabaseHas(UserResourcesCount::class, [
+        $this->assertDatabaseHas(UserFavouritesCount::class, [
             'user_id' => $user->id,
             'count'   => 0,
-            'type' => UserResourcesCount::FAVOURITES_TYPE
+            'type' => UserFavouritesCount::TYPE
         ]);
     }
 

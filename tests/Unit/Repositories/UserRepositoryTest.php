@@ -3,11 +3,12 @@
 namespace Tests\Unit\Repositories;
 
 use App\Models\User as Model;
+use App\Models\UserBookmarksCount;
+use App\Models\UserFavouritesCount;
 use App\QueryColumns\UserQueryColumns;
 use App\Repositories\UserRepository;
 use App\ValueObjects\Username;
 use Database\Factories\UserFactory;
-use Database\Factories\UserResourceCountFactory;
 use Tests\TestCase;
 
 class UserRepositoryTest extends TestCase
@@ -33,7 +34,7 @@ class UserRepositoryTest extends TestCase
         /** @var Model */
         $model = UserFactory::new()->create();
 
-        UserResourceCountFactory::new()->bookmark()->create([
+        UserBookmarksCount::create([
             'user_id' => $model->id,
             'count' => 100,
         ]);
@@ -46,7 +47,7 @@ class UserRepositoryTest extends TestCase
         /** @var Model */
         $model = UserFactory::new()->create();
 
-        UserResourceCountFactory::new()->favourite()->create([
+        UserFavouritesCount::create([
             'user_id' => $model->id,
             'count' => 45,
         ]);

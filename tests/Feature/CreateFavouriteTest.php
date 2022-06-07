@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Bookmark;
 use App\Models\Favourite;
-use App\Models\UserResourcesCount;
+use App\Models\UserFavouritesCount;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
@@ -49,7 +49,7 @@ class CreateFavouriteTest extends TestCase
                 ]
             ]);
     }
-
+    
     public function testWillAddBookmarkToFavourites(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
@@ -65,10 +65,10 @@ class CreateFavouriteTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->assertDatabaseHas(UserResourcesCount::class, [
+        $this->assertDatabaseHas(UserFavouritesCount::class, [
             'user_id' => $user->id,
-            'count'   => 1,
-            'type' => UserResourcesCount::FAVOURITES_TYPE
+            'count' => 1,
+            'type' => UserFavouritesCount::TYPE
         ]);
     }
 
@@ -89,10 +89,10 @@ class CreateFavouriteTest extends TestCase
             ]);
         });
 
-        $this->assertDatabaseHas(UserResourcesCount::class, [
+        $this->assertDatabaseHas(UserFavouritesCount::class, [
             'user_id' => $user->id,
             'count'   => $amount,
-            'type' => UserResourcesCount::FAVOURITES_TYPE
+            'type' => UserFavouritesCount::TYPE
         ]);
     }
 

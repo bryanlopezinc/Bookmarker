@@ -3,7 +3,7 @@
 namespace Tests\Unit\Repositories;
 
 use App\DataTransferObjects\Builders\FolderBuilder;
-use App\Models\UserResourcesCount;
+use App\Models\UserFoldersCount;
 use Tests\TestCase;
 use App\ValueObjects\UserID;
 use App\Repositories\FoldersRepository;
@@ -29,10 +29,10 @@ class FoldersRepositoryTest extends TestCase
         $repository->create($folder);
         $repository->create($folder);
 
-        $this->assertDatabaseHas(UserResourcesCount::class, [
+        $this->assertDatabaseHas(UserFoldersCount::class, [
             'user_id' => $userID,
             'count' => 3,
-            'type' => UserResourcesCount::FOLDERS_TYPE
+            'type' => UserFoldersCount::TYPE
         ]);
     }
 }

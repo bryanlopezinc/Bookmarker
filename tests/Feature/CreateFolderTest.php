@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Folder;
-use App\Models\UserResourcesCount;
+use App\Models\UserFoldersCount;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
@@ -69,10 +69,10 @@ class CreateFolderTest extends TestCase
             'description' => $description
         ]);
 
-        $this->assertDatabaseHas(UserResourcesCount::class, [
+        $this->assertDatabaseHas(UserFoldersCount::class, [
             'user_id' => $user->id,
             'count' => 1,
-            'type' => UserResourcesCount::FOLDERS_TYPE
+            'type' => UserFoldersCount::TYPE
         ]);
     }
 

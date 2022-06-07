@@ -10,7 +10,7 @@ use App\DataTransferObjects\Folder;
 use App\Models\Folder as Model;
 use App\Models\FolderBookmark;
 use App\Models\FolderBookmarksCount;
-use App\Models\UserResourcesCount;
+use App\Models\UserFoldersCount;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Illuminate\Support\Collection;
@@ -31,12 +31,7 @@ final class FoldersRepository
 
     private function incrementUserFoldersCount(UserID $userID): void
     {
-        $attributes = [
-            'user_id' => $userID->toInt(),
-            'type' => UserResourcesCount::FOLDERS_TYPE,
-        ];
-
-        $model = UserResourcesCount::query()->firstOrCreate($attributes, ['count' => 1, ...$attributes]);
+        $model = UserFoldersCount::query()->firstOrCreate(['user_id' => $userID->toInt()], ['count' => 1]);
 
         if (!$model->wasRecentlyCreated) {
             $model->increment('count');

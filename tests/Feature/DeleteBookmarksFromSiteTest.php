@@ -4,7 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Bookmark;
 use App\Models\Favourite;
-use App\Models\UserResourcesCount;
+use App\Models\UserBookmarksCount;
+use App\Models\UserFavouritesCount;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
@@ -53,10 +54,10 @@ class DeleteBookmarksFromSiteTest extends TestCase
         $this->assertModelMissing($firstBookmark);
         $this->assertModelExists($secondBookmark);
 
-        $this->assertDatabaseHas(UserResourcesCount::class, [
+        $this->assertDatabaseHas(UserBookmarksCount::class, [
             'user_id' => $user->id,
             'count' => 1,
-            'type' => UserResourcesCount::BOOKMARKS_TYPE
+            'type' => UserBookmarksCount::TYPE
         ]);
     }
 
@@ -82,10 +83,10 @@ class DeleteBookmarksFromSiteTest extends TestCase
             'bookmark_id' => $firstBookmark->id
         ]);
 
-        $this->assertDatabaseHas(UserResourcesCount::class, [
+        $this->assertDatabaseHas(UserFavouritesCount::class, [
             'user_id' => $user->id,
             'count' => 1,
-            'type' => UserResourcesCount::FAVOURITES_TYPE
+            'type' => UserFavouritesCount::TYPE
         ]);
     }
 }

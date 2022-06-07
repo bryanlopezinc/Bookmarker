@@ -6,7 +6,7 @@ namespace App\Services;
 
 use App\Collections\ResourceIDsCollection;
 use App\DataTransferObjects\Bookmark;
-use App\Policies\EnsureAuthorizedUserOwnsBookmark;
+use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkQueryColumns;
 use App\Repositories\DeleteBookmarksRepository;
 use App\Repositories\BookmarksRepository;
@@ -28,7 +28,7 @@ final class DeleteBookmarksService
             return;
         }
 
-        $bookmarks->each(new EnsureAuthorizedUserOwnsBookmark);
+        $bookmarks->each(new EnsureAuthorizedUserOwnsResource);
 
         $this->deleteBookmarks->deleteManyFor(UserID::fromAuthUser(), $bookmarkIds);
     }

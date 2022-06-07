@@ -9,10 +9,11 @@ use App\ValueObjects\UserID;
 use App\ValueObjects\TimeStamp;
 use App\ValueObjects\ResourceID;
 use App\Collections\TagsCollection;
+use App\Contracts\BelongsToUserInterface;
 use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\WebPageDescription;
 
-final class Bookmark extends DataTransferObject
+final class Bookmark extends DataTransferObject implements BelongsToUserInterface
 {
     public readonly ResourceID $id;
     public readonly BookmarkTitle $title;
@@ -30,4 +31,9 @@ final class Bookmark extends DataTransferObject
     public readonly TagsCollection $tags;
     public bool $isDeadLink;
     public bool $isUserFavourite;
+
+    public function getOwnerID(): UserID
+    {
+        return $this->ownerId;
+    }
 }

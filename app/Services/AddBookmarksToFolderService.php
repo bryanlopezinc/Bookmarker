@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Collections\ResourceIDsCollection;
-use App\Policies\EnsureAuthorizedUserOwnsBookmark;
-use App\Policies\EnsureAuthorizedUserOwnsFolder;
+use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkQueryColumns;
 use App\Repositories\BookmarksRepository;
 use App\ValueObjects\ResourceID;
@@ -41,7 +40,7 @@ final class AddBookmarksToFolderService
             ], Response::HTTP_NOT_FOUND));
         }
 
-        (new EnsureAuthorizedUserOwnsFolder)($folder);
+        (new EnsureAuthorizedUserOwnsResource)($folder);
     }
 
     private function validateBookmarks(ResourceIDsCollection $bookmarkIDs): void
@@ -54,7 +53,7 @@ final class AddBookmarksToFolderService
             ], Response::HTTP_NOT_FOUND));
         }
 
-        $bookmarks->each(new EnsureAuthorizedUserOwnsBookmark);
+        $bookmarks->each(new EnsureAuthorizedUserOwnsResource);
     }
 
     private function checkFolderForPossibleDuplicates(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): void

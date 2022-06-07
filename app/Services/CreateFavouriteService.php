@@ -8,7 +8,7 @@ use App\Collections\BookmarksCollection;
 use App\Collections\ResourceIDsCollection;
 use App\DataTransferObjects\Bookmark;
 use App\Jobs\CheckBookmarksHealth;
-use App\Policies\EnsureAuthorizedUserOwnsBookmark;
+use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkQueryColumns;
 use App\Repositories\FavouritesRepository;
 use App\Repositories\BookmarksRepository;
@@ -32,7 +32,7 @@ final class CreateFavouriteService
             $this->throwException($this->prepareNotFoundResponseMessage($bookmarkIDs, $bookmarks), Response::HTTP_NOT_FOUND);
         }
 
-        $bookmarks->each(new EnsureAuthorizedUserOwnsBookmark);
+        $bookmarks->each(new EnsureAuthorizedUserOwnsResource);
 
         $userId = UserID::fromAuthUser();
 

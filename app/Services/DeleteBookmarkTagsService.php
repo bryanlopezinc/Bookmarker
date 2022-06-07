@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Collections\TagsCollection;
-use App\Policies\EnsureAuthorizedUserOwnsBookmark;
+use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkQueryColumns;
 use App\ValueObjects\ResourceID;
 use App\Repositories\BookmarksRepository;
@@ -28,7 +28,7 @@ final class DeleteBookmarkTagsService
             throw new NotFoundHttpException();
         }
 
-        (new EnsureAuthorizedUserOwnsBookmark)($bookmark);
+        (new EnsureAuthorizedUserOwnsResource)($bookmark);
 
         $this->tagsRepository->detach($tagsCollection, $bookmarkId);
     }

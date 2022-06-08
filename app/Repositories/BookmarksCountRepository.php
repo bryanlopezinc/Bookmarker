@@ -17,13 +17,4 @@ final class BookmarksCountRepository
             $bookmarksCount->increment('count');
         }
     }
-
-    public function decrementUserBookmarksCount(UserID $userId, int $count = 1): void
-    {
-        if ($count < 1) {
-            return;
-        }
-
-        UserBookmarksCount::where('user_id', $userId->toInt())->decrement('count', $count);
-    }
 }

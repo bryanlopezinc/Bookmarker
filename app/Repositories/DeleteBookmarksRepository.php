@@ -27,8 +27,6 @@ final class DeleteBookmarksRepository
 
         $totalBookmarksDeleted = Model::query()->where('user_id', $userId->toInt())->whereIn('id', $bookmarkIds->asIntegers())->delete();
 
-        $this->bookmarksCountRepository->decrementUserBookmarksCount($userId, $totalBookmarksDeleted);
-
         $this->favouritesRepository->decrementFavouritesCount(
             $userId,
             $totalBookmarksDeleted ? $totalFavouritedToBeDeleted : 0
@@ -66,14 +64,10 @@ final class DeleteBookmarksRepository
                 $userId
             );
 
-            $totalBookmarksDeleted = $chunk->toQuery()->delete();
+            $chunk->toQuery()->delete();
 
             if ($totalFavouritedToBeDeleted > 0) {
                 $this->favouritesRepository->decrementFavouritesCount($userId, $totalFavouritedToBeDeleted);
-            }
-
-            if ($totalBookmarksDeleted > 0) {
-                $this->bookmarksCountRepository->decrementUserBookmarksCount($userId, $chunk->count());
             }
         });
     }

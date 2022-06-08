@@ -12,12 +12,6 @@ use Illuminate\Database\Eloquent\Collection;
 
 final class DeleteBookmarksRepository
 {
-    public function __construct(
-        private BookmarksCountRepository $bookmarksCountRepository,
-        private FavouritesRepository $favouritesRepository
-    ) {
-    }
-
     public function deleteManyFor(UserID $userId, ResourceIDsCollection $bookmarkIds): bool
     {
         return (bool) Model::query()->where('user_id', $userId->toInt())->whereIn('id', $bookmarkIds->asIntegers())->delete();

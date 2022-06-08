@@ -31,6 +31,15 @@ return new class extends Migration
                 SET urc.count = urc.count - 1
                 WHERE  urc.type = 3 AND urc.user_id = OLD.user_id;
             END;
+
+            -- Decrement favourites count before favourites is cascade deleted
+            CREATE TRIGGER decrement_user_favourites_count
+            BEFORE DELETE ON bookmarks FOR EACH ROW
+               IF( EXISTS (SELECT * FROM favourites WHERE user_id = OLD.user_id AND bookmark_id = OLD.id) ) THEN
+                    UPDATE  users_resources_counts urc
+                    SET urc.count = urc.count - 1
+                    WHERE  urc.type = 4 AND urc.user_id = OLD.user_id;
+                END IF;
         SQL);
     }
 
@@ -43,5 +52,6 @@ return new class extends Migration
     {
         Schema::dropIfExists('users_resources_counts');
         DB::unprepared('DROP TRIGGER decrement_user_resources_count');
+        DB::unprepared('DROP TRIGGER decrement_user_favourites_count');
     }
 };

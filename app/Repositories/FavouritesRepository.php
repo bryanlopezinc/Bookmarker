@@ -73,7 +73,7 @@ final class FavouritesRepository
         return (bool) $deleted;
     }
 
-    public function decrementFavouritesCount(UserID $userId, int $amount = 1): void
+    private function decrementFavouritesCount(UserID $userId, int $amount = 1): void
     {
         if ($amount < 1) {
             return;

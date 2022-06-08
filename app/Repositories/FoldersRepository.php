@@ -81,16 +81,29 @@ final class FoldersRepository
         $this->incrementFolderBookmarksCount($folderID, $bookmarkIDs->count());
     }
 
+    /**
+     * @return int number of deleted records.
+     */
+    public function removeBookmarksFromFolder(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): int
+    {
+        $deleted =  FolderBookmark::where('folder_id', $folderID->toInt())->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())->delete();
+
+        $this->decrementFolderBookmarksCount($folderID, $deleted);
+
+        return $deleted;
+    }
+
     private function incrementFolderBookmarksCount(ResourceID $folderID, int $amount): void
     {
-        $attributes = [
-            'folder_id' => $folderID->toInt(),
-        ];
-
-        $model = FolderBookmarksCount::query()->firstOrCreate($attributes, ['count' => $amount, ...$attributes]);
+        $model = FolderBookmarksCount::query()->firstOrCreate(['folder_id' => $folderID->toInt()], ['count' => $amount]);
 
         if (!$model->wasRecentlyCreated) {
             $model->increment('count', $amount);
         }
+    }
+
+    private function decrementFolderBookmarksCount(ResourceID $folderID, int $amount): void
+    {
+        FolderBookmarksCount::query()->where('folder_id', $folderID->toInt())->decrement('count', $amount);
     }
 }

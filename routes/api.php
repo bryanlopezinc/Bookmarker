@@ -42,9 +42,14 @@ Route::middleware('auth:api')->group(function () {
             ->name('updateBookmark');
 
         Route::post('folders', Controllers\CreateFolderController::class)->name('createFolder');
+
         Route::post('bookmarks/folders', Controllers\AddBookmarksToFolderController::class)
             ->middleware(ConvertStringToArray::keys('bookmarks'))
             ->name('addBookmarksToFolder');
+
+        Route::delete('bookmarks/folders', Controllers\RemoveBookmarksFromFolderController::class)
+            ->middleware(ConvertStringToArray::keys('bookmarks'))
+            ->name('removeBookmarksFromFolder');
     });
 });
 

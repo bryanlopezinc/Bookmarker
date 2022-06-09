@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Models\FolderBookmarksCount;
 use Database\Factories\BookmarkFactory;
@@ -76,26 +77,33 @@ class AddBookmarksToFolderTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folderID = FolderFactory::new()->create([
+            'user_id' => $user->id,
+            'created_at' => $createdAt = now()->yesterday(),
+            'updated_at' => $createdAt,
+        ])->id;
 
         $this->getTestResponse([
             'bookmarks' => $bookmarks->pluck('id')->implode(','),
-            'folder' => $folder->id
+            'folder' => $folderID
         ])->assertCreated();
 
-        $bookmarks->pluck('id')->each(function (int $bookmarkID) use ($folder) {
+        $bookmarks->pluck('id')->each(function (int $bookmarkID) use ($folderID) {
             $this->assertDatabaseHas(FolderBookmark::class, [
                 'bookmark_id' => $bookmarkID,
-                'folder_id' => $folder->id
+                'folder_id' => $folderID
             ]);
         });
 
         $this->assertDatabaseHas(FolderBookmarksCount::class, [
-            'folder_id' => $folder->id,
+            'folder_id' => $folderID,
             'count' => 10,
         ]);
+
+        //Assert the folder updated_at column was updated
+        $this->assertTrue(
+            Folder::query()->whereKey($folderID)->first('updated_at')->updated_at->isToday()
+        );
     }
 
     public function testCannotAddBookmarkToFolderMoreThanOnce(): void

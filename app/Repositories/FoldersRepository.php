@@ -79,6 +79,8 @@ final class FoldersRepository
         FolderBookmark::insert($bookmarkIDs->asIntegers()->map($mapCallback)->all());
 
         $this->incrementFolderBookmarksCount($folderID, $bookmarkIDs->count());
+
+        Model::query()->whereKey($folderID->toInt())->first()->touch();
     }
 
     /**

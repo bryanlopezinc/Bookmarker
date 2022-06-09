@@ -86,11 +86,7 @@ final class FoldersRepository
      */
     public function removeBookmarksFromFolder(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): int
     {
-        $deleted =  FolderBookmark::where('folder_id', $folderID->toInt())->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())->delete();
-
-        $this->decrementFolderBookmarksCount($folderID, $deleted);
-
-        return $deleted;
+        return FolderBookmark::where('folder_id', $folderID->toInt())->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())->delete();
     }
 
     private function incrementFolderBookmarksCount(ResourceID $folderID, int $amount): void
@@ -100,10 +96,5 @@ final class FoldersRepository
         if (!$model->wasRecentlyCreated) {
             $model->increment('count', $amount);
         }
-    }
-
-    private function decrementFolderBookmarksCount(ResourceID $folderID, int $amount): void
-    {
-        FolderBookmarksCount::query()->where('folder_id', $folderID->toInt())->decrement('count', $amount);
     }
 }

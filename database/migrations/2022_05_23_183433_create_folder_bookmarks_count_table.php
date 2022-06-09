@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -19,6 +20,14 @@ return new class extends Migration
             $table->unsignedBigInteger('count');
             $table->timestamps();
         });
+
+        DB::unprepared(<<<SQL
+            CREATE TRIGGER decrement_folders_bookmarks_count
+            AFTER DELETE ON folders_bookmarks FOR EACH ROW
+            UPDATE  folders_bookmarks_count fbc
+            SET fbc.count = fbc.count - 1
+            WHERE  fbc.folder_id =  OLD.folder_id;
+        SQL);
     }
 
     /**

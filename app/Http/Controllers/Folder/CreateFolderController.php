@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Folder;
 
 use App\DataTransferObjects\Builders\FolderBuilder;
 use App\Repositories\FoldersRepository;

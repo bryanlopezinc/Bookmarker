@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers;
+use App\Http\Controllers\Folder;
 use App\Http\Middleware\ConvertNestedValuesToArrayMiddleware as ConvertStringToArray;
 use App\Http\Middleware\HandleDbTransactionsMiddleware as DBTransaction;
 use Illuminate\Support\Facades\Route;
@@ -41,14 +42,14 @@ Route::middleware('auth:api')->group(function () {
             ->middleware([ConvertStringToArray::keys('tags')])
             ->name('updateBookmark');
 
-        Route::post('folders', Controllers\CreateFolderController::class)->name('createFolder');
-        Route::delete('folders', Controllers\DeleteFolderController::class)->name('deleteFolder');
+        Route::post('folders', Folder\CreateFolderController::class)->name('createFolder');
+        Route::delete('folders', Folder\DeleteFolderController::class)->name('deleteFolder');
 
-        Route::post('bookmarks/folders', Controllers\AddBookmarksToFolderController::class)
+        Route::post('bookmarks/folders', Folder\AddBookmarksToFolderController::class)
             ->middleware(ConvertStringToArray::keys('bookmarks'))
             ->name('addBookmarksToFolder');
 
-        Route::delete('bookmarks/folders', Controllers\RemoveBookmarksFromFolderController::class)
+        Route::delete('bookmarks/folders', Folder\RemoveBookmarksFromFolderController::class)
             ->middleware(ConvertStringToArray::keys('bookmarks'))
             ->name('removeBookmarksFromFolder');
     });

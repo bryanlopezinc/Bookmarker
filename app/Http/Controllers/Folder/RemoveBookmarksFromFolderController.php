@@ -2,19 +2,18 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Folder;
 
 use App\Collections\ResourceIDsCollection;
 use App\Rules\ResourceIdRule;
-use App\Services\AddBookmarksToFolderService;
+use App\Services\RemoveBookmarksFromFolderService as Service;
 use App\ValueObjects\ResourceID;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 
-final class AddBookmarksToFolderController
+final class RemoveBookmarksFromFolderController
 {
-    public function __invoke(Request $request, AddBookmarksToFolderService $service): JsonResponse
+    public function __invoke(Request $request, Service $service): JsonResponse
     {
         $request->validate([
             'bookmarks' => ['required', 'array', 'max:30'],
@@ -22,11 +21,11 @@ final class AddBookmarksToFolderController
             'folder' => ['required', new ResourceIdRule]
         ]);
 
-        $service->add(
+        $service->remove(
             ResourceIDsCollection::fromNativeTypes($request->input('bookmarks')),
             ResourceID::fromRequest($request, 'folder')
         );
 
-        return response()->json(status: Response::HTTP_CREATED);
+        return response()->json();
     }
 }

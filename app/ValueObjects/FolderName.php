@@ -8,9 +8,7 @@ final class FolderName
 {
     public const MAX = 50;
 
-    private readonly string $value;
-
-    public function __construct(string $value)
+    public function __construct(public readonly string $value)
     {
         if (blank($value)) {
             throw new \Exception('Folder name cannot be empty');
@@ -19,13 +17,6 @@ final class FolderName
         if (mb_strlen($value) > self::MAX) {
             throw new \Exception('Folder name cannot exceed ' . self::MAX);
         }
-
-        $this->value = $value;
-    }
-
-    public function value(): string
-    {
-        return $this->value;
     }
 
     /**

@@ -27,7 +27,7 @@ class FolderNameTest extends TestCase
     {
         $folder = new FolderName($value = "<script>alert(shame on you bryan :-( )</script>");
 
-        $this->assertEquals($folder->value(), $value);
+        $this->assertEquals($folder->value, $value);
         $this->assertEquals($folder->safe(), '&lt;script&gt;alert(shame on you bryan :-( )&lt;/script&gt;');
     }
 }

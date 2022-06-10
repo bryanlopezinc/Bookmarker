@@ -8,6 +8,8 @@ use App\DataTransferObjects\Builders\FolderBuilder;
 use App\DataTransferObjects\Folder;
 use App\Models\Folder as Model;
 use App\Models\UserFoldersCount;
+use App\ValueObjects\FolderDescription;
+use App\ValueObjects\FolderName;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 
@@ -52,5 +54,13 @@ final class FoldersRepository
             ->setID($model->id)
             ->setOwnerID($model->user_id)
             ->build();
+    }
+
+    public function update(ResourceID $folderID, FolderName $folderName, FolderDescription $folderDescription): void
+    {
+        Model::query()->whereKey($folderID->toInt())->first()->update([
+            'description' => $folderDescription->isEmpty() ? null : $folderDescription->value,
+            'name' => $folderName->value
+        ]);
     }
 }

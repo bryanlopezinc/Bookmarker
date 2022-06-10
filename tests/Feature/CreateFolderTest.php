@@ -34,6 +34,9 @@ class CreateFolderTest extends TestCase
         Passport::actingAs(UserFactory::new()->create());
 
         $this->getTestResponse()->assertJsonValidationErrors(['name']);
+        $this->getTestResponse([
+            'name' => ' ',
+        ])->assertJsonValidationErrors(['name']);
     }
 
     public function testFolderNameCannotBeGreaterThan_50(): void

@@ -40,6 +40,14 @@ return new class extends Migration
                     SET urc.count = urc.count - 1
                     WHERE  urc.type = 4 AND urc.user_id = OLD.user_id;
                 END IF;
+
+            CREATE TRIGGER decrement_user_folders_count
+            AFTER DELETE ON folders FOR EACH ROW
+            BEGIN
+                UPDATE  users_resources_counts urc
+                SET urc.count = urc.count - 1
+                WHERE  urc.type = 5 AND urc.user_id = OLD.user_id;
+            END;
         SQL);
     }
 
@@ -51,7 +59,5 @@ return new class extends Migration
     public function down()
     {
         Schema::dropIfExists('users_resources_counts');
-        DB::unprepared('DROP TRIGGER decrement_user_resources_count');
-        DB::unprepared('DROP TRIGGER decrement_user_favourites_count');
     }
 };

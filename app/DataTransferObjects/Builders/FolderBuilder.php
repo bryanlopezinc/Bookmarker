@@ -7,6 +7,7 @@ namespace App\DataTransferObjects\Builders;
 use App\DataTransferObjects\Folder;
 use App\ValueObjects\FolderDescription;
 use App\ValueObjects\FolderName;
+use App\ValueObjects\PositiveNumber;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Carbon\Carbon;
@@ -44,6 +45,20 @@ final class FolderBuilder extends Builder
     public function setCreatedAt(Carbon $date): self
     {
         $this->attributes['createdAt'] = $date;
+
+        return $this;
+    }
+
+    public function setUpdatedAt(Carbon $date): self
+    {
+        $this->attributes['updatedAt'] = $date;
+
+        return $this;
+    }
+
+    public function setBookmarksCount(int $count): self
+    {
+        $this->attributes['bookmarksCount'] = new PositiveNumber($count);
 
         return $this;
     }

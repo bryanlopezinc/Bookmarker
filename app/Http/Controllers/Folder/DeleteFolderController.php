@@ -15,10 +15,17 @@ final class DeleteFolderController
     public function __invoke(Request $request, DeleteFolderService $service): JsonResponse
     {
         $request->validate([
-            'folder' => ['required', new ResourceIdRule]
+            'folder' => ['required', new ResourceIdRule],
+            'delete_bookmarks' => ['nullable', 'boolean']
         ]);
 
-        $service->delete(ResourceID::fromRequest($request, 'folder'));
+        $folderID = ResourceID::fromRequest($request, 'folder');
+        
+        if ($request->boolean('delete_bookmarks')) {
+            $service->deleteRecursive($folderID);
+        } else {
+            $service->delete($folderID);
+        }
 
         return response()->json();
     }

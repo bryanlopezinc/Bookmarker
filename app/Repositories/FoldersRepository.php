@@ -38,11 +38,6 @@ final class FoldersRepository
         }
     }
 
-    public function delete(ResourceID $folderID): bool
-    {
-        return (bool) Model::query()->whereKey($folderID->toInt())->delete();
-    }
-
     /**
      * Find a folder by id or return false if the folder does not exists
      */

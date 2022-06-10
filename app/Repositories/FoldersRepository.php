@@ -71,15 +71,20 @@ final class FoldersRepository
 
     public function addBookmarksToFolder(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): void
     {
-        $mapCallback = fn (int $bookmarkID) => [
+        $callback = fn (int $bookmarkID) => [
             'bookmark_id' => $bookmarkID,
             'folder_id' => $folderID->toInt()
         ];
 
-        FolderBookmark::insert($bookmarkIDs->asIntegers()->map($mapCallback)->all());
+        FolderBookmark::insert($bookmarkIDs->asIntegers()->map($callback)->all());
 
         $this->incrementFolderBookmarksCount($folderID, $bookmarkIDs->count());
 
+        $this->updateTimeStamp($folderID);
+    }
+
+    private function updateTimeStamp(ResourceID $folderID): void
+    {
         Model::query()->whereKey($folderID->toInt())->first()->touch();
     }
 
@@ -88,7 +93,13 @@ final class FoldersRepository
      */
     public function removeBookmarksFromFolder(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): int
     {
-        return FolderBookmark::where('folder_id', $folderID->toInt())->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())->delete();
+        $deleted = FolderBookmark::where('folder_id', $folderID->toInt())->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())->delete();
+
+        if ($deleted > 0) {
+            $this->updateTimeStamp($folderID);
+        }
+
+        return $deleted;
     }
 
     private function incrementFolderBookmarksCount(ResourceID $folderID, int $amount): void

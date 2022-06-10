@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Models\FolderBookmarksCount;
 use Database\Factories\BookmarkFactory;
@@ -72,7 +73,9 @@ class RemoveBookmarksFromFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         $bookmarkIDs = BookmarkFactory::new()->count(10)->create([
-            'user_id' => $user->id
+            'user_id' => $user->id,
+            'created_at' => $createdAt = now()->yesterday(),
+            'updated_at' => $createdAt,
         ])->pluck('id');
 
         $folderID = FolderFactory::new()->create([
@@ -110,6 +113,11 @@ class RemoveBookmarksFromFolderTest extends TestCase
             'folder_id' => $folderID,
             'count' => 1,
         ]);
+
+        //Assert the folder updated_at column was updated
+        $this->assertTrue(
+            Folder::query()->whereKey($folderID)->first('updated_at')->updated_at->isToday()
+        );
     }
 
     public function testWillReturnNotFoundResponseWhenBookmarksDontExistsInFolder(): void

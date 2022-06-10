@@ -71,12 +71,13 @@ final class FoldersRepository
 
     public function addBookmarksToFolder(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): void
     {
-        $callback = fn (int $bookmarkID) => [
-            'bookmark_id' => $bookmarkID,
-            'folder_id' => $folderID->toInt()
-        ];
-
-        FolderBookmark::insert($bookmarkIDs->asIntegers()->map($callback)->all());
+        $bookmarkIDs
+            ->asIntegers()
+            ->map(fn (int $bookmarkID) => [
+                'bookmark_id' => $bookmarkID,
+                'folder_id' => $folderID->toInt()
+            ])
+            ->tap(fn (Collection $data) => FolderBookmark::insert($data->all()));
 
         $this->incrementFolderBookmarksCount($folderID, $bookmarkIDs->count());
 

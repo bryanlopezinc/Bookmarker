@@ -8,6 +8,7 @@ use App\Collections\ResourceIDsCollection;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkQueryColumns;
 use App\Repositories\BookmarksRepository;
+use App\Repositories\FolderBookmarksRepository;
 use App\ValueObjects\ResourceID;
 use App\Repositories\FoldersRepository;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -15,8 +16,11 @@ use Illuminate\Http\Response;
 
 final class RemoveBookmarksFromFolderService
 {
-    public function __construct(private FoldersRepository $repository, private BookmarksRepository $bookmarksRepository)
-    {
+    public function __construct(
+        private FoldersRepository $repository,
+        private BookmarksRepository $bookmarksRepository,
+        private FolderBookmarksRepository $folderBookmarks
+    ) {
     }
 
     public function remove(ResourceIDsCollection $bookmarkIDs, ResourceID $folderID): void
@@ -27,7 +31,7 @@ final class RemoveBookmarksFromFolderService
 
         $this->ensureBookmarksExistsInFolder($folderID, $bookmarkIDs);
 
-        $this->repository->removeBookmarksFromFolder($folderID, $bookmarkIDs);
+        $this->folderBookmarks->removeBookmarksFromFolder($folderID, $bookmarkIDs);
     }
 
     private function validateFolder(ResourceID $folderID): void
@@ -58,7 +62,7 @@ final class RemoveBookmarksFromFolderService
 
     private function ensureBookmarksExistsInFolder(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): void
     {
-        $exists  = $this->repository->getFolderBookmarksFrom($folderID, $bookmarkIDs);
+        $exists  = $this->folderBookmarks->getFolderBookmarksFrom($folderID, $bookmarkIDs);
 
         if ($exists->count() !== $bookmarkIDs->count()) {
             throw new HttpResponseException(response()->json([

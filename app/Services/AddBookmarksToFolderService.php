@@ -8,6 +8,7 @@ use App\Collections\ResourceIDsCollection;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkQueryColumns;
 use App\Repositories\BookmarksRepository;
+use App\Repositories\FolderBookmarksRepository;
 use App\ValueObjects\ResourceID;
 use App\Repositories\FoldersRepository;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -15,8 +16,11 @@ use Illuminate\Http\Response;
 
 final class AddBookmarksToFolderService
 {
-    public function __construct(private FoldersRepository $repository, private BookmarksRepository $bookmarksRepository)
-    {
+    public function __construct(
+        private FoldersRepository $repository,
+        private BookmarksRepository $bookmarksRepository,
+        private FolderBookmarksRepository $folderBookmarks
+    ) {
     }
 
     public function add(ResourceIDsCollection $bookmarkIDs, ResourceID $folderID): void
@@ -27,7 +31,7 @@ final class AddBookmarksToFolderService
 
         $this->checkFolderForPossibleDuplicates($folderID, $bookmarkIDs);
 
-        $this->repository->addBookmarksToFolder($folderID, $bookmarkIDs);
+        $this->folderBookmarks->addBookmarksToFolder($folderID, $bookmarkIDs);
     }
 
     private function validateFolder(ResourceID $folderID): void
@@ -58,7 +62,7 @@ final class AddBookmarksToFolderService
 
     private function checkFolderForPossibleDuplicates(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): void
     {
-        $exists  = $this->repository->getFolderBookmarksFrom($folderID, $bookmarkIDs);
+        $exists  = $this->folderBookmarks->getFolderBookmarksFrom($folderID, $bookmarkIDs);
 
         if ($exists->isNotEmpty()) {
             throw new HttpResponseException(response()->json([

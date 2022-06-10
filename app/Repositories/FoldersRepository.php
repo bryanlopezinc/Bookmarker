@@ -19,7 +19,7 @@ final class FoldersRepository
     {
         Model::query()->create([
             'description' => $folder->description->value,
-            'name' => $folder->name->value,
+            'name' => $folder->name->value(),
             'user_id' => $folder->ownerID->toInt(),
             'created_at' => $folder->createdAt
         ]);
@@ -60,7 +60,7 @@ final class FoldersRepository
     {
         Model::query()->whereKey($folderID->toInt())->first()->update([
             'description' => $folderDescription->isEmpty() ? null : $folderDescription->value,
-            'name' => $folderName->value
+            'name' => $folderName->value()
         ]);
     }
 }

@@ -48,4 +48,12 @@ final class BookmarkTitle
             );
         }
     }
+
+    /**
+     * Get the sanitized bookmarkTitle.
+     */
+    public function safe(): string
+    {
+        return e($this->value);
+    }
 }

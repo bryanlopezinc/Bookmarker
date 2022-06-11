@@ -84,16 +84,14 @@ class FetchUserFoldersTest extends TestCase
                     ->where('links.first', route('userFolders', ['per_page' => 15, 'page' => 1]))
                     ->fromArray($json->toArray()['data'])
                     ->each(function (AssertableJson $json) use ($userfolders) {
-                        $attributes = $json->toArray();
-
                         $json->etc();
-                        $this->assertContains($attributes['attributes']['id'], $userfolders->pluck('id')->all());
+                        $json->where('attributes.id', fn (int $id) => $userfolders->pluck('id')->containsStrict($id));
 
-                        //Assert the name  and decription response sent to client is the sanitized version
-                        $this->assertEquals($attributes['attributes']['name'], '&lt;script&gt;alert(Cross Site Scripting)&lt;/script&gt;');
-                        $this->assertEquals($attributes['attributes']['description'], '&lt;script&gt;alert(CSS)&lt;/script&gt;');
+                        //Assert the name  and decription response sent to client are sanitized
+                        $json->where('attributes.name', '&lt;script&gt;alert(Cross Site Scripting)&lt;/script&gt;');
+                        $json->where('attributes.description', '&lt;script&gt;alert(CSS)&lt;/script&gt;');
 
-                        (new AssertableJsonString($attributes))
+                        (new AssertableJsonString($json->toArray()))
                             ->assertCount(2)
                             ->assertCount(6, 'attributes')
                             ->assertStructure([

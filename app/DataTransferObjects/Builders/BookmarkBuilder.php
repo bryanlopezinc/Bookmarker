@@ -9,7 +9,7 @@ use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\WebSite;
 use App\Models\Bookmark as Model;
 use App\ValueObjects\BookmarkTitle;
-use App\ValueObjects\WebPageDescription;
+use App\ValueObjects\BookmarkDescription;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\TimeStamp;
 use App\ValueObjects\Url;
@@ -81,7 +81,7 @@ final class BookmarkBuilder extends Builder
 
     public function description(?string $description): self
     {
-        $this->attributes['description'] = new WebPageDescription($description);
+        $this->attributes['description'] = new BookmarkDescription($description);
 
         return $this;
     }

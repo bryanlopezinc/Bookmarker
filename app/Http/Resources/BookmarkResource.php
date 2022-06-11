@@ -20,11 +20,11 @@ final class BookmarkResource extends JsonResource
             'type' => 'bookmark',
             'attributes' => [
                 'id' => $this->bookmark->id->toInt(),
-                'title' => $this->bookmark->title->value,
+                'title' => $this->bookmark->title->safe(),
                 'web_page_link' => $this->bookmark->linkToWebPage->value,
                 'has_preview_image'  => $this->bookmark->hasPreviewImageUrl,
                 'preview_image_url'  => $this->when($this->bookmark->hasPreviewImageUrl, fn () => $this->bookmark->previewImageUrl->value),
-                'description' => $this->when(!$this->bookmark->description->isEmpty(), fn () => $this->bookmark->description->value),
+                'description' => $this->when(!$this->bookmark->description->isEmpty(), fn () => $this->bookmark->description->safe()),
                 'has_description' => !$this->bookmark->description->isEmpty(),
                 'site_id' => $this->bookmark->webPagesiteId->toInt(),
                 'from_site' => new WebSiteResource($this->bookmark->fromWebSite),

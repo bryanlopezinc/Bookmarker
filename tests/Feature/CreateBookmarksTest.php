@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\UpdateBookmarkInfo;
+use App\Models\Bookmark;
 use App\Models\UserBookmarksCount;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -64,20 +65,48 @@ class CreateBookmarksTest extends TestCase
         ]);
     }
 
-    public function testWillAddWebPageToBookmarks(): void
+    public function testBookmarkDescriptionCannotExceed_200(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->getTestResponse(['url' => $this->faker->url, 'description' => str_repeat('a', 201)])->assertJsonValidationErrors([
+            'description' => 'The description must not be greater than 200 characters.'
+        ]);
+    }
+
+    public function testBookmarkTitleCannotExceed_100(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->getTestResponse(['url' => $this->faker->url, 'title' => str_repeat('a', 101)])->assertJsonValidationErrors([
+            'title' => 'The title must not be greater than 100 characters.'
+        ]);
+    }
+
+    public function testWillCreateBookmark(): void
     {
         Bus::fake();
 
         Passport::actingAs($user = UserFactory::new()->create());
 
         $this->getTestResponse([
-            'url' => $this->faker->url
+            'url' => $url =  $this->faker->url
         ])->assertCreated();
+
+        $this->assertDatabaseHas(Bookmark::class, [
+            'title' => $url,
+        ]);
 
         $this->getTestResponse([
             'url'   => $this->faker->url,
-            'title' => $this->faker->word
+            'title' => $title = '<h1>whatever</h1>',
+            'description' => $description = '<h2>my dog stepped on a bee :-(</h2>'
         ])->assertCreated();
+
+        $this->assertDatabaseHas(Bookmark::class, [
+            'title' => $title,
+            'description' => $description
+        ]);
 
         $this->getTestResponse([
             'url'   => $this->faker->url,

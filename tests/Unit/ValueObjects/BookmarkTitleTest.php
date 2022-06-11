@@ -32,4 +32,12 @@ class BookmarkTitleTest extends TestCase
 
         new BookmarkTitle(str_repeat('a', BookmarkTitle::MAX + 1));
     }
+
+    public function testWillConvertSpecialCharacters(): void
+    {
+        $description = new BookmarkTitle($value = "<script>alert(you are fucked)</script>");
+
+        $this->assertEquals($description->value, $value);
+        $this->assertEquals($description->safe(), '&lt;script&gt;alert(you are fucked)&lt;/script&gt;');
+    }
 }

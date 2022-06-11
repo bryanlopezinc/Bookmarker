@@ -8,7 +8,7 @@ use App\ValueObjects\UserID;
 use App\ValueObjects\ResourceID;
 use App\Collections\TagsCollection;
 use App\ValueObjects\BookmarkTitle;
-use App\ValueObjects\WebPageDescription;
+use App\ValueObjects\BookmarkDescription;
 use App\Http\Requests\UpdateBookmarkRequest;
 use App\DataTransferObjects\UpdateBookmarkData;
 
@@ -56,7 +56,7 @@ final class UpdateBookmarkDataBuilder extends Builder
 
     public function description(string $description): self
     {
-        $this->attributes['description'] = new WebPageDescription($description);
+        $this->attributes['description'] = new BookmarkDescription($description);
 
         $this->hasDescription(true);
 

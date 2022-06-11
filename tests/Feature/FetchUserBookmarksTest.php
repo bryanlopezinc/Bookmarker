@@ -86,7 +86,9 @@ class FetchUserBookmarksTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         BookmarkFactory::new()->count(10)->create([
-            'user_id' => $user->id
+            'user_id' => $user->id,
+            'title' => '<h1>did you forget something?</h1>',
+            'description' => 'And <h1>spoof!</h1>'
         ]);
 
         $response = $this->getTestResponse([])
@@ -97,6 +99,9 @@ class FetchUserBookmarksTest extends TestCase
                     ->where('links.first', route('fetchUserBookmarks', ['per_page' => 15, 'page' => 1]))
                     ->fromArray($json->toArray()['data'])
                     ->each(function (AssertableJson $json) {
+                        //Assert sanitized attributes was sent to client.
+                        $json->where('attributes.title', '&lt;h1&gt;did you forget something?&lt;/h1&gt;');
+                        $json->where('attributes.description', 'And &lt;h1&gt;spoof!&lt;/h1&gt;');
                         $json->where('attributes.is_user_favourite', false)->etc();
                     });
             })

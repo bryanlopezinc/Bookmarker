@@ -64,7 +64,11 @@ class FetchUserFavouritesTest extends TestCase
 
         $this->getTestResponse()->assertSuccessful()->assertJsonCount(0, 'data');
 
-        $bookmarks = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id]);
+        $bookmarks = BookmarkFactory::new()->count(5)->create([
+            'user_id' => $user->id,
+            'title' => '<h1>did you forget something?</h1>',
+            'description' => 'And <h1>spoof!</h1>'
+        ]);
 
         $this->postJson(route('createFavourite'), ['bookmarks' => (string) $bookmarks->pluck('id')->implode(',')])->assertCreated();
 
@@ -75,6 +79,9 @@ class FetchUserFavouritesTest extends TestCase
                 $json->etc()
                     ->fromArray($json->toArray()['data'])
                     ->each(function (AssertableJson $json) {
+                        //Assert sanitized attributes was sent to client.
+                        $json->where('attributes.title', '&lt;h1&gt;did you forget something?&lt;/h1&gt;');
+                        $json->where('attributes.description', 'And &lt;h1&gt;spoof!&lt;/h1&gt;');
                         $json->where('attributes.is_user_favourite', true)->etc();
                     })
                     ->etc();

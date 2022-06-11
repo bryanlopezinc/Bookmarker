@@ -11,7 +11,7 @@ use App\ValueObjects\ResourceID;
 use App\Collections\TagsCollection;
 use App\Contracts\BelongsToUserInterface;
 use App\ValueObjects\BookmarkTitle;
-use App\ValueObjects\WebPageDescription;
+use App\ValueObjects\BookmarkDescription;
 
 final class Bookmark extends DataTransferObject implements BelongsToUserInterface
 {
@@ -21,7 +21,7 @@ final class Bookmark extends DataTransferObject implements BelongsToUserInterfac
     public readonly Url $linkToWebPage;
     public readonly Url $previewImageUrl;
     public readonly bool $hasPreviewImageUrl;
-    public readonly WebPageDescription $description;
+    public readonly BookmarkDescription $description;
     public readonly bool $descriptionWasSetByUser;
     public readonly ResourceID $webPagesiteId;
     public readonly UserID $ownerId;

@@ -23,11 +23,11 @@ final class FolderResource extends JsonResource
             'type' => 'folder',
             'attributes' => [
                 'id' => $this->folder->folderID->toInt(),
-                'name'  => $this->folder->name->safe(),
-                'description'   => $this->folder->description->value,
+                'name' => $this->folder->name->safe(),
+                'description' => $this->folder->description->safe(),
                 'date_created' => $this->folder->createdAt->toDateTimeString(),
                 'last_updated' => $this->folder->updatedAt->toDateTimeString(),
-                'bookmarks_count' => $this->folder->bookmarksCount->value,
+                'items_count' => $this->folder->bookmarksCount->value,
             ]
         ];
     }

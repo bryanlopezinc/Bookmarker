@@ -23,4 +23,12 @@ final class FolderDescription
     {
         return blank($this->value);
     }
+
+    /**
+     * Get the sanitized folderDescription.
+     */
+    public function safe(): string
+    {
+        return htmlspecialchars($this->value, ENT_QUOTES);
+    }
 }

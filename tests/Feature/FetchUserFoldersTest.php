@@ -71,7 +71,8 @@ class FetchUserFoldersTest extends TestCase
 
         $userfolders = FolderFactory::new()->count(10)->create([
             'user_id' => $user->id,
-            'name' => "<script>alert(Cross Site Scripting)</script>"
+            'name' => "<script>alert(Cross Site Scripting)</script>",
+            'description' => "<script>alert(CSS)</script>",
         ]);
 
         $this->getTestResponse([])
@@ -88,8 +89,9 @@ class FetchUserFoldersTest extends TestCase
                         $json->etc();
                         $this->assertContains($attributes['attributes']['id'], $userfolders->pluck('id')->all());
 
-                        //Assert the name response sent to client is the sanitized version
+                        //Assert the name  and decription response sent to client is the sanitized version
                         $this->assertEquals($attributes['attributes']['name'], '&lt;script&gt;alert(Cross Site Scripting)&lt;/script&gt;');
+                        $this->assertEquals($attributes['attributes']['description'], '&lt;script&gt;alert(CSS)&lt;/script&gt;');
 
                         (new AssertableJsonString($attributes))->assertStructure([
                             "type",
@@ -99,7 +101,7 @@ class FetchUserFoldersTest extends TestCase
                                 "description",
                                 "date_created",
                                 "last_updated",
-                                "bookmarks_count",
+                                "items_count",
                             ]
                         ]);
                     });

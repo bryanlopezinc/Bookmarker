@@ -93,17 +93,20 @@ class FetchUserFoldersTest extends TestCase
                         $this->assertEquals($attributes['attributes']['name'], '&lt;script&gt;alert(Cross Site Scripting)&lt;/script&gt;');
                         $this->assertEquals($attributes['attributes']['description'], '&lt;script&gt;alert(CSS)&lt;/script&gt;');
 
-                        (new AssertableJsonString($attributes))->assertStructure([
-                            "type",
-                            "attributes" => [
-                                "id",
-                                "name",
-                                "description",
-                                "date_created",
-                                "last_updated",
-                                "items_count",
-                            ]
-                        ]);
+                        (new AssertableJsonString($attributes))
+                            ->assertCount(2)
+                            ->assertCount(6, 'attributes')
+                            ->assertStructure([
+                                "type",
+                                "attributes" => [
+                                    "id",
+                                    "name",
+                                    "description",
+                                    "date_created",
+                                    "last_updated",
+                                    "items_count",
+                                ]
+                            ]);
                     });
             })
             ->assertJsonCount(2, 'links')

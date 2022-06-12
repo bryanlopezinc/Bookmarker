@@ -13,6 +13,7 @@ use App\ValueObjects\ResourceID;
 use App\Repositories\FoldersRepository;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Response;
+use App\Exceptions\FolderNotFoundHttpResponseException as HttpException;
 
 final class AddBookmarksToFolderService
 {
@@ -25,26 +26,13 @@ final class AddBookmarksToFolderService
 
     public function add(ResourceIDsCollection $bookmarkIDs, ResourceID $folderID): void
     {
-        $this->validateFolder($folderID);
+        (new EnsureAuthorizedUserOwnsResource)($this->repository->findOrFail($folderID, new HttpException));
 
         $this->validateBookmarks($bookmarkIDs);
 
         $this->checkFolderForPossibleDuplicates($folderID, $bookmarkIDs);
 
         $this->folderBookmarks->addBookmarksToFolder($folderID, $bookmarkIDs);
-    }
-
-    private function validateFolder(ResourceID $folderID): void
-    {
-        $folder = $this->repository->findByID($folderID);
-
-        if (!$folder) {
-            throw new HttpResponseException(response()->json([
-                'message' => "The folder does not exists"
-            ], Response::HTTP_NOT_FOUND));
-        }
-
-        (new EnsureAuthorizedUserOwnsResource)($folder);
     }
 
     private function validateBookmarks(ResourceIDsCollection $bookmarkIDs): void

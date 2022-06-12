@@ -7,13 +7,14 @@ namespace App\Services;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\Repositories\{DeleteFoldersRepository, FoldersRepository};
 use App\ValueObjects\ResourceID;
-use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Http\Response;
+use App\Exceptions\FolderNotFoundHttpResponseException as HttpException;
 
 final class DeleteFolderService
 {
-    public function __construct(private DeleteFoldersRepository $deleteFoldersRepository, private FoldersRepository $foldersRepository)
-    {
+    public function __construct(
+        private DeleteFoldersRepository $deleteFoldersRepository,
+        private FoldersRepository $foldersRepository
+    ) {
     }
 
     public function delete(ResourceID $folderID): void
@@ -31,25 +32,12 @@ final class DeleteFolderService
 
     private function deleteFolder(ResourceID $folderID, bool $recursive = false): void
     {
-        $this->validateFolder($folderID);
+        (new EnsureAuthorizedUserOwnsResource)($this->foldersRepository->findOrFail($folderID, new HttpException));
 
         if ($recursive) {
             $this->deleteFoldersRepository->deleteRecursive($folderID);
         } else {
             $this->deleteFoldersRepository->delete($folderID);
         }
-    }
-
-    private function validateFolder(ResourceID $folderID): void
-    {
-        $folder = $this->foldersRepository->findByID($folderID);
-
-        if (!$folder) {
-            throw new HttpResponseException(response()->json([
-                'message' => "The folder does not exists"
-            ], Response::HTTP_NOT_FOUND));
-        }
-
-        (new EnsureAuthorizedUserOwnsResource)($folder);
     }
 }

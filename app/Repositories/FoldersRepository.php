@@ -12,6 +12,7 @@ use App\ValueObjects\FolderDescription;
 use App\ValueObjects\FolderName;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
+use Throwable;
 
 final class FoldersRepository
 {
@@ -37,14 +38,14 @@ final class FoldersRepository
     }
 
     /**
-     * Find a folder by id or return false if the folder does not exists
+     * Find a folder by id or throw an Exception when folder does not exists
      */
-    public function findByID(ResourceID $folderID): Folder|false
+    public function findOrFail(ResourceID $folderID, Throwable $exception): Folder
     {
         $model = Model::query()->whereKey($folderID->toInt())->first();
 
         if ($model === null) {
-            return false;
+           throw $exception;
         }
 
         return (new FolderBuilder())

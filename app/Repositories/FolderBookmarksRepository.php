@@ -5,14 +5,46 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Collections\ResourceIDsCollection;
+use App\DataTransferObjects\Bookmark;
+use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\Models\Folder as Model;
 use App\Models\FolderBookmark;
 use App\Models\FolderBookmarksCount;
+use App\PaginationData;
 use App\ValueObjects\ResourceID;
+use App\ValueObjects\UserID;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 
 final class FolderBookmarksRepository
 {
+    /**
+     * @return Paginator<Bookmark>
+     */
+    public function bookmarks(ResourceID $folderID, PaginationData $pagination, UserID $userID): Paginator
+    {
+        /** @var Paginator */
+        $result = FolderBookmark::query()
+            ->where('folder_id', $folderID->toInt())
+            ->simplePaginate($pagination->perPage(), ['bookmark_id'], page: $pagination->page());
+
+        $bookmarkIDs = ResourceIDsCollection::fromNativeTypes($result->getCollection()->pluck('bookmark_id'));
+
+        $favourites = (new FavouritesRepository)->getUserFavouritesFrom($bookmarkIDs, $userID)->asIntegers();
+
+        $result->setCollection(
+            (new BookmarksRepository)
+                ->findManyById($bookmarkIDs)
+                ->map(function (Bookmark $bookmark) use ($favourites) {
+                    return BookmarkBuilder::fromBookmark($bookmark)
+                        ->isUserFavourite($favourites->containsStrict($bookmark->id->toInt()))
+                        ->build();
+                })
+        );
+
+        return $result;
+    }
+
     /**
      * Get all the bookmarkIDs that already exists in  given folder from the given bookmark ids.
      */

@@ -30,7 +30,7 @@ final class BookmarksRepository
             ->whereIn('bookmarks.id', $IDs->asIntegers()->unique()->all())
             ->get()
             ->map(function (Model $bookmark) use ($columns): Bookmark {
-                if (!$columns->has('id')) {
+                if (!$columns->isEmpty() && !$columns->has('id')) {
                     $bookmark->offsetUnset('id');
                 }
 

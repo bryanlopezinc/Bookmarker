@@ -46,6 +46,7 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('folders', Folder\DeleteFolderController::class)->name('deleteFolder');
         Route::patch('folders', Folder\UpdateFolderController::class)->name('updateFolder');
         Route::get('users/folders', Folder\FetchUserFoldersController::class)->name('userFolders');
+        Route::get('folders/bookmarks', Folder\FetchFolderBookmarksController::class)->name('folderBookmarks');
 
         Route::post('bookmarks/folders', Folder\AddBookmarksToFolderController::class)
             ->middleware(ConvertStringToArray::keys('bookmarks'))

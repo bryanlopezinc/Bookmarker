@@ -25,6 +25,11 @@ final class BookmarkBuilder extends Builder
         return (new BuildBookmarkFromModel)($model);
     }
 
+    public static function fromBookmark(Bookmark $bookmark): BookmarkBuilder
+    {
+        return new self($bookmark->toArray());
+    }
+
     public static function new(): self
     {
         return new self;

@@ -17,7 +17,7 @@ final class RemoveBookmarksFromFolderController
     {
         $request->validate([
             'bookmarks' => ['required', 'array', 'max:30'],
-            'bookmarks.*' => [new ResourceIdRule],
+            'bookmarks.*' => [new ResourceIdRule, 'distinct:strict'],
             'folder' => ['required', new ResourceIdRule]
         ]);
 

@@ -9,7 +9,6 @@ use App\Models\UserBookmarksCount;
 use App\Models\UserFavouritesCount;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
-use Illuminate\Support\Facades\Bus;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
@@ -39,6 +38,18 @@ class DeleteBookmarksTest extends TestCase
         Passport::actingAs(UserFactory::new()->create());
 
         $this->getTestResponse()->assertJsonValidationErrorFor('ids');
+    }
+
+    public function testAttributesMustBeUnique(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->getTestResponse([
+            'ids' => '1,1,3,4,5',
+        ])->assertJsonValidationErrors([
+            "ids.0" => ["The ids.0 field has a duplicate value."],
+            "ids.1" => ["The ids.1 field has a duplicate value."]
+        ]);
     }
 
     public function test_cannot_delete_more_than_100_bookmarks_simultaneously(): void

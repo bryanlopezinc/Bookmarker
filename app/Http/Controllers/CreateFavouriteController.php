@@ -17,7 +17,7 @@ final class CreateFavouriteController
     {
         $request->validate([
             'bookmarks' => ['required', 'filled', 'max:100'],
-            'bookmarks.*' => [new ResourceIdRule]
+            'bookmarks.*' => [new ResourceIdRule, 'distinct:strict']
         ], ['max' => 'cannot add more than 100 bookmarks simultaneously']);
 
         $service->create(ResourceIDsCollection::fromNativeTypes($request->input('bookmarks')));

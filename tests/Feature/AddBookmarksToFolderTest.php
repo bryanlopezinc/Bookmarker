@@ -49,13 +49,14 @@ class AddBookmarksToFolderTest extends TestCase
         $this->getTestResponse(['bookmarks' => '1,2bar'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
-                "folder" => [
-                    "The folder field is required."
-                ],
-                "bookmarks.1" => [
-                    "The bookmarks.1 attribute is invalid"
-                ]
+                "folder" => ["The folder field is required."],
+                "bookmarks.1" => ["The bookmarks.1 attribute is invalid"]
             ]);
+    }
+
+    public function testMakeHiddenValuesMustExistsInBookmarksValues(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
 
         $this->getTestResponse([
             'bookmarks' => '1,2,3,4,5',
@@ -64,6 +65,26 @@ class AddBookmarksToFolderTest extends TestCase
             'make_hidden.5' => [
                 'BookmarkId 6 does not exist in bookmarks.'
             ]
+        ]);
+    }
+
+    public function testAttributesMustBeUnique(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->getTestResponse([
+            'bookmarks' => '1,1,3,4,5',
+        ])->assertJsonValidationErrors([
+            "bookmarks.0" => ["The bookmarks.0 field has a duplicate value."],
+            "bookmarks.1" => ["The bookmarks.1 field has a duplicate value."]
+        ]);
+
+        $this->getTestResponse([
+            'bookmarks' => '1,2,3,4,5',
+            'make_hidden' => '1,1,2,3,4,5'
+        ])->assertJsonValidationErrors([
+            "make_hidden.0" => ["The make_hidden.0 field has a duplicate value."],
+            "make_hidden.1" => ["The make_hidden.1 field has a duplicate value."]
         ]);
     }
 
@@ -122,7 +143,7 @@ class AddBookmarksToFolderTest extends TestCase
 
         $bookmarkIDsToMakePrivate = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
         $bookmarkIDsToMakePublic = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
-        $folderID = FolderFactory::new()->create([ 'user_id' => $user->id,])->id;
+        $folderID = FolderFactory::new()->create(['user_id' => $user->id,])->id;
 
         $this->getTestResponse([
             'bookmarks' => $bookmarkIDsToMakePrivate->merge($bookmarkIDsToMakePublic)->shuffle()->implode(','),

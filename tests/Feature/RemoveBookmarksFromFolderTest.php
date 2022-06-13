@@ -48,13 +48,21 @@ class RemoveBookmarksFromFolderTest extends TestCase
         $this->getTestResponse(['bookmarks' => '1,2bar'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
-                "folder" => [
-                    "The folder field is required."
-                ],
-                "bookmarks.1" => [
-                    "The bookmarks.1 attribute is invalid"
-                ]
+                "folder" => ["The folder field is required."],
+                "bookmarks.1" => ["The bookmarks.1 attribute is invalid"]
             ]);
+    }
+
+    public function testAttributesMustBeUnique(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->getTestResponse([
+            'bookmarks' => '1,1,3,4,5',
+        ])->assertJsonValidationErrors([
+            "bookmarks.0" => ["The bookmarks.0 field has a duplicate value."],
+            "bookmarks.1" => ["The bookmarks.1 field has a duplicate value."]
+        ]);
     }
 
     public function testCannotRemoveMoreThan_30_bookmarks_simultaneously(): void
@@ -180,7 +188,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
 
         //Assert will return not found when some (but not all) bookmarks exists
         $this->getTestResponse([
-            'bookmarks' => $bookmarkIDs->push($bookmarkIDs->first() + 1)->implode(','),
+            'bookmarks' => $bookmarkIDs->push($bookmarkIDs->last() + 1)->implode(','),
             'folder' => $folderID
         ])->assertNotFound()
             ->assertExactJson([

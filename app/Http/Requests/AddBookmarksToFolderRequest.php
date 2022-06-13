@@ -14,10 +14,10 @@ final class AddBookmarksToFolderRequest extends FormRequest
     {
         return [
             'bookmarks' => ['required', 'array', 'max:30'],
-            'bookmarks.*' => [new ResourceIdRule],
+            'bookmarks.*' => [new ResourceIdRule, 'distinct:strict'],
             'folder' => ['required', new ResourceIdRule],
             'make_hidden' => ['nullable', 'array'],
-            'make_hidden.*' => [new ResourceIdRule, Rule::forEach(function () {
+            'make_hidden.*' => [new ResourceIdRule, 'distinct:strict', Rule::forEach(function () {
                 return [
                     function ($attribute, $value, $fail) {
                         if (!in_array($value, $this->input('bookmarks'), true)) {

@@ -18,7 +18,7 @@ final class HideFolderBookmarksController
         $request->validate([
             'folder_id' => ['required', new ResourceIdRule],
             'bookmarks' => ['required', 'array', 'max:30', 'filled'],
-            'bookmarks.*' => [new ResourceIdRule]
+            'bookmarks.*' => [new ResourceIdRule, 'distinct:strict']
         ]);
 
         $service->hide(

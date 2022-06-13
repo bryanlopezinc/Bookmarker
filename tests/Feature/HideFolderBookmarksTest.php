@@ -36,6 +36,18 @@ class HideFolderBookmarksTest extends TestCase
         $this->getTestResponse()->assertJsonValidationErrors(['folder_id', 'bookmarks']);
     }
 
+    public function testAttributesMustBeUnique(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->getTestResponse([
+            'bookmarks' => '1,1,3,4,5',
+        ])->assertJsonValidationErrors([
+            "bookmarks.0" => ["The bookmarks.0 field has a duplicate value."],
+            "bookmarks.1" => ["The bookmarks.1 field has a duplicate value."]
+        ]);
+    }
+
     public function testBookmarksCannotExceed_30(): void
     {
         Passport::actingAs(UserFactory::new()->create());

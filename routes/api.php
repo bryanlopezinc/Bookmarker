@@ -2,7 +2,7 @@
 
 use App\Http\Controllers;
 use App\Http\Controllers\Folder;
-use App\Http\Middleware\ConvertNestedValuesToArrayMiddleware as ConvertStringToArray;
+use App\Http\Middleware\ConvertConcatenatedValuesToArrayMiddleware as ConvertStringToArray;
 use App\Http\Middleware\HandleDbTransactionsMiddleware as DBTransaction;
 use Illuminate\Support\Facades\Route;
 use Laravel\Passport\Http\Middleware\CheckClientCredentials;

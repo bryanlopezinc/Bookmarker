@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Http\Middleware;
 
 use Tests\TestCase;
-use App\Http\Middleware\ConvertNestedValuesToArrayMiddleware;
+use App\Http\Middleware\ConvertConcatenatedValuesToArrayMiddleware;
 
-class ConvertNestedValuesToArrayMiddlewareTest extends TestCase
+class ConvertConcatenatedValuesToArrayMiddlewareTest extends TestCase
 {
     public function testWillConvertAttributes(): void
     {
@@ -15,7 +15,7 @@ class ConvertNestedValuesToArrayMiddlewareTest extends TestCase
             'foo' => 'bar,baz,far'
         ]);
 
-        (new ConvertNestedValuesToArrayMiddleware)->handle($request, function () {
+        (new ConvertConcatenatedValuesToArrayMiddleware)->handle($request, function () {
         }, 'foo');
 
         $this->assertEquals(['bar', 'baz', 'far'], request('foo'));
@@ -29,7 +29,7 @@ class ConvertNestedValuesToArrayMiddlewareTest extends TestCase
             'foo' => ['bar,baz,far']
         ]);
 
-        (new ConvertNestedValuesToArrayMiddleware)->handle($request, function () {
+        (new ConvertConcatenatedValuesToArrayMiddleware)->handle($request, function () {
         }, 'foo');
 
         $this->assertEquals(['bar', 'baz', 'far'], request('foo'));

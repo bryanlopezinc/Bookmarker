@@ -24,14 +24,38 @@ final class FolderBookmarksRepository
      */
     public function bookmarks(ResourceID $folderID, PaginationData $pagination, UserID $userID): Paginator
     {
+        return $this->getBookmarks($folderID, $pagination, [
+            'onlyPublic' => false,
+            'userID' => $userID
+        ]);
+    }
+
+    /**
+     * @return Paginator<FolderBookmark>
+     */
+    public function onlyPublicBookmarks(ResourceID $folderID, PaginationData $pagination): Paginator
+    {
+        return $this->getBookmarks($folderID, $pagination, [
+            'onlyPublic' => true
+        ]);
+    }
+
+    /**
+     * @return Paginator<FolderBookmark>
+     */
+    private function getBookmarks(ResourceID $folderID, PaginationData $pagination, array $options): Paginator
+    {
         /** @var Paginator */
         $result = FolderBookmarkModel::query()
             ->where('folder_id', $folderID->toInt())
+            ->when($options['onlyPublic'], fn ($query) => $query->where('is_public', true))
             ->simplePaginate($pagination->perPage(), ['bookmark_id', 'is_public'], page: $pagination->page());
 
         $bookmarkIDs = ResourceIDsCollection::fromNativeTypes($result->getCollection()->pluck('bookmark_id'));
 
-        $favourites = (new FavouritesRepository)->getUserFavouritesFrom($bookmarkIDs, $userID)->asIntegers();
+        $favourites = isset($options['userID'])
+            ? (new FavouritesRepository)->getUserFavouritesFrom($bookmarkIDs, $options['userID'])->asIntegers()
+            : collect();
 
         $result->setCollection(
             (new BookmarksRepository)

@@ -62,6 +62,10 @@ Route::post('client/oauth/token', Controllers\Auth\IssueClientTokenController::c
 Route::post('users', Controllers\CreateUserController::class)->middleware([DBTransaction::class])->name('createUser');
 Route::post('login', Controllers\Auth\LoginController::class)->name('loginUser');
 
+Route::get('folders/shared/bookmarks', Folder\FetchSharedFolderBookmarksController::class)
+    ->middleware([CheckClientCredentials::class])
+    ->name('viewPublicfolderBookmarks');
+
 Route::post('users/password/reset-token', Controllers\Auth\RequestPasswordResetController::class)
     ->middleware([DBTransaction::class, CheckClientCredentials::class])
     ->name('requestPasswordResetToken');

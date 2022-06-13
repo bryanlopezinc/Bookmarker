@@ -21,6 +21,7 @@ class FoldersRepositoryTest extends TestCase
             ->setDescription($this->faker->sentence)
             ->setName($this->faker->word)
             ->setOwnerID($userID = UserFactory::new()->create()->id)
+            ->setisPublic(false)
             ->build();
 
         $repository = new FoldersRepository;

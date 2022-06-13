@@ -28,6 +28,7 @@ final class FolderResource extends JsonResource
                 'date_created' => $this->folder->createdAt->toDateTimeString(),
                 'last_updated' => $this->folder->updatedAt->toDateTimeString(),
                 'items_count' => $this->folder->bookmarksCount->value,
+                'is_public' => $this->folder->isPublic,
             ]
         ];
     }

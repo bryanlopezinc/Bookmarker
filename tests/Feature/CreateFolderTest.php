@@ -69,7 +69,8 @@ class CreateFolderTest extends TestCase
         $this->assertDatabaseHas(Folder::class, [
             'user_id' => $user->id,
             'name' => $name,
-            'description' => $description
+            'description' => $description,
+            'is_public' => false
         ]);
 
         $this->assertDatabaseHas(UserFoldersCount::class, [
@@ -86,5 +87,21 @@ class CreateFolderTest extends TestCase
         $this->getTestResponse([
             'name' => $this->faker->word,
         ])->assertCreated();
+    }
+
+    public function testCreatePublicFolder(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->getTestResponse([
+            'name' => $name = $this->faker->word,
+            'is_public' => true
+        ])->assertCreated();
+
+        $this->assertDatabaseHas(Folder::class, [
+            'user_id' => $user->id,
+            'name' => $name,
+            'is_public' => true
+        ]);
     }
 }

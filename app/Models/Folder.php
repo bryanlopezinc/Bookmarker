@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
  * @property int $id
  * @property string|null $description
  * @property string $name
+ * @property bool $is_public
  * @property int $user_id foreign key to \App\Models\User
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
@@ -27,6 +28,13 @@ final class Folder extends Model
      * {@inheritdoc}
      */
     protected $guarded = [];
+
+    /**
+     * {@inheritdoc}
+     */
+    protected $casts = [
+        'is_public' => 'bool'
+    ];
 
     /**
      * @param \Illuminate\Database\Eloquent\Builder $builder

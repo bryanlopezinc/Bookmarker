@@ -16,7 +16,8 @@ final class CreateFolderRequest extends FormRequest
     {
         $rules = [
             'name' => ['string', 'max:' . FolderName::MAX, 'filled'],
-            'description' => ['nullable', 'string', 'max:' . FolderDescription::MAX]
+            'description' => ['nullable', 'string', 'max:' . FolderDescription::MAX],
+            'is_public' => ['nullable', 'bool']
         ];
 
         if ($this->routeIs('createFolder')) {

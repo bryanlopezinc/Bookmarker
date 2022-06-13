@@ -15,6 +15,7 @@ return new class extends Migration
     {
         Schema::create('folders', function (Blueprint $table) {
             $table->id();
+            $table->boolean('is_public')->index();
             $table->foreignId('user_id')->index();
             $table->text('description')->nullable();
             $table->string('name', 50)->index();

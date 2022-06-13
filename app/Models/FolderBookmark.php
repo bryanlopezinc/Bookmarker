@@ -12,12 +12,13 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property int $bookmark_id foreign key to \App\Models\Bookmark
  * @property int $folder_id foreign key to \App\Models\Folder
+ * @property bool $is_public
  * @property \Carbon\Carbon $created_at
  */
 final class FolderBookmark extends Model
 {
     const UPDATED_AT = null;
-    
+
     /**
      * {@inheritdoc}
      */
@@ -27,4 +28,11 @@ final class FolderBookmark extends Model
      * {@inheritdoc}
      */
     protected $guarded = [];
+
+    /**
+     * {@inheritdoc}
+     */
+    protected $casts = [
+        'is_public' => 'bool'
+    ];
 }

@@ -27,7 +27,8 @@ final class UpdateFolderService
         $this->foldersRepository->update(
             $folder->folderID,
             new FolderName($request->validated('name', $folder->name->value)),
-            new FolderDescription($request->validated('description', $folder->description->value))
+            new FolderDescription($request->validated('description', $folder->description->value)),
+            $request->boolean('is_public', $folder->isPublic)
         );
     }
 }

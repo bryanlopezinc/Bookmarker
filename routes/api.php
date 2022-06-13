@@ -49,7 +49,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('folders/bookmarks', Folder\FetchFolderBookmarksController::class)->name('folderBookmarks');
 
         Route::post('bookmarks/folders', Folder\AddBookmarksToFolderController::class)
-            ->middleware(ConvertStringToArray::keys('bookmarks'))
+            ->middleware(ConvertStringToArray::keys('bookmarks', 'make_hidden'))
             ->name('addBookmarksToFolder');
 
         Route::delete('bookmarks/folders', Folder\RemoveBookmarksFromFolderController::class)

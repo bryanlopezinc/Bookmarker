@@ -62,6 +62,7 @@ class DeleteBookmarksRepositoryTest extends TestCase
         FolderBookmark::create([
             'bookmark_id' => $bookmarkID = $bookmarkIDs->first(),
             'folder_id' => $folderID = FolderFactory::new()->create()->id,
+            'is_public' => true
         ]);
 
         FolderBookmarksCount::create([
@@ -97,6 +98,7 @@ class DeleteBookmarksRepositoryTest extends TestCase
         FolderBookmark::create([
             'bookmark_id' => $bookmarkID = BookmarkFactory::new()->create()->id,
             'folder_id' => $folderID = FolderFactory::new()->create()->id,
+            'is_public' => true
         ]);
 
         FolderBookmarksCount::create([

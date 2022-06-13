@@ -83,7 +83,29 @@ class UpdateFolderTest extends TestCase
             'id' => $folder->id,
             'user_id' => $user->id,
             'name' => $name,
-            'description' => $description
+            'description' => $description,
+            'is_public' => false
+        ]);
+    }
+
+    public function testMakeFolderPublic(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->create([
+            'user_id' => $user->id
+        ]);
+
+        $this->getTestResponse([
+            'is_public' => true,
+            'folder' => $folder->id,
+            'name' => $this->faker->word
+        ])->assertOk();
+
+        $this->assertDatabaseHas(Folder::class, [
+            'id' => $folder->id,
+            'user_id' => $user->id,
+            'is_public' => true
         ]);
     }
 

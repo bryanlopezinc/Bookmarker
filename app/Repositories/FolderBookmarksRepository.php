@@ -7,8 +7,9 @@ namespace App\Repositories;
 use App\Collections\ResourceIDsCollection;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
+use App\DataTransferObjects\FolderBookmark;
 use App\Models\Folder as Model;
-use App\Models\FolderBookmark;
+use App\Models\FolderBookmark as FolderBookmarkModel;
 use App\Models\FolderBookmarksCount;
 use App\PaginationData;
 use App\ValueObjects\ResourceID;
@@ -19,14 +20,14 @@ use Illuminate\Support\Collection;
 final class FolderBookmarksRepository
 {
     /**
-     * @return Paginator<Bookmark>
+     * @return Paginator<FolderBookmark>
      */
     public function bookmarks(ResourceID $folderID, PaginationData $pagination, UserID $userID): Paginator
     {
         /** @var Paginator */
-        $result = FolderBookmark::query()
+        $result = FolderBookmarkModel::query()
             ->where('folder_id', $folderID->toInt())
-            ->simplePaginate($pagination->perPage(), ['bookmark_id'], page: $pagination->page());
+            ->simplePaginate($pagination->perPage(), ['bookmark_id', 'is_public'], page: $pagination->page());
 
         $bookmarkIDs = ResourceIDsCollection::fromNativeTypes($result->getCollection()->pluck('bookmark_id'));
 
@@ -35,10 +36,15 @@ final class FolderBookmarksRepository
         $result->setCollection(
             (new BookmarksRepository)
                 ->findManyById($bookmarkIDs)
-                ->map(function (Bookmark $bookmark) use ($favourites) {
-                    return BookmarkBuilder::fromBookmark($bookmark)
+                ->map(function (Bookmark $bookmark) use ($favourites, $result) {
+                    $bookmark = BookmarkBuilder::fromBookmark($bookmark)
                         ->isUserFavourite($favourites->containsStrict($bookmark->id->toInt()))
                         ->build();
+
+                    return new FolderBookmark(
+                        $bookmark,
+                        $result->getCollection()->filter(fn (FolderBookmarkModel $model) => $model->bookmark_id === $bookmark->id->toInt())->sole()->is_public
+                    );
                 })
         );
 
@@ -50,21 +56,24 @@ final class FolderBookmarksRepository
      */
     public function getFolderBookmarksFrom(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): ResourceIDsCollection
     {
-        return FolderBookmark::where('folder_id', $folderID->toInt())
+        return FolderBookmarkModel::where('folder_id', $folderID->toInt())
             ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
             ->get('bookmark_id')
             ->pipe(fn (Collection $bookmarkIDs) => ResourceIDsCollection::fromNativeTypes($bookmarkIDs->pluck('bookmark_id')->all()));
     }
 
-    public function addBookmarksToFolder(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): void
+    public function addBookmarksToFolder(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs, ResourceIDsCollection $makeHidden): void
     {
+        $makeHidden = $makeHidden->asIntegers();
+
         $bookmarkIDs
             ->asIntegers()
             ->map(fn (int $bookmarkID) => [
                 'bookmark_id' => $bookmarkID,
-                'folder_id' => $folderID->toInt()
+                'folder_id' => $folderID->toInt(),
+                'is_public' => $makeHidden->containsStrict($bookmarkID) ? false : true
             ])
-            ->tap(fn (Collection $data) => FolderBookmark::insert($data->all()));
+            ->tap(fn (Collection $data) => FolderBookmarkModel::insert($data->all()));
 
         $this->incrementFolderBookmarksCount($folderID, $bookmarkIDs->count());
 
@@ -81,7 +90,7 @@ final class FolderBookmarksRepository
      */
     public function removeBookmarksFromFolder(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): int
     {
-        $deleted = FolderBookmark::where('folder_id', $folderID->toInt())->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())->delete();
+        $deleted = FolderBookmarkModel::where('folder_id', $folderID->toInt())->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())->delete();
 
         if ($deleted > 0) {
             $this->updateTimeStamp($folderID);

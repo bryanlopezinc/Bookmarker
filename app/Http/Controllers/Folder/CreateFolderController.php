@@ -20,6 +20,7 @@ final class CreateFolderController
             ->setDescription($request->validated('description'))
             ->setName($request->validated('name'))
             ->setOwnerID(UserID::fromAuthUser())
+            ->setisPublic($request->boolean('is_public'))
             ->build();
 
         $repository->create($folder);

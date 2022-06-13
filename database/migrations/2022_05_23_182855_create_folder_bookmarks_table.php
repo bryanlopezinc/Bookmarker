@@ -16,6 +16,7 @@ return new class extends Migration
     {
         Schema::create('folders_bookmarks', function (Blueprint $table) {
             $table->id();
+            $table->boolean('is_public')->index();
             $table->foreignId('bookmark_id')->constrained('bookmarks');
             $table->foreignId('folder_id')->constrained('folders');
             $table->unique(['bookmark_id', 'folder_id']);

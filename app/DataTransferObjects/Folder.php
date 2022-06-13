@@ -21,6 +21,7 @@ final class Folder extends DataTransferObject implements BelongsToUserInterface
     public readonly Carbon $createdAt;
     public readonly Carbon $updatedAt;
     public readonly PositiveNumber $bookmarksCount;
+    public readonly bool $isPublic;
 
     public function getOwnerID(): UserID
     {

@@ -56,6 +56,15 @@ class AddBookmarksToFolderTest extends TestCase
                     "The bookmarks.1 attribute is invalid"
                 ]
             ]);
+
+        $this->getTestResponse([
+            'bookmarks' => '1,2,3,4,5',
+            'make_hidden' => '1,2,3,4,5,6'
+        ])->assertJsonValidationErrors([
+            'make_hidden.5' => [
+                'BookmarkId 6 does not exist in bookmarks.'
+            ]
+        ]);
     }
 
     public function testCannotAddMoreThan_30_bookmarks_simultaneouly(): void
@@ -73,9 +82,9 @@ class AddBookmarksToFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarks = BookmarkFactory::new()->count(10)->create([
+        $bookmarkIDs = BookmarkFactory::new()->count(10)->create([
             'user_id' => $user->id
-        ]);
+        ])->pluck('id');
 
         $folderID = FolderFactory::new()->create([
             'user_id' => $user->id,
@@ -84,14 +93,15 @@ class AddBookmarksToFolderTest extends TestCase
         ])->id;
 
         $this->getTestResponse([
-            'bookmarks' => $bookmarks->pluck('id')->implode(','),
-            'folder' => $folderID
+            'bookmarks' => $bookmarkIDs->implode(','),
+            'folder' => $folderID,
         ])->assertCreated();
 
-        $bookmarks->pluck('id')->each(function (int $bookmarkID) use ($folderID) {
+        $bookmarkIDs->each(function (int $bookmarkID) use ($folderID) {
             $this->assertDatabaseHas(FolderBookmark::class, [
                 'bookmark_id' => $bookmarkID,
-                'folder_id' => $folderID
+                'folder_id' => $folderID,
+                'is_public' => true
             ]);
         });
 
@@ -104,6 +114,37 @@ class AddBookmarksToFolderTest extends TestCase
         $this->assertTrue(
             Folder::query()->whereKey($folderID)->first('updated_at')->updated_at->isToday()
         );
+    }
+
+    public function testWillMakeBookmarksHidden(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $bookmarkIDsToMakePrivate = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
+        $bookmarkIDsToMakePublic = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
+        $folderID = FolderFactory::new()->create([ 'user_id' => $user->id,])->id;
+
+        $this->getTestResponse([
+            'bookmarks' => $bookmarkIDsToMakePrivate->merge($bookmarkIDsToMakePublic)->shuffle()->implode(','),
+            'folder' => $folderID,
+            'make_hidden' => $bookmarkIDsToMakePrivate->implode(',')
+        ])->assertCreated();
+
+        $bookmarkIDsToMakePublic->each(function (int $bookmarkID) use ($folderID) {
+            $this->assertDatabaseHas(FolderBookmark::class, [
+                'bookmark_id' => $bookmarkID,
+                'folder_id' => $folderID,
+                'is_public' => true
+            ]);
+        });
+
+        $bookmarkIDsToMakePrivate->each(function (int $bookmarkID) use ($folderID) {
+            $this->assertDatabaseHas(FolderBookmark::class, [
+                'bookmark_id' => $bookmarkID,
+                'folder_id' => $folderID,
+                'is_public' => false
+            ]);
+        });
     }
 
     public function testCannotAddBookmarkToFolderMoreThanOnce(): void

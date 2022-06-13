@@ -22,7 +22,8 @@ final class FoldersRepository
             'description' => $folder->description->value,
             'name' => $folder->name->value,
             'user_id' => $folder->ownerID->toInt(),
-            'created_at' => $folder->createdAt
+            'created_at' => $folder->createdAt,
+            'is_public' => $folder->isPublic
         ]);
 
         $this->incrementUserFoldersCount($folder->ownerID);
@@ -54,14 +55,16 @@ final class FoldersRepository
             ->setName($model->name)
             ->setID($model->id)
             ->setOwnerID($model->user_id)
+            ->setisPublic($model->is_public)
             ->build();
     }
 
-    public function update(ResourceID $folderID, FolderName $folderName, FolderDescription $folderDescription): void
+    public function update(ResourceID $folderID, FolderName $folderName, FolderDescription $folderDescription, bool $isPublic): void
     {
         Model::query()->whereKey($folderID->toInt())->first()->update([
             'description' => $folderDescription->isEmpty() ? null : $folderDescription->value,
-            'name' => $folderName->value
+            'name' => $folderName->value,
+            'is_public' => $isPublic
         ]);
     }
 }

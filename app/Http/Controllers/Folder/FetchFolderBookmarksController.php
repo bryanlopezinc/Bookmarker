@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Folder;
 
-use App\Http\Resources\BookmarkResource;
+use App\Http\Resources\FolderBookmarkResource;
 use App\Http\Resources\PaginatedResourceCollection;
 use App\PaginationData;
 use App\Rules\ResourceIdRule;
@@ -26,6 +26,6 @@ final class FetchFolderBookmarksController
 
         $result->appends('per_page', $request->input('per_page', PaginationData::DEFAULT_PER_PAGE))->withQueryString();
 
-        return new PaginatedResourceCollection($result, BookmarkResource::class);
+        return new PaginatedResourceCollection($result, FolderBookmarkResource::class);
     }
 }

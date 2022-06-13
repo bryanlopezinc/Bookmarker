@@ -21,7 +21,15 @@ final class FolderFactory extends Factory
         return [
             'name' => $this->faker->word,
             'description' => $this->faker->sentence,
-            'user_id' => UserFactory::new()->create()->id
+            'user_id' => UserFactory::new()->create()->id,
+            'is_public' => false,
         ];
+    }
+
+    public function public(): self
+    {
+        return $this->state([
+            'is_public' => true,
+        ]);
     }
 }

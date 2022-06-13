@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\DataTransferObjects\Bookmark;
+use App\DataTransferObjects\FolderBookmark;
 use App\Exceptions\FolderNotFoundHttpResponseException as HttpException;
 use App\PaginationData;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
@@ -23,7 +23,7 @@ final class FetchFolderBookmarksService
     }
 
     /**
-     * @return Paginator<Bookmark>
+     * @return Paginator<FolderBookmark>
      */
     public function fetch(ResourceID $folderID, PaginationData $pagination, UserID $userID): Paginator
     {

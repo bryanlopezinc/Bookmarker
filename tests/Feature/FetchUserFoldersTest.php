@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Folder;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\AssertableJsonString;
@@ -86,6 +87,7 @@ class FetchUserFoldersTest extends TestCase
                     ->each(function (AssertableJson $json) use ($userfolders) {
                         $json->etc();
                         $json->where('attributes.id', fn (int $id) => $userfolders->pluck('id')->containsStrict($id));
+                        $json->where('attributes.is_public', false);
 
                         //Assert the name  and decription response sent to client are sanitized
                         $json->where('attributes.name', '&lt;script&gt;alert(Cross Site Scripting)&lt;/script&gt;');
@@ -93,7 +95,7 @@ class FetchUserFoldersTest extends TestCase
 
                         (new AssertableJsonString($json->toArray()))
                             ->assertCount(2)
-                            ->assertCount(6, 'attributes')
+                            ->assertCount(7, 'attributes')
                             ->assertStructure([
                                 "type",
                                 "attributes" => [
@@ -103,6 +105,7 @@ class FetchUserFoldersTest extends TestCase
                                     "date_created",
                                     "last_updated",
                                     "items_count",
+                                    "is_public"
                                 ]
                             ]);
                     });
@@ -127,6 +130,27 @@ class FetchUserFoldersTest extends TestCase
             ->assertSuccessful()
             ->assertJson(function (AssertableJson $json) {
                 $json->where('links.first', route('userFolders', ['per_page' => 20, 'page' => 1]))->etc();
+            });
+    }
+
+    public function testIsPublicAttributeWillBetrue(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        FolderFactory::new()->count(5)->public()->create([
+            'user_id' => $user->id,
+        ]);
+
+        $this->getTestResponse([])
+            ->assertSuccessful()
+            ->assertJsonCount(5, 'data')
+            ->assertJson(function (AssertableJson $json) {
+                $json
+                    ->etc()
+                    ->fromArray($json->toArray()['data'])
+                    ->each(function (AssertableJson $json) {
+                        $json->etc()->where('attributes.is_public', true);
+                    });
             });
     }
 

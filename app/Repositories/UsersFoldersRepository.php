@@ -34,6 +34,7 @@ final class UsersFoldersRepository
                     ->setOwnerID($folder->user_id)
                     ->setUpdatedAt($folder->updated_at)
                     ->setBookmarksCount((int)$folder->bookmarks_count)
+                    ->setisPublic($folder->is_public)
                     ->build();
             })
         );

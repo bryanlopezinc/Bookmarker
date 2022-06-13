@@ -24,7 +24,7 @@ final class AddBookmarksToFolderService
     ) {
     }
 
-    public function add(ResourceIDsCollection $bookmarkIDs, ResourceID $folderID): void
+    public function add(ResourceIDsCollection $bookmarkIDs, ResourceID $folderID, ResourceIDsCollection $makeHidden): void
     {
         (new EnsureAuthorizedUserOwnsResource)($this->repository->findOrFail($folderID, new HttpException));
 
@@ -32,7 +32,7 @@ final class AddBookmarksToFolderService
 
         $this->checkFolderForPossibleDuplicates($folderID, $bookmarkIDs);
 
-        $this->folderBookmarks->addBookmarksToFolder($folderID, $bookmarkIDs);
+        $this->folderBookmarks->addBookmarksToFolder($folderID, $bookmarkIDs, $makeHidden);
     }
 
     private function validateBookmarks(ResourceIDsCollection $bookmarkIDs): void

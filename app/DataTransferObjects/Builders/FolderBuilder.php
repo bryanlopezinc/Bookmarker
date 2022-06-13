@@ -63,6 +63,13 @@ final class FolderBuilder extends Builder
         return $this;
     }
 
+    public function setisPublic(bool $isPublic): self
+    {
+        $this->attributes['isPublic'] = $isPublic;
+
+        return $this;
+    }
+
     public function build(): Folder
     {
         return new Folder($this->attributes);

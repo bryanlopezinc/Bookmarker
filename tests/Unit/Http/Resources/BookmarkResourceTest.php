@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Http\Requests;
+namespace Tests\Unit\Http\Resources;
 
 use App\Collections\TagsCollection;
 use App\DataTransferObjects\Builders\BookmarkBuilder;

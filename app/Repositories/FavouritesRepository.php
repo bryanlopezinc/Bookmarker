@@ -45,12 +45,14 @@ final class FavouritesRepository
         }
     }
 
-    public function exists(ResourceID $bookmarkId, UserID $userId): bool
+    public function exists(ResourceIDsCollection $bookmarkIDs, UserID $userId): bool
     {
-        return Favourite::where([
-            'user_id' => $userId->toInt(),
-            'bookmark_id' => $bookmarkId->toInt()
-        ])->exists();
+        $total = Favourite::where('user_id', $userId->toInt())
+            ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())
+            ->get()
+            ->count();
+
+        return $bookmarkIDs->count() === $total;
     }
 
     public function duplicates(UserID $userID, ResourceIDsCollection $bookmarkIDs): ResourceIDsCollection
@@ -61,14 +63,13 @@ final class FavouritesRepository
             ->pipe(fn (Collection $favourites) => ResourceIDsCollection::fromNativeTypes($favourites->pluck('bookmark_id')->all()));
     }
 
-    public function delete(ResourceID $bookmarkId, UserID $userId): bool
+    public function delete(ResourceIDsCollection $bookmarkIDs, UserID $userId): bool
     {
-        $deleted = Favourite::query()->where([
-            'user_id' => $userId->toInt(),
-            'bookmark_id' => $bookmarkId->toInt()
-        ])->delete();
+        $deleted = Favourite::where('user_id', $userId->toInt())
+            ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())
+            ->delete();
 
-        $this->decrementFavouritesCount($userId);
+        $this->decrementFavouritesCount($userId, $deleted);
 
         return (bool) $deleted;
     }

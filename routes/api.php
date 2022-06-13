@@ -33,7 +33,10 @@ Route::middleware('auth:api')->group(function () {
             ->name('createFavourite');
 
         Route::delete('bookmarks/site', Controllers\DeleteBookmarksFromSiteController::class)->name('deleteBookmarksFromSite');
-        Route::delete('favourites', Controllers\DeleteFavouriteController::class)->name('deleteFavourite');
+
+        Route::delete('favourites', Controllers\DeleteFavouriteController::class)
+            ->middleware([ConvertStringToArray::keys('bookmarks')])
+            ->name('deleteFavourite');
 
         Route::delete('bookmarks/tags/remove', Controllers\DeleteBookmarkTagsController::class)
             ->middleware([ConvertStringToArray::keys('tags')])

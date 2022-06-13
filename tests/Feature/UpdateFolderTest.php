@@ -172,6 +172,21 @@ class UpdateFolderTest extends TestCase
         ]);
     }
 
+    public function testCanUpdateOnlyPrivacy(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->create([
+            'user_id' => $user->id
+        ]);
+
+        $this->getTestResponse([
+            'is_public' => true,
+            'folder' => $folder->id,
+            'password' => 'password'
+        ])->assertOk();
+    }
+
     public function testCanUpdateOnlyDescription(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());

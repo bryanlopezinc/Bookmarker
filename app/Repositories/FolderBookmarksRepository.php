@@ -131,4 +131,13 @@ final class FolderBookmarksRepository
             $model->increment('count', $amount);
         }
     }
+
+    public function makeHidden(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): void
+    {
+        FolderBookmarkModel::where('folder_id', $folderID->toInt())
+            ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())
+            ->update([
+                'is_public' => false
+            ]);
+    }
 }

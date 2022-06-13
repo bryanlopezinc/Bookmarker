@@ -52,6 +52,10 @@ Route::middleware('auth:api')->group(function () {
             ->middleware(ConvertStringToArray::keys('bookmarks', 'make_hidden'))
             ->name('addBookmarksToFolder');
 
+        Route::post('folders/bookmarks/hide', Folder\HideFolderBookmarksController::class)
+            ->middleware(ConvertStringToArray::keys('bookmarks'))
+            ->name('hideFolderBookmarks');
+
         Route::delete('bookmarks/folders', Folder\RemoveBookmarksFromFolderController::class)
             ->middleware(ConvertStringToArray::keys('bookmarks'))
             ->name('removeBookmarksFromFolder');

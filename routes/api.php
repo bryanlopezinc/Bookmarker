@@ -4,6 +4,7 @@ use App\Http\Controllers;
 use App\Http\Controllers\Folder;
 use App\Http\Middleware\ConvertConcatenatedValuesToArrayMiddleware as ConvertStringToArray;
 use App\Http\Middleware\HandleDbTransactionsMiddleware as DBTransaction;
+use App\Http\Middleware\ConfirmPasswordBeforeMakingFolderPublicMiddleware as ConfirmPassword;
 use Illuminate\Support\Facades\Route;
 use Laravel\Passport\Http\Middleware\CheckClientCredentials;
 
@@ -44,9 +45,12 @@ Route::middleware('auth:api')->group(function () {
 
         Route::post('folders', Folder\CreateFolderController::class)->name('createFolder');
         Route::delete('folders', Folder\DeleteFolderController::class)->name('deleteFolder');
-        Route::patch('folders', Folder\UpdateFolderController::class)->name('updateFolder');
         Route::get('users/folders', Folder\FetchUserFoldersController::class)->name('userFolders');
         Route::get('folders/bookmarks', Folder\FetchFolderBookmarksController::class)->name('folderBookmarks');
+
+        Route::patch('folders', Folder\UpdateFolderController::class)
+            ->middleware([ConfirmPassword::class])
+            ->name('updateFolder');
 
         Route::post('bookmarks/folders', Folder\AddBookmarksToFolderController::class)
             ->middleware(ConvertStringToArray::keys('bookmarks', 'make_hidden'))

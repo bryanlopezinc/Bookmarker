@@ -92,6 +92,52 @@ class UpdateFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
+        $folderIDs = FolderFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
+
+        $this->getTestResponse([
+            'is_public' => true,
+            'folder' => $folderIDs->first(),
+            'name' => $this->faker->word,
+        ])->assertStatus(423)
+            ->assertExactJson(['message' => 'Password confirmation required.']);
+
+        $this->getTestResponse([
+            'is_public' => true,
+            'folder' => $folderIDs->first(),
+            'name' => $this->faker->word,
+            'password' => 'password'
+        ])->assertOk();
+
+        //Assert subsequent request won't Require password
+        $this->travel(52)->minutes(function () use ($folderIDs) {
+            $folderIDs->skip(1)->each(function (int $folderID) {
+                $this->getTestResponse([
+                    'is_public' => true,
+                    'folder' => $folderID,
+                    'name' => $this->faker->word,
+                ])->assertOk();
+            });
+        });
+
+        $this->assertDatabaseHas(Folder::class, [
+            'id' => $folderIDs->first(),
+            'user_id' => $user->id,
+            'is_public' => true
+        ]);
+
+        $this->travel(61)->minute(function () {
+            $this->getTestResponse([
+                'is_public' => true,
+                'folder' => 11,
+                'name' => $this->faker->word,
+            ])->assertStatus(423);
+        });
+    }
+
+    public function testWillReturnValidationErrorIfPasswordNoMatch(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
         $folder = FolderFactory::new()->create([
             'user_id' => $user->id
         ]);
@@ -99,14 +145,10 @@ class UpdateFolderTest extends TestCase
         $this->getTestResponse([
             'is_public' => true,
             'folder' => $folder->id,
-            'name' => $this->faker->word
-        ])->assertOk();
-
-        $this->assertDatabaseHas(Folder::class, [
-            'id' => $folder->id,
-            'user_id' => $user->id,
-            'is_public' => true
-        ]);
+            'name' => $this->faker->word,
+            'password' => 'I forgot my password please let me in'
+        ])->assertUnauthorized()
+            ->assertExactJson(['message' => 'Invalid password']);
     }
 
     public function testCanUpdateDescriptionToBeBlank(): void

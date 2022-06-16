@@ -15,6 +15,9 @@ use Laravel\Passport\Passport;
 use Tests\TestCase;
 use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
 
+/**
+ * @group 119
+ */
 class AddBookmarksToFolderTest extends TestCase
 {
     use WithFaker, AssertsBookmarksWillBeHealthchecked;
@@ -89,14 +92,14 @@ class AddBookmarksToFolderTest extends TestCase
         ]);
     }
 
-    public function testCannotAddMoreThan_30_bookmarks_simultaneouly(): void
+    public function testCannotAddMoreThan_50_bookmarks_simultaneouly(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['bookmarks' => implode(',', range(1, 31))])
+        $this->getTestResponse(['bookmarks' => implode(',', range(1, 51))])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'bookmarks' => 'The bookmarks must not have more than 30 items.'
+                'bookmarks' => 'The bookmarks must not have more than 50 items.'
             ]);
     }
 

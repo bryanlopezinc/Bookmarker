@@ -13,7 +13,7 @@ final class AddBookmarksToFolderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'bookmarks' => ['required', 'array', 'max:30'],
+            'bookmarks' => ['required', 'array', 'max:50'],
             'bookmarks.*' => [new ResourceIdRule, 'distinct:strict'],
             'folder' => ['required', new ResourceIdRule],
             'make_hidden' => ['nullable', 'array'],

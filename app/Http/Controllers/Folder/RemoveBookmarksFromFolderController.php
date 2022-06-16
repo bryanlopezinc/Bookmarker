@@ -16,7 +16,7 @@ final class RemoveBookmarksFromFolderController
     public function __invoke(Request $request, Service $service): JsonResponse
     {
         $request->validate([
-            'bookmarks' => ['required', 'array', 'max:30'],
+            'bookmarks' => ['required', 'array', 'max:50'],
             'bookmarks.*' => [new ResourceIdRule, 'distinct:strict'],
             'folder' => ['required', new ResourceIdRule]
         ]);

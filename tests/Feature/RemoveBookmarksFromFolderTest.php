@@ -65,14 +65,14 @@ class RemoveBookmarksFromFolderTest extends TestCase
         ]);
     }
 
-    public function testCannotRemoveMoreThan_30_bookmarks_simultaneously(): void
+    public function testCannotRemoveMoreThan_50_bookmarks_simultaneously(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['bookmarks' => implode(',', range(1, 31))])
+        $this->getTestResponse(['bookmarks' => implode(',', range(1, 51))])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'bookmarks' => 'The bookmarks must not have more than 30 items.'
+                'bookmarks' => 'The bookmarks must not have more than 50 items.'
             ]);
     }
 

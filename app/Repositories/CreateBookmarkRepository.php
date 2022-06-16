@@ -7,14 +7,14 @@ namespace App\Repositories;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\Models\Bookmark as Model;
+use App\Models\UserBookmarksCount;
 use App\Models\WebSite;
+use App\ValueObjects\UserID;
 
 final class CreateBookmarkRepository
 {
-    public function __construct(
-        private TagsRepository $tagsRepository,
-        private BookmarksCountRepository $bookmarksCountRepository
-    ) {
+    public function __construct(private TagsRepository $tagsRepository)
+    {
     }
 
     public function create(Bookmark $bookmark): Bookmark
@@ -37,8 +37,17 @@ final class CreateBookmarkRepository
 
         $this->tagsRepository->attach($bookmark->tags, $model);
 
-        $this->bookmarksCountRepository->incrementUserBookmarksCount($bookmark->ownerId);
+        $this->incrementUserBookmarksCount($bookmark->ownerId);
 
         return BookmarkBuilder::fromModel($model)->build();
+    }
+
+    private function incrementUserBookmarksCount(UserID $userId): void
+    {
+        $bookmarksCount = UserBookmarksCount::query()->firstOrCreate(['user_id' => $userId->toInt()], ['count' => 1,]);
+
+        if (!$bookmarksCount->wasRecentlyCreated) {
+            $bookmarksCount->increment('count');
+        }
     }
 }

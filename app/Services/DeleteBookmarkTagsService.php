@@ -8,14 +8,14 @@ use App\Collections\TagsCollection;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkQueryColumns;
 use App\ValueObjects\ResourceID;
-use App\Repositories\BookmarksRepository;
+use App\Repositories\FetchBookmarksRepository;
 use App\Repositories\TagsRepository;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class DeleteBookmarkTagsService
 {
     public function __construct(
-        private BookmarksRepository $bookmarksRepository,
+        private FetchBookmarksRepository $bookmarksRepository,
         private TagsRepository $tagsRepository
     ) {
     }

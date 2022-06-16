@@ -8,7 +8,7 @@ use App\Collections\ResourceIDsCollection;
 use App\Exceptions\FolderNotFoundHttpResponseException;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkQueryColumns;
-use App\Repositories\BookmarksRepository;
+use App\Repositories\FetchBookmarksRepository;
 use App\Repositories\FolderBookmarksRepository;
 use App\Repositories\FoldersRepository;
 use App\ValueObjects\ResourceID;
@@ -20,7 +20,7 @@ final class HideFolderBookmarksService
     public function __construct(
         private FolderBookmarksRepository $folderBookmarksRepository,
         private FoldersRepository $foldersRepository,
-        private BookmarksRepository $bookmarksRepository
+        private FetchBookmarksRepository $bookmarksRepository
     ) {
     }
 

@@ -9,13 +9,13 @@ use App\DataTransferObjects\Bookmark;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkQueryColumns;
 use App\Repositories\DeleteBookmarksRepository;
-use App\Repositories\BookmarksRepository;
+use App\Repositories\FetchBookmarksRepository;
 use App\ValueObjects\UserID;
 
 final class DeleteBookmarksService
 {
     public function __construct(
-        private BookmarksRepository $bookmarksRepository,
+        private FetchBookmarksRepository $bookmarksRepository,
         private DeleteBookmarksRepository $deleteBookmarks
     ) {
     }

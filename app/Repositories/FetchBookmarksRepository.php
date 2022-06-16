@@ -12,7 +12,7 @@ use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\QueryColumns\BookmarkQueryColumns as Columns;
 use Illuminate\Support\Collection;
 
-final class BookmarksRepository
+final class FetchBookmarksRepository
 {
     public function findById(ResourceID $bookmarkId, Columns $columns = new Columns()): Bookmark|false
     {

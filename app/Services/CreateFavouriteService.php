@@ -9,7 +9,7 @@ use App\DataTransferObjects\Bookmark;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkQueryColumns;
 use App\Repositories\FavouritesRepository;
-use App\Repositories\BookmarksRepository;
+use App\Repositories\FetchBookmarksRepository;
 use App\ValueObjects\UserID;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Collection;
@@ -17,8 +17,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class CreateFavouriteService
 {
-    public function __construct(private FavouritesRepository $repository, private BookmarksRepository $bookmarkRepository)
-    {
+    public function __construct(
+        private FavouritesRepository $repository,
+        private FetchBookmarksRepository $bookmarkRepository
+    ) {
     }
 
     public function create(ResourceIDsCollection $bookmarkIDs): void

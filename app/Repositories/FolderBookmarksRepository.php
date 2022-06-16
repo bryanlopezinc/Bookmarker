@@ -58,7 +58,7 @@ final class FolderBookmarksRepository
             : collect();
 
         $result->setCollection(
-            (new BookmarksRepository)
+            (new FetchBookmarksRepository)
                 ->findManyById($bookmarkIDs)
                 ->map(function (Bookmark $bookmark) use ($favourites, $result) {
                     $bookmark = BookmarkBuilder::fromBookmark($bookmark)

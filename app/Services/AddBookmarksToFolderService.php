@@ -7,7 +7,7 @@ namespace App\Services;
 use App\Collections\ResourceIDsCollection;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkQueryColumns;
-use App\Repositories\BookmarksRepository;
+use App\Repositories\FetchBookmarksRepository;
 use App\Repositories\FolderBookmarksRepository;
 use App\ValueObjects\ResourceID;
 use App\Repositories\FoldersRepository;
@@ -19,7 +19,7 @@ final class AddBookmarksToFolderService
 {
     public function __construct(
         private FoldersRepository $repository,
-        private BookmarksRepository $bookmarksRepository,
+        private FetchBookmarksRepository $bookmarksRepository,
         private FolderBookmarksRepository $folderBookmarks
     ) {
     }

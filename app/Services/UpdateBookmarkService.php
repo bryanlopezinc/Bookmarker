@@ -6,7 +6,7 @@ namespace App\Services;
 
 use Illuminate\Http\Response;
 use App\Http\Requests\UpdateBookmarkRequest;
-use App\Repositories\BookmarksRepository;
+use App\Repositories\FetchBookmarksRepository;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Repositories\UpdateBookmarkRepository as Repository;
 use App\DataTransferObjects\Builders\UpdateBookmarkDataBuilder;
@@ -17,7 +17,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class UpdateBookmarkService
 {
-    public function __construct(private Repository $repository, private BookmarksRepository $bookmarksRepository)
+    public function __construct(private Repository $repository, private FetchBookmarksRepository $bookmarksRepository)
     {
     }
 

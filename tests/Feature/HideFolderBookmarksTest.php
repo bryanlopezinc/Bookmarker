@@ -48,14 +48,14 @@ class HideFolderBookmarksTest extends TestCase
         ]);
     }
 
-    public function testBookmarksCannotExceed_30(): void
+    public function testBookmarksCannotExceed_50(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['bookmarks' => collect()->times(31)->implode(',')])
+        $this->getTestResponse(['bookmarks' => collect()->times(51)->implode(',')])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'bookmarks' => ['The bookmarks must not have more than 30 items.']
+                'bookmarks' => ['The bookmarks must not have more than 50 items.']
             ]);
     }
 

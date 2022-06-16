@@ -100,6 +100,18 @@ class DeleteFavouriteTest extends TestCase
         ]);
     }
 
+    public function test_cannot_delete_more_than_50_favourites_simultaneously(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->getTestResponse(['bookmarks' => collect()->times(51)->implode(',')])
+        ->assertJsonValidationErrors([
+            'bookmarks' => [
+                'The bookmarks must not have more than 50 items.'
+            ]
+        ]);
+    }
+
     public function testReturnErrorWhenUserDoesNotHaveFavourites(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());

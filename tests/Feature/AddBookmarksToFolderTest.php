@@ -15,9 +15,6 @@ use Laravel\Passport\Passport;
 use Tests\TestCase;
 use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
 
-/**
- * @group 119
- */
 class AddBookmarksToFolderTest extends TestCase
 {
     use WithFaker, AssertsBookmarksWillBeHealthchecked;

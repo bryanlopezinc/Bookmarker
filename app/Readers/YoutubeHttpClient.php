@@ -43,13 +43,13 @@ final class YoutubeHttpClient implements HttpClientInterface
 
     private function getGoogleApiKey(): string
     {
-        $key = env('GOOGLE_API_KEY');
+        $apiKey = config($key = 'services.google.key');
 
-        if (blank($key)) {
-            throw new \Exception('The GOOGLE_API_KEY attribute has not been set in .env file');
+        if (blank($apiKey)) {
+            throw new \Exception('The ' . $key . ' is missing or has not been set');
         }
 
-        return $key;
+        return $apiKey;
     }
 
     private function getVideoID(Url $url): string

@@ -7,7 +7,6 @@ namespace Tests\Unit\Readers;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\Readers\YoutubeHttpClient;
 use Database\Factories\BookmarkFactory;
-use Illuminate\Support\Env;
 use Illuminate\Support\Facades\Http;
 use Psr\Log\LoggerInterface;
 use Tests\TestCase;
@@ -38,9 +37,9 @@ class YoutubeHttpClientTest extends TestCase
 
     public function testWillThrowExceptionIf_Api_KeyIsNotSet(): void
     {
-        $this->expectExceptionMessage('The GOOGLE_API_KEY attribute has not been set in .env file');
+        $this->expectExceptionMessage('The services.google.key is missing or has not been set');
 
-        Env::getRepository()->set('GOOGLE_API_KEY', '');
+        config(['services.google.key' => null]);
 
         $bookmark = BookmarkFactory::new()->create([
             'url' => 'https://www.youtube.com/watch?v=MBO0AiAD0DQ'

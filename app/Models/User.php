@@ -60,11 +60,14 @@ final class User extends Authenticatable
         }
 
         if (!$columns->isEmpty()) {
-            $builder->addSelect($this->qualifyColumns($columns->except(['bookmarks_count'])));
+            $builder->addSelect($this->qualifyColumns($columns->except([
+                'bookmarks_count', 'folders_count', 'favourites_count'
+            ])));
         }
 
         $this->addBookmarksCountQuery($builder, $columns);
         $this->addFavouritesCountQuery($builder, $columns);
+        $this->addFoldersCountQuery($builder, $columns);
 
         return $builder;
     }
@@ -99,5 +102,21 @@ final class User extends Authenticatable
         $builder->join('users_resources_counts as fc', function (JoinClause $join) {
             $join->on('users.id', '=', 'fc.user_id')->where('fc.type', UserFavouritesCount::TYPE);
         }, type: 'left outer')->addSelect('fc.count as favourites_count');
+    }
+
+    /**
+     * @param Builder $builder
+     */
+    private function addFoldersCountQuery(&$builder, UserQueryColumns $options): void
+    {
+        $wantsFoldersCount = $options->has('folders_count') ?: $options->isEmpty();
+
+        if (!$wantsFoldersCount) {
+            return;
+        }
+
+        $builder->join('users_resources_counts as ufc', function (JoinClause $join) {
+            $join->on('users.id', '=', 'ufc.user_id')->where('ufc.type', UserFoldersCount::TYPE);
+        }, type: 'left outer')->addSelect('ufc.count as folders_count');
     }
 }

@@ -20,4 +20,5 @@ final class User extends DataTransferObject
     public readonly string $password;
     public readonly PositiveNumber $bookmarksCount;
     public readonly PositiveNumber $favouritesCount;
+    public readonly PositiveNumber $foldersCount;
 }

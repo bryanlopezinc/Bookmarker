@@ -2,9 +2,10 @@
 
 namespace Tests\Unit\Repositories;
 
+use App\DataTransferObjects\User;
 use App\Models\User as Model;
 use App\Models\UserBookmarksCount;
-use App\Models\UserFavouritesCount;
+use App\Models\{UserFavouritesCount, UserFoldersCount};
 use App\QueryColumns\UserQueryColumns;
 use App\Repositories\UserRepository;
 use App\ValueObjects\Username;
@@ -27,6 +28,14 @@ class UserRepositoryTest extends TestCase
         $model = UserFactory::new()->create();
 
         $this->assertSame(0, (new UserRepository)->findByUsername(Username::fromString($model->username))->favouritesCount->value);
+    }
+
+    public function testFoldersCountWillBeZeroWhenUserHasNoFolder(): void
+    {
+        /** @var Model */
+        $model = UserFactory::new()->create();
+
+        $this->assertSame(0, (new UserRepository)->findByUsername(Username::fromString($model->username))->foldersCount->value);
     }
 
     public function testWillReturnCorrectBookmarksCountWhenUserHasBookmarks(): void
@@ -55,6 +64,19 @@ class UserRepositoryTest extends TestCase
         $this->assertSame(45, (new UserRepository)->findByUsername(Username::fromString($model->username))->favouritesCount->value);
     }
 
+    public function testWillReturnCorrectFoldersCountWhenUserHasFolders(): void
+    {
+        /** @var Model */
+        $model = UserFactory::new()->create();
+
+        UserFoldersCount::create([
+            'user_id' => $model->id,
+            'count' => 45,
+        ]);
+
+        $this->assertSame(45, (new UserRepository)->findByUsername(Username::fromString($model->username))->foldersCount->value);
+    }
+
     public function testWillReturnOnlyRequestedColumns(): void
     {
         /** @var Model */
@@ -72,5 +94,22 @@ class UserRepositoryTest extends TestCase
         $this->assertCount(2, $user2->toArray());
         $user2->bookmarksCount;
         $user2->username;
+    }
+
+    public function testWillReturnAllAttributesWhenNoAttributesAreRequested(): void
+    {
+        /** @var Model */
+        $model = UserFactory::new()->create();
+        $repository = new UserRepository;
+
+        $user = $repository->findByUsername(Username::fromString($model->username));
+
+        $expected = collect((new \ReflectionClass(User::class))->getProperties(\ReflectionProperty::IS_PUBLIC))
+            ->map(fn (\ReflectionProperty $property) => $property->name)
+            ->sort()
+            ->values()
+            ->all();
+
+        $this->assertEquals($expected, collect($user->toArray())->keys()->sort()->values()->all());
     }
 }

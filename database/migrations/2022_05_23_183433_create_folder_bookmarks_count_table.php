@@ -17,7 +17,7 @@ return new class extends Migration
         Schema::create('folders_bookmarks_count', function (Blueprint $table) {
             $table->id();
             $table->foreignId('folder_id')->unique()->constrained('folders')->cascadeOnDelete();
-            $table->unsignedBigInteger('count');
+            $table->unsignedBigInteger('count')->index();
             $table->timestamps();
         });
 

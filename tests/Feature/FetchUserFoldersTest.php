@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Folder;
+use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\AssertableJsonString;
@@ -127,10 +127,121 @@ class FetchUserFoldersTest extends TestCase
             ]);
 
         $this->getTestResponse(['per_page' => 20])
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJson(function (AssertableJson $json) {
                 $json->where('links.first', route('userFolders', ['per_page' => 20, 'page' => 1]))->etc();
             });
+    }
+
+    public function testWillReturnRecentFoldersByDefault(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $folders = FolderFactory::new()->count(5)->create(['user_id' => $user->id]);
+
+        $response = $this->getTestResponse([])->assertOk();
+
+        $this->assertEquals(
+            $folders->pluck('id')->sortDesc()->values()->all(),
+            collect($response->json('data'))->pluck('attributes.id')->all()
+        );
+    }
+
+    public function testWillSortFoldersByNewest(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $folders = FolderFactory::new()->count(5)->create(['user_id' => $user->id]);
+
+        $response = $this->getTestResponse(['sort' => 'newest'])->assertOk();
+
+        $this->assertEquals(
+            $folders->pluck('id')->sortDesc()->values()->all(),
+            collect($response->json('data'))->pluck('attributes.id')->all()
+        );
+    }
+
+    public function testWillSortFoldersByOldest(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $folders = FolderFactory::new()->count(5)->create(['user_id' => $user->id]);
+
+        $response = $this->getTestResponse(['sort' => 'oldest'])->assertOk();
+
+        $this->assertEquals(
+            $folders->pluck('id')->all(),
+            collect($response->json('data'))->pluck('attributes.id')->all()
+        );
+    }
+
+    public function testWillSortFoldersByMostItems(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $userFolders = FolderFactory::new()->count(7)->create(['user_id' => $user->id]);
+
+        $folderWithMostItems = $userFolders->random();
+
+        $this->postJson(route('addBookmarksToFolder'), [
+            'bookmarks' => BookmarkFactory::new()->count(3)->create(['user_id' => $user->id])->pluck('id')->implode(','),
+            'folder' => $folderWithMostItems->id
+        ])->assertCreated();
+
+        $response = $this->getTestResponse(['sort' => 'most_items'])->assertOk();
+
+        $this->assertEquals(
+            $folderWithMostItems->id,
+            collect($response->json('data'))->pluck('attributes.id')->first()
+        );
+    }
+
+    public function testWillSortFoldersByLeastItems(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $userFoldersIDs = FolderFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
+
+        $folderIDWithLeastItems = $userFoldersIDs->random();
+        $bookmarksAmountToAddToFolder = 1;
+
+        $userFoldersIDs
+            ->reject($folderIDWithLeastItems)
+            ->each(function (int $folderID) use (&$bookmarksAmountToAddToFolder, $user) {
+                $this->postJson(route('addBookmarksToFolder'), [
+                    'bookmarks' => BookmarkFactory::new()->count($bookmarksAmountToAddToFolder)->create(['user_id' => $user->id])->pluck('id')->implode(','),
+                    'folder' => $folderID
+                ])->assertCreated();
+
+                $bookmarksAmountToAddToFolder++;
+            });
+
+        $response = $this->getTestResponse(['sort' => 'least_items'])->assertOk();
+
+        $this->assertEquals(
+            [$folderIDWithLeastItems, ...$userFoldersIDs->reject($folderIDWithLeastItems)->all()],
+            collect($response->json('data'))->pluck('attributes.id')->all()
+        );
+    }
+
+    public function testWillSortFoldersByRecentlyUpdated(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $userFolders = FolderFactory::new()->count(5)->create(['user_id' => $user->id]);
+
+        $recentlyUpdatedFolder = $userFolders->random();
+
+        $this->travel(5)->minutes(fn () => $recentlyUpdatedFolder->update([
+            'name' => 'Links to all my billions'
+        ]));
+
+        $response = $this->getTestResponse(['sort' => 'updated_recently'])->assertOk();
+
+        $this->assertEquals(
+            $recentlyUpdatedFolder->id,
+            collect($response->json('data'))->pluck('attributes.id')->first()
+        );
     }
 
     public function testIsPublicAttributeWillBetrue(): void

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\DataTransferObjects;
 
 use App\Collections\TagsCollection;
-use App\Enums\SortCriteria;
+use App\Enums\UserBookmarksSortCriteria;
 use App\Http\Requests\FetchUserBookmarksRequest;
 use App\PaginationData;
 use App\ValueObjects\ResourceID;
@@ -19,7 +19,7 @@ final class UserBookmarksFilters extends DataTransferObject
     public readonly bool $wantsUntaggedBookmarks;
     public readonly PaginationData $pagination;
     public readonly bool $hasSortCriteria;
-    public readonly SortCriteria $sortCriteria;
+    public readonly UserBookmarksSortCriteria $sortCriteria;
     public readonly bool $wantsBooksmarksWithDeadLinks;
 
     public static function fromRequest(FetchUserBookmarksRequest $request): self
@@ -43,8 +43,8 @@ final class UserBookmarksFilters extends DataTransferObject
 
         $request->whenHas('sort', function (string $sort) use (&$data) {
             $data['sortCriteria'] = [
-                'oldest' => SortCriteria::OLDEST,
-                'newest' => SortCriteria::NEWEST,
+                'oldest' => UserBookmarksSortCriteria::OLDEST,
+                'newest' => UserBookmarksSortCriteria::NEWEST,
             ][$sort];
         });
 
@@ -87,8 +87,8 @@ final class UserBookmarksFilters extends DataTransferObject
 
         if ($hasSortCriteria) {
             $data['sortCriteria'] = match ($request['sortBy']) {
-                'oldest' => SortCriteria::OLDEST,
-                'newest' => SortCriteria::NEWEST,
+                'oldest' => UserBookmarksSortCriteria::OLDEST,
+                'newest' => UserBookmarksSortCriteria::NEWEST,
             };
         }
 

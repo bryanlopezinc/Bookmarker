@@ -20,6 +20,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('name', 50)->index();
             $table->timestamps();
+            $table->index('updated_at');
         });
     }
 

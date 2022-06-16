@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Collections\ResourceIDsCollection;
+use App\Collections\ResourceIDsCollection as IDs;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\FolderBookmark;
@@ -51,7 +51,7 @@ final class FolderBookmarksRepository
             ->when($options['onlyPublic'], fn ($query) => $query->where('is_public', true))
             ->simplePaginate($pagination->perPage(), ['bookmark_id', 'is_public'], page: $pagination->page());
 
-        $bookmarkIDs = ResourceIDsCollection::fromNativeTypes($result->getCollection()->pluck('bookmark_id'));
+        $bookmarkIDs = IDs::fromNativeTypes($result->getCollection()->pluck('bookmark_id'));
 
         $favourites = isset($options['userID'])
             ? (new FavouritesRepository)->getUserFavouritesFrom($bookmarkIDs, $options['userID'])->asIntegers()
@@ -78,15 +78,15 @@ final class FolderBookmarksRepository
     /**
      * Get all the bookmarkIDs that already exists in  given folder from the given bookmark ids.
      */
-    public function getFolderBookmarksFrom(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): ResourceIDsCollection
+    public function getFolderBookmarksFrom(ResourceID $folderID, IDs $bookmarkIDs): IDs
     {
         return FolderBookmarkModel::where('folder_id', $folderID->toInt())
             ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
             ->get('bookmark_id')
-            ->pipe(fn (Collection $bookmarkIDs) => ResourceIDsCollection::fromNativeTypes($bookmarkIDs->pluck('bookmark_id')->all()));
+            ->pipe(fn (Collection $bookmarkIDs) => IDs::fromNativeTypes($bookmarkIDs->pluck('bookmark_id')->all()));
     }
 
-    public function addBookmarksToFolder(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs, ResourceIDsCollection $makeHidden): void
+    public function addBookmarksToFolder(ResourceID $folderID, IDs $bookmarkIDs, IDs $makeHidden): void
     {
         $makeHidden = $makeHidden->asIntegers();
 
@@ -112,7 +112,7 @@ final class FolderBookmarksRepository
     /**
      * @return int number of deleted records.
      */
-    public function removeBookmarksFromFolder(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): int
+    public function removeBookmarksFromFolder(ResourceID $folderID, IDs $bookmarkIDs): int
     {
         $deleted = FolderBookmarkModel::where('folder_id', $folderID->toInt())->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())->delete();
 
@@ -132,7 +132,7 @@ final class FolderBookmarksRepository
         }
     }
 
-    public function makeHidden(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): void
+    public function makeHidden(ResourceID $folderID, IDs $bookmarkIDs): void
     {
         FolderBookmarkModel::where('folder_id', $folderID->toInt())
             ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())

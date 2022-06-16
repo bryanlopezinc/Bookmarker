@@ -91,7 +91,7 @@ class FetchUserBookmarksTest extends TestCase
         ]);
 
         $this->getTestResponse([])
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJsonCount(10, 'data')
             ->assertJson(function (AssertableJson $json) {
                 $json->etc()
@@ -150,7 +150,7 @@ class FetchUserBookmarksTest extends TestCase
         $firstBookmark = Bookmark::query()->where('user_id', $user->id)->first();
 
         $response =  $this->getTestResponse(['site_id' => $firstBookmark->site_id])
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJson(function (AssertableJson $assert) use ($firstBookmark) {
                 $link = route('fetchUserBookmarks', [
@@ -178,7 +178,7 @@ class FetchUserBookmarksTest extends TestCase
         ]);
 
         $response = $this->getTestResponse(['tags' => $tag])
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJson(function (AssertableJson $assert) use ($tag) {
                 $link = route('fetchUserBookmarks', [
@@ -212,7 +212,7 @@ class FetchUserBookmarksTest extends TestCase
             'tags' => implode(',', $tags),
             'sort' => 'oldest',
         ])
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJsonCount(6, 'data')
             ->assertJson(function (AssertableJson $json) use ($tags) {
                 $link = route('fetchUserBookmarks', [
@@ -244,7 +244,7 @@ class FetchUserBookmarksTest extends TestCase
         $this->saveBookmark();
 
         $this->getTestResponse(['untagged' => true])
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJsonCount(2, 'data')
             ->assertJson(function (AssertableJson $assert) {
                 $link = route('fetchUserBookmarks', [
@@ -268,7 +268,7 @@ class FetchUserBookmarksTest extends TestCase
 
         $response = $this->withoutExceptionHandling()
             ->getTestResponse(['sort' => 'oldest'])
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJsonCount(2, 'data')
             ->assertJson(function (AssertableJson $assert) {
                 $link = route('fetchUserBookmarks', [
@@ -294,7 +294,7 @@ class FetchUserBookmarksTest extends TestCase
 
         $response = $this->withoutExceptionHandling()
             ->getTestResponse(['sort' => 'newest'])
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJsonCount(2, 'data')
             ->assertJson(function (AssertableJson $assert) {
                 $link = route('fetchUserBookmarks', [
@@ -319,7 +319,7 @@ class FetchUserBookmarksTest extends TestCase
         }
 
         $this->getTestResponse(['per_page' => 17])
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJsonCount(17, 'data');
     }
 
@@ -335,7 +335,7 @@ class FetchUserBookmarksTest extends TestCase
         $this->postJson(route('createFavourite'), ['bookmarks' => (string) $bookmarks->first()->id])->assertCreated();
 
         $this->getTestResponse([])
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJson(function (AssertableJson $json) {
                 $data = $json->toArray()['data'];
 
@@ -368,7 +368,7 @@ class FetchUserBookmarksTest extends TestCase
         ]);
 
         $this->getTestResponse(['dead_links' => true])
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJson(function (AssertableJson $assert) use ($bookmarkWithDeadLink) {
                 $assert->where('data.0.attributes.id', $bookmarkWithDeadLink->id)->etc();

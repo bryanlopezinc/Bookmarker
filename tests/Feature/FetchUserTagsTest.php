@@ -63,7 +63,7 @@ class FetchUserTagsTest extends TestCase
         $this->saveBookmark(['tags' => $tags = $this->faker->words()]);
 
         $response = $this->getTestResponse()
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJsonStructure([
                 'data',

@@ -98,7 +98,7 @@ class ResetPasswordTest extends TestCase
         $this->postJson(route('requestPasswordResetToken'), [
             'email'  => $user->email,
             'reset_url' => 'https://url.com?token=:token&email=:email'
-        ])->assertSuccessful()->json('token');
+        ])->assertOk()->json('token');
 
         Notification::assertSentTo($user, function (ResetPasswordNotification $notification) use (&$token) {
             $token = $notification->token;
@@ -150,6 +150,6 @@ class ResetPasswordTest extends TestCase
             'client_secret' => $client->secret,
             'grant_type' => 'password',
             'two_fa_code' => (string) $this->getVerificationCode($user->username, self::NEW_PASSWORD),
-        ])->assertSuccessful();
+        ])->assertOk();
     }
 }

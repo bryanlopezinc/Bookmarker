@@ -72,7 +72,7 @@ class FetchUserBookmarksSourcesTest extends TestCase
 
         $this->withoutExceptionHandling()
             ->getTestResponse()
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJsonCount(6, 'data')
             ->assertJsonStructure([
                 "links" => [

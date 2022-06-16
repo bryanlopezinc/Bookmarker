@@ -16,6 +16,6 @@ final class DeleteBookmarkTagsController
     {
         $service->delete(ResourceID::fromRequest($request), TagsCollection::createFromStrings($request->input('tags')));
 
-        return response()->json(status: 204);
+        return response()->json();
     }
 }

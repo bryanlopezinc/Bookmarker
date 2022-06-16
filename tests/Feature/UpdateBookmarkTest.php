@@ -64,7 +64,7 @@ class UpdateBookmarkTest extends TestCase
             'id' => $model->id,
             'tags' => $tag = $this->faker->word,
             'title' => $title = $this->faker->sentence
-        ])->assertSuccessful();
+        ])->assertOk();
 
         $this->assertDatabaseHas(Bookmark::class, [
             'id' => $model->id,
@@ -88,7 +88,7 @@ class UpdateBookmarkTest extends TestCase
         $this->getTestResponse([
             'id' => $model->id,
             'tags' => $this->faker->word,
-        ])->assertSuccessful();
+        ])->assertOk();
     }
 
     public function testCanUpdateBookmarkOnlyTitle(): void
@@ -102,7 +102,7 @@ class UpdateBookmarkTest extends TestCase
         $this->getTestResponse([
             'id' => $model->id,
             'title' => $this->faker->sentence
-        ])->assertSuccessful();
+        ])->assertOk();
     }
 
     public function testWillReturnBadRequestResponseWhenBookmarkTagsLengthIsExceeded(): void
@@ -157,7 +157,7 @@ class UpdateBookmarkTest extends TestCase
         $this->getTestResponse([
             'id' => $model->id,
             'title' => $this->faker->sentence
-        ])->assertSuccessful();
+        ])->assertOk();
 
         $this->assertBookmarksHealthWillBeChecked([$model->id]);
     }

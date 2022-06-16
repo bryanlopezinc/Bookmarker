@@ -74,7 +74,7 @@ class DeleteBookmarksTest extends TestCase
 
         $bookmark = Bookmark::query()->where('user_id', $user->id)->first();
 
-        $this->getTestResponse(['ids' => (string)$bookmark->id])->assertStatus(204);
+        $this->getTestResponse(['ids' => (string)$bookmark->id])->assertOk();
 
         $this->assertDatabaseMissing(Bookmark::class, ['id' => $bookmark->id]);
         $this->assertDatabaseMissing(BookmarkTag::class, ['bookmark_id' => $bookmark->id]);
@@ -94,7 +94,7 @@ class DeleteBookmarksTest extends TestCase
 
         $bookmark = Bookmark::query()->where('user_id', $user->id)->first();
 
-        $this->getTestResponse(['ids' => (string)$bookmark->id])->assertStatus(204);
+        $this->getTestResponse(['ids' => (string)$bookmark->id])->assertOk();
 
         $this->assertBookmarksHealthWillNotBeChecked([$bookmark->id]);
     }
@@ -110,7 +110,7 @@ class DeleteBookmarksTest extends TestCase
         //Add created bookmark to favourites.
         $this->postJson(route('createFavourite'), ['bookmarks' => (string) $bookmark->id])->assertCreated();
 
-        $this->getTestResponse(['ids' => (string)$bookmark->id])->assertStatus(204);
+        $this->getTestResponse(['ids' => (string)$bookmark->id])->assertOk();
 
         $this->assertDatabaseMissing(Favourite::class, [
             'user_id' => $user->id,
@@ -133,7 +133,7 @@ class DeleteBookmarksTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse(['ids' => (string)($model->id + 1)])->assertStatus(204);
+        $this->getTestResponse(['ids' => (string)($model->id + 1)])->assertOk();
     }
 
     public function testWillReturnForbiddenWhenUserDoesNotOwnBookmark(): void

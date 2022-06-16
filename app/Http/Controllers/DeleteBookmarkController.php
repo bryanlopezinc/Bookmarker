@@ -21,6 +21,6 @@ final class DeleteBookmarkController
 
         $service->delete(ResourceIDsCollection::fromNativeTypes($request->input('ids')));
 
-        return response()->json(status: 204);
+        return response()->json();
     }
 }

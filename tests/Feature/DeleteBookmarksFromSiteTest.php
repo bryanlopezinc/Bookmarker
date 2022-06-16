@@ -49,7 +49,7 @@ class DeleteBookmarksFromSiteTest extends TestCase
 
         [$firstBookmark, $secondBookmark] = [$userBookmarks->first(), $userBookmarks->last()];
 
-        $this->getTestResponse(['site_id' => $firstBookmark->site_id])->assertStatus(202);
+        $this->getTestResponse(['site_id' => $firstBookmark->site_id])->assertOk();
 
         $this->assertModelMissing($firstBookmark);
         $this->assertModelExists($secondBookmark);
@@ -76,7 +76,7 @@ class DeleteBookmarksFromSiteTest extends TestCase
         $this->postJson(route('createFavourite'), ['bookmarks' => (string) $firstBookmark->id])->assertCreated();
         $this->postJson(route('createFavourite'), ['bookmarks' => (string) $secondBookmark->id])->assertCreated();
 
-        $this->getTestResponse(['site_id' => $firstBookmark->site_id])->assertStatus(202);
+        $this->getTestResponse(['site_id' => $firstBookmark->site_id])->assertOk();
 
         $this->assertDatabaseMissing(Favourite::class, [
             'user_id' => $user->id,

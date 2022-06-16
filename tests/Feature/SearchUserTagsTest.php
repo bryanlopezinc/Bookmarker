@@ -42,7 +42,7 @@ class SearchUserTagsTest extends TestCase
 
         $this->getTestResponse(['tag' => $tag])
             ->assertJsonCount(1, 'data')
-            ->assertSuccessful()
+            ->assertOk()
             ->assertExactJson([
                 'data' => [
                     ['name' => $tag]

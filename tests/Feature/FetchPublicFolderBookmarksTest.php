@@ -97,7 +97,7 @@ class FetchPublicFolderBookmarksTest extends TestCase
         ));
 
         $this->getTestResponse(['folder_id' => $folder->id])
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJsonCount(5, 'data')
             ->assertJson(function (AssertableJson $json) use ($publicFolderBookmarkIDs, $folder) {
                 $json->etc()
@@ -173,7 +173,7 @@ class FetchPublicFolderBookmarksTest extends TestCase
             ])->all()
         ));
 
-        $this->getTestResponse(['folder_id' => $folder->id])->assertSuccessful();
+        $this->getTestResponse(['folder_id' => $folder->id])->assertOk();
 
         $this->assertBookmarksHealthWillBeChecked($folderBookmarkIDs->all());
     }
@@ -202,6 +202,6 @@ class FetchPublicFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->public()->create([]);
 
-        $this->getTestResponse(['folder_id' => $folder->id])->assertJsonCount(0, 'data')->assertSuccessful();
+        $this->getTestResponse(['folder_id' => $folder->id])->assertJsonCount(0, 'data')->assertOk();
     }
 }

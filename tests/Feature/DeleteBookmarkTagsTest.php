@@ -52,7 +52,7 @@ class DeleteBookmarkTagsTest extends TestCase
             'tag_id' => $tag->id
         ]);
 
-        $this->getTestResponse(['id' => $model->id, 'tags' => $tag->name])->assertStatus(204);
+        $this->getTestResponse(['id' => $model->id, 'tags' => $tag->name])->assertOk();
 
         $this->assertDatabaseMissing(BookmarkTag::class, [
             'bookmark_id' => $model->id,

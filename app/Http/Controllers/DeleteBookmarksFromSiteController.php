@@ -24,6 +24,6 @@ final class DeleteBookmarksFromSiteController
 
         $repository->fromSite(ResourceID::fromRequest($request, 'site_id'), UserID::fromAuthUser());
 
-        return response()->json(status: 202);
+        return response()->json();
     }
 }

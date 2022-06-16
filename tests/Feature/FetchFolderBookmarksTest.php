@@ -97,7 +97,7 @@ class FetchFolderBookmarksTest extends TestCase
         $this->getTestResponse([
             'folder_id' => $folder->id
         ])
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJsonCount(5, 'data')
             ->assertJson(function (AssertableJson $json) use ($bookmarkIDs, $folder, $bookmarkShouldBePublicFn) {
                 $json->etc()
@@ -209,6 +209,6 @@ class FetchFolderBookmarksTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse(['folder_id' => $folder->id])->assertJsonCount(0, 'data')->assertSuccessful();
+        $this->getTestResponse(['folder_id' => $folder->id])->assertJsonCount(0, 'data')->assertOk();
     }
 }

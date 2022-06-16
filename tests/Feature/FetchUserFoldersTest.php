@@ -77,7 +77,7 @@ class FetchUserFoldersTest extends TestCase
         ]);
 
         $this->getTestResponse([])
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJsonCount(10, 'data')
             ->assertJson(function (AssertableJson $json) use ($userfolders) {
                 $json
@@ -142,7 +142,7 @@ class FetchUserFoldersTest extends TestCase
         ]);
 
         $this->getTestResponse([])
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJsonCount(5, 'data')
             ->assertJson(function (AssertableJson $json) {
                 $json
@@ -163,7 +163,7 @@ class FetchUserFoldersTest extends TestCase
         ]);
 
         $this->getTestResponse(['per_page' => 17])
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJsonCount(17, 'data');
     }
 }

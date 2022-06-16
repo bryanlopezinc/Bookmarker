@@ -101,7 +101,7 @@ class LoginUserTest extends TestCase
             'with_ip' => '24.48.0.1',
             'with_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
         ])
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJsonCount(6, 'data.attributes')
             ->assertJsonCount(4, 'data.token')
@@ -202,8 +202,7 @@ class LoginUserTest extends TestCase
             'grant_type' => 'password',
             'two_fa_code' => $code,
             'with_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
-        ])
-            ->assertSuccessful();
+        ])->assertOk();
 
         Mail::assertSent(function (NewLoginMail $mail) {
             $this->assertTrue($mail->loginInfo->location->isUnknown());
@@ -227,7 +226,7 @@ class LoginUserTest extends TestCase
             'client_secret' => $this->client->secret,
             'grant_type' => 'password',
             'two_fa_code' => $code,
-        ])->assertSuccessful();
+        ])->assertOk();
 
         Mail::assertSent(function (NewLoginMail $mail) {
             $this->assertFalse($mail->loginInfo->device->nameIsKnown());

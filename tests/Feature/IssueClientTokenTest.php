@@ -46,7 +46,7 @@ class IssueClientTokenTest extends TestCase
             'client_secret' => $client->secret,
             'grant_type' => 'client_credentials'
         ])
-            ->assertSuccessful()
+            ->assertOk()
             ->assertJsonCount(3)
             ->assertJsonStructure([
                 'token_type',

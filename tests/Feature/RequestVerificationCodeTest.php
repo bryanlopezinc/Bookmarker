@@ -73,7 +73,7 @@ class RequestVerificationCodeTest extends TestCase
         $this->getTestResponse([
             'username'  => $user->username,
             'password' => 'password',
-        ])->assertSuccessful();
+        ])->assertOk();
 
         Mail::assertSent(function (VerificationCodeMail $mail) use ($user, $verificationCode) {
             $this->assertSame($user->email, $mail->to[0]['address']);
@@ -91,7 +91,7 @@ class RequestVerificationCodeTest extends TestCase
         $this->getTestResponse([
             'username'  => $username,
             'password' => 'password',
-        ])->assertSuccessful();
+        ])->assertOk();
 
         $this->getTestResponse([
             'username'  => $username,
@@ -113,7 +113,7 @@ class RequestVerificationCodeTest extends TestCase
         $this->getTestResponse([
             'username'  => $username,
             'password' => 'password',
-        ])->assertSuccessful();
+        ])->assertOk();
 
         $this->getTestResponse([
             'username'  => $username,
@@ -125,6 +125,6 @@ class RequestVerificationCodeTest extends TestCase
         $this->getTestResponse([
             'username'  => $username,
             'password' => 'password',
-        ])->assertSuccessful();
+        ])->assertOk();
     }
 }

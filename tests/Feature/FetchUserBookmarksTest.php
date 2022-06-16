@@ -10,12 +10,11 @@ use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
-use Tests\Traits\AssertsBookmarkJson;
-use Tests\Traits\CreatesBookmark;
+use Tests\Traits\{AssertsBookmarkJson, CreatesBookmark, AssertsBookmarksWillBeHealthchecked};
 
 class FetchUserBookmarksTest extends TestCase
 {
-    use CreatesBookmark, AssertsBookmarkJson;
+    use CreatesBookmark, AssertsBookmarkJson, AssertsBookmarksWillBeHealthchecked;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
@@ -85,13 +84,13 @@ class FetchUserBookmarksTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        BookmarkFactory::new()->count(10)->create([
+        $bookmarks = BookmarkFactory::new()->count(10)->create([
             'user_id' => $user->id,
             'title' => '<h1>did you forget something?</h1>',
             'description' => 'And <h1>spoof!</h1>'
         ]);
 
-        $response = $this->getTestResponse([])
+        $this->getTestResponse([])
             ->assertSuccessful()
             ->assertJsonCount(10, 'data')
             ->assertJson(function (AssertableJson $json) {
@@ -99,6 +98,7 @@ class FetchUserBookmarksTest extends TestCase
                     ->where('links.first', route('fetchUserBookmarks', ['per_page' => 15, 'page' => 1]))
                     ->fromArray($json->toArray()['data'])
                     ->each(function (AssertableJson $json) {
+                        $this->assertBookmarkJson($json->toArray());
                         //Assert sanitized attributes was sent to client.
                         $json->where('attributes.title', '&lt;h1&gt;did you forget something?&lt;/h1&gt;');
                         $json->where('attributes.description', 'And &lt;h1&gt;spoof!&lt;/h1&gt;');
@@ -121,13 +121,22 @@ class FetchUserBookmarksTest extends TestCase
                 ]
             ]);
 
-        $this->assertBookmarkJson($response->json('data.0'));
-
         $this->getTestResponse(['per_page' => 20])
             ->assertSuccessful()
             ->assertJson(function (AssertableJson $json) {
                 $json->where('links.first', route('fetchUserBookmarks', ['per_page' => 20, 'page' => 1]))->etc();
             });
+    }
+
+    public function testWillCheckBookmarksHealth(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $bookmarks = BookmarkFactory::new()->count(10)->create(['user_id' => $user->id]);
+
+        $this->getTestResponse([])->assertOk();
+
+        $this->assertBookmarksHealthWillBeChecked($bookmarks->pluck('id')->all());
     }
 
     public function testWillFetchUserBookmarksFromASpecifiedSite(): void

@@ -26,7 +26,7 @@ final class Bookmark extends DataTransferObject implements BelongsToUserInterfac
     public readonly ResourceID $webPagesiteId;
     public readonly UserID $ownerId;
     public readonly TimeStamp $timeCreated;
-    public readonly TimeStamp $timeupdated;
+    public readonly TimeStamp $timeUpdated;
     public readonly WebSite $fromWebSite;
     public readonly TagsCollection $tags;
     public bool $isDeadLink;

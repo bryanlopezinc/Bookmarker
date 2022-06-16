@@ -11,9 +11,12 @@ use Illuminate\Http\Response;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
 
 class CreateFavouriteTest extends TestCase
 {
+    use AssertsBookmarksWillBeHealthchecked;
+
     protected function getTestResponse(array $parameters = []): TestResponse
     {
         return $this->postJson(route('createFavourite'), $parameters);
@@ -106,6 +109,17 @@ class CreateFavouriteTest extends TestCase
             'count'   => $amount,
             'type' => UserFavouritesCount::TYPE
         ]);
+    }
+
+    public function testWillCheckBookmarksHealth(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $bookmarks = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id]);
+
+        $this->getTestResponse(['bookmarks' => $bookmarks->pluck('id')->implode(',')])->assertCreated();
+
+        $this->assertBookmarksHealthWillBeChecked($bookmarks->pluck('id')->all());
     }
 
     public function testReturnErrorWhenBookmarkExistsInFavourites(): void

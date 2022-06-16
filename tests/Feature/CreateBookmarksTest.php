@@ -105,7 +105,8 @@ class CreateBookmarksTest extends TestCase
 
         $this->assertDatabaseHas(Bookmark::class, [
             'title' => $title,
-            'description' => $description
+            'description' => $description,
+            'user_id' => $user->id
         ]);
 
         $this->getTestResponse([

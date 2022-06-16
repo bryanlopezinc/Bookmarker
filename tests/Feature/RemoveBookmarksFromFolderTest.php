@@ -165,37 +165,6 @@ class RemoveBookmarksFromFolderTest extends TestCase
             ]);
     }
 
-    public function testCannotRemoveInvalidBookmarksFromFolder(): void
-    {
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        $bookmarkIDs = BookmarkFactory::new()->count(3)->create([
-            'user_id' => $user->id
-        ])->pluck('id');
-
-        $folderID = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ])->id;
-
-        //Assert will return not found when all bookmarks dont exists
-        $this->getTestResponse([
-            'bookmarks' => $bookmarkIDs->map(fn (int $id) => $id + 1)->implode(','),
-            'folder' => $folderID
-        ])->assertNotFound()
-            ->assertExactJson([
-                'message' => "The bookmarks does not exists"
-            ]);
-
-        //Assert will return not found when some (but not all) bookmarks exists
-        $this->getTestResponse([
-            'bookmarks' => $bookmarkIDs->push($bookmarkIDs->last() + 1)->implode(','),
-            'folder' => $folderID
-        ])->assertNotFound()
-            ->assertExactJson([
-                'message' => "The bookmarks does not exists"
-            ]);
-    }
-
     public function testUserCanOnlyRemoveBookmarksFromOwnFolder(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
@@ -206,24 +175,6 @@ class RemoveBookmarksFromFolderTest extends TestCase
 
         $folder = FolderFactory::new()->create([
             'user_id' => UserFactory::new()->create()->id //Another user's folder
-        ]);
-
-        $this->getTestResponse([
-            'bookmarks' => $bookmarks->pluck('id')->implode(','),
-            'folder' => $folder->id
-        ])->assertForbidden();
-    }
-
-    public function testUserCanOnlyRemoveOwnBookmarksFromOwnFolder(): void
-    {
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        $bookmarks = BookmarkFactory::new()->count(10)->create([
-            'user_id' => UserFactory::new()->create()->id //Another user's bookmarks
-        ]);
-
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
         ]);
 
         $this->getTestResponse([

@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Collections\ResourceIDsCollection;
+use App\Contracts\BookmarksHealthRepositoryInterface;
 use App\Models\BookmarkHealth;
 
-final class BookmarksHealthRepository
+final class BookmarksHealthRepository implements BookmarksHealthRepositoryInterface
 {
     /** frequency in days a bookmarks health should be checked */
     private const CHECK_FREQUENCY = 6;
 
     /**
-     * Get the bookmark IDs that have not been recently checked
-     * or return the ids that have never been checked from the given bookmark IDs.
+     * {@inheritdoc}
      */
     public function whereNotRecentlyChecked(ResourceIDsCollection $bookmarkIDs): ResourceIDsCollection
     {
@@ -32,8 +32,7 @@ final class BookmarksHealthRepository
     }
 
     /**
-     * @param array<int,bool> $records An associative array of health check data
-     *  where each key is the bookmarkID and the value a bool indicationg if the heathCheck passed or failed.
+     * {@inheritdoc}
      */
     public function update(array $records): void
     {

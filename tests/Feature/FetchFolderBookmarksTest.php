@@ -12,9 +12,12 @@ use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
 
 class FetchFolderBookmarksTest extends TestCase
 {
+    use AssertsBookmarksWillBeHealthchecked;
+
     protected function getTestResponse(array $parameters = []): TestResponse
     {
         return $this->getJson(route('folderBookmarks', $parameters));
@@ -151,6 +154,27 @@ class FetchFolderBookmarksTest extends TestCase
                     "has_more_pages",
                 ]
             ]);
+    }
+
+    public function testWillCheckBookmarksHealth(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $bookmarkIDs = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
+
+        $folder = FolderFactory::new()->afterCreating(fn (Folder $folder) => FolderBookmark::insert(
+            $bookmarkIDs->map(fn (int $bookmarkID) => [
+                'folder_id' => $folder->id,
+                'bookmark_id' => $bookmarkID,
+                'is_public' => false
+            ])->all()
+        ))->create([
+            'user_id' => $user->id
+        ]);
+
+        $this->getTestResponse(['folder_id' => $folder->id])->assertOk();
+
+        $this->assertBookmarksHealthWillBeChecked($bookmarkIDs->all());
     }
 
     public function testFolderMustBelongToUser(): void

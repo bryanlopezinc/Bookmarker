@@ -5,36 +5,20 @@ declare(strict_types=1);
 namespace App;
 
 use App\Collections\BookmarksCollection;
+use App\Contracts\BookmarksHealthRepositoryInterface;
 use App\DataTransferObjects\Bookmark;
-use App\Repositories\BookmarksHealthRepository;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
 final class HealthChecker
 {
-    private static bool $enabled = true;
-
-    public function __construct(private BookmarksHealthRepository $repository)
+    public function __construct(private BookmarksHealthRepositoryInterface $repository)
     {
-    }
-
-    public static function isEnabled(): bool
-    {
-        return static::$enabled === true;
-    }
-
-    public static function enable(bool $enable = true): void
-    {
-        static::$enabled = $enable;
     }
 
     public function ping(BookmarksCollection $bookmarks): void
     {
-        if (!static::$enabled) {
-            return;
-        }
-
         $data = [];
 
         $responses = $this->getResponse(

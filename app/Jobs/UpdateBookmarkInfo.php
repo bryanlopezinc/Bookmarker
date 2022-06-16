@@ -26,6 +26,10 @@ final class UpdateBookmarkInfo implements ShouldQueue
     {
         $data = $client->getWebPageData($this->bookmark);
 
+        if ($data === false) {
+            return;
+        }
+
         (new Actions\UpdateBookmarkThumbnailWithWebPageImage($data))($this->bookmark);
         (new Actions\UpdateBookmarkDescriptionWithWebPageDescription($data))($this->bookmark);
         (new Actions\UpdateSiteNameWithWebPageSiteName($data))($this->bookmark);

@@ -9,10 +9,11 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 use Tests\Traits\AssertsBookmarkJson;
+use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
 
 class FetchUserFavouritesTest extends TestCase
 {
-    use AssertsBookmarkJson;
+    use AssertsBookmarkJson, AssertsBookmarksWillBeHealthchecked;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
@@ -100,5 +101,18 @@ class FetchUserFavouritesTest extends TestCase
             ]);
 
         $this->assertBookmarkJson($response->json('data.0'));
+    }
+
+    public function testWillCheckBookmarksHealth(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $bookmarks = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id]);
+
+        $this->postJson(route('createFavourite'), ['bookmarks' => (string) $bookmarks->pluck('id')->implode(',')])->assertCreated();
+
+        $this->getTestResponse()->assertOk();
+
+        $this->assertBookmarksHealthWillBeChecked($bookmarks->pluck('id')->all());
     }
 }

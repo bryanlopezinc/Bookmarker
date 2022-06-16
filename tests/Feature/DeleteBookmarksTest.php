@@ -12,11 +12,12 @@ use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
 use Tests\Traits\CreatesBookmark;
 
 class DeleteBookmarksTest extends TestCase
 {
-    use CreatesBookmark;
+    use CreatesBookmark, AssertsBookmarksWillBeHealthchecked;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
@@ -83,6 +84,19 @@ class DeleteBookmarksTest extends TestCase
             'count' => 0,
             'type' => UserBookmarksCount::TYPE
         ]);
+    }
+
+    public function testWilNotCheckBookmarksHealth(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->saveBookmark();
+
+        $bookmark = Bookmark::query()->where('user_id', $user->id)->first();
+
+        $this->getTestResponse(['ids' => (string)$bookmark->id])->assertStatus(204);
+
+        $this->assertBookmarksHealthWillNotBeChecked([$bookmark->id]);
     }
 
     public function testWillDeleteFavouritesWhenBookmarkIsDeleted(): void

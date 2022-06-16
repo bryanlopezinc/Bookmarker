@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Collections\BookmarksCollection;
 use App\ValueObjects\Url;
 use App\ValueObjects\UserID;
 use App\Http\Requests\CreateBookmarkRequest;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\Builders\SiteBuilder;
-use App\Jobs\CheckBookmarksHealth;
 use App\Jobs\UpdateBookmarkInfo;
 use App\Repositories\CreateBookmarkRepository as Repository;
 
@@ -37,6 +35,5 @@ final class CreateBookmarkService
             ->build();
 
         UpdateBookmarkInfo::dispatch($bookmark = $this->repository->create($bookmark));
-        CheckBookmarksHealth::dispatch(new BookmarksCollection([$bookmark]));
     }
 }

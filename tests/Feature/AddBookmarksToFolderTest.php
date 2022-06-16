@@ -13,10 +13,11 @@ use Illuminate\Http\Response;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
 
 class AddBookmarksToFolderTest extends TestCase
 {
-    use WithFaker;
+    use WithFaker, AssertsBookmarksWillBeHealthchecked;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
@@ -135,6 +136,22 @@ class AddBookmarksToFolderTest extends TestCase
         $this->assertTrue(
             Folder::query()->whereKey($folderID)->first('updated_at')->updated_at->isToday()
         );
+    }
+
+    public function testWillCheckBookmarksHealth(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $bookmarkIDs = BookmarkFactory::new()->count(10)->create(['user_id' => $user->id])->pluck('id');
+
+        $folderID = FolderFactory::new()->create(['user_id' => $user->id])->id;
+
+        $this->getTestResponse([
+            'bookmarks' => $bookmarkIDs->implode(','),
+            'folder' => $folderID,
+        ])->assertCreated();
+
+        $this->assertBookmarksHealthWillBeChecked($bookmarkIDs->all());
     }
 
     public function testWillMakeBookmarksHidden(): void

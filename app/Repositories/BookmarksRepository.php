@@ -26,12 +26,21 @@ final class BookmarksRepository
      */
     public function findManyById(ResourceIDsCollection $IDs, Columns $columns = new Columns()): Collection
     {
+        $originalRequestedColums = $columns->toArray();
+
+        if (!$columns->isEmpty() && !$columns->has($attributesNeededToCheckBookmarkHealth = ['id', 'url'])) {
+            $columns = new Columns(collect($columns)->push(...$attributesNeededToCheckBookmarkHealth)->unique()->all());
+        }
+
         return Model::WithQueryOptions($columns)
             ->whereIn('bookmarks.id', $IDs->asIntegers()->unique()->all())
             ->get()
-            ->map(function (Model $bookmark) use ($columns): Bookmark {
-                if (!$columns->isEmpty() && !$columns->has('id')) {
-                    $bookmark->offsetUnset('id');
+            ->map(function (Model $bookmark) use ($originalRequestedColums): Bookmark {
+                if (!empty($originalRequestedColums)) {
+                    collect($bookmark->toArray())
+                        ->keys()
+                        ->diff($originalRequestedColums)
+                        ->each(fn (string $attrbute) => $bookmark->offsetUnset($attrbute));
                 }
 
                 return BookmarkBuilder::fromModel($bookmark)->build();

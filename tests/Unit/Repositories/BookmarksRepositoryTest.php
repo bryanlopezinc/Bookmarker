@@ -2,11 +2,13 @@
 
 namespace Tests\Unit\Repositories;
 
+use App\DataTransferObjects\Bookmark;
 use App\QueryColumns\BookmarkQueryColumns as BookmarkColumns;
 use App\Repositories\BookmarksRepository;
 use App\ValueObjects\ResourceID;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\BookmarkHealthFactory;
+use ReflectionProperty;
 use Tests\TestCase;
 
 class BookmarksRepositoryTest extends TestCase
@@ -18,6 +20,20 @@ class BookmarksRepositoryTest extends TestCase
         parent::setUp();
 
         $this->repository = app(BookmarksRepository::class);
+    }
+
+    public function testWillReturnAllAttributesWhenNoColumnsAreRequested(): void
+    {
+        $bookmark = $this->repository->findById(new ResourceID(BookmarkFactory::new()->create()->id));
+
+        $expected = collect((new \ReflectionClass(Bookmark::class))->getProperties(ReflectionProperty::IS_PUBLIC))
+            ->map(fn (ReflectionProperty $property) => $property->name)
+            ->reject('isUserFavourite')
+            ->sort()
+            ->values()
+            ->all();
+
+        $this->assertEquals($expected, collect($bookmark->toArray())->keys()->sort()->values()->all());
     }
 
     public function testWillReturnOnlyUserId(): void

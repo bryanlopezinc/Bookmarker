@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
-use App\HealthChecker;
+use App\Collections\BookmarksCollection;
+use App\Jobs\CheckBookmarksHealth;
+use App\Observers\BookmarkObserver;
 use App\TwoFA\Cache\VerificationCodesRepository;
 use App\TwoFA\VerifyVerificationCode;
 use Illuminate\Contracts\Hashing\Hasher;
@@ -34,13 +36,12 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
-        if ($this->app->environment('local', 'testing')) {
+        if ($this->app->environment('local')) {
             $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
         }
 
-        if ($this->app->environment('testing')) {
-            //Prevent faking http responses for  every route that checks bookmarks health during tests
-            HealthChecker::enable(false);
-        }
+        $this->app->terminating(function (BookmarkObserver $observer) {
+            CheckBookmarksHealth::dispatch(new BookmarksCollection($observer->getRetrievedBookmarks()));
+        });
     }
 }

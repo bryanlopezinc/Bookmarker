@@ -13,10 +13,11 @@ use Illuminate\Support\Collection;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
 
 class UpdateBookmarkTest extends TestCase
 {
-    use WithFaker;
+    use WithFaker, AssertsBookmarksWillBeHealthchecked;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
@@ -145,5 +146,19 @@ class UpdateBookmarkTest extends TestCase
             'id' => $model->id,
             'title' => 'title'
         ])->assertForbidden();
+    }
+
+    public function testWillCheckBookmarksHealth(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $model = BookmarkFactory::new()->create([ 'user_id' => $user->id]);
+
+        $this->getTestResponse([
+            'id' => $model->id,
+            'title' => $this->faker->sentence
+        ])->assertSuccessful();
+
+        $this->assertBookmarksHealthWillBeChecked([$model->id]);
     }
 }

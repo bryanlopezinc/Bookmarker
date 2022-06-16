@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\QueryColumns;
 
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Collection;
 
-abstract class QueryColumns
+abstract class QueryColumns implements Arrayable
 {
     protected Collection $columns;
 
@@ -15,9 +16,18 @@ abstract class QueryColumns
         $this->columns = collect($columns);
     }
 
-    public function has(string $field): bool
+    /**
+     * @param array<string>|string $field
+     */
+    public function has(string|array $columns): bool
     {
-        return $this->columns->containsStrict($field);
+        foreach ((array) $columns as $column) {
+            if (!$this->columns->containsStrict($column)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function except(string|array $fields): array
@@ -34,8 +44,16 @@ abstract class QueryColumns
 
     public function clear(): static
     {
-         $this->columns = collect();
+        $this->columns = collect();
 
-         return $this;
+        return $this;
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function toArray(): array
+    {
+        return $this->columns->all();
     }
 }

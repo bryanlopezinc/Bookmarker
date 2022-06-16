@@ -17,10 +17,6 @@ class HealthCheckerTest extends TestCase
 {
     public function testWillCheckBookmarks(): void
     {
-        $isEnabled = HealthChecker::isEnabled();
-
-        HealthChecker::enable();
-
         $checker = new HealthChecker(new BookmarksHealthRepository);
 
         /** @var array<Bookmark> */
@@ -47,28 +43,5 @@ class HealthCheckerTest extends TestCase
         }
 
         Http::assertSentCount(5);
-
-        HealthChecker::enable($isEnabled);
-    }
-
-    public function testWillNotCheckBookmarksHealthifDisabled(): void
-    {
-        $isEnabled = HealthChecker::isEnabled();
-
-        HealthChecker::enable(false);
-
-        $checker = new HealthChecker(new BookmarksHealthRepository);
-
-        /** @var array<Bookmark> */
-        $bookmarks = BookmarkFactory::new()
-            ->count(5)
-            ->create()
-            ->map(fn (Model $model) => BookmarkBuilder::fromModel($model)->build());
-
-        $checker->ping(new BookmarksCollection($bookmarks));
-
-        Http::assertNothingSent();
-
-        HealthChecker::enable($isEnabled);
     }
 }

@@ -13,9 +13,12 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
 
 class FetchPublicFolderBookmarksTest extends TestCase
 {
+    use AssertsBookmarksWillBeHealthchecked;
+
     protected function getTestResponse(array $parameters = []): TestResponse
     {
         return $this->getJson(route('viewPublicfolderBookmarks', $parameters));
@@ -151,6 +154,28 @@ class FetchPublicFolderBookmarksTest extends TestCase
                     "has_more_pages",
                 ]
             ]);
+    }
+
+    public function testWillCheckBookmarksHealth(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        $user = UserFactory::new()->create();
+
+        $folderBookmarkIDs = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
+        $folder = FolderFactory::new()->public()->create(['user_id' => $user->id]);
+
+        $folderBookmarkIDs->tap(fn (Collection $collection) => FolderBookmark::insert(
+            $collection->map(fn (int $bookmarkID) => [
+                'folder_id' => $folder->id,
+                'bookmark_id' => $bookmarkID,
+                'is_public' => true
+            ])->all()
+        ));
+
+        $this->getTestResponse(['folder_id' => $folder->id])->assertSuccessful();
+
+        $this->assertBookmarksHealthWillBeChecked($folderBookmarkIDs->all());
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotExists(): void

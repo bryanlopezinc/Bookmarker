@@ -43,7 +43,7 @@ final class YoutubeHttpClient implements HttpClientInterface
 
     private function getGoogleApiKey(): string
     {
-        $apiKey = config($key = 'services.google.key');
+        $apiKey = config($key = 'services.youtube.key');
 
         if (blank($apiKey)) {
             throw new \Exception('The ' . $key . ' is missing or has not been set');

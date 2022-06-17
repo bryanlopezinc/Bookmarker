@@ -37,9 +37,9 @@ class YoutubeHttpClientTest extends TestCase
 
     public function testWillThrowExceptionIf_Api_KeyIsNotSet(): void
     {
-        $this->expectExceptionMessage('The services.google.key is missing or has not been set');
+        $this->expectExceptionMessage('The services.youtube.key is missing or has not been set');
 
-        config(['services.google.key' => null]);
+        config(['services.youtube.key' => null]);
 
         $bookmark = BookmarkFactory::new()->create([
             'url' => 'https://www.youtube.com/watch?v=MBO0AiAD0DQ'

@@ -29,7 +29,7 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    'google' => [
+    'youtube' => [
         'key' => env('GOOGLE_API_KEY')
     ],
 ];

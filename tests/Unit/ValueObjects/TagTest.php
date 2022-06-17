@@ -24,7 +24,7 @@ class TagTest extends TestCase
         $this->expectNotToPerformAssertions();
 
         new Tag(Str::random(Tag::MAX_LENGTH));
-        new Tag(123456);
+        new Tag('123456');
     }
 
     public function testWillThrowExceptionWhenTagIsEmpty(): void

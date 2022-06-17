@@ -11,13 +11,10 @@ final class Tag
 {
     public const MAX_LENGTH = 22;
 
-    public readonly string $value;
     private static array $checked = [];
 
-    public function __construct(string|int $value)
+    public function __construct(public readonly string $value)
     {
-        $this->value = mb_strtolower((string) $value);
-
         $this->validate();
     }
 

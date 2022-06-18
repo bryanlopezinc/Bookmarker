@@ -7,7 +7,7 @@ namespace App\QueryColumns;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Collection;
 
-abstract class QueryColumns implements Arrayable
+abstract class Attributes implements Arrayable
 {
     protected Collection $columns;
 

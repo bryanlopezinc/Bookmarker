@@ -6,7 +6,7 @@ namespace App\TwoFA\Services;
 
 use App\DataTransferObjects\User;
 use App\Exceptions\InvalidUsernameException;
-use App\QueryColumns\UserQueryColumns;
+use App\QueryColumns\UserAttributes;
 use App\Repositories\UserRepository;
 use App\TwoFA\Cache\RecentlySentVerificationCodesRepository;
 use App\TwoFA\Cache\VerificationCodesRepository;
@@ -48,7 +48,7 @@ final class RequestVerificationCodeService
 
     private function getUser(Request $request): User|false
     {
-        $attributes = UserQueryColumns::new()->id()->password()->email();
+        $attributes = UserAttributes::new()->id()->password()->email();
 
         try {
             return $this->userRepository->findByUsername(Username::fromRequest($request), $attributes);

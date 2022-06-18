@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\QueryColumns\UserQueryColumns;
+use App\QueryColumns\UserAttributes;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -21,7 +21,7 @@ use Illuminate\Database\Query\JoinClause;
  * @property \Carbon\Carbon $email_verified_at
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
- * @method static Builder WithQueryOptions(UserQueryColumns $columns)
+ * @method static Builder WithQueryOptions(UserAttributes $columns)
  */
 final class User extends Authenticatable
 {
@@ -51,7 +51,7 @@ final class User extends Authenticatable
      *
      * @return Builder
      */
-    public function scopeWithQueryOptions($builder, UserQueryColumns $columns)
+    public function scopeWithQueryOptions($builder, UserAttributes $columns)
     {
         $builder->addSelect($this->getQualifiedKeyName());
 
@@ -75,7 +75,7 @@ final class User extends Authenticatable
     /**
      * @param Builder $builder
      */
-    private function addBookmarksCountQuery(&$builder, UserQueryColumns $options): void
+    private function addBookmarksCountQuery(&$builder, UserAttributes $options): void
     {
         $wantsBookmarksCount = $options->has('bookmarks_count') ?: $options->isEmpty();
 
@@ -91,7 +91,7 @@ final class User extends Authenticatable
     /**
      * @param Builder $builder
      */
-    private function addFavouritesCountQuery(&$builder, UserQueryColumns $options): void
+    private function addFavouritesCountQuery(&$builder, UserAttributes $options): void
     {
         $wantsFavouritesCount = $options->has('favourites_count') ?: $options->isEmpty();
 
@@ -107,7 +107,7 @@ final class User extends Authenticatable
     /**
      * @param Builder $builder
      */
-    private function addFoldersCountQuery(&$builder, UserQueryColumns $options): void
+    private function addFoldersCountQuery(&$builder, UserAttributes $options): void
     {
         $wantsFoldersCount = $options->has('folders_count') ?: $options->isEmpty();
 

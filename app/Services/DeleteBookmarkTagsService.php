@@ -6,7 +6,7 @@ namespace App\Services;
 
 use App\Collections\TagsCollection;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\QueryColumns\BookmarkQueryColumns;
+use App\QueryColumns\BookmarkAttributes;
 use App\ValueObjects\ResourceID;
 use App\Repositories\FetchBookmarksRepository;
 use App\Repositories\TagsRepository;
@@ -21,7 +21,7 @@ final class DeleteBookmarkTagsService
 
     public function delete(ResourceID $bookmarkId, TagsCollection $tagsCollection): void
     {
-        $bookmark = $this->bookmarksRepository->findById($bookmarkId, BookmarkQueryColumns::new()->id()->userId());
+        $bookmark = $this->bookmarksRepository->findById($bookmarkId, BookmarkAttributes::new()->id()->userId());
 
         (new EnsureAuthorizedUserOwnsResource)($bookmark);
 

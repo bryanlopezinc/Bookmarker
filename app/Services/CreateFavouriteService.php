@@ -7,7 +7,7 @@ namespace App\Services;
 use App\Collections\ResourceIDsCollection;
 use App\Exceptions\HttpException;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\QueryColumns\BookmarkQueryColumns;
+use App\QueryColumns\BookmarkAttributes;
 use App\Repositories\FavouritesRepository;
 use App\Repositories\FetchBookmarksRepository;
 use App\ValueObjects\UserID;
@@ -22,7 +22,7 @@ final class CreateFavouriteService
 
     public function create(ResourceIDsCollection $bookmarkIDs): void
     {
-        $bookmarks = $this->bookmarkRepository->findManyById($bookmarkIDs, BookmarkQueryColumns::new()->userId()->id());
+        $bookmarks = $this->bookmarkRepository->findManyById($bookmarkIDs, BookmarkAttributes::new()->userId()->id());
 
         //throw exception if some bookmarkIDs does not exists.
         if ($bookmarks->count() !== $bookmarkIDs->count()) {

@@ -3,7 +3,7 @@
 namespace Tests\Unit\Repositories;
 
 use App\DataTransferObjects\Bookmark;
-use App\QueryColumns\BookmarkQueryColumns as BookmarkColumns;
+use App\QueryColumns\BookmarkAttributes as BookmarkColumns;
 use App\Repositories\FetchBookmarksRepository;
 use App\ValueObjects\ResourceID;
 use Database\Factories\BookmarkFactory;

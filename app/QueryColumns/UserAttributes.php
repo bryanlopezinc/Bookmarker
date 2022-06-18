@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\QueryColumns;
 
-final class UserQueryColumns extends QueryColumns
+final class UserAttributes extends Attributes
 {
     public static function new(): self
     {

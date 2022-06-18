@@ -12,7 +12,7 @@ use App\DataTransferObjects\Builders\UpdateBookmarkDataBuilder;
 use App\Exceptions\HttpException;
 use App\Http\Requests\CreateBookmarkRequest;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\QueryColumns\BookmarkQueryColumns;
+use App\QueryColumns\BookmarkAttributes;
 
 final class UpdateBookmarkService
 {
@@ -24,7 +24,7 @@ final class UpdateBookmarkService
     {
         $data = UpdateBookmarkDataBuilder::fromRequest($request)->build();
 
-        $bookmark = $this->bookmarksRepository->findById($data->id, BookmarkQueryColumns::new()->userId()->tags());
+        $bookmark = $this->bookmarksRepository->findById($data->id, BookmarkAttributes::new()->userId()->tags());
 
         (new EnsureAuthorizedUserOwnsResource)($bookmark);
 

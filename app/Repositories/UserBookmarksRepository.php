@@ -10,7 +10,7 @@ use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\UserBookmarksFilters;
 use App\PaginationData;
-use App\QueryColumns\BookmarkQueryColumns as Columns;
+use App\QueryColumns\BookmarkAttributes as Columns;
 use App\ValueObjects\UserID;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\Paginator;

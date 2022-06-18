@@ -6,7 +6,7 @@ namespace App\Services;
 
 use App\Collections\ResourceIDsCollection;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\QueryColumns\BookmarkQueryColumns;
+use App\QueryColumns\BookmarkAttributes;
 use App\Repositories\FetchBookmarksRepository;
 use App\Repositories\FolderBookmarksRepository;
 use App\ValueObjects\ResourceID;
@@ -35,7 +35,7 @@ final class AddBookmarksToFolderService
 
     private function validateBookmarks(ResourceIDsCollection $bookmarkIDs): void
     {
-        $bookmarks = $this->bookmarksRepository->findManyById($bookmarkIDs, BookmarkQueryColumns::new()->userId()->id());
+        $bookmarks = $this->bookmarksRepository->findManyById($bookmarkIDs, BookmarkAttributes::new()->userId()->id());
 
         if ($bookmarks->count() !== $bookmarkIDs->count()) {
             throw HttpException::notFound(['message' => 'The bookmarks does not exists']);

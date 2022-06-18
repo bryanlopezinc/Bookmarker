@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\QueryColumns\BookmarkQueryColumns as BookmarkColumns;
+use App\QueryColumns\BookmarkAttributes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Builder;
@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\DB;
  * @property int $site_id foreign key to \App\Models\WebSite
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
- * @method static Builder WithQueryOptions(BookmarkColumns $queryOptions)
+ * @method static Builder WithQueryOptions(BookmarkAttributes $queryOptions)
  */
 final class Bookmark extends Model
 {
@@ -61,7 +61,7 @@ final class Bookmark extends Model
      *
      * @return Builder
      */
-    public function scopeWithQueryOptions($builder, BookmarkColumns $columns)
+    public function scopeWithQueryOptions($builder, BookmarkAttributes $columns)
     {
         $builder->addSelect($this->getQualifiedKeyName());
 
@@ -85,7 +85,7 @@ final class Bookmark extends Model
      *
      * @return Builder
      */
-    protected function parseTagsRelationQuery(&$builder, BookmarkColumns $options)
+    protected function parseTagsRelationQuery(&$builder, BookmarkAttributes $options)
     {
         $wantsTags = $options->has('tags') ?: $options->isEmpty();
 
@@ -101,7 +101,7 @@ final class Bookmark extends Model
      *
      * @return Builder
      */
-    protected function parseSiteRelationQuery(&$builder, BookmarkColumns $options)
+    protected function parseSiteRelationQuery(&$builder, BookmarkAttributes $options)
     {
         $wantsSiteRelation = $options->has('site') ?: $options->isEmpty();
 
@@ -117,7 +117,7 @@ final class Bookmark extends Model
      *
      * @return Builder
      */
-    protected function parseHealthCheckquery(&$builder, BookmarkColumns $options)
+    protected function parseHealthCheckquery(&$builder, BookmarkAttributes $options)
     {
         $condtion = $options->has('is_dead_link') ?: $options->isEmpty();
 

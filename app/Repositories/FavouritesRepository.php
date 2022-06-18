@@ -13,7 +13,7 @@ use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\Models\UserFavouritesCount;
 use App\PaginationData;
-use App\QueryColumns\BookmarkQueryColumns;
+use App\QueryColumns\BookmarkAttributes;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 
@@ -89,7 +89,7 @@ final class FavouritesRepository
     public function get(UserID $userId, PaginationData $pagination): Paginator
     {
         /** @var Paginator */
-        $favourites = Model::WithQueryOptions(BookmarkQueryColumns::new())
+        $favourites = Model::WithQueryOptions(BookmarkAttributes::new())
             ->join('favourites', 'favourites.bookmark_id', '=', 'bookmarks.id')
             ->where('favourites.user_id', $userId->toInt())
             ->simplePaginate($pagination->perPage(), page: $pagination->page());

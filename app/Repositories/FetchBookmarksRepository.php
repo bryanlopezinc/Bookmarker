@@ -10,7 +10,7 @@ use App\Models\Bookmark as Model;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\Exceptions\BookmarkNotFoundException;
-use App\QueryColumns\BookmarkQueryColumns as Columns;
+use App\QueryColumns\BookmarkAttributes;
 use Illuminate\Support\Collection;
 
 final class FetchBookmarksRepository
@@ -18,9 +18,9 @@ final class FetchBookmarksRepository
     /**
      * @throws BookmarkNotFoundException
      */
-    public function findById(ResourceID $bookmarkId, Columns $columns = new Columns()): Bookmark
+    public function findById(ResourceID $bookmarkId, BookmarkAttributes $onlyAttributes = new BookmarkAttributes()): Bookmark
     {
-        $result = $this->findManyById($bookmarkId->toCollection(), $columns);
+        $result = $this->findManyById($bookmarkId->toCollection(), $onlyAttributes);
 
         if ($result->isEmpty()) {
             throw new BookmarkNotFoundException;
@@ -32,12 +32,12 @@ final class FetchBookmarksRepository
     /**
      * @return Collection<Bookmark>
      */
-    public function findManyById(ResourceIDsCollection $IDs, Columns $columns = new Columns()): Collection
+    public function findManyById(ResourceIDsCollection $IDs, BookmarkAttributes $columns = new BookmarkAttributes()): Collection
     {
         $originalRequestedColums = $columns->toArray();
 
         if (!$columns->isEmpty() && !$columns->has($attributesNeededToCheckBookmarkHealth = ['id', 'url'])) {
-            $columns = new Columns(collect($columns)->push(...$attributesNeededToCheckBookmarkHealth)->unique()->all());
+            $columns = new BookmarkAttributes(collect($columns)->push(...$attributesNeededToCheckBookmarkHealth)->unique()->all());
         }
 
         return Model::WithQueryOptions($columns)

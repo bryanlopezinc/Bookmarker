@@ -6,7 +6,7 @@ use App\DataTransferObjects\User;
 use App\Models\User as Model;
 use App\Models\UserBookmarksCount;
 use App\Models\{UserFavouritesCount, UserFoldersCount};
-use App\QueryColumns\UserQueryColumns;
+use App\QueryColumns\UserAttributes;
 use App\Repositories\UserRepository;
 use App\ValueObjects\Username;
 use Database\Factories\UserFactory;
@@ -82,7 +82,7 @@ class UserRepositoryTest extends TestCase
         /** @var Model */
         $model = UserFactory::new()->create();
         $repository = new UserRepository;
-        $columns = new UserQueryColumns();
+        $columns = new UserAttributes();
 
         $user1 = $repository->findByUsername(Username::fromString($model->username), $columns->password()->id()->email());
         $this->assertCount(3, $user1->toArray());

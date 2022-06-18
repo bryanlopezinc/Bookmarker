@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\QueryColumns;
 
-final class BookmarkQueryColumns extends QueryColumns
+final class BookmarkAttributes extends Attributes
 {
     public static function new(): self
     {

@@ -134,7 +134,7 @@ class CreateFavouriteTest extends TestCase
         $this->getTestResponse(['bookmarks' => (string) $bookmark->id])
             ->assertStatus(Response::HTTP_CONFLICT)
             ->assertExactJson([
-                "could not add ids [{$bookmark->id}] because they have already been added to favourites"
+                'message' => "Bookmarks already exists in favourites"
             ]);
     }
 
@@ -155,10 +155,10 @@ class CreateFavouriteTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse(['bookmarks' => (string) $invalidID = ($bookmark->id + 1)])
+        $this->getTestResponse(['bookmarks' => (string) ($bookmark->id + 1)])
             ->assertNotFound()
             ->assertExactJson([
-                "could not add ids [$invalidID] because they do not exists"
+                'message' => "Bookmarks does not exists"
             ]);
 
         $this->assertDatabaseMissing(Favourite::class, [

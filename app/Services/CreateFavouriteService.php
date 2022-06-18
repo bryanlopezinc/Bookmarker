@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Collections\ResourceIDsCollection;
-use App\DataTransferObjects\Bookmark;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkQueryColumns;
 use App\Repositories\FavouritesRepository;
 use App\Repositories\FetchBookmarksRepository;
 use App\ValueObjects\UserID;
 use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\Response;
 
 final class CreateFavouriteService
@@ -29,7 +27,7 @@ final class CreateFavouriteService
 
         //throw exception if some bookmarkIDs does not exists.
         if ($bookmarks->count() !== $bookmarkIDs->count()) {
-            $this->throwException($this->prepareNotFoundResponseMessage($bookmarkIDs, $bookmarks), Response::HTTP_NOT_FOUND);
+            $this->throwNotFoundException();
         }
 
         $bookmarks->each(new EnsureAuthorizedUserOwnsResource);
@@ -39,30 +37,23 @@ final class CreateFavouriteService
         $duplicates = $this->repository->duplicates($userId, $bookmarkIDs);
 
         if ($duplicates->isNotEmpty()) {
-            $this->throwException($this->prepareHttpConflictMessage($duplicates), Response::HTTP_CONFLICT);
+            $this->throwConflictException();
         }
 
         $this->repository->createMany($bookmarkIDs, $userId);
     }
 
-    private function prepareHttpConflictMessage(ResourceIDsCollection $bookmarkIds): string
+    private function throwNotFoundException(): void
     {
-        return sprintf('could not add ids [%s] because they have already been added to favourites', $bookmarkIds->asIntegers()->implode(', '));
+        throw new HttpResponseException(response()->json([
+            'message' => 'Bookmarks does not exists'
+        ], Response::HTTP_NOT_FOUND));
     }
 
-    /**
-     * @param Collection<Bookmark> $result
-     */
-    private function prepareNotFoundResponseMessage(ResourceIDsCollection $bookmarkIDs, Collection $result): string
+    private function throwConflictException(): void
     {
-        return sprintf(
-            "could not add ids [%s] because they do not exists",
-            $bookmarkIDs->asIntegers()->diff($result->map(fn (Bookmark $bookmark) => $bookmark->id->toInt()))->implode(', ')
-        );
-    }
-
-    private function throwException(mixed $message, int $status): void
-    {
-        throw new HttpResponseException(response()->json($message, $status));
+        throw new HttpResponseException(response()->json([
+            'message' => 'Bookmarks already exists in favourites'
+        ], Response::HTTP_CONFLICT));
     }
 }

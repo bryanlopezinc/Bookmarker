@@ -97,13 +97,12 @@ class CreateUserTest extends TestCase
         ])
             ->assertCreated()
             ->assertJsonCount(3, 'data')
-            ->assertJsonCount(7, 'data.attributes')
+            ->assertJsonCount(6, 'data.attributes')
             ->assertJsonCount(4, 'data.token')
             ->assertJsonStructure([
                 'data' => [
                     'type',
                     'attributes' => [
-                        'id',
                         'firstname',
                         'lastname',
                         'username',

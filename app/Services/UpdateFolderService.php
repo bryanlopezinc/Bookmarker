@@ -10,7 +10,6 @@ use App\Repositories\FoldersRepository;
 use App\ValueObjects\FolderDescription;
 use App\ValueObjects\FolderName;
 use App\ValueObjects\ResourceID;
-use App\Exceptions\FolderNotFoundHttpResponseException as HttpException;
 
 final class UpdateFolderService
 {
@@ -20,7 +19,7 @@ final class UpdateFolderService
 
     public function fromRequest(CreateFolderRequest $request): void
     {
-        $folder = $this->foldersRepository->findOrFail(ResourceID::fromRequest($request, 'folder'), new HttpException);
+        $folder = $this->foldersRepository->find(ResourceID::fromRequest($request, 'folder'));
 
         (new EnsureAuthorizedUserOwnsResource)($folder);
 

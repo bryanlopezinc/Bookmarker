@@ -9,16 +9,24 @@ use App\ValueObjects\ResourceID;
 use App\Models\Bookmark as Model;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
+use App\Exceptions\BookmarkNotFoundException;
 use App\QueryColumns\BookmarkQueryColumns as Columns;
 use Illuminate\Support\Collection;
 
 final class FetchBookmarksRepository
 {
-    public function findById(ResourceID $bookmarkId, Columns $columns = new Columns()): Bookmark|false
+    /**
+     * @throws BookmarkNotFoundException
+     */
+    public function findById(ResourceID $bookmarkId, Columns $columns = new Columns()): Bookmark
     {
         $result = $this->findManyById($bookmarkId->toCollection(), $columns);
 
-        return $result->isEmpty() ? false : $result->sole();
+        if ($result->isEmpty()) {
+            throw new BookmarkNotFoundException;
+        }
+
+        return $result->sole();
     }
 
     /**

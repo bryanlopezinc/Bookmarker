@@ -9,9 +9,7 @@ use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\Repositories\FolderBookmarksRepository;
 use App\ValueObjects\ResourceID;
 use App\Repositories\FoldersRepository;
-use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Http\Response;
-use App\Exceptions\FolderNotFoundHttpResponseException as HttpException;
+use App\Exceptions\HttpException;
 
 final class RemoveBookmarksFromFolderService
 {
@@ -23,7 +21,7 @@ final class RemoveBookmarksFromFolderService
 
     public function remove(ResourceIDsCollection $bookmarkIDs, ResourceID $folderID): void
     {
-        (new EnsureAuthorizedUserOwnsResource)($this->repository->findOrFail($folderID, new HttpException));
+        (new EnsureAuthorizedUserOwnsResource)($this->repository->find($folderID));
 
         $this->ensureBookmarksExistsInFolder($folderID, $bookmarkIDs);
 
@@ -35,9 +33,7 @@ final class RemoveBookmarksFromFolderService
         $exists  = $this->folderBookmarks->getFolderBookmarksFrom($folderID, $bookmarkIDs);
 
         if ($exists->count() !== $bookmarkIDs->count()) {
-            throw new HttpResponseException(response()->json([
-                'message' => "Bookmarks does not exists in folder"
-            ], Response::HTTP_NOT_FOUND));
+            throw HttpException::notFound(['message' => "Bookmarks does not exists in folder"]);
         }
     }
 }

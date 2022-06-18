@@ -32,7 +32,7 @@ final class DeleteFolderService
 
     private function deleteFolder(ResourceID $folderID, bool $recursive = false): void
     {
-        (new EnsureAuthorizedUserOwnsResource)($this->foldersRepository->findOrFail($folderID, new HttpException));
+        (new EnsureAuthorizedUserOwnsResource)($this->foldersRepository->find($folderID));
 
         if ($recursive) {
             $this->deleteFoldersRepository->deleteRecursive($folderID);

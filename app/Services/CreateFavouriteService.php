@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Collections\ResourceIDsCollection;
+use App\Exceptions\HttpException;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkQueryColumns;
 use App\Repositories\FavouritesRepository;
 use App\Repositories\FetchBookmarksRepository;
 use App\ValueObjects\UserID;
-use Illuminate\Http\Exceptions\HttpResponseException;
-use Symfony\Component\HttpFoundation\Response;
 
 final class CreateFavouriteService
 {
@@ -27,7 +26,7 @@ final class CreateFavouriteService
 
         //throw exception if some bookmarkIDs does not exists.
         if ($bookmarks->count() !== $bookmarkIDs->count()) {
-            $this->throwNotFoundException();
+            throw HttpException::notFound(['message' => 'Bookmarks does not exists']);
         }
 
         $bookmarks->each(new EnsureAuthorizedUserOwnsResource);
@@ -37,23 +36,9 @@ final class CreateFavouriteService
         $duplicates = $this->repository->duplicates($userId, $bookmarkIDs);
 
         if ($duplicates->isNotEmpty()) {
-            $this->throwConflictException();
+            throw HttpException::conflict(['message' => 'Bookmarks already exists in favourites']);
         }
 
         $this->repository->createMany($bookmarkIDs, $userId);
-    }
-
-    private function throwNotFoundException(): void
-    {
-        throw new HttpResponseException(response()->json([
-            'message' => 'Bookmarks does not exists'
-        ], Response::HTTP_NOT_FOUND));
-    }
-
-    private function throwConflictException(): void
-    {
-        throw new HttpResponseException(response()->json([
-            'message' => 'Bookmarks already exists in favourites'
-        ], Response::HTTP_CONFLICT));
     }
 }

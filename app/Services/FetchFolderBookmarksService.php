@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\DataTransferObjects\FolderBookmark;
-use App\Exceptions\FolderNotFoundHttpResponseException as HttpException;
 use App\PaginationData;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\Repositories\FolderBookmarksRepository;
@@ -27,7 +26,7 @@ final class FetchFolderBookmarksService
      */
     public function fetch(ResourceID $folderID, PaginationData $pagination, UserID $userID): Paginator
     {
-        (new EnsureAuthorizedUserOwnsResource)($this->foldersRepository->findOrFail($folderID, new HttpException));
+        (new EnsureAuthorizedUserOwnsResource)($this->foldersRepository->find($folderID));
 
         return $this->folderBookmarksRepository->bookmarks($folderID, $pagination, $userID);
     }

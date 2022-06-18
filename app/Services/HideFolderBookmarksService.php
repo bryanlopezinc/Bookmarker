@@ -5,15 +5,12 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Collections\ResourceIDsCollection;
-use App\Exceptions\FolderNotFoundHttpResponseException;
+use App\Exceptions\HttpException;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\QueryColumns\BookmarkQueryColumns;
 use App\Repositories\FetchBookmarksRepository;
 use App\Repositories\FolderBookmarksRepository;
 use App\Repositories\FoldersRepository;
 use App\ValueObjects\ResourceID;
-use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Http\Response;
 
 final class HideFolderBookmarksService
 {
@@ -26,7 +23,7 @@ final class HideFolderBookmarksService
 
     public function hide(ResourceIDsCollection $bookmarkIDs, ResourceID $folderID): void
     {
-        (new EnsureAuthorizedUserOwnsResource)($this->foldersRepository->findOrFail($folderID, new FolderNotFoundHttpResponseException));
+        (new EnsureAuthorizedUserOwnsResource)($this->foldersRepository->find($folderID));
 
         $this->ensureBookmarksExistsInFolder($folderID, $bookmarkIDs);
 
@@ -38,9 +35,7 @@ final class HideFolderBookmarksService
         $exists  = $this->folderBookmarksRepository->getFolderBookmarksFrom($folderID, $bookmarkIDs);
 
         if ($exists->count() !== $bookmarkIDs->count()) {
-            throw new HttpResponseException(response()->json([
-                'message' => "Bookmarks does not exists in folder"
-            ], Response::HTTP_NOT_FOUND));
+            throw HttpException::notFound(['message' => "Bookmarks does not exists in folder"]);
         }
     }
 }

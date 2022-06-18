@@ -7,13 +7,12 @@ namespace App\Services;
 use Illuminate\Http\Response;
 use App\Http\Requests\UpdateBookmarkRequest;
 use App\Repositories\FetchBookmarksRepository;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Repositories\UpdateBookmarkRepository as Repository;
 use App\DataTransferObjects\Builders\UpdateBookmarkDataBuilder;
+use App\Exceptions\HttpException;
 use App\Http\Requests\CreateBookmarkRequest;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkQueryColumns;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class UpdateBookmarkService
 {
@@ -27,14 +26,10 @@ final class UpdateBookmarkService
 
         $bookmark = $this->bookmarksRepository->findById($data->id, BookmarkQueryColumns::new()->userId()->tags());
 
-        if ($bookmark === false) {
-            throw new NotFoundHttpException();
-        }
-
         (new EnsureAuthorizedUserOwnsResource)($bookmark);
 
         if ($bookmark->tags->count() + $data->tags->count() > CreateBookmarkRequest::MAX_TAGS) {
-            throw new HttpException(Response::HTTP_BAD_REQUEST, 'Cannot add more tags to bookmark');
+            throw new HttpException(['message' => 'Cannot add more tags to bookmark'], Response::HTTP_BAD_REQUEST);
         }
 
         $this->repository->update($data);

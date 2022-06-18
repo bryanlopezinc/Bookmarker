@@ -11,9 +11,7 @@ use App\Repositories\FetchBookmarksRepository;
 use App\Repositories\FolderBookmarksRepository;
 use App\ValueObjects\ResourceID;
 use App\Repositories\FoldersRepository;
-use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Http\Response;
-use App\Exceptions\FolderNotFoundHttpResponseException as HttpException;
+use App\Exceptions\HttpException as HttpException;
 
 final class AddBookmarksToFolderService
 {
@@ -26,7 +24,7 @@ final class AddBookmarksToFolderService
 
     public function add(ResourceIDsCollection $bookmarkIDs, ResourceID $folderID, ResourceIDsCollection $makeHidden): void
     {
-        (new EnsureAuthorizedUserOwnsResource)($this->repository->findOrFail($folderID, new HttpException));
+        (new EnsureAuthorizedUserOwnsResource)($this->repository->find($folderID));
 
         $this->validateBookmarks($bookmarkIDs);
 
@@ -40,9 +38,7 @@ final class AddBookmarksToFolderService
         $bookmarks = $this->bookmarksRepository->findManyById($bookmarkIDs, BookmarkQueryColumns::new()->userId()->id());
 
         if ($bookmarks->count() !== $bookmarkIDs->count()) {
-            throw new HttpResponseException(response()->json([
-                'message' => "The bookmarks does not exists"
-            ], Response::HTTP_NOT_FOUND));
+            throw HttpException::notFound(['message' => 'The bookmarks does not exists']);
         }
 
         $bookmarks->each(new EnsureAuthorizedUserOwnsResource);
@@ -53,9 +49,7 @@ final class AddBookmarksToFolderService
         $exists  = $this->folderBookmarks->getFolderBookmarksFrom($folderID, $bookmarkIDs);
 
         if ($exists->isNotEmpty()) {
-            throw new HttpResponseException(response()->json([
-                'message' => "Bookmarks already exists"
-            ], Response::HTTP_CONFLICT));
+            throw HttpException::conflict(['message' => 'Bookmarks already exists']);
         }
     }
 }

@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Collections\ResourceIDsCollection;
+use App\Exceptions\HttpException;
 use App\Repositories\FavouritesRepository;
 use App\ValueObjects\UserID;
-use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Http\Response;
 
 final class DeleteUserFavouritesService
 {
@@ -21,7 +20,7 @@ final class DeleteUserFavouritesService
         $userId = UserID::fromAuthUser();
 
         if (!$this->repository->exists($bookmarkIDs, $userId)) {
-            throw new HttpResponseException(response()->json(status: Response::HTTP_NOT_FOUND));
+            throw  HttpException::notFound(['message' => 'favourites does not exists']);
         }
 
         $this->repository->delete($bookmarkIDs, $userId);

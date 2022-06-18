@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\DataTransferObjects\Builders\FolderBuilder;
 use App\DataTransferObjects\Folder;
+use App\Exceptions\FolderNotFoundHttpResponseException;
 use App\Models\Folder as Model;
 use App\Models\UserFoldersCount;
 use App\ValueObjects\FolderDescription;
@@ -39,14 +40,14 @@ final class FoldersRepository
     }
 
     /**
-     * Find a folder by id or throw an Exception when folder does not exists
+     * @throws FolderNotFoundHttpResponseException
      */
-    public function findOrFail(ResourceID $folderID, Throwable $exception): Folder
+    public function find(ResourceID $folderID): Folder
     {
         $model = Model::query()->whereKey($folderID->toInt())->first();
 
         if ($model === null) {
-           throw $exception;
+           throw new FolderNotFoundHttpResponseException;
         }
 
         return (new FolderBuilder())

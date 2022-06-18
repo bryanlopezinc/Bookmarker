@@ -10,7 +10,6 @@ use App\QueryColumns\BookmarkQueryColumns;
 use App\ValueObjects\ResourceID;
 use App\Repositories\FetchBookmarksRepository;
 use App\Repositories\TagsRepository;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class DeleteBookmarkTagsService
 {
@@ -23,10 +22,6 @@ final class DeleteBookmarkTagsService
     public function delete(ResourceID $bookmarkId, TagsCollection $tagsCollection): void
     {
         $bookmark = $this->bookmarksRepository->findById($bookmarkId, BookmarkQueryColumns::new()->id()->userId());
-
-        if ($bookmark === false) {
-            throw new NotFoundHttpException();
-        }
 
         (new EnsureAuthorizedUserOwnsResource)($bookmark);
 

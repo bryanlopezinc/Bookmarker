@@ -15,8 +15,8 @@ use Illuminate\Database\Query\JoinClause;
  * @property int $id
  * @property string $username
  * @property string $firstname
- * @property bool $lastname
- * @property bool $email
+ * @property string $lastname
+ * @property string $email
  * @property string $password
  * @property \Carbon\Carbon $email_verified_at
  * @property \Carbon\Carbon $created_at
@@ -41,9 +41,9 @@ final class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    public function findForPassport(string $username): ?self
+    public function findForPassport(string $id): ?self
     {
-        return $this->where('username', $username)->first();
+        return $this->where('username', $id)->orWhere('email', $id)->first();
     }
 
     /**

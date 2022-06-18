@@ -82,6 +82,20 @@ class RequestVerificationCodeTest extends TestCase
         });
     }
 
+    public function testCanRequestCodeWithValidEmail(): void
+    {
+        Mail::fake();
+
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        $user = UserFactory::new()->create();
+
+        $this->getTestResponse([
+            'username'  => $user->email,
+            'password' => 'password',
+        ])->assertOk();
+    }
+
     public function testWillReturnErrorResponseWhenRequestIsSentMoreThanOnceInAMinute(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());

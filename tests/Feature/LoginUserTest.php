@@ -78,6 +78,39 @@ class LoginUserTest extends TestCase
         ]);
     }
 
+    public function testUsernameMustBeAnEmailOrUsername(): void
+    {
+        $this->getTestResponse([
+            'username'  => 'urhen#uh', //invalid username
+            'password'  => 'password',
+            'client_id' => $this->client->id,
+            'client_secret' => $this->client->secret,
+            'grant_type' => 'password',
+            'two_fa_code' => '12345',
+        ])
+            ->assertUnprocessable(400)
+            ->assertJsonValidationErrors([
+                'username' => [
+                    'The username must be a valid username or email'
+                ]
+            ]);
+
+        $this->getTestResponse([
+            'username'  => 'bryanlopez.@yahoo.com',
+            'password'  => 'password',
+            'client_id' => $this->client->id,
+            'client_secret' => $this->client->secret,
+            'grant_type' => 'password',
+            'two_fa_code' => '12345',
+        ])
+            ->assertUnprocessable(400)
+            ->assertJsonValidationErrors([
+                'username' => [
+                    'The username must be a valid username or email'
+                ]
+            ]);
+    }
+
     public function testWillLoginUser(): void
     {
         Mail::fake();
@@ -142,6 +175,33 @@ class LoginUserTest extends TestCase
 
             return true;
         });
+    }
+
+    public function testCanLoginWithEmail(): void
+    {
+        $email = $this->user->email;
+
+        Mail::fake();
+
+        Http::fake([
+            'ip-api.com/*' => Http::response('{
+                    "country": "Canada",
+                    "city": "Montreal"
+            }'),
+        ]);
+
+        $code = (string)$this->getVerificationCode($email, 'password');
+
+        $this->getTestResponse([
+            'username'  => $email,
+            'password'  => 'password',
+            'client_id' => $this->client->id,
+            'client_secret' => $this->client->secret,
+            'grant_type' => 'password',
+            'two_fa_code' => $code,
+            'with_ip' => '24.48.0.1',
+            'with_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
+        ])->assertOk();
     }
 
     public function testWillNotLoginUserWhenCodeIsInvalid(): void

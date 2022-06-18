@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Rules\UsernameOrEmailRule;
 use App\TwoFA\InvalidVerificationCodeException;
 use App\TwoFA\VerificationCode;
-use App\ValueObjects\Username;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -15,7 +15,7 @@ final class LoginUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'username' => Username::rules(['required']),
+            'username' => ['required', 'filled', 'string', new UsernameOrEmailRule],
             'password' => ['required'],
             'with_ip' => ['ip', 'sometimes', 'filled'],
             'with_agent' => ['sometimes', 'filled'],

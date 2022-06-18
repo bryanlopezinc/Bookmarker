@@ -8,6 +8,7 @@ use App\DataTransferObjects\Builders\UserBuilder;
 use App\DataTransferObjects\User;
 use App\Models\User as UserModel;
 use App\QueryColumns\UserQueryColumns;
+use App\ValueObjects\Email;
 use App\ValueObjects\UserID;
 use App\ValueObjects\Username;
 
@@ -21,6 +22,11 @@ final class UserRepository
     public function findByID(UserID $userID, UserQueryColumns $columns = new UserQueryColumns()): User|false
     {
         return $this->find('users.id', $userID->toInt(), $columns);
+    }
+
+    public function findByEmail(Email $email, UserQueryColumns $columns = new UserQueryColumns()): User|false
+    {
+        return $this->find('users.email', $email->value, $columns);
     }
 
     private function find(string $byColumn, string|int $value, UserQueryColumns $columns): User|false

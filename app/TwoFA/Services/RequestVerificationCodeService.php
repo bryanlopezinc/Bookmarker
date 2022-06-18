@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace App\TwoFA\Services;
 
 use App\DataTransferObjects\User;
+use App\Exceptions\InvalidUsernameException;
 use App\QueryColumns\UserQueryColumns;
 use App\Repositories\UserRepository;
 use App\TwoFA\Cache\RecentlySentVerificationCodesRepository;
 use App\TwoFA\Cache\VerificationCodesRepository;
 use App\TwoFA\Requests\RequestVerificationCodeRequest as Request;
-use App\TwoFA\SendVerificationCodeJob;
-use App\TwoFA\TwoFactorData;
+use App\TwoFA\{SendVerificationCodeJob, TwoFactorData};
 use App\TwoFA\VerificationCodeGeneratorInterface;
-use App\ValueObjects\Username;
+use App\ValueObjects\{Email, Username};
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Response;
@@ -33,9 +33,7 @@ final class RequestVerificationCodeService
 
     public function __invoke(Request $request): void
     {
-        $user = $this->userRepository->findByUsername(Username::fromRequest($request), UserQueryColumns::new()->id()->password()->email());
-
-        $this->ensureValidCrendentials($user, $request);
+        $this->ensureValidCrendentials($user = $this->getUser($request), $request);
 
         $this->ensureCanRequestNewVerificationCode($user);
 
@@ -48,35 +46,38 @@ final class RequestVerificationCodeService
         SendVerificationCodeJob::dispatch($user->email, $twoFactorData->verificationCode);
     }
 
+    private function getUser(Request $request): User|false
+    {
+        $attributes = UserQueryColumns::new()->id()->password()->email();
+
+        try {
+            return $this->userRepository->findByUsername(Username::fromRequest($request), $attributes);
+        } catch (InvalidUsernameException) {
+            return $this->userRepository->findByEmail(new Email($request->validated('username')), $attributes);
+        }
+    }
+
     private function ensureCanRequestNewVerificationCode(User $user): void
     {
         if ($this->recentTokens->has($user->id)) {
-            $this->throwException(Response::HTTP_TOO_MANY_REQUESTS, [
+            throw new HttpResponseException(response()->json([
                 'message' => sprintf('retry after  %s seconds', $this->secondsUntil($this->tokens->get($user->id)->retryAfter))
-            ]);
+            ], Response::HTTP_TOO_MANY_REQUESTS,));
         }
     }
 
     private function ensureValidCrendentials(User|false $user, Request $request): void
     {
+        $exception = new HttpResponseException(response()->json([
+            'message' => 'Invalid Credentials'
+        ], Response::HTTP_UNAUTHORIZED));
+
         if (!$user) {
-            $this->throwUnauthorizedException();
+            throw $exception;
         }
 
         if (!app(Hasher::class)->check($request->input('password'), $user->password)) {
-            $this->throwUnauthorizedException();
+            throw $exception;
         }
-    }
-
-    private function throwUnauthorizedException(): void
-    {
-        $this->throwException(Response::HTTP_UNAUTHORIZED, [
-            'message' => 'Invalid Credentials'
-        ]);
-    }
-
-    private function throwException(int $status, array $message = []): void
-    {
-        throw new HttpResponseException(response()->json($message, $status));
     }
 }

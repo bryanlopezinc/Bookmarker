@@ -23,4 +23,9 @@ final class HttpException extends HttpResponseException
     {
         return new self($message, Response::HTTP_CONFLICT);
     }
+
+    public static function unAuthorized(mixed $message = []): self
+    {
+        return new self($message, Response::HTTP_UNAUTHORIZED);
+    }
 }

@@ -11,6 +11,7 @@ use Laravel\Passport\Http\Middleware\CheckClientCredentials;
 Route::middleware('auth:api')->group(function () {
 
     Route::get('users/me', Controllers\Auth\FetchUserProfileController::class)->name('authUserProfile');
+    Route::delete('users', Controllers\DeleteUserAccountController::class)->name('deleteUserAccount');
     Route::get('users/favourites', Controllers\FetchUserFavouritesController::class)->name('fetchUserFavourites');
     Route::get('users/bookmarks/sources', Controllers\FetchUserBookmarksSourcesController::class)->name('fetchUserSites');
     Route::get('users/tags', Controllers\FetchUserTagsController::class)->name('userTags');
@@ -68,6 +69,10 @@ Route::middleware('auth:api')->group(function () {
             ->middleware(ConvertStringToArray::keys('bookmarks'))
             ->name('removeBookmarksFromFolder');
     });
+
+    Route::post('token/refresh', [Laravel\Passport\Http\Controllers\TransientTokenController::class, 'refresh'])
+        ->name('refreshToken')
+        ->middleware('web');
 });
 
 Route::post('client/oauth/token', Controllers\Auth\IssueClientTokenController::class)->name('issueClientToken');

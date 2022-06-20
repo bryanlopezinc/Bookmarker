@@ -2,6 +2,8 @@
 
 namespace App\Console;
 
+use App\Jobs\CleanDeletedUsersTable;
+use App\Jobs\PruneDeletedUsersData;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -16,6 +18,9 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('passport:purge')->daily();
+        $schedule->command('auth:clear-resets')->daily();
+        $schedule->job(PruneDeletedUsersData::class)->hourly();
+        $schedule->job(CleanDeletedUsersTable::class)->everyTwoHours();
     }
 
     /**
@@ -25,7 +30,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands()
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }

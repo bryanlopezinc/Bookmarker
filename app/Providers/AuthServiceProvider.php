@@ -6,7 +6,6 @@ use App\Http\Controllers\Auth\IssueClientTokenController;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Passport\Passport;
-use Laravel\Passport\RouteRegistrar;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -28,14 +27,9 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
         $this->registerDefaultPasswordRules();
-
-        if (!$this->app->routesAreCached()) {
-            Passport::routes(function (RouteRegistrar $router) {
-                $router->forTransientTokens();
-            });
-        }
-
         $this->registerTokenLifeTimes();
+
+        Passport::cookie('api_token');
     }
 
     private function registerDefaultPasswordRules(): void

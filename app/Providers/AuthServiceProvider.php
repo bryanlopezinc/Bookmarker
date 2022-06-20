@@ -41,8 +41,8 @@ class AuthServiceProvider extends ServiceProvider
 
     private function registerTokenLifeTimes(): void
     {
-        Passport::tokensExpireIn(now()->addMinutes(30));
-        Passport::refreshTokensExpireIn(now()->addDay());
+        Passport::tokensExpireIn(now()->addHour());
+        Passport::refreshTokensExpireIn(now()->addWeeks(2));
 
         $this->app->beforeResolving(IssueClientTokenController::class, function () {
             Passport::tokensExpireIn(now()->addMonth());

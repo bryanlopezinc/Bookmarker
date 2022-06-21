@@ -25,7 +25,7 @@ class BookmarkResourceTest extends TestCase
         $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->create())
             ->tags(TagsCollection::createFromStrings($this->faker->words()))
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
-            ->isDeadlink(false)
+            ->isHealthy(false)
             ->isUserFavourite(false)
             ->build();
 
@@ -36,7 +36,7 @@ class BookmarkResourceTest extends TestCase
             ->assertJson(function (AssertableJson $assert) {
                 $assert->where('data.attributes.has_tags', true);
                 $assert->where('data.attributes.has_description', true);
-                $assert->where('data.attributes.is_dead_link', false);
+                $assert->where('data.attributes.is_healthy', false);
                 $assert->where('data.attributes.has_tags', true);
                 $assert->has('data.attributes.preview_image_url');
                 $assert->has('data.attributes.description');
@@ -54,7 +54,7 @@ class BookmarkResourceTest extends TestCase
         $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->create())
             ->tags(TagsCollection::createFromStrings([]))
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
-            ->isDeadlink(false)
+            ->isHealthy(false)
             ->isUserFavourite(false)
             ->build();
 
@@ -74,7 +74,7 @@ class BookmarkResourceTest extends TestCase
         ]))
             ->tags(TagsCollection::createFromStrings($this->faker->words()))
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
-            ->isDeadlink(false)
+            ->isHealthy(false)
             ->isUserFavourite(false)
             ->build();
 
@@ -95,7 +95,7 @@ class BookmarkResourceTest extends TestCase
         ]))
             ->tags(TagsCollection::createFromStrings($this->faker->words()))
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
-            ->isDeadlink(false)
+            ->isHealthy(false)
             ->isUserFavourite(false)
             ->build();
 

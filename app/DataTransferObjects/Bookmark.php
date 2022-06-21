@@ -29,7 +29,7 @@ final class Bookmark extends DataTransferObject implements BelongsToUserInterfac
     public readonly TimeStamp $timeUpdated;
     public readonly WebSite $fromWebSite;
     public readonly TagsCollection $tags;
-    public bool $isDeadLink;
+    public bool $isHealthy;
     public bool $isUserFavourite;
 
     public function getOwnerID(): UserID

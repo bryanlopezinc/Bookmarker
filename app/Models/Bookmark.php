@@ -43,7 +43,7 @@ final class Bookmark extends Model
     protected $casts = [
         'has_custom_title' => 'bool',
         'description_set_by_user' => 'bool',
-        'is_dead_link' => 'bool'
+        'is_healthy' => 'bool'
     ];
 
     public function tags(): HasManyThrough
@@ -125,14 +125,7 @@ final class Bookmark extends Model
             return $builder;
         }
 
-        $sql = <<<SQL
-                        case
-                            WHEN bookmarks_health.is_healthy IS NULL THEN 0
-                            ELSE bookmarks_health.is_healthy
-                        END as 'is_dead_link'
-                    SQL;
-
-        return $builder->addSelect('bookmarks_health.is_healthy', DB::raw($sql))
+        return $builder->addSelect('bookmarks_health.is_healthy')
             ->join('bookmarks_health', 'bookmarks.id', '=', 'bookmarks_health.bookmark_id', 'left outer');
     }
 }

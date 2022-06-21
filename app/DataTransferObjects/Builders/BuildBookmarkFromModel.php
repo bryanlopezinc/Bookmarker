@@ -28,7 +28,7 @@ final class BuildBookmarkFromModel
             ->when($keyExists('updated_at'), fn (BookmarkBuilder $b) => $b->updatedAt((string)$model->updated_at))
             ->when($keyExists('tags'), $this->tagsBuilderCallback($attributes))
             ->when($keyExists('site'), $this->siteBuilderCallback($model))
-            ->when($keyExists('is_dead_link'), fn (BookmarkBuilder $b) => $b->isDeadlink($model->is_dead_link))
+            ->when($keyExists('is_healthy'), fn (BookmarkBuilder $b) => $b->isHealthy(is_null($model->is_healthy) ? true :  (bool)$model->is_healthy))
             ->when($keyExists('is_user_favourite'), fn (BookmarkBuilder $b) => $b->isUserFavourite($model->is_user_favourite));
     }
 

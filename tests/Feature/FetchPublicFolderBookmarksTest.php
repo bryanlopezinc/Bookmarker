@@ -130,7 +130,7 @@ class FetchPublicFolderBookmarksTest extends TestCase
                                     'tags',
                                     'has_tags',
                                     'tags_count',
-                                    'is_dead_link',
+                                    'is_healthy',
                                     'is_user_favourite',
                                     'is_public',
                                     'created_on' => [

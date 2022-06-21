@@ -67,14 +67,14 @@ class BookmarksRepositoryTest extends TestCase
         $this->assertCount(2, $bookmark->toArray());
     }
 
-    public function test_is_dead_link_attribute_will_return_false_when_bookmark_Id_does_not_exists(): void
+    public function test_is_healthy_attribute_will_return_true_when_bookmark_id_does_not_exists_in_bookmarks_health_table(): void
     {
         $bookmark = $this->repository->findById(new ResourceID(BookmarkFactory::new()->create()->id));
 
-        $this->assertFalse($bookmark->isDeadLink);
+        $this->assertTrue($bookmark->isHealthy);
     }
 
-    public function test_is_dead_link_attribute_will_return_true_when_bookmark_id_exists(): void
+    public function test_is_healthy_attribute_will_return_true_when_bookmark_id_exists(): void
     {
         $model = BookmarkFactory::new()->create();
 
@@ -84,10 +84,10 @@ class BookmarksRepositoryTest extends TestCase
 
         $bookmark = $this->repository->findById(new ResourceID($model->id));
 
-        $this->assertTrue($bookmark->isDeadLink);
+        $this->assertTrue($bookmark->isHealthy);
     }
 
-    public function test_is_dead_link_attribute_will_return_false_when_bookmark_id_exists(): void
+    public function test_is_healthy_attribute_will_return_false_when_bookmark_id_exists(): void
     {
         $model = BookmarkFactory::new()->create();
 
@@ -97,6 +97,6 @@ class BookmarksRepositoryTest extends TestCase
 
         $bookmark = $this->repository->findById(new ResourceID($model->id));
 
-        $this->assertFalse($bookmark->isDeadLink);
+        $this->assertFalse($bookmark->isHealthy);
     }
 }

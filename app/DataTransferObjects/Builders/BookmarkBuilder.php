@@ -136,9 +136,9 @@ final class BookmarkBuilder extends Builder
         return $this;
     }
 
-    public function isDeadlink(bool $value): self
+    public function isHealthy(bool $value): self
     {
-        $this->attributes['isDeadLink'] = $value;
+        $this->attributes['isHealthy'] = $value;
 
         return $this;
     }

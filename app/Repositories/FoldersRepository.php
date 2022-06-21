@@ -44,7 +44,7 @@ final class FoldersRepository
      */
     public function find(ResourceID $folderID): Folder
     {
-        $model = Model::query()->whereKey($folderID->toInt())->first();
+        $model = Model::WithBookmarksCount()->whereKey($folderID->toInt())->first();
 
         if ($model === null) {
            throw new FolderNotFoundHttpResponseException;
@@ -57,6 +57,7 @@ final class FoldersRepository
             ->setID($model->id)
             ->setOwnerID($model->user_id)
             ->setisPublic($model->is_public)
+            ->setBookmarksCount((int)$model->bookmarks_count)
             ->build();
     }
 

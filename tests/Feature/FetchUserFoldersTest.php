@@ -88,6 +88,10 @@ class FetchUserFoldersTest extends TestCase
                         $json->etc();
                         $json->where('attributes.id', fn (int $id) => $userfolders->pluck('id')->containsStrict($id));
                         $json->where('attributes.is_public', false);
+                        $json->where('attributes.storage.capacity', 200);
+                        $json->where('attributes.storage.is_full', false);
+                        $json->where('attributes.storage.available', 200);
+                        $json->where('attributes.storage.percentage_used', 0);
 
                         //Assert the name  and decription response sent to client are sanitized
                         $json->where('attributes.name', '&lt;script&gt;alert(Cross Site Scripting)&lt;/script&gt;');
@@ -96,6 +100,7 @@ class FetchUserFoldersTest extends TestCase
                         (new AssertableJsonString($json->toArray()))
                             ->assertCount(2)
                             ->assertCount(7, 'attributes')
+                            ->assertCount(5, 'attributes.storage')
                             ->assertStructure([
                                 "type",
                                 "attributes" => [
@@ -104,8 +109,14 @@ class FetchUserFoldersTest extends TestCase
                                     "description",
                                     "date_created",
                                     "last_updated",
-                                    "items_count",
-                                    "is_public"
+                                    "is_public",
+                                    'storage' => [
+                                        'items_count',
+                                        'capacity',
+                                        'is_full',
+                                        'available',
+                                        'percentage_used'
+                                    ]
                                 ]
                             ]);
                     });

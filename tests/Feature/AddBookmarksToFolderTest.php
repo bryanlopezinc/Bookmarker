@@ -138,6 +138,52 @@ class AddBookmarksToFolderTest extends TestCase
         );
     }
 
+    public function testFolderCannotHaveMoreThan_200_Bookmarks(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $folderID = FolderFactory::new()->create($attributes = ['user_id' => $user->id])->id;
+
+        for ($i = 0; $i < 4; $i++) {
+            $bookmarkIDs = BookmarkFactory::new()->count(50)->create($attributes)->pluck('id');
+
+            $this->getTestResponse([
+                'bookmarks' => $bookmarkIDs->implode(','),
+                'folder' => $folderID,
+            ])->assertCreated();
+        }
+
+        $this->getTestResponse([
+            'bookmarks' => (string) BookmarkFactory::new()->create($attributes)->id,
+            'folder' => $folderID,
+        ])
+            ->assertForbidden()
+            ->assertExactJson(['message' => 'folder cannot contain more bookmarks']);
+    }
+
+    public function testErrorMessageWhenFolderCannotTakeMoreBookmarks(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $folderID = FolderFactory::new()->create($attributes = ['user_id' => $user->id])->id;
+
+        for ($i = 0; $i < 4; $i++) {
+            $bookmarkIDs = BookmarkFactory::new()->count(45)->create($attributes)->pluck('id');
+
+            $this->getTestResponse([
+                'bookmarks' => $bookmarkIDs->implode(','),
+                'folder' => $folderID,
+            ])->assertCreated();
+        }
+
+        $this->getTestResponse([
+            'bookmarks' => BookmarkFactory::new()->count(21)->create($attributes)->pluck('id')->implode(','),
+            'folder' => $folderID,
+        ])
+            ->assertForbidden()
+            ->assertExactJson(['message' => 'folder can only take only 20 more bookmarks']);
+    }
+
     public function testWillCheckBookmarksHealth(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());

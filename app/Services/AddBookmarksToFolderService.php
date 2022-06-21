@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Collections\ResourceIDsCollection;
+use App\DataTransferObjects\Folder;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkAttributes;
 use App\Repositories\FetchBookmarksRepository;
@@ -24,13 +25,26 @@ final class AddBookmarksToFolderService
 
     public function add(ResourceIDsCollection $bookmarkIDs, ResourceID $folderID, ResourceIDsCollection $makeHidden): void
     {
-        (new EnsureAuthorizedUserOwnsResource)($this->repository->find($folderID));
+        (new EnsureAuthorizedUserOwnsResource)($folder = $this->repository->find($folderID));
+
+        $this->ensureFolderCanContainBookmarks($bookmarkIDs, $folder);
 
         $this->validateBookmarks($bookmarkIDs);
 
         $this->checkFolderForPossibleDuplicates($folderID, $bookmarkIDs);
 
         $this->folderBookmarks->addBookmarksToFolder($folderID, $bookmarkIDs, $makeHidden);
+    }
+
+    private function ensureFolderCanContainBookmarks(ResourceIDsCollection $bookmarks, Folder $folder): void
+    {
+        $exceptionMessage = $folder->storage->isFull()
+            ? 'folder cannot contain more bookmarks'
+            : sprintf('folder can only take only %s more bookmarks', $folder->storage->spaceAvailable());
+
+        if (!$folder->storage->canContain($bookmarks)) {
+            throw HttpException::forbidden(['message' => $exceptionMessage]);
+        }
     }
 
     private function validateBookmarks(ResourceIDsCollection $bookmarkIDs): void

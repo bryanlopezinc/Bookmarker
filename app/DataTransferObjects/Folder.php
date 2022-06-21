@@ -7,7 +7,7 @@ namespace App\DataTransferObjects;
 use App\Contracts\BelongsToUserInterface;
 use App\ValueObjects\FolderDescription;
 use App\ValueObjects\FolderName;
-use App\ValueObjects\PositiveNumber;
+use App\ValueObjects\FolderStorage;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Carbon\Carbon;
@@ -20,7 +20,7 @@ final class Folder extends DataTransferObject implements BelongsToUserInterface
     public readonly FolderDescription $description;
     public readonly Carbon $createdAt;
     public readonly Carbon $updatedAt;
-    public readonly PositiveNumber $bookmarksCount;
+    public readonly FolderStorage $storage;
     public readonly bool $isPublic;
 
     public function getOwnerID(): UserID

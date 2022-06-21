@@ -7,7 +7,7 @@ namespace App\DataTransferObjects\Builders;
 use App\DataTransferObjects\Folder;
 use App\ValueObjects\FolderDescription;
 use App\ValueObjects\FolderName;
-use App\ValueObjects\PositiveNumber;
+use App\ValueObjects\FolderStorage;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Carbon\Carbon;
@@ -58,7 +58,7 @@ final class FolderBuilder extends Builder
 
     public function setBookmarksCount(int $count): self
     {
-        $this->attributes['bookmarksCount'] = new PositiveNumber($count);
+        $this->attributes['storage'] = new FolderStorage($count);
 
         return $this;
     }

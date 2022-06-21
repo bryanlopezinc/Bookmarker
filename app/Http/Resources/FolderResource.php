@@ -27,8 +27,14 @@ final class FolderResource extends JsonResource
                 'description' => $this->folder->description->safe(),
                 'date_created' => $this->folder->createdAt->toDateTimeString(),
                 'last_updated' => $this->folder->updatedAt->toDateTimeString(),
-                'items_count' => $this->folder->bookmarksCount->value,
                 'is_public' => $this->folder->isPublic,
+                'storage' => [
+                    'items_count' => $this->folder->storage->total,
+                    'capacity' => $this->folder->storage::MAX,
+                    'is_full' => $this->folder->storage->isFull(),
+                    'available' => $this->folder->storage->spaceAvailable(),
+                    'percentage_used' => $this->folder->storage->percentageUsed(),
+                ]
             ]
         ];
     }

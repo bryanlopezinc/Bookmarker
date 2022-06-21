@@ -19,6 +19,10 @@ final class HealthChecker
 
     public function ping(BookmarksCollection $bookmarks): void
     {
+        if ($bookmarks->isEmpty()) {
+            return;
+        }
+
         $data = [];
 
         $responses = $this->getResponse(

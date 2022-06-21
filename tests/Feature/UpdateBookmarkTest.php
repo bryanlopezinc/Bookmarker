@@ -77,7 +77,7 @@ class UpdateBookmarkTest extends TestCase
         ]);
     }
 
-    public function testCanUpdateBookmarkOnlyTags(): void
+    public function testCanUpdateOnlyTags(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -91,7 +91,7 @@ class UpdateBookmarkTest extends TestCase
         ])->assertOk();
     }
 
-    public function testCanUpdateBookmarkOnlyTitle(): void
+    public function testCanUpdateOnlyTitle(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 

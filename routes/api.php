@@ -70,11 +70,11 @@ Route::middleware('auth:api')->group(function () {
             ->middleware(ConvertStringToArray::keys('bookmarks'))
             ->name('removeBookmarksFromFolder');
     });
-
-    Route::post('token/refresh', [Laravel\Passport\Http\Controllers\TransientTokenController::class, 'refresh'])
-        ->name('refreshToken')
-        ->middleware('web');
 });
+
+Route::post('token/refresh', [Laravel\Passport\Http\Controllers\AccessTokenController::class, 'issueToken'])
+    ->name('refreshToken')
+    ->middleware('throttle');
 
 Route::post('client/oauth/token', Controllers\Auth\IssueClientTokenController::class)->name('issueClientToken');
 Route::post('users', Controllers\CreateUserController::class)->middleware([DBTransaction::class])->name('createUser');

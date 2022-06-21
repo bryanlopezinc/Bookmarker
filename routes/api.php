@@ -10,6 +10,7 @@ use Laravel\Passport\Http\Middleware\CheckClientCredentials;
 
 Route::middleware('auth:api')->group(function () {
 
+    Route::post('logout', Controllers\Auth\LogoutController::class)->name('logoutUser');
     Route::get('users/me', Controllers\Auth\FetchUserProfileController::class)->name('authUserProfile');
     Route::delete('users', Controllers\DeleteUserAccountController::class)->name('deleteUserAccount');
     Route::get('users/favourites', Controllers\FetchUserFavouritesController::class)->name('fetchUserFavourites');

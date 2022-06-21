@@ -7,6 +7,8 @@ namespace App\Actions;
 use App\DataTransferObjects\Bookmark;
 use App\Models\Bookmark as Model;
 use App\Readers\WebPageData;
+use App\ValueObjects\BookmarkDescription;
+use Illuminate\Support\Str;
 
 final class UpdateBookmarkDescriptionWithWebPageDescription
 {
@@ -26,6 +28,8 @@ final class UpdateBookmarkDescriptionWithWebPageDescription
             return;
         }
 
-        Model::query()->where('id', $bookmark->id->toInt())->update(['description' => $description]);
+        Model::query()->where('id', $bookmark->id->toInt())->update([
+            'description' => Str::limit($description, BookmarkDescription::MAX - 3)
+        ]);
     }
 }

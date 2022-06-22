@@ -33,6 +33,10 @@ final class HealthChecker
             $data[$id] = $response->status() === 404 ? false : true;
         }
 
+        if (empty($data)) {
+            return;
+        }
+
         $this->repository->update($data);
     }
 

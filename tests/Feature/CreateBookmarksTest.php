@@ -65,6 +65,23 @@ class CreateBookmarksTest extends TestCase
         ]);
     }
 
+    public function testTagsMustBeUnique(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->getTestResponse([
+            'url' => $this->faker->url,
+            'tags' => 'howTo,howTo,stackOverflow'
+        ])->assertJsonValidationErrors([
+                "tags.0" => [
+                    "The tags.0 field has a duplicate value."
+                ],
+                "tags.1" => [
+                    "The tags.1 field has a duplicate value."
+                ]
+            ]);
+    }
+
     public function testBookmarkDescriptionCannotExceed_200(): void
     {
         Passport::actingAs(UserFactory::new()->create());
@@ -112,7 +129,7 @@ class CreateBookmarksTest extends TestCase
         $this->getTestResponse([
             'url'   => $this->faker->url,
             'title' => $this->faker->word,
-            'tags'  => implode(',', [$this->faker->word, $repeat = $this->faker->word, $repeat])
+            'tags'  => implode(',', $this->faker->words())
         ])->assertCreated();
 
         $this->assertDatabaseHas(UserBookmarksCount::class, [

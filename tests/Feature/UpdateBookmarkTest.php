@@ -14,10 +14,11 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
+use Tests\Traits\CreatesBookmark;
 
 class UpdateBookmarkTest extends TestCase
 {
-    use WithFaker, AssertsBookmarksWillBeHealthchecked;
+    use WithFaker, AssertsBookmarksWillBeHealthchecked, CreatesBookmark;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
@@ -148,11 +149,42 @@ class UpdateBookmarkTest extends TestCase
         ])->assertForbidden();
     }
 
+    public function testCannotAttachExistingTagToBookmark(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->saveBookmark(['tags' => $tags = $this->faker->words()]);
+
+        shuffle($tags);
+
+        $this->getTestResponse([
+            'id' => Bookmark::query()->where('user_id', $user->id)->sole('id')->id,
+            'tags' => $tags[0],
+        ])->assertStatus(409)
+            ->assertExactJson(['message' =>  'Duplicate tags']);
+    }
+
+    public function testTagsMustBeUnique(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->getTestResponse([
+            'tags' => 'howTo,howTo,stackOverflow'
+        ])->assertJsonValidationErrors([
+            "tags.0" => [
+                "The tags.0 field has a duplicate value."
+            ],
+            "tags.1" => [
+                "The tags.1 field has a duplicate value."
+            ]
+        ]);
+    }
+
     public function testWillCheckBookmarksHealth(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $model = BookmarkFactory::new()->create([ 'user_id' => $user->id]);
+        $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
 
         $this->getTestResponse([
             'id' => $model->id,

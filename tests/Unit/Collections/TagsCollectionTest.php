@@ -18,4 +18,12 @@ class TagsCollectionTest extends TestCase
         $this->assertCount(3, $tags);
         $this->assertEquals($tags->toStringCollection()->all(), ['wednesday', 'thursday', 'friday']);
     }
+
+    public function testContains(): void
+    {
+        $tags = TagsCollection::createFromStrings(['monday', 'tuesday', 'wednesday', 'thursday', 'friday']);
+
+        $this->assertTrue($tags->contains(TagsCollection::createFromStrings(['monday', 'tuesday'])));
+        $this->assertFalse($tags->contains(TagsCollection::createFromStrings(['lundi', 'mardi'])));
+    }
 }

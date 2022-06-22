@@ -48,4 +48,12 @@ final class TagsCollection extends BaseCollection
             $this->toStringCollection()->uniqueStrict()->values()->all()
         );
     }
+
+    /**
+     * Determine if the collection contains ANY of the given tags
+     */
+    public function contains(TagsCollection $tags): bool
+    {
+        return $this->toStringCollection()->intersect($tags->toStringCollection())->isNotEmpty();
+    }
 }

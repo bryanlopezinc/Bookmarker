@@ -17,7 +17,7 @@ class UpdateBookmarkRequestTest extends TestCase
 
         $this->assertEquals($request->rules(), [
             'tags' => ['filled', 'max:15'],
-            'tags.*' => Tag::rules(),
+            'tags.*' => Tag::rules(['distinct:strict']),
             'title' => ["filled", "string", "max:100", "required_without_all:tags",],
             'id' => ["required", new ResourceIdRule],
             'description' => ['nullable', 'max:200', 'filled']

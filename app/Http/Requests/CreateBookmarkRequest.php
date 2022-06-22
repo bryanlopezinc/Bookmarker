@@ -19,7 +19,7 @@ final class CreateBookmarkRequest extends FormRequest
             'url' => ['required', 'url'],
             'description' => ['nullable', 'max:200', 'filled'],
             'tags' => ['nullable', 'filled', 'max:' . self::MAX_TAGS],
-            'tags.*' => Tag::rules(),
+            'tags.*' => Tag::rules(['distinct:strict']),
             'title' => ['nullable', ...BookmarkTitle::rules()]
         ];
     }

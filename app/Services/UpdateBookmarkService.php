@@ -22,16 +22,20 @@ final class UpdateBookmarkService
 
     public function fromRequest(UpdateBookmarkRequest $request): void
     {
-        $data = UpdateBookmarkDataBuilder::fromRequest($request)->build();
+        $newAttributes = UpdateBookmarkDataBuilder::fromRequest($request)->build();
 
-        $bookmark = $this->bookmarksRepository->findById($data->id, BookmarkAttributes::new()->userId()->tags());
+        $bookmark = $this->bookmarksRepository->findById($newAttributes->id, BookmarkAttributes::new()->userId()->tags());
 
         (new EnsureAuthorizedUserOwnsResource)($bookmark);
 
-        if ($bookmark->tags->count() + $data->tags->count() > CreateBookmarkRequest::MAX_TAGS) {
+        if ($bookmark->tags->count() + $newAttributes->tags->count() > CreateBookmarkRequest::MAX_TAGS) {
             throw new HttpException(['message' => 'Cannot add more tags to bookmark'], Response::HTTP_BAD_REQUEST);
         }
 
-        $this->repository->update($data);
+        if ($bookmark->tags->contains($newAttributes->tags)) {
+            throw HttpException::conflict(['message' => 'Duplicate tags']);
+        }
+
+        $this->repository->update($newAttributes);
     }
 }

@@ -14,7 +14,7 @@ final class DeleteBookmarkTagsRequest extends FormRequest
     {
         return [
             'id' => ['required', new ResourceIdRule],
-            'tags' => ['required', 'filled'],
+            'tags' => ['required', 'filled', 'array'],
             'tags.*' => Tag::rules(),
         ];
     }

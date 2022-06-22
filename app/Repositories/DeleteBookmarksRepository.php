@@ -28,11 +28,14 @@ final class DeleteBookmarksRepository
      */
     public function fromSite(ResourceID $siteId, UserID $userId): bool
     {
-        return Model::query()->where([
-            'site_id' => $siteId->toInt(),
-            'user_id' => $userId->toInt()
-        ])->chunkById(100, function (Collection $chunk) {
-            $chunk->toQuery()->delete();
+        //Prevent bookmark from being health checked when retrieved.
+        return Model::withoutEvents(function () use ($siteId, $userId) {
+            return Model::query()->where([
+                'site_id' => $siteId->toInt(),
+                'user_id' => $userId->toInt()
+            ])->chunkById(100, function (Collection $chunk) {
+                $chunk->toQuery()->delete();
+            });
         });
     }
 }

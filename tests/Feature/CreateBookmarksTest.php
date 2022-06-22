@@ -155,4 +155,33 @@ class CreateBookmarksTest extends TestCase
 
         $this->getTestResponse(['url' => $this->faker->url])->assertCreated();
     }
+
+    /**
+     * bug fix
+     */
+    public function testEventHandlerWillHandleEventWhenSiteNameIsPresent(): void
+    {
+        $appName = \Illuminate\Support\Str::random(8);
+
+        $html = <<<HTML
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta http-equiv="X-UA-Compatible" content="IE=edge">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta name ="application-name" content="$appName">
+                <title>Document</title>
+            </head>
+            <body>
+            </body>
+            </html>
+        HTML;
+
+        Http::fake(fn () => Http::response($html));
+
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->getTestResponse(['url' => $this->faker->url])->assertCreated();
+    }
 }

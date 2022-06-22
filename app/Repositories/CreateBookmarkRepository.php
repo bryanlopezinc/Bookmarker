@@ -21,7 +21,8 @@ final class CreateBookmarkRepository
     {
         $site = WebSite::query()->firstOrCreate(['host' => $bookmark->fromWebSite->domainName->value], [
             'host' => $bookmark->fromWebSite->domainName->value,
-            'name' => $bookmark->fromWebSite->domainName->value
+            'name' => $bookmark->fromWebSite->domainName->value,
+            'name_updated_at' => null
         ]);
 
         $model = Model::query()->create([

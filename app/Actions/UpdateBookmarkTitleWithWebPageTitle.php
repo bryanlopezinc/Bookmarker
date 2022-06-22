@@ -7,6 +7,8 @@ namespace App\Actions;
 use App\DataTransferObjects\Bookmark;
 use App\Models\Bookmark as Model;
 use App\Readers\WebPageData;
+use App\ValueObjects\BookmarkTitle;
+use Illuminate\Support\Str;
 
 final class UpdateBookmarkTitleWithWebPageTitle
 {
@@ -26,6 +28,8 @@ final class UpdateBookmarkTitleWithWebPageTitle
 
         Model::query()
             ->where('id', $bookmark->id->toInt())
-            ->update(['title' => $title]);
+            ->update([
+                'title' => Str::limit($title, BookmarkTitle::MAX - 3)
+            ]);
     }
 }

@@ -90,9 +90,7 @@ class DeleteBookmarksTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->saveBookmark();
-
-        $bookmark = Bookmark::query()->where('user_id', $user->id)->first();
+        $bookmark = BookmarkFactory::new()->create(['user_id' => $user->id]);
 
         $this->getTestResponse(['ids' => (string)$bookmark->id])->assertOk();
 

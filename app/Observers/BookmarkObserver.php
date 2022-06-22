@@ -22,6 +22,11 @@ final class BookmarkObserver
         static::$cache[$bookmark->id] =  BookmarkBuilder::fromModel($bookmark)->build();
     }
 
+    public function deleting(Bookmark $bookmark): void
+    {
+        unset(static::$cache[$bookmark->id]);
+    }
+
     /**
      * @return array<Bookmark>
      */

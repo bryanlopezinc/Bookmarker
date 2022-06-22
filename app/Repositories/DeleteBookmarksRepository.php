@@ -7,6 +7,7 @@ namespace App\Repositories;
 use App\Collections\ResourceIDsCollection;
 use App\ValueObjects\ResourceID;
 use App\Models\Bookmark as Model;
+use App\Observers\BookmarkObserver;
 use App\ValueObjects\UserID;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -14,6 +15,11 @@ final class DeleteBookmarksRepository
 {
     public function deleteManyFor(UserID $userId, ResourceIDsCollection $bookmarkIds): bool
     {
+        //Prevent bookmark from being health checked if it has been retrieved
+        $bookmarkIds->asIntegers()->each(function (int $bookmarkID) {
+            (new BookmarkObserver)->deleting(new Model(['id' => $bookmarkID]));
+        });
+
         return (bool) Model::query()->where('user_id', $userId->toInt())->whereIn('id', $bookmarkIds->asIntegers())->delete();
     }
 

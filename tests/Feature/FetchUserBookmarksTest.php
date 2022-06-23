@@ -202,11 +202,11 @@ class FetchUserBookmarksTest extends TestCase
         $this->saveBookmark(); //unrelated to tag group
         $this->saveBookmark(['tags' => [$this->faker->word . '1']]); //unrelated to tag group
         $this->saveBookmark(['tags' => [$tags[0], $this->faker->word]]); // related to tag group but with extra tag
-        $this->saveBookmark(['tags' => [$tags[1], $this->faker->word]]); // related to tag group but with extra tag
-        $this->saveBookmark(['tags' => [$tags[2], $this->faker->word]]); // related to tag group but with extra tag
+        $this->saveBookmark(['tags' => [$tags[1], $this->faker->word]]);
+        $this->saveBookmark(['tags' => [$tags[2], $this->faker->word]]);
         $this->saveBookmark(['tags' => [$tags[0]]]); // related to tag group
-        $this->saveBookmark(['tags' => [$tags[1]]]); // related to tag group
-        $this->saveBookmark(['tags' => [$tags[2]]]); // related to tag group
+        $this->saveBookmark(['tags' => [$tags[1]]]);
+        $this->saveBookmark(['tags' => [$tags[2]]]);
 
         $response = $this->getTestResponse([
             'tags' => implode(',', $tags),

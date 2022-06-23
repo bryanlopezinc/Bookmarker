@@ -15,10 +15,12 @@ final class CreateFavouriteController
 {
     public function __invoke(Request $request, CreateFavouriteService $service): JsonResponse
     {
+        $maxBookmarks = setting('MAX_POST_FAVOURITES');
+
         $request->validate([
-            'bookmarks' => ['required', 'filled', 'max:50'],
+            'bookmarks' => ['required', 'filled', join(':', ['max', $maxBookmarks])],
             'bookmarks.*' => [new ResourceIdRule, 'distinct:strict']
-        ], ['max' => 'cannot add more than 50 bookmarks simultaneously']);
+        ], ['max' => "cannot add more than {$maxBookmarks} bookmarks simultaneously"]);
 
         $service->create(ResourceIDsCollection::fromNativeTypes($request->input('bookmarks')));
 

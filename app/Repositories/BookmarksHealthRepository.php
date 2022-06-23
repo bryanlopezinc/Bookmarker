@@ -10,9 +10,6 @@ use App\Models\BookmarkHealth;
 
 final class BookmarksHealthRepository implements BookmarksHealthRepositoryInterface
 {
-    /** frequency in days a bookmarks health should be checked */
-    private const CHECK_FREQUENCY = 6;
-
     /**
      * {@inheritdoc}
      */
@@ -25,7 +22,7 @@ final class BookmarksHealthRepository implements BookmarksHealthRepositoryInterf
         $foundBookmarkIDs->push(...$bookmarks->pluck('bookmark_id')->all());
 
         return ResourceIDsCollection::fromNativeTypes(
-            $bookmarks->where('last_checked', '<=', now()->subDays(self::CHECK_FREQUENCY))
+            $bookmarks->where('last_checked', '<=', now()->subDays(setting('HEALTH_CHECK_FREQUENCY')))
                 ->pluck('bookmark_id')
                 ->merge($bookmarkIDs->asIntegers()->diff($foundBookmarkIDs)) // merge bookmark ids that have never been checked.
         );

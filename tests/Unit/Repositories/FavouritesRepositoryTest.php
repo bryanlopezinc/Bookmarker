@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Models;
+namespace Tests\Unit\Repositories;
 
 use App\Collections\ResourceIDsCollection;
 use App\Repositories\FavouritesRepository;

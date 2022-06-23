@@ -15,7 +15,7 @@ final class DeleteFavouriteController
     public function __invoke(Request $request, DeleteUserFavouritesService $service): JsonResponse
     {
         $request->validate([
-            'bookmarks' => ['required', 'array', 'max:50'],
+            'bookmarks' => ['required', 'array', join(':', ['max', setting('MAX_DELETE_FAVOURITES')])],
             'bookmarks.*' => [new ResourceIdRule, 'distinct:strict'],
         ]);
 

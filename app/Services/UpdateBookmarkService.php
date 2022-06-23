@@ -10,7 +10,6 @@ use App\Repositories\FetchBookmarksRepository;
 use App\Repositories\UpdateBookmarkRepository as Repository;
 use App\DataTransferObjects\Builders\UpdateBookmarkDataBuilder;
 use App\Exceptions\HttpException;
-use App\Http\Requests\CreateBookmarkRequest;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkAttributes;
 
@@ -28,7 +27,7 @@ final class UpdateBookmarkService
 
         (new EnsureAuthorizedUserOwnsResource)($bookmark);
 
-        if ($bookmark->tags->count() + $newAttributes->tags->count() > CreateBookmarkRequest::MAX_TAGS) {
+        if ($bookmark->tags->count() + $newAttributes->tags->count() > setting('MAX_BOOKMARKS_TAGS')) {
             throw new HttpException(['message' => 'Cannot add more tags to bookmark'], Response::HTTP_BAD_REQUEST);
         }
 

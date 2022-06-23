@@ -16,7 +16,7 @@ final class FetchUserBookmarksRequest extends FormRequest
     {
         return [
             'site_id' => ['nullable', new ResourceIdRule],
-            'tags' => ['nullable', 'filled', 'max:15'],
+            'tags' => ['nullable', 'filled', join(':', ['max', setting('MAX_BOOKMARKS_TAGS')])],
             'tags.*' => Tag::rules(),
             'untagged' => ['nullable', 'boolean', 'filled'],
             'sort' => ['nullable', 'string', 'filled', Rule::in(['oldest', 'newest'])],

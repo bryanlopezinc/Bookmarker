@@ -39,7 +39,7 @@ final class RequestVerificationCodeService
 
         $twoFactorData = new TwoFactorData($user->id, $this->codeGenerator->generate(), $retryAfter = now()->addSeconds(59));
 
-        $this->tokens->put($twoFactorData, now()->addMinutes(10));
+        $this->tokens->put($twoFactorData, now()->addMinutes(setting('VERIFICATION_CODE_EXPIRE')));
 
         $this->recentTokens->put($user->id, $retryAfter);
 

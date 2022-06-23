@@ -128,6 +128,20 @@ class FetchUserBookmarksTest extends TestCase
             });
     }
 
+    public function testWillSortBookmarksByLatestByDefault(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->saveBookmark();
+        $this->saveBookmark();
+
+        $bookmarkIDs = Bookmark::query()->where('user_id', $user->id)->latest('id')->get('id')->pluck('id')->all();
+
+        $response = $this->withoutExceptionHandling()->getTestResponse([])->assertOk();
+
+        $this->assertEquals($bookmarkIDs, collect($response->json('data'))->pluck('attributes.id')->all());
+    }
+
     public function testWillCheckBookmarksHealth(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
@@ -331,22 +345,26 @@ class FetchUserBookmarksTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        //Add first bookmark to favourites.
-        $this->postJson(route('createFavourite'), ['bookmarks' => (string) $bookmarks->first()->id])->assertCreated();
+        $userfavourite = $bookmarks->random();
+
+        $this->postJson(route('createFavourite'), ['bookmarks' => (string) $userfavourite->id])->assertCreated();
 
         $this->getTestResponse([])
             ->assertOk()
-            ->assertJson(function (AssertableJson $json) {
-                $data = $json->toArray()['data'];
-
-                //The first bookmark 'is_user_favourite 'attribute is equal to true .
-                array_shift($data);
-
+            ->assertJson(function (AssertableJson $json) use ($userfavourite) {
                 $json->etc()
-                    ->where('data.0.attributes.is_user_favourite', true)
-                    ->fromArray($data)
-                    ->each(function (AssertableJson $json) {
-                        $json->where('attributes.is_user_favourite', false)->etc();
+                    ->fromArray($json->toArray()['data'])
+                    ->each(function (AssertableJson $json) use ($userfavourite) {
+                        $json->where('attributes.is_user_favourite', function (bool $value) use ($userfavourite, $json) {
+                            if ($json->toArray()['attributes']['id'] === $userfavourite->id) {
+                                $this->assertTrue($value);
+                            } else {
+                                $this->assertFalse($value);
+                            }
+
+                            return true;
+                        })
+                            ->etc();
                     });
             });
     }

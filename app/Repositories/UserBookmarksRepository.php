@@ -30,7 +30,7 @@ final class UserBookmarksRepository
         $query = Model::WithQueryOptions(new Columns())->where('user_id', $userID->toInt());
 
         if (!$filters->hasAnyFilter()) {
-            return $this->paginate($query, $userID, $filters->pagination);
+            return $this->paginate($query->latest('bookmarks.id'), $userID, $filters->pagination);
         }
 
         if ($filters->wantsOnlyBookmarksFromParticularSite) {

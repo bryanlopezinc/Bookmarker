@@ -23,7 +23,7 @@ final class UpdateBookmarkService
     {
         $newAttributes = UpdateBookmarkDataBuilder::fromRequest($request)->build();
 
-        $bookmark = $this->bookmarksRepository->findById($newAttributes->id, BookmarkAttributes::new()->userId()->tags());
+        $bookmark = $this->bookmarksRepository->findById($newAttributes->id, BookmarkAttributes::only('userId,tags'));
 
         (new EnsureAuthorizedUserOwnsResource)($bookmark);
 

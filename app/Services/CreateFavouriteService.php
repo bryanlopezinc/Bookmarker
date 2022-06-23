@@ -22,7 +22,7 @@ final class CreateFavouriteService
 
     public function create(ResourceIDsCollection $bookmarkIDs): void
     {
-        $bookmarks = $this->bookmarkRepository->findManyById($bookmarkIDs, BookmarkAttributes::new()->userId()->id());
+        $bookmarks = $this->bookmarkRepository->findManyById($bookmarkIDs, BookmarkAttributes::only('userId,id'));
 
         //throw exception if some bookmarkIDs does not exists.
         if ($bookmarks->count() !== $bookmarkIDs->count()) {

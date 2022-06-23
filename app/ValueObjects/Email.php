@@ -11,7 +11,7 @@ final class Email
     public function __construct(public readonly string $value)
     {
         if (Validator::make(['value' => $value], ['value' => 'email'])->fails()) {
-            throw new \InvalidArgumentException('Invalid email ' . $value);
+            throw new \DomainException('Invalid email ' . $value);
         }
     }
 }

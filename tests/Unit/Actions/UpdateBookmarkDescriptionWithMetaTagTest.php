@@ -22,7 +22,7 @@ class UpdateBookmarkDescriptionWithMetaTagTest extends TestCase
         $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->create())->build();
 
         $data = WebPageData::fromArray([
-            'description' => $description = implode(' ', $this->faker->sentences()),
+            'description' => $description = $this->faker->sentence,
             'imageUrl' => new Url($this->faker->url),
             'title' => $this->faker->sentence,
             'siteName' => $this->faker->word,

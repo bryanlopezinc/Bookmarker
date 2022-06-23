@@ -7,14 +7,12 @@ namespace Tests\Unit\ValueObjects;
 use App\ValueObjects\Tag;
 use Illuminate\Support\Str;
 use Tests\TestCase;
-use App\Exceptions\InvalidTagException;
 
 class TagTest extends TestCase
 {
     public function testLengthMustNotExceedMaxLength(): void
     {
-        $this->expectException(InvalidTagException::class);
-        $this->expectExceptionCode(InvalidTagException::INVALID_MAX_LENGHT_CODE);
+        $this->expectException(\LengthException::class);
 
         new Tag(Str::random(Tag::MAX_LENGTH + 1));
     }
@@ -29,16 +27,14 @@ class TagTest extends TestCase
 
     public function testWillThrowExceptionWhenTagIsEmpty(): void
     {
-        $this->expectException(InvalidTagException::class);
-        $this->expectExceptionCode(InvalidTagException::EMPTY_TAG_CODE);
+        $this->expectExceptionCode(998);
 
-        new Tag('   ');
+        new Tag('      ');
     }
 
     public function testWillThrowExceptionWhenTagContainsSpaces(): void
     {
-        $this->expectException(InvalidTagException::class);
-        $this->expectExceptionCode(InvalidTagException::APLHA_NUM_CODE);
+        $this->expectException(\DomainException::class);
 
         new Tag('foo bar');
     }
@@ -50,8 +46,7 @@ class TagTest extends TestCase
                 new Tag(Str::random(Tag::MAX_LENGTH - 1) . $tag);
 
                 return true;
-            } catch (InvalidTagException $e) {
-                $this->assertEquals(InvalidTagException::APLHA_NUM_CODE, $e->getCode());
+            } catch (\DomainException) {
                 return false;
             }
         };

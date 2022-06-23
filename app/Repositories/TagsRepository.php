@@ -39,11 +39,9 @@ final class TagsRepository
      */
     private function insertGetTagIds(TagsCollection $tags): array
     {
-        $bookmarkTags = $tags->unique();
+        $savedTags = Model::whereIn('name', $tags->toStringCollection())->get();
 
-        $savedTags = Model::whereIn('name', $bookmarkTags->toStringCollection())->get();
-
-        $newTags = $bookmarkTags
+        $newTags = $tags
             ->except(TagsCollection::createFromStrings($savedTags->pluck('name')->all()))
             ->toStringCollection()
             ->tap(fn (Collection $tags) => Model::insert($tags->map(fn (string $tag) => ['name' => $tag])->all()));

@@ -11,38 +11,20 @@ final class UserAttributes extends Attributes
         return new self();
     }
 
-    public function id(): self
+    /**
+     * @param string $attributes A comma seperated list of attributes which can only be
+     * any of id,username,email,bookmarks_count,password
+     */
+    public static function only(string $attributes): self
     {
-        $this->columns[] = 'id';
+        $values = (static::new()->mapAttributes($attributes, [
+            'id' => 'id',
+            'username' => 'username',
+            'email' => 'email',
+            'bookmarksCount' => 'bookmarks_count',
+            'password' => 'password'
+        ]));
 
-        return $this;
-    }
-
-    public function username(): self
-    {
-        $this->columns[] = 'username';
-
-        return $this;
-    }
-
-    public function email(): self
-    {
-        $this->columns[] = 'email';
-
-        return $this;
-    }
-
-    public function bookmarksCount(): self
-    {
-        $this->columns[] = 'bookmarks_count';
-
-        return $this;
-    }
-
-    public function password(): self
-    {
-        $this->columns[] = 'password';
-
-        return $this;
+        return new static($values);
     }
 }

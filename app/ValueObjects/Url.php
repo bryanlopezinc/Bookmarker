@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace App\ValueObjects;
 
-use App\Exceptions\InvalidUrlException;
-
 final class Url
 {
     public function __construct(public readonly string $value)
     {
         if (filter_var($value, FILTER_VALIDATE_URL) === false) {
-            throw new InvalidUrlException('Invalid url ' . $value);
+            throw new \DomainException('Invalid url ' . $value, 5050);
         }
     }
 
@@ -24,7 +22,10 @@ final class Url
 
         try {
             return new self($url);
-        } catch (InvalidUrlException) {
+        } catch (\DomainException $e) {
+            if ($e->getCode() !== 5050) {
+                throw $e;
+            }
             return false;
         }
     }

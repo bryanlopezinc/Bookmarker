@@ -60,7 +60,7 @@ class FetchUserTagsTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->saveBookmark(['tags' => $tags = $this->faker->words()]);
+        $this->saveBookmark(['tags' => $tags = $this->faker->unique()->words()]);
 
         $response = $this->getTestResponse()
             ->assertOk()

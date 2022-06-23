@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('title');
             $table->boolean('has_custom_title');
             $table->string('url');
-            $table->text('description')->nullable();
+            $table->string('description', 200)->nullable();
             $table->boolean('description_set_by_user');
             $table->unsignedBigInteger('site_id')->index();
             $table->unsignedBigInteger('user_id')->index();

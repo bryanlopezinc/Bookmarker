@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
-final class InvalidCollectionItemException extends \RuntimeException
+final class InvalidCollectionItemException extends \DomainException
 {
     public function __construct(int|string $index, string $class, mixed $item)
     {

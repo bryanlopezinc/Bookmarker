@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->boolean('is_public')->index();
             $table->foreignId('user_id')->index();
-            $table->text('description')->nullable();
+            $table->string('description', 150)->nullable();
             $table->string('name', 50)->index();
             $table->timestamps();
             $table->index('updated_at');

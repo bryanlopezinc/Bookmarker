@@ -49,7 +49,7 @@ final class AddBookmarksToFolderService
 
     private function validateBookmarks(ResourceIDsCollection $bookmarkIDs): void
     {
-        $bookmarks = $this->bookmarksRepository->findManyById($bookmarkIDs, BookmarkAttributes::new()->userId()->id());
+        $bookmarks = $this->bookmarksRepository->findManyById($bookmarkIDs, BookmarkAttributes::only('userId,id'));
 
         if ($bookmarks->count() !== $bookmarkIDs->count()) {
             throw HttpException::notFound(['message' => 'The bookmarks does not exists']);

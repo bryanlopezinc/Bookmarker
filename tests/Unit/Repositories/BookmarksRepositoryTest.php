@@ -40,7 +40,7 @@ class BookmarksRepositoryTest extends TestCase
     {
         $model = BookmarkFactory::new()->create();
 
-        $bookmark = $this->repository->findById(new ResourceID($model->id), BookmarkColumns::new()->userId());
+        $bookmark = $this->repository->findById(new ResourceID($model->id), BookmarkColumns::only('userId'));
 
         $bookmark->ownerId; // will throw initialization exception if not retrived
         $this->assertCount(1, $bookmark->toArray());
@@ -50,7 +50,7 @@ class BookmarksRepositoryTest extends TestCase
     {
         $model = BookmarkFactory::new()->create();
 
-        $bookmark = $this->repository->findById(new ResourceID($model->id), BookmarkColumns::new()->tags());
+        $bookmark = $this->repository->findById(new ResourceID($model->id), BookmarkColumns::only('tags'));
 
         $bookmark->tags;
         $this->assertCount(1, $bookmark->toArray());
@@ -60,7 +60,7 @@ class BookmarksRepositoryTest extends TestCase
     {
         $model = BookmarkFactory::new()->create();
 
-        $bookmark = $this->repository->findById(new ResourceID($model->id), BookmarkColumns::new()->tags()->userId());
+        $bookmark = $this->repository->findById(new ResourceID($model->id), BookmarkColumns::only('tags,userId'));
 
         $bookmark->ownerId;
         $bookmark->tags;

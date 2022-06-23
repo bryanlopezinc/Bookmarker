@@ -13,7 +13,7 @@ final class BookmarkDescription
         if (blank($value)) return;
 
         if (mb_strlen($value) > self::MAX) {
-            throw new \RuntimeException('Bookmark description cannot be greater ' . self::MAX);
+            throw new \LengthException('Bookmark description cannot be greater ' . self::MAX);
         }
     }
 

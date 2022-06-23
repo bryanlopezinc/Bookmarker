@@ -11,11 +11,11 @@ final class FolderName
     public function __construct(public readonly string $value)
     {
         if (blank($value)) {
-            throw new \Exception('Folder name cannot be empty');
+            throw new \LengthException('Folder name cannot be empty');
         }
 
         if (mb_strlen($value) > self::MAX) {
-            throw new \Exception('Folder name cannot exceed ' . self::MAX);
+            throw new \LengthException('Folder name cannot exceed ' . self::MAX);
         }
     }
 

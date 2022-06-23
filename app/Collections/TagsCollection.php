@@ -14,6 +14,17 @@ final class TagsCollection extends BaseCollection
         return $item instanceof Tag;
     }
 
+    protected function validateItems(): void
+    {
+        parent::validateItems();
+
+        $duplicates = $this->toStringCollection()->duplicatesStrict();
+
+        if ($duplicates->isNotEmpty()) {
+            throw new \LogicException('Collection contains duplicate tags ' . $duplicates->implode(','), 4500);
+        }
+    }
+
     /**
      * @param array<string> $tags
      */
@@ -39,13 +50,6 @@ final class TagsCollection extends BaseCollection
     {
         return TagsCollection::createFromStrings(
             $this->toStringCollection()->diff($tags->toStringCollection())->values()->all()
-        );
-    }
-
-    public function unique(): TagsCollection
-    {
-        return TagsCollection::createFromStrings(
-            $this->toStringCollection()->uniqueStrict()->values()->all()
         );
     }
 

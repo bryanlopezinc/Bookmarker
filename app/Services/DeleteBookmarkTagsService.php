@@ -21,7 +21,7 @@ final class DeleteBookmarkTagsService
 
     public function delete(ResourceID $bookmarkId, TagsCollection $tagsCollection): void
     {
-        $bookmark = $this->bookmarksRepository->findById($bookmarkId, BookmarkAttributes::new()->id()->userId());
+        $bookmark = $this->bookmarksRepository->findById($bookmarkId, BookmarkAttributes::only('userId,id'));
 
         (new EnsureAuthorizedUserOwnsResource)($bookmark);
 

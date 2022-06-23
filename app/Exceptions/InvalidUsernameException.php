@@ -6,7 +6,7 @@ namespace App\Exceptions;
 
 use App\ValueObjects\Username;
 
-final class InvalidUsernameException extends \RuntimeException
+final class InvalidUsernameException extends \DomainException
 {
     public static function dueToLengthExceeded(): self
     {

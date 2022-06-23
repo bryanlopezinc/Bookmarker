@@ -48,7 +48,7 @@ final class RequestVerificationCodeService
 
     private function getUser(Request $request): User|false
     {
-        $attributes = UserAttributes::new()->id()->password()->email();
+        $attributes = UserAttributes::only('id,password,email');
 
         try {
             return $this->userRepository->findByUsername(Username::fromRequest($request), $attributes);

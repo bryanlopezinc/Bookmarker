@@ -28,7 +28,7 @@ class BookmarkTitleTest extends TestCase
 
     public function testWillThrowExceptionIfMaxLengthIsExceeded(): void
     {
-        $this->expectExceptionCode(5001);
+        $this->expectException(\LengthException::class);
 
         new BookmarkTitle(str_repeat('a', BookmarkTitle::MAX + 1));
     }

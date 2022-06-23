@@ -11,31 +11,19 @@ final class BookmarkAttributes extends Attributes
         return new self();
     }
 
-    public function id(): self
+    /**
+     * @param string $attributes A comma seperated list of attributes which can only be
+     * any of id,site,userId,tags
+     */
+    public static function only(string $attributes): self
     {
-        $this->columns[] = 'id';
+        $values = (static::new()->mapAttributes($attributes, [
+            'id' => 'id',
+            'site' => 'site',
+            'userId' => 'user_id',
+            'tags' => 'tags'
+        ]));
 
-        return $this;
-    }
-
-    public function site(): self
-    {
-        $this->columns[] = 'site';
-
-        return $this;
-    }
-
-    public function userId(): self
-    {
-        $this->columns[] = 'user_id';
-
-        return $this;
-    }
-
-    public function tags(): self
-    {
-        $this->columns[] = 'tags';
-
-        return $this;
+        return new static($values);
     }
 }

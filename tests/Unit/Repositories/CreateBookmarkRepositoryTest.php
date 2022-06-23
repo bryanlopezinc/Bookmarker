@@ -52,21 +52,6 @@ class CreateBookmarkRepositoryTest extends TestCase
         ]);
     }
 
-    public function testWillSaveUniqueTags(): void
-    {
-        $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->make())
-            ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
-            ->bookmarkedById($model['user_id'])
-            ->tags(array_fill(0, 5, $tag = $this->faker->word))
-            ->build();
-
-        $this->repository->create($bookmark);
-
-        $this->assertDatabaseHas(Tag::class, [
-            'name' => $tag
-        ]);
-    }
-
     public function testWillAttachExistingTagsToNewBookmark(): void
     {
         $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->make())

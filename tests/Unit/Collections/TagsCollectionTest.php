@@ -9,6 +9,13 @@ use Tests\TestCase;
 
 class TagsCollectionTest extends TestCase
 {
+    public function testTagsMustBeUnique(): void
+    {
+        $this->expectExceptionCode(4500);
+
+        TagsCollection::createFromStrings(['monday', 'monday', 'wednesday', 'thursday', 'friday']);
+    }
+
     public function testExcept(): void
     {
         $tags = TagsCollection::createFromStrings(['monday', 'tuesday', 'wednesday', 'thursday', 'friday']);

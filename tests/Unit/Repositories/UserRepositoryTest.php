@@ -82,15 +82,14 @@ class UserRepositoryTest extends TestCase
         /** @var Model */
         $model = UserFactory::new()->create();
         $repository = new UserRepository;
-        $columns = new UserAttributes();
 
-        $user1 = $repository->findByUsername(Username::fromString($model->username), $columns->password()->id()->email());
+        $user1 = $repository->findByUsername(Username::fromString($model->username), UserAttributes::only('password,email,id'));
         $this->assertCount(3, $user1->toArray());
         $user1->password; //will throw initialization exception if values are not set
         $user1->email;
         $user1->id;
 
-        $user2 = $repository->findByUsername(Username::fromString($model->username), $columns->clear()->bookmarksCount()->username());
+        $user2 = $repository->findByUsername(Username::fromString($model->username), UserAttributes::only('bookmarksCount,username'));
         $this->assertCount(2, $user2->toArray());
         $user2->bookmarksCount;
         $user2->username;

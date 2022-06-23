@@ -15,7 +15,7 @@ final class FolderDescription
         }
 
         if (mb_strlen($value) > self::MAX) {
-            throw new \Exception('Folder description cannot exceed ' . self::MAX);
+            throw new \LengthException('Folder description cannot exceed ' . self::MAX);
         }
     }
 

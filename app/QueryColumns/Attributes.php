@@ -16,10 +16,25 @@ abstract class Attributes implements Arrayable
         $this->columns = collect($columns);
     }
 
+    final protected function mapAttributes(string $attributes, array $attributeValueMap): array
+    {
+        $values = [];
+
+        foreach (explode(',', $attributes)  as $attribute) {
+            if (!array_key_exists($attribute, $attributeValueMap)) {
+                throw new \DomainException('unexpected attribute ' . $attribute);
+            }
+
+            $values[] = $attributeValueMap[$attribute];
+        }
+
+        return $values;
+    }
+
     /**
      * @param array<string>|string $field
      */
-    public function has(string|array $columns): bool
+    final public function has(string|array $columns): bool
     {
         foreach ((array) $columns as $column) {
             if (!$this->columns->containsStrict($column)) {
@@ -30,29 +45,22 @@ abstract class Attributes implements Arrayable
         return true;
     }
 
-    public function except(string|array $fields): array
+    final public function except(string|array $fields): array
     {
         $fields = (array) $fields;
 
         return $this->columns->reject(fn (string $field) => in_array($field, $fields, true))->all();
     }
 
-    public function isEmpty(): bool
+    final public function isEmpty(): bool
     {
         return $this->columns->isEmpty();
-    }
-
-    public function clear(): static
-    {
-        $this->columns = collect();
-
-        return $this;
     }
 
     /**
      * @return array<string>
      */
-    public function toArray(): array
+    final public function toArray(): array
     {
         return $this->columns->all();
     }

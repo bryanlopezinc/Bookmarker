@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\ValueObjects;
 
-use App\Exceptions\InvalidTagException;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Concerns\ValidatesAttributes;
 
 final class Tag
 {
@@ -32,23 +31,21 @@ final class Tag
     {
         if (isset(static::$checked[$this->value])) return;
 
-        $attribute = 'tag';
+        if (mb_strlen($this->value) > self::MAX_LENGTH) {
+            throw new \LengthException('Tag length cannot be greater ' . self::MAX_LENGTH);
+        }
 
-        $rules = $this->rules(['bail']);
+        if (blank($this->value)) {
+            throw new \LengthException('Tag cannot be empty', 998);
+        }
 
-        $validator = Validator::make([$attribute => $this->value], [$attribute => $rules]);
+        $validator = new class
+        {
+            use ValidatesAttributes;
+        };
 
-        if ($validator->fails()) {
-            $errorCodes = [
-                'Filled' => InvalidTagException::EMPTY_TAG_CODE,
-                'Max' => InvalidTagException::INVALID_MAX_LENGHT_CODE,
-                'AlphaNum' => InvalidTagException::APLHA_NUM_CODE,
-            ];
-
-            throw new InvalidTagException(
-                (string) $validator->errors()->get($attribute)[0],
-                $errorCodes[array_key_first($validator->failed()[$attribute])]
-            );
+        if (!$validator->validateAlphaNum('', $this->value)) {
+            throw new \DomainException('Tag can only contain alpha numeric characters');
         }
 
         static::$checked[$this->value] = true;

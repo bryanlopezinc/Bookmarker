@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\ValueObjects;
 
-use Illuminate\Support\Facades\Validator;
-
 final class BookmarkTitle
 {
     public const MAX = 100;
@@ -31,21 +29,12 @@ final class BookmarkTitle
             return;
         }
 
-        $attribute = 'bookmarkTitle';
+        if (mb_strlen($this->value) > self::MAX) {
+            throw new \LengthException('Bookmark title cannot be greater ' . self::MAX);
+        }
 
-        $validator = Validator::make([$attribute => $this->value], [$attribute => ['bail', ...static::rules()]]);
-
-        if ($validator->fails()) {
-            $errorCodes = [
-                'Filled' => 5000,
-                'Max' => 5001,
-                // 'AlphaDash' => 5002,
-            ];
-
-            throw new \InvalidArgumentException(
-                (string) $validator->errors()->get($attribute)[0],
-                $errorCodes[array_key_first($validator->failed()[$attribute])]
-            );
+        if (blank($this->value)) {
+            throw new \LengthException('Bookmark title cannot be empty', 5000);
         }
     }
 

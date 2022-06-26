@@ -181,8 +181,6 @@ class LoginUserTest extends TestCase
     {
         $email = $this->user->email;
 
-        Mail::fake();
-
         Http::fake([
             'ip-api.com/*' => Http::response('{
                     "country": "Canada",

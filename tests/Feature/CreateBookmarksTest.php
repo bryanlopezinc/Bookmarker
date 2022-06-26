@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Jobs\UpdateBookmarkInfo;
 use App\Models\Bookmark;
 use App\Models\UserBookmarksCount;
+use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Bus;
@@ -58,7 +59,7 @@ class CreateBookmarksTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $tags = implode(',', $this->faker->words(16));
+        $tags = TagFactory::new()->count(16)->make()->pluck('name')->implode(',');
 
         $this->getTestResponse(['url' => $this->faker->url, 'tags' => $tags])->assertJsonValidationErrors([
             'tags' => 'The tags must not be greater than 15 characters.'
@@ -129,7 +130,7 @@ class CreateBookmarksTest extends TestCase
         $this->getTestResponse([
             'url'   => $this->faker->url,
             'title' => $this->faker->word,
-            'tags'  => implode(',', $this->faker->words())
+            'tags'  => TagFactory::new()->count(3)->make()->pluck('name')->implode(',')
         ])->assertCreated();
 
         $this->assertDatabaseHas(UserBookmarksCount::class, [

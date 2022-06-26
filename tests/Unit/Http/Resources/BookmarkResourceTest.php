@@ -11,6 +11,7 @@ use Tests\TestCase;
 use App\Http\Resources\BookmarkResource;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\SiteFactory;
+use Database\Factories\TagFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
@@ -72,7 +73,7 @@ class BookmarkResourceTest extends TestCase
         $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->create([
             'description' => null,
         ]))
-            ->tags(TagsCollection::createFromStrings($this->faker->unique()->words()))
+            ->tags(TagsCollection::createFromStrings($this->faker->unique(true)->words()))
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
             ->isHealthy(false)
             ->isUserFavourite(false)
@@ -93,7 +94,7 @@ class BookmarkResourceTest extends TestCase
         $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->create([
             'preview_image_url' => null,
         ]))
-            ->tags(TagsCollection::createFromStrings($this->faker->unique()->words()))
+            ->tags(TagsCollection::createFromStrings(TagFactory::new()->count(3)->make()->pluck('name')->all()))
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
             ->isHealthy(false)
             ->isUserFavourite(false)

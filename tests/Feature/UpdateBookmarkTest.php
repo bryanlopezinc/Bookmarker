@@ -121,7 +121,7 @@ class UpdateBookmarkTest extends TestCase
 
         $this->getTestResponse([
             'id' => $model->id,
-            'tags' => implode(',', $this->faker->words(6))
+            'tags' => TagFactory::new()->count(6)->make()->pluck('name')->implode(',')
         ])->assertStatus(400);
     }
 
@@ -153,7 +153,7 @@ class UpdateBookmarkTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->saveBookmark(['tags' => $tags = $this->faker->words()]);
+        $this->saveBookmark(['tags' => $tags = TagFactory::new()->count(3)->make()->pluck('name')->all()]);
 
         shuffle($tags);
 

@@ -23,7 +23,7 @@ use Illuminate\Database\Query\JoinClause;
  * @property \Carbon\Carbon $updated_at
  * @method static Builder WithQueryOptions(UserAttributes $columns)
  */
-final class User extends Authenticatable
+final class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -44,6 +44,11 @@ final class User extends Authenticatable
     public function findForPassport(string $id): ?self
     {
         return $this->where('username', $id)->orWhere('email', $id)->first();
+    }
+
+    public function getEmailName(): string
+    {
+        return 'email';
     }
 
     /**

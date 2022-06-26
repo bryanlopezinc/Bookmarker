@@ -69,8 +69,16 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('bookmarks/folders', Folder\RemoveBookmarksFromFolderController::class)
             ->middleware(ConvertStringToArray::keys('bookmarks'))
             ->name('removeBookmarksFromFolder');
+
+        Route::get('email/verify/{id}/{hash}', Controllers\Auth\VerifyEmailController::class)
+            ->middleware('signed')
+            ->name('verification.verify');
+
+        Route::post('email/verify/resend', Controllers\Auth\ResendVerificationLinkController::class)
+            ->middleware('throttle:6,1')
+            ->name('verification.resend');
     });
-});
+}); // End auth middleware
 
 Route::post('token/refresh', [Laravel\Passport\Http\Controllers\AccessTokenController::class, 'issueToken'])
     ->name('refreshToken')

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
@@ -60,7 +61,7 @@ class FetchUserTagsTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->saveBookmark(['tags' => $tags = $this->faker->unique()->words()]);
+        $this->saveBookmark(['tags' => $tags = TagFactory::new()->count(3)->make()->pluck('name')->all()]);
 
         $response = $this->getTestResponse()
             ->assertOk()

@@ -25,6 +25,6 @@ final class SendEmailVerificationNotification implements ShouldQueue
             $model->getEmailName() => $event->getUser()->email->value
         ];
 
-        $this->dispatcher->send(new Model($userAttributes), new VerifyEmailNotification($event->getVerificationUrl()));
+        $this->dispatcher->send(new Model($userAttributes), new VerifyEmailNotification());
     }
 }

@@ -21,7 +21,7 @@ final class CreateUserController extends AccessTokenController
 
         $accessToken = $this->issueToken($serverRequest)->content();
 
-        event(new RegisteredEvent($user, new Url($request->input('verification_url'))));
+        event(new RegisteredEvent($user));
 
         return new AccesssTokenResource($user, $accessToken, Response::HTTP_CREATED);
     }

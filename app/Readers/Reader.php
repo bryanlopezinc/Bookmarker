@@ -53,12 +53,16 @@ final class Reader
 
     public function getPreviewImageUrl(): Url|false
     {
-        return Url::tryFromString(
-            $this->evalute(
-                '//meta[@property="og:image"]/@content',
-                '//meta[@name="twitter:image"]/@content'
-            )->item(0)?->nodeValue
-        );
+        $value = $this->evalute(
+            '//meta[@property="og:image"]/@content',
+            '//meta[@name="twitter:image"]/@content'
+        )->item(0)?->nodeValue;
+
+        if (!Url::isValid($value)) {
+            return false;
+        }
+
+        return new Url($value);
     }
 
     public function getPageTitle(): string|false

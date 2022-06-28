@@ -44,4 +44,9 @@ return [
 
     // frequency (in days) a bookmarks health should be checked.
     'HEALTH_CHECK_FREQUENCY' => 6,
+
+    //The email verification url that will be sent to the user.
+    //The url should contain placeholders for the 'id', 'hash', 'signature', and 'expires' parameters.
+    //Eg https://webclient.com/:id/:hash?signature=:signature&expires=:expires
+    'EMAIL_VERIFICATION_URL' => env('EMAIL_VERIFICATION_URL'),
 ];

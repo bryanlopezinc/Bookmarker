@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
+use App\ValueObjects\Url;
 use App\ValueObjects\Username;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -50,13 +51,13 @@ class CreateUserTest extends TestCase
             $this->getTestResponse($params)
                 ->assertUnprocessable()
                 ->assertJsonValidationErrors([$key => "The {$key} field is required."])
-                ->assertJsonCount(2, 'errors');
+                ->assertJsonCount(1, 'errors');
         }
 
         $this->getTestResponse(Arr::except($attributes, ['password_confirmation']))
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['password' => 'The password confirmation does not match.'])
-            ->assertJsonCount(2, 'errors');
+            ->assertJsonCount(1, 'errors');
     }
 
     public function testWillReturnValidationErrorsWhenUsernameAttrbuteIsInvalid(): void
@@ -85,70 +86,10 @@ class CreateUserTest extends TestCase
             ->assertJsonValidationErrors(['email' => 'The email has already been taken.']);
     }
 
-    public function testVerificationUrlMustBeValid(): void
-    {
-        $this->getTestResponse(['verification_url' => 'foo_bar'])->assertJsonValidationErrors([
-            'verification_url' => ['The verification url must be a valid URL.']
-        ]);
-
-        $this->getTestResponse(['verification_url' => $this->faker->url])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'verification_url' => [
-                    "The verification url attribute must contain :id placeholder",
-                    "The verification url attribute must contain :hash placeholder",
-                    "The verification url attribute must contain :signature placeholder",
-                    "The verification url attribute must contain :expires placeholder",
-                ]
-            ]);
-
-        $this->getTestResponse(['verification_url' => $this->faker->url . '?id=:id'])
-            ->assertUnprocessable()
-            ->assertJsonCount(3, 'errors.verification_url')
-            ->assertJsonValidationErrors([
-                'verification_url' => [
-                    "The verification url attribute must contain :hash placeholder",
-                    "The verification url attribute must contain :signature placeholder",
-                    "The verification url attribute must contain :expires placeholder",
-                ]
-            ]);
-
-        $this->getTestResponse(['verification_url' => $this->faker->url . '?hash=:hash'])
-            ->assertUnprocessable()
-            ->assertJsonCount(3, 'errors.verification_url')
-            ->assertJsonValidationErrors([
-                'verification_url' => [
-                    "The verification url attribute must contain :id placeholder",
-                    "The verification url attribute must contain :signature placeholder",
-                    "The verification url attribute must contain :expires placeholder",
-                ]
-            ]);
-
-        $this->getTestResponse(['verification_url' => $this->faker->url . '?signature=:signature'])
-            ->assertUnprocessable()
-            ->assertJsonCount(3, 'errors.verification_url')
-            ->assertJsonValidationErrors([
-                'verification_url' => [
-                    "The verification url attribute must contain :id placeholder",
-                    "The verification url attribute must contain :hash placeholder",
-                    "The verification url attribute must contain :expires placeholder",
-                ]
-            ]);
-
-        $this->getTestResponse(['verification_url' => $this->faker->url . '?expires=:expires'])
-            ->assertUnprocessable()
-            ->assertJsonCount(3, 'errors.verification_url')
-            ->assertJsonValidationErrors([
-                'verification_url' => [
-                    "The verification url attribute must contain :id placeholder",
-                    "The verification url attribute must contain :hash placeholder",
-                    "The verification url attribute must contain :signature placeholder",
-                ]
-            ]);
-    }
-
     public function testWillCreateUser(): void
     {
+        config(['settings.EMAIL_VERIFICATION_URL' => $this->faker->url.'?id=:id&hash=:hash&signature=:signature&expires=:expires']);
+
         $client = ClientFactory::new()->asPasswordClient()->create();
 
         Notification::fake();
@@ -163,12 +104,6 @@ class CreateUserTest extends TestCase
             'client_id' => $client->id,
             'client_secret' => $client->secret,
             'grant_type' => 'password',
-            'verification_url' => $this->faker->url . '?' .  http_build_query([
-                'id' => ':id',
-                'hash' => ':hash',
-                'signature' => ':signature',
-                'expires' => ':expires'
-            ])
         ])
             ->assertCreated()
             ->assertJsonCount(3, 'data')
@@ -222,7 +157,7 @@ class CreateUserTest extends TestCase
      */
     public function testCanVerifyEmailWithParameters(): void
     {
-        $components = $this->parseQuery(static::$verificationUrl);
+        $components = (new Url(static::$verificationUrl))->parseQuery();
 
         $uri = route('verification.verify', [
             $components['id'],
@@ -234,19 +169,5 @@ class CreateUserTest extends TestCase
         $this->getJson($uri, ['Authorization' => 'Bearer ' . static::$accessToken])->assertOk();
 
         $this->assertTrue(User::whereKey($components['id'])->sole()->email_verified_at->isToday());
-    }
-
-    private function parseQuery(string $url): array
-    {
-        $parts = parse_url($url);
-
-        $result = [];
-
-        foreach (explode('&', $parts['query']) as $query) {
-            [$key, $value] = explode('=', $query);
-            $result[$key] = $value;
-        }
-
-        return $result;
     }
 }

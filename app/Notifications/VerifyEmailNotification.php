@@ -5,25 +5,20 @@ declare(strict_types=1);
 namespace App\Notifications;
 
 use App\ValueObjects\Url;
+use App\VerifyEmailUrl;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Stringable;
 
 final class VerifyEmailNotification extends VerifyEmail
 {
-    public function __construct(private Url $verificationUrl)
-    {
-    }
-
     /**
      * {@inheritdoc}
      */
     protected function verificationUrl($notifiable)
     {
-        $components = $this->parseUrl(
-            parse_url(parent::verificationUrl($notifiable))
-        );
+        $components = $this->parseUrl(parent::verificationUrl($notifiable));
 
-        return (new Stringable($this->verificationUrl->value))
+        return (new Stringable(new VerifyEmailUrl))
             ->replace(':expires', $components['expires'])
             ->replace(':signature', $components['signature'])
             ->replace(':hash', $components['hash'])
@@ -36,20 +31,16 @@ final class VerifyEmailNotification extends VerifyEmail
      *
      * @return array<string,string>
      */
-    private function parseUrl(array $parts): array
+    private function parseUrl(string $url): array
     {
-        $result = [];
+        $url = new Url($url);
+        $path = array_filter(explode('/', $url->getPath()));
 
-        $path = array_filter(explode('/', $parts['path']));
+        $queryParameters = $url->parseQuery();
 
-        foreach (explode('&', $parts['query']) as $query) {
-            [$key, $value] = explode('=', $query);
-            $result[$key] = $value;
-        }
+        $queryParameters['id'] = $path[4];
+        $queryParameters['hash'] = $path[5];
 
-        $result['id'] = $path[4];
-        $result['hash'] = $path[5];
-
-        return $result;
+        return $queryParameters;
     }
 }

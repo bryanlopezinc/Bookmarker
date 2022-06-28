@@ -29,6 +29,11 @@ final class VerificationCodesRepository
         return $this->repository->get($this->parseKey($userID));
     }
 
+    public function forget(UserID $userID): void
+    {
+        $this->repository->forget($this->parseKey($userID));
+    }
+
     private function parseKey(UserID $userID): string
     {
         return 'Users::2fa::' . $userID->toInt();

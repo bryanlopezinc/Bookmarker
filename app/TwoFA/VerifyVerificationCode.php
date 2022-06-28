@@ -41,6 +41,8 @@ final class VerifyVerificationCode implements UserRepositoryInterface
             $this->throwException();
         };
 
+        $this->verificationCodes->forget($userID);
+
         return $user;
     }
 

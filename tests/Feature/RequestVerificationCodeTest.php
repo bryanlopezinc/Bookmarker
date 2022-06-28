@@ -25,6 +25,11 @@ class RequestVerificationCodeTest extends TestCase
         $this->assertRouteIsAccessibeViaPath('v1/users/request-verification-code', 'requestVerificationCode');
     }
 
+    public function testUnAuthorizedClientCannotAccessRoute():void
+    {
+        $this->getTestResponse()->assertUnauthorized();
+    }
+
     public function testWillReturnValidationErrorsWhenClientCredentialsAreInvalid(): void
     {
         $this->getTestResponse([])->assertUnauthorized();

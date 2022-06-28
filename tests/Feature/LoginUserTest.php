@@ -202,6 +202,44 @@ class LoginUserTest extends TestCase
         ])->assertOk();
     }
 
+    public function testCannotReuseVerificationCode(): void
+    {
+        $email = $this->user->email;
+
+        Http::fake([
+            'ip-api.com/*' => Http::response('{
+                    "country": "Canada",
+                    "city": "Montreal"
+            }'),
+        ]);
+
+        $code = (string)$this->getVerificationCode($email, 'password');
+
+        $this->getTestResponse([
+            'username'  => $email,
+            'password'  => 'password',
+            'client_id' => $this->client->id,
+            'client_secret' => $this->client->secret,
+            'grant_type' => 'password',
+            'two_fa_code' => $code,
+            'with_ip' => '24.48.0.1',
+            'with_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
+        ])->assertOk();
+
+        $this->getTestResponse([
+            'username'  => $email,
+            'password'  => 'password',
+            'client_id' => $this->client->id,
+            'client_secret' => $this->client->secret,
+            'grant_type' => 'password',
+            'two_fa_code' => $code,
+        ])->assertStatus(400)->assertExactJson([
+            "error" => "invalidVerificationCode",
+            "error_description" => "The given verification code is invalid.",
+            "message" => "The given verification code is invalid.",
+        ]);
+    }
+
     public function testCannotUseCodeAfter_10_Minutes(): void
     {
         $email = $this->user->email;

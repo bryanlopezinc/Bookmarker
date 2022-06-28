@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
-use App\Http\Requests\RequestPasswordResetRequest;
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
 use Illuminate\Contracts\Auth\PasswordBroker;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 final class RequestPasswordResetController
@@ -17,10 +17,14 @@ final class RequestPasswordResetController
     {
     }
 
-    public function __invoke(RequestPasswordResetRequest $request): JsonResponse
+    public function __invoke(Request $request): JsonResponse
     {
-        $status  = $this->passwordBroker->sendResetLink($request->only('email'), function (User $user, string $token) use ($request) {
-            $user->notify(new ResetPasswordNotification($token, $request->validated('reset_url')));
+        $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        $status  = $this->passwordBroker->sendResetLink($request->only('email'), function (User $user, string $token) {
+            $user->notify(new ResetPasswordNotification($token));
         });
 
         $response = fn (string $message, int $status) => response()->json(['message' => $message], $status);

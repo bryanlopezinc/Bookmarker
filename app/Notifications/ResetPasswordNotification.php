@@ -4,23 +4,19 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
+use App\ResetPasswordUrl;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Str;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-final class ResetPasswordNotification extends ResetPassword
+final class ResetPasswordNotification extends ResetPassword implements ShouldQueue
 {
-    private string $resetPasswordUrl;
-
-    public function __construct(string $token, string $resetPasswordUrl)
-    {
-        parent::__construct($token);
-
-        $this->resetPasswordUrl = $resetPasswordUrl;
-    }
+    use Queueable;
 
     protected function resetUrl($notifiable)
     {
-        return Str::of($this->resetPasswordUrl)
+        return Str::of(new ResetPasswordUrl)
             ->replace(':token', $this->token)
             ->replace(':email', $notifiable->getEmailForPasswordReset())
             ->toString();

@@ -21,7 +21,7 @@ final class TagFactory extends Factory
     public function definition()
     {
         return [
-            'name'  =>  Str::limit(str_shuffle($this->faker->word . $this->faker->word), Tag::MAX_LENGTH, '')
+            'name'  => Str::random(8)
         ];
     }
 }

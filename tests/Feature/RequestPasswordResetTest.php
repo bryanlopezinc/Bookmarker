@@ -2,29 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
-use Laravel\Passport\Client;
 use Laravel\Passport\Passport;
 
 class RequestPasswordResetTest extends TestCase
 {
-    private Client $client;
-    private User $user;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->client = ClientFactory::new()->asClientCredentials()->create();
-        $this->user = UserFactory::new()->create();
-    }
-
     protected function getTestResponse(array $parameters = [], array $headers = []): TestResponse
     {
         return $this->postJson(route('requestPasswordResetToken'), $parameters, $headers);
@@ -35,35 +22,24 @@ class RequestPasswordResetTest extends TestCase
         $this->assertRouteIsAccessibeViaPath('v1/users/password/reset-token', 'requestPasswordResetToken');
     }
 
-    public function testWillReturnValidationErrorsWhenClientCredentialsAreInvalid(): void
+    public function testUnauthorizedClientCannotAccessRoute(): void
     {
-        $this->getTestResponse(['email'  => $this->user->email])->assertUnauthorized();
+        $this->getTestResponse(['email'  => UserFactory::new()->create()->email])->assertUnauthorized();
     }
 
     public function testWillReturnValidationErrorsWhenAttributesAreInvalid(): void
     {
-        Passport::actingAsClient($this->client);
+        Passport::actingAsClient(ClientFactory::new()->asClientCredentials()->create());
 
-        $this->getTestResponse([])->assertUnprocessable()->assertJsonValidationErrors(['email', 'reset_url']);
-        $this->getTestResponse([
-            'reset_url' => 'https://google.com',
-            'email' => 'mymail@yahoo.com'
-        ])->assertUnprocessable()->assertJsonValidationErrors([
-            'reset_url' => [
-                'The reset url attribute must contain :token placeholder',
-                'The reset url attribute must contain :email placeholder'
-            ]
-        ]);
+        $this->getTestResponse([])->assertUnprocessable()->assertJsonValidationErrors(['email']);
+        $this->getTestResponse(['email' => 'my mail@yahoo.com'])->assertUnprocessable();
     }
 
     public function testWillReturnErrorResponseWhenUserDoesNotExists(): void
     {
-        Passport::actingAsClient($this->client);
+        Passport::actingAsClient(ClientFactory::new()->asClientCredentials()->create());
 
-        $this->getTestResponse([
-            'email'  => 'non-existentUser@yahoo.com',
-            'reset_url' => 'https://url.com?token=:token&email=:email'
-        ])
+        $this->getTestResponse(['email'  => 'non-existentUser@yahoo.com'])
             ->assertNotFound()
             ->assertExactJson([
                 'message' => 'Could not find user with given email'
@@ -72,25 +48,26 @@ class RequestPasswordResetTest extends TestCase
 
     public function testSuccessResponse(): void
     {
+        config(['settings.RESET_PASSWORD_URL' => 'https://url.com/reset?token=:token&email=:email&foo=bar']);
+
         Notification::fake();
 
-        Passport::actingAsClient($this->client);
+        Passport::actingAsClient(ClientFactory::new()->asClientCredentials()->create());
 
-        $this->getTestResponse([
-            'email'  => $this->user->email,
-            'reset_url' => 'https://url.com/reset?token=:token&email=:email&foo=bar'
-        ])->assertOk()->assertExactJson([
-            'message' => 'success',
-        ]);
+        $user = UserFactory::new()->create();
+
+        $this->getTestResponse(['email'  => $user->email,])
+            ->assertOk()
+            ->assertExactJson(['message' => 'success']);
 
         $this->assertDatabaseHas('password_resets', [
-            'email' => $this->user->email,
+            'email' => $user->email,
         ]);
 
-        Notification::assertSentTo($this->user, function (ResetPasswordNotification $notification) {
+        Notification::assertSentTo($user, function (ResetPasswordNotification $notification) use ($user) {
             $this->assertEquals(
-                $notification->toMail($this->user)->actionUrl,
-                "https://url.com/reset?token=$notification->token&email={$this->user->email}&foo=bar"
+                $notification->toMail($user)->actionUrl,
+                "https://url.com/reset?token=$notification->token&email={$user->email}&foo=bar"
             );
 
             return true;

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Bookmark;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\BookmarkHealthFactory;
+use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
@@ -186,9 +187,12 @@ class FetchUserBookmarksTest extends TestCase
         Passport::actingAs(UserFactory::new()->create());
 
         $this->saveBookmark();
-        $this->saveBookmark(['tags' => $this->faker->words()]);
+        $this->saveBookmark(['tags' => TagFactory::new()->count(3)->make()->pluck('name')->all()]);
         $this->saveBookmark([
-            'tags' => [$tag = $this->faker->word, $this->faker->word]
+            'tags' => [
+                $tag = TagFactory::new()->make()->name,
+                TagFactory::new()->make()->name
+            ]
         ]);
 
         $response = $this->getTestResponse(['tags' => $tag])

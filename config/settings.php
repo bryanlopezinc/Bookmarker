@@ -48,5 +48,16 @@ return [
     //The email verification url that will be sent to the user.
     //The url should contain placeholders for the 'id', 'hash', 'signature', and 'expires' parameters.
     //Eg https://webclient.com/:id/:hash?signature=:signature&expires=:expires
+    //All extra query parameters will be reserved.
     'EMAIL_VERIFICATION_URL' => env('EMAIL_VERIFICATION_URL'),
+
+    //The reset password url that will be sent to the users email.
+    //The url should contain placeholders for the 'token' and 'email' parameters
+    //Eg https://webclient-here.com/?emailQueryName=:email&tokenQueryName=:token
+    //the password reset link that will be sent to the user will be
+    //https://webclient-here.com/?emailQueryName=user-email&tokenQueryName=reset-token.
+    // Also https://webclient-here.com/:email/:token will become
+    //https://webclient-here.com/user-email/reset-token.
+    //All extra query parameters will be reserved.
+    'RESET_PASSWORD_URL' => env('RESET_PASSWORD_URL'),
 ];

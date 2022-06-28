@@ -24,7 +24,7 @@ Route::middleware('auth:api')->group(function () {
 
     Route::middleware(DBTransaction::class)->group(function () {
         Route::post('bookmarks', Controllers\CreateBookmarkController::class)
-            ->middleware([ConvertStringToArray::keys('tags')])
+            ->middleware([ConvertStringToArray::keys('tags'), 'verified'])
             ->name('createBookmark');
 
         Route::delete('bookmarks', Controllers\DeleteBookmarkController::class)

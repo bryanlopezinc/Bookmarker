@@ -27,7 +27,8 @@ final class UserResource extends JsonResource
                 'username'   => $this->user->username->value,
                 'bookmarks_count' => $this->user->bookmarksCount->value,
                 'favourites_count' => $this->user->favouritesCount->value,
-                'folders_count' => $this->user->foldersCount->value
+                'folders_count' => $this->user->foldersCount->value,
+                'has_verified_email' => $this->user->hasVerifiedEmail
             ]
         ];
     }

@@ -11,6 +11,7 @@ use App\ValueObjects\UserID;
 use App\ValueObjects\Username;
 use App\Models\User as Model;
 use App\ValueObjects\PositiveNumber;
+use Carbon\Carbon;
 
 final class UserBuilder extends Builder
 {
@@ -34,7 +35,8 @@ final class UserBuilder extends Builder
             ->when($keyExists('bookmarks_count'), fn (self $sb) => $sb->bookmarksCount((int)$model['bookmarks_count']))
             ->when($keyExists('favourites_count'), fn (self $sb) => $sb->favouritesCount((int)$model['favourites_count']))
             ->when($keyExists('folders_count'), fn (self $sb) => $sb->foldersCount((int)$model['folders_count']))
-            ->when($keyExists('password'), fn (self $sb) => $sb->password($model['password']));
+            ->when($keyExists('password'), fn (self $sb) => $sb->password($model['password']))
+            ->when($keyExists('email_verified_at'), fn (self $sb) => $sb->emailVerifiedAt($model['email_verified_at']));
     }
 
     public function id(int|UserID $id): self
@@ -96,6 +98,13 @@ final class UserBuilder extends Builder
     public function foldersCount(int $count): self
     {
         $this->attributes['foldersCount'] = new PositiveNumber($count);
+
+        return $this;
+    }
+
+    public function emailVerifiedAt(Carbon|null $dateTime): self
+    {
+        $this->attributes['hasVerifiedEmail'] = $dateTime !== null;
 
         return $this;
     }

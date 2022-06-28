@@ -31,6 +31,7 @@ final class CreateUserRepository
             ->bookmarksCount(0)
             ->favouritesCount(0)
             ->foldersCount(0)
+            ->emailVerifiedAt(null)
             ->build();
     }
 }

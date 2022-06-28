@@ -88,7 +88,7 @@ class CreateUserTest extends TestCase
 
     public function testWillCreateUser(): void
     {
-        config(['settings.EMAIL_VERIFICATION_URL' => $this->faker->url.'?id=:id&hash=:hash&signature=:signature&expires=:expires']);
+        config(['settings.EMAIL_VERIFICATION_URL' => $this->faker->url . '?id=:id&hash=:hash&signature=:signature&expires=:expires']);
 
         $client = ClientFactory::new()->asPasswordClient()->create();
 
@@ -107,7 +107,7 @@ class CreateUserTest extends TestCase
         ])
             ->assertCreated()
             ->assertJsonCount(3, 'data')
-            ->assertJsonCount(6, 'data.attributes')
+            ->assertJsonCount(7, 'data.attributes')
             ->assertJsonCount(4, 'data.token')
             ->assertJsonStructure([
                 'data' => [
@@ -118,7 +118,8 @@ class CreateUserTest extends TestCase
                         'username',
                         'bookmarks_count',
                         'favourites_count',
-                        'folders_count'
+                        'folders_count',
+                        'has_verified_email'
                     ],
                     'token' => [
                         'token_type',
@@ -129,7 +130,11 @@ class CreateUserTest extends TestCase
                 ]
             ])
             ->assertJson(function (AssertableJson $assertableJson) {
-                $assertableJson->where('data.attributes.bookmarks_count', 0)->etc();
+                $assertableJson->etc()
+                    ->where('data.attributes.has_verified_email', false)
+                    ->where('data.attributes.favourites_count', 0)
+                    ->where('data.attributes.folders_count', 0)
+                    ->where('data.attributes.bookmarks_count', 0);
             });
 
         $this->assertDatabaseHas(User::class, [

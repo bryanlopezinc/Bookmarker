@@ -32,7 +32,7 @@ class FetchAuthUserProfileTest extends TestCase
         $this->getTestResponse()
             ->assertOk()
             ->assertJsonCount(1)
-            ->assertJsonCount(6, 'data.attributes')
+            ->assertJsonCount(7, 'data.attributes')
             ->assertJson(function (AssertableJson $json) use ($user) {
                 $json->where('data.attributes.firstname', $user->firstname);
                 $json->where('data.attributes.lastname', $user->lastname);
@@ -40,6 +40,7 @@ class FetchAuthUserProfileTest extends TestCase
                 $json->where('data.attributes.bookmarks_count', 0);
                 $json->where('data.attributes.favourites_count', 0);
                 $json->where('data.attributes.folders_count', 0);
+                $json->where('data.attributes.has_verified_email', true);
                 $json->etc();
             })
             ->assertJsonStructure([
@@ -51,7 +52,8 @@ class FetchAuthUserProfileTest extends TestCase
                         'username',
                         'bookmarks_count',
                         'favourites_count',
-                        'folders_count'
+                        'folders_count',
+                        'has_verified_email',
                     ],
                 ]
             ]);;

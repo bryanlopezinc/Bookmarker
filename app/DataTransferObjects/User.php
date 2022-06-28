@@ -21,4 +21,5 @@ final class User extends DataTransferObject
     public readonly PositiveNumber $bookmarksCount;
     public readonly PositiveNumber $favouritesCount;
     public readonly PositiveNumber $foldersCount;
+    public readonly bool $hasVerifiedEmail;
 }

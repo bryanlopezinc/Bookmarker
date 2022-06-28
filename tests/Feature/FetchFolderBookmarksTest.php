@@ -113,7 +113,7 @@ class FetchFolderBookmarksTest extends TestCase
                             });
 
                         (new AssertableJsonString($json->toArray()))
-                            ->assertCount(16, 'attributes')
+                            ->assertCount(15, 'attributes')
                             ->assertCount(3, 'attributes.created_on')
                             ->assertStructure([
                                 'type',
@@ -125,7 +125,6 @@ class FetchFolderBookmarksTest extends TestCase
                                     'preview_image_url',
                                     'description',
                                     'has_description',
-                                    'site_id',
                                     'from_site',
                                     'tags',
                                     'has_tags',

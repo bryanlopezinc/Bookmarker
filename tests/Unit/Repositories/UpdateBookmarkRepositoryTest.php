@@ -6,6 +6,7 @@ use App\DataTransferObjects\Builders\UpdateBookmarkDataBuilder;
 use App\Models\Bookmark;
 use App\Repositories\UpdateBookmarkRepository;
 use Database\Factories\BookmarkFactory;
+use Database\Factories\TagFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
@@ -31,7 +32,7 @@ class UpdateBookmarkRepositoryTest extends TestCase
             ->id($model->id)
             ->title($this->faker->word)
             ->description($this->faker->sentence)
-            ->tags($this->faker->words())
+            ->tags(TagFactory::new()->count(3)->make()->pluck('name')->all())
             ->UserId($model->user_id)
             ->build();
 

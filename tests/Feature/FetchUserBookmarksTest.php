@@ -85,7 +85,7 @@ class FetchUserBookmarksTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarks = BookmarkFactory::new()->count(10)->create([
+        BookmarkFactory::new()->count(10)->create([
             'user_id' => $user->id,
             'title' => '<h1>did you forget something?</h1>',
             'description' => 'And <h1>spoof!</h1>'
@@ -178,7 +178,7 @@ class FetchUserBookmarksTest extends TestCase
             });
 
         foreach ($response->json('data') as $resource) {
-            $this->assertSame($firstBookmark->site_id, $resource['attributes']['site_id']);
+            $this->assertSame($firstBookmark->site_id, data_get($resource, 'attributes.from_site.attributes.id'));
         }
     }
 

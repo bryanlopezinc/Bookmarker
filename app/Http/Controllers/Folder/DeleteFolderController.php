@@ -21,7 +21,9 @@ final class DeleteFolderController
 
         $folderID = ResourceID::fromRequest($request, 'folder');
         
-        if ($request->boolean('delete_bookmarks')) {
+        $shouldDeleteFolderBookmarks = $request->boolean('delete_bookmarks');
+
+        if ($shouldDeleteFolderBookmarks) {
             $service->deleteRecursive($folderID);
         } else {
             $service->delete($folderID);

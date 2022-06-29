@@ -19,7 +19,7 @@ final class DeleteUserFavouritesService
     {
         $userId = UserID::fromAuthUser();
 
-        if (!$this->repository->exists($bookmarkIDs, $userId)) {
+        if (!$this->repository->containsAll($bookmarkIDs, $userId)) {
             throw  HttpException::notFound(['message' => 'favourites does not exists']);
         }
 

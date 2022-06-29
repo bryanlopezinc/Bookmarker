@@ -18,7 +18,7 @@ final class YoutubeHttpClient implements HttpClientInterface
     {
     }
 
-    public function getWebPageData(Bookmark $bookmark): WebPageData|false
+    public function fetchBookmarkPageData(Bookmark $bookmark): BookmarkMetaData|false
     {
         $response = Http::get('https://www.googleapis.com/youtube/v3/videos', [
             'id' => $this->getVideoID($bookmark->linkToWebPage),
@@ -33,7 +33,7 @@ final class YoutubeHttpClient implements HttpClientInterface
             return false;
         }
 
-        return WebPageData::fromArray([
+        return BookmarkMetaData::fromArray([
             'title' => $response->json('items.0.snippet.title'),
             'description' => $response->json('items.0.snippet.description'),
             'imageUrl' => new Url($response->json('items.0.snippet.thumbnails.medium.url')),

@@ -18,7 +18,7 @@ use Illuminate\Support\Collection;
 
 final class UserBookmarksRepository
 {
-    public function __construct(private FavouritesRepository $favouritesRepository)
+    public function __construct(private FavouritesRepository $userFavourites)
     {
     }
 
@@ -75,7 +75,7 @@ final class UserBookmarksRepository
 
     private function setIsUserFavouriteAttributeOnBookmarks(Collection $bookmarks, UserID $userID): Collection
     {
-        $bookmarkIDsFavouritedByUser = $this->favouritesRepository->getUserFavouritesFrom(
+        $bookmarkIDsFavouritedByUser = $this->userFavourites->intersect(
             ResourceIDsCollection::fromNativeTypes($bookmarks->pluck('id')),
             $userID
         )->asIntegers();

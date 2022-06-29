@@ -31,12 +31,12 @@ final class Tag
     {
         if (isset(static::$checked[$this->value])) return;
 
-        if (mb_strlen($this->value) > self::MAX_LENGTH) {
-            throw new \LengthException('Tag length cannot be greater ' . self::MAX_LENGTH);
-        }
-
         if (blank($this->value)) {
             throw new \LengthException('Tag cannot be empty', 998);
+        }
+        
+        if (mb_strlen($this->value) > self::MAX_LENGTH) {
+            throw new \LengthException('Tag length cannot be greater ' . self::MAX_LENGTH);
         }
 
         $validator = new class

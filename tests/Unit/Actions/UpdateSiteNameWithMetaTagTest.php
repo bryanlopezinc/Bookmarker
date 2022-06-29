@@ -8,7 +8,7 @@ use App\Actions\UpdateSiteNameWithWebPageSiteName as UpdateSiteName;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\Builders\SiteBuilder;
 use App\Models\WebSite;
-use App\Readers\WebPageData;
+use App\Readers\BookmarkMetaData;
 use App\ValueObjects\Url;
 use Database\Factories\SiteFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -24,7 +24,7 @@ class UpdateSiteNameWithMetaTagTest extends TestCase
             ->site(SiteBuilder::fromModel($site = SiteFactory::new()->create())->build())
             ->build();
 
-        $data = WebPageData::fromArray([
+        $data = BookmarkMetaData::fromArray([
             'siteName' => 'PlayStation',
             'description' => implode(' ', $this->faker->sentences()),
             'imageUrl' => new Url($this->faker->url),
@@ -45,7 +45,7 @@ class UpdateSiteNameWithMetaTagTest extends TestCase
             ->site(SiteBuilder::fromModel($site = SiteFactory::new()->create())->build())
             ->build();
 
-        $data = WebPageData::fromArray([
+        $data = BookmarkMetaData::fromArray([
             'siteName' => false,
             'description' => implode(' ', $this->faker->sentences()),
             'imageUrl' => new Url($this->faker->url),
@@ -66,7 +66,7 @@ class UpdateSiteNameWithMetaTagTest extends TestCase
             ->site(SiteBuilder::fromModel($site = SiteFactory::new()->create(['name_updated_at' => now(), 'name' => 'foosite']))->build())
             ->build();
 
-        $data = WebPageData::fromArray([
+        $data = BookmarkMetaData::fromArray([
             'siteName' => 'PlayStation',
             'description' => implode(' ', $this->faker->sentences()),
             'imageUrl' => new Url($this->faker->url),

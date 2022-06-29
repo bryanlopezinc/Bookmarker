@@ -6,13 +6,13 @@ namespace App\Actions;
 
 use App\DataTransferObjects\Bookmark;
 use App\Models\Bookmark as Model;
-use App\Readers\WebPageData;
+use App\Readers\BookmarkMetaData;
 use App\ValueObjects\BookmarkTitle;
 use Illuminate\Support\Str;
 
 final class UpdateBookmarkTitleWithWebPageTitle
 {
-    public function __construct(private WebPageData $pageData)
+    public function __construct(private BookmarkMetaData $pageData)
     {
     }
 

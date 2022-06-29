@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Readers;
 
-use App\Readers\Reader;
+use App\Readers\DOMReader as Reader;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 

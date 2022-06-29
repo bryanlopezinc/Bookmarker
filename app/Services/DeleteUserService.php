@@ -18,7 +18,9 @@ final class DeleteUserService
 
     public function delete(Request $request): void
     {
-        if (!$this->hasher->check($request->input('password'), auth('api')->user()->getAuthPassword())) {
+        $passwordMatches = $this->hasher->check($request->input('password'), auth('api')->user()->getAuthPassword());
+
+        if (!$passwordMatches) {
             throw HttpException::unAuthorized(['message' => 'Invalid password']);
         }
 

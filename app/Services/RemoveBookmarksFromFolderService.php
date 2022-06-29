@@ -30,9 +30,7 @@ final class RemoveBookmarksFromFolderService
 
     private function ensureBookmarksExistsInFolder(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): void
     {
-        $exists  = $this->folderBookmarks->getFolderBookmarksFrom($folderID, $bookmarkIDs);
-
-        if ($exists->count() !== $bookmarkIDs->count()) {
+        if (!$this->folderBookmarks->containsAll($bookmarkIDs, $folderID)) {
             throw HttpException::notFound(['message' => "Bookmarks does not exists in folder"]);
         }
     }

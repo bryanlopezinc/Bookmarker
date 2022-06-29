@@ -24,7 +24,7 @@ final class UpdateBookmarkInfo implements ShouldQueue
 
     public function handle(HttpClientInterface $client): void
     {
-        $data = $client->getWebPageData($this->bookmark);
+        $data = $client->fetchBookmarkPageData($this->bookmark);
 
         if ($data === false) {
             return;

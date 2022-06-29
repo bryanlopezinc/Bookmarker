@@ -54,7 +54,7 @@ final class FolderBookmarksRepository
         $bookmarkIDs = IDs::fromNativeTypes($result->getCollection()->pluck('bookmark_id'));
 
         $favourites = isset($options['userID'])
-            ? (new FavouritesRepository)->getUserFavouritesFrom($bookmarkIDs, $options['userID'])->asIntegers()
+            ? (new FavouritesRepository)->intersect($bookmarkIDs, $options['userID'])->asIntegers()
             : collect();
 
         $result->setCollection(
@@ -76,17 +76,30 @@ final class FolderBookmarksRepository
     }
 
     /**
-     * Get all the bookmarkIDs that already exists in  given folder from the given bookmark ids.
+     * Check if ANY the given bookmarks exists in the given folder
      */
-    public function getFolderBookmarksFrom(ResourceID $folderID, IDs $bookmarkIDs): IDs
+    public function contains(IDs $bookmarkIDs, ResourceID $folderID): bool
     {
         return FolderBookmarkModel::where('folder_id', $folderID->toInt())
             ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
             ->get('bookmark_id')
-            ->pipe(fn (Collection $bookmarkIDs) => IDs::fromNativeTypes($bookmarkIDs->pluck('bookmark_id')->all()));
+            ->isNotEmpty();
     }
 
-    public function addBookmarksToFolder(ResourceID $folderID, IDs $bookmarkIDs, IDs $makeHidden): void
+    /**
+     * Check if ALL the given bookmarks exists in the given folder
+     */
+    public function containsAll(IDs $bookmarkIDs, ResourceID $folderID): bool
+    {
+        $resultCount = FolderBookmarkModel::where('folder_id', $folderID->toInt())
+            ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
+            ->get('bookmark_id')
+            ->count();
+
+        return $bookmarkIDs->count() === $resultCount;
+    }
+
+    public function add(ResourceID $folderID, IDs $bookmarkIDs, IDs $makeHidden): void
     {
         $makeHidden = $makeHidden->asIntegers();
 

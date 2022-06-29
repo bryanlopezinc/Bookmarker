@@ -22,20 +22,19 @@ final class CreateFavouriteService
 
     public function create(ResourceIDsCollection $bookmarkIDs): void
     {
+        $userId = UserID::fromAuthUser();
+        
         $bookmarks = $this->bookmarkRepository->findManyById($bookmarkIDs, BookmarkAttributes::only('userId,id'));
 
-        //throw exception if some bookmarkIDs does not exists.
-        if ($bookmarks->count() !== $bookmarkIDs->count()) {
+        $allBookmarksExists = $bookmarkIDs->count() === $bookmarks->count();
+
+        if (!$allBookmarksExists) {
             throw HttpException::notFound(['message' => 'Bookmarks does not exists']);
         }
 
         $bookmarks->each(new EnsureAuthorizedUserOwnsResource);
 
-        $userId = UserID::fromAuthUser();
-
-        $duplicates = $this->repository->duplicates($userId, $bookmarkIDs);
-
-        if ($duplicates->isNotEmpty()) {
+        if ($this->repository->contains($bookmarkIDs, $userId)) {
             throw HttpException::conflict(['message' => 'Bookmarks already exists in favourites']);
         }
 

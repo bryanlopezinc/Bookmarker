@@ -7,7 +7,7 @@ namespace Tests\Unit\Actions;
 use App\Actions\UpdateBookmarkThumbnailWithWebPageImage as UpdateBookmarkImage;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\Models\Bookmark;
-use App\Readers\WebPageData;
+use App\Readers\BookmarkMetaData;
 use App\ValueObjects\Url;
 use Database\Factories\BookmarkFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -21,7 +21,7 @@ class UpdateBookmarkImageUrlWithMetaTagTest extends TestCase
     {
         $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->create())->build();
 
-        $data = WebPageData::fromArray([
+        $data = BookmarkMetaData::fromArray([
             'imageUrl' => new Url('https://image.com/smike.png'),
             'description' => implode(' ', $this->faker->sentences()),
             'title' => $this->faker->sentence,
@@ -40,7 +40,7 @@ class UpdateBookmarkImageUrlWithMetaTagTest extends TestCase
     {
         $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->create())->build();
 
-        $data = WebPageData::fromArray([
+        $data = BookmarkMetaData::fromArray([
             'imageUrl' => false,
             'description' => implode(' ', $this->faker->sentences()),
             'title' => $this->faker->sentence,

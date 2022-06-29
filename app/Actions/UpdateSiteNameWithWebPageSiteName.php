@@ -6,11 +6,11 @@ namespace App\Actions;
 
 use App\DataTransferObjects\Bookmark;
 use App\Models\WebSite;
-use App\Readers\WebPageData;
+use App\Readers\BookmarkMetaData;
 
 final class UpdateSiteNameWithWebPageSiteName
 {
-    public function __construct(private WebPageData $pageData)
+    public function __construct(private BookmarkMetaData $pageData)
     {
     }
 

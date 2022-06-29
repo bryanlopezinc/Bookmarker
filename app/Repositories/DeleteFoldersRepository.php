@@ -25,20 +25,18 @@ final class DeleteFoldersRepository
         return $this->deleteFolder($folderID, true);
     }
 
-    private function deleteFolder(ResourceID $folderID, bool $recursive = false): bool
+    private function deleteFolder(ResourceID $folderID, bool $shouldDeleteBookmarksInFolder = false): bool
     {
-        $deleteFn = fn () => (bool) Model::query()->whereKey($folderID->toInt())->delete();
+        FolderBookmark::query()
+            ->where('folder_id', $folderID->toInt())
+            ->chunkById(100, function (Collection $chunk) use ($shouldDeleteBookmarksInFolder) {
+                if ($shouldDeleteBookmarksInFolder) {
+                    Bookmark::query()->whereKey($chunk->pluck('bookmark_id')->all())->delete();
+                }
 
-        if (!$recursive) {
-            return $deleteFn();
-        }
+                $chunk->toQuery()->delete();
+            });
 
-        FolderBookmark::query()->where('folder_id', $folderID->toInt())->chunkById(100, function (Collection $chunk) {
-            Bookmark::query()->whereKey($chunk->pluck('bookmark_id')->all())->delete();
-
-            $chunk->toQuery()->delete();
-        });
-
-        return $deleteFn();
+        return (bool) Model::query()->whereKey($folderID->toInt())->delete();
     }
 }

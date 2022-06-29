@@ -33,7 +33,7 @@ final class AddBookmarksToFolderService
 
         $this->checkFolderForPossibleDuplicates($folderID, $bookmarkIDs);
 
-        $this->folderBookmarks->addBookmarksToFolder($folderID, $bookmarkIDs, $makeHidden);
+        $this->folderBookmarks->add($folderID, $bookmarkIDs, $makeHidden);
     }
 
     private function ensureFolderCanContainBookmarks(ResourceIDsCollection $bookmarks, Folder $folder): void
@@ -60,9 +60,7 @@ final class AddBookmarksToFolderService
 
     private function checkFolderForPossibleDuplicates(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): void
     {
-        $exists  = $this->folderBookmarks->getFolderBookmarksFrom($folderID, $bookmarkIDs);
-
-        if ($exists->isNotEmpty()) {
+        if ($this->folderBookmarks->contains($bookmarkIDs, $folderID)) {
             throw HttpException::conflict(['message' => 'Bookmarks already exists']);
         }
     }

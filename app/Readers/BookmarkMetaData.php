@@ -7,7 +7,7 @@ namespace App\Readers;
 use App\DataTransferObjects\DataTransferObject;
 use App\ValueObjects\Url;
 
-final class WebPageData extends DataTransferObject
+final class BookmarkMetaData extends DataTransferObject
 {
     public readonly string|false $description;
     public readonly string|false $title;

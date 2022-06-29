@@ -9,7 +9,8 @@ use App\DataTransferObjects\Bookmark;
 interface HttpClientInterface
 {
     /**
-     * Get the web page data or return false if page request fails
+     * Fetch the Bookmark's page data as an object.
+     * This method will return false if the http request fails.
      */
-    public function getWebPageData(Bookmark $bookmark): WebPageData|false;
+    public function fetchBookmarkPageData(Bookmark $bookmark): BookmarkMetaData|false;
 }

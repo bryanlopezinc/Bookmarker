@@ -21,7 +21,7 @@ class UpdateBookmarkInfoTest extends TestCase
         $bookmark = BookmarkFactory::new()->create();
 
         $client = $this->getMockBuilder(HttpClientInterface::class)->getMock();
-        $client->method('getWebPageData')->willReturn(false);
+        $client->method('fetchBookmarkPageData')->willReturn(false);
 
         $job = (new UpdateBookmarkInfo(BookmarkBuilder::fromModel($bookmark)->build()));
 

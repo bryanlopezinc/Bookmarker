@@ -48,37 +48,48 @@ class DeleteFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         $folderIDs = FolderFactory::new()->count(3)->create(['user_id' => $user->id])->pluck('id');
+        $folderIDToDelete = $folderIDs->random();
 
         //Save 3 bookmarks for user
         for ($i = 0; $i < 3; $i++)  $this->saveBookmark();
 
-        $userBookmarks = Bookmark::query()->where('user_id', $user->id)->get();
+        $userBookmarks = Bookmark::query()
+            ->where('user_id', $user->id)
+            ->get()
+            // add user bookmarks to a folder.
+            ->tap(fn (Collection $bookmarks) => $this->postJson(route('addBookmarksToFolder'), [
+                'bookmarks' => $bookmarks->pluck('id')->implode(','),
+                'folder' => $folderIDToDelete
+            ])->assertCreated());
 
         UserFoldersCount::create([
             'count' => 3,
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse(['folder' => $folderIDs->last()])->assertOk();
+        $this->getTestResponse(['folder' => $folderIDToDelete])->assertOk();
 
-        $folderIDs->take(2)->each(function (int $folderID) {
+        //assert no other folder was deleted
+        $folderIDs->reject($folderIDToDelete)->each(function (int $folderID) {
             $this->assertDatabaseHas(Folder::class, ['id' => $folderID]);
         });
 
-        $this->assertDatabaseMissing(Folder::class, ['id' => $folderIDs->last()]);
-
-        $this->assertDatabaseMissing(FolderBookmarksCount::class, [
-            'folder_id' => $folderIDs->last(),
-        ]);
-
+        $this->assertDatabaseMissing(Folder::class, ['id' => $folderIDToDelete]);
+        $this->assertDatabaseMissing(FolderBookmarksCount::class, ['folder_id' => $folderIDToDelete,]);
         $this->assertDatabaseHas(UserFoldersCount::class, [
             'user_id' => $user->id,
             'count' => 2,
             'type' => UserFoldersCount::TYPE
         ]);
 
-        $userBookmarks->each(function (Bookmark $bookmark) {
-            //Assert folder contents was not deleted
+        $userBookmarks->each(function (Bookmark $bookmark) use ($folderIDToDelete) {
+            //Assert records where deleted in folder_bookmarks table
+            $this->assertDatabaseMissing(FolderBookmark::class, [
+                'bookmark_id' => $bookmark->id,
+                'folder_id' => $folderIDToDelete
+            ]);
+
+            //Assert bookmark in folder was not deleted
             $this->assertDatabaseHas(Bookmark::class, ['id' => $bookmark->id,]);
         });
     }
@@ -106,7 +117,7 @@ class DeleteFolderTest extends TestCase
                 'folder' => $folderID
             ])->assertCreated());
 
-        //delete folder and of its contents
+        //delete folder and delete all bookmarks in folder
         $this->getTestResponse([
             'folder' => $folderID,
             'delete_bookmarks' => true
@@ -130,13 +141,13 @@ class DeleteFolderTest extends TestCase
         ]);
 
         $userBookmarks->each(function (Bookmark $bookmark) use ($folderID) {
-            //Assert folder bookmarks where deleted
+            //Assert records where deleted in folder_bookmarks table
             $this->assertDatabaseMissing(FolderBookmark::class, [
                 'bookmark_id' => $bookmark->id,
                 'folder_id' => $folderID
             ]);
 
-            //Assert bookmark was deleted
+            //Assert bookmark in folder was deleted
             $this->assertDatabaseMissing(Bookmark::class, ['id' => $bookmark->id,]);
         });
     }

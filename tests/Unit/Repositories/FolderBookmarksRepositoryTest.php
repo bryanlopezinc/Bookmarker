@@ -22,7 +22,7 @@ class FolderBookmarksRepositoryTest extends TestCase
         $bookmarkIDs = BookmarkFactory::new()->count(5)->create()->pluck('id');
         $folder = FolderFactory::new()->create();
 
-        $repository->addBookmarksToFolder(
+        $repository->add(
             new ResourceID($folder->id),
             ResourceIDsCollection::fromNativeTypes($bookmarkIDs->add($bookmarkIDs->random())),
             new ResourceIDsCollection([])
@@ -35,7 +35,7 @@ class FolderBookmarksRepositoryTest extends TestCase
         $bookmarkIDs = BookmarkFactory::new()->count(5)->create()->pluck('id');
         $folder = FolderFactory::new()->create();
 
-        $repository->addBookmarksToFolder(
+        $repository->add(
             new ResourceID($folder->id),
             ResourceIDsCollection::fromNativeTypes($bookmarkIDs),
             ResourceIDsCollection::fromNativeTypes([$bookmarkIDs->last()])

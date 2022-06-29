@@ -12,11 +12,12 @@ final class Url
     public function __construct(string|\Stringable $value)
     {
         $this->value = (string) $value;
-        $this->parts = parse_url($value);
 
         if (filter_var($this->value, FILTER_VALIDATE_URL) === false) {
             throw new \DomainException('Invalid url ' . $value, 5050);
         }
+
+        $this->parts = parse_url($value);
     }
 
     public static function isValid(mixed $url): bool

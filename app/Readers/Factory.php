@@ -9,13 +9,13 @@ use App\ValueObjects\Url;
 
 final class Factory implements HttpClientInterface
 {
-    public function getWebPageData(Bookmark $bookmark): WebPageData
+    public function fetchBookmarkPageData(Bookmark $bookmark): BookmarkMetaData
     {
         if ($this->isLinkToYoutubeVideo($bookmark->linkToWebPage)) {
             return app(YoutubeHttpClient::class)->getWebPageData($bookmark);
         }
 
-        return (new DefaultClient)->getWebPageData($bookmark);
+        return (new DefaultClient)->fetchBookmarkPageData($bookmark);
     }
 
     private function isLinkToYoutubeVideo(Url $url): bool

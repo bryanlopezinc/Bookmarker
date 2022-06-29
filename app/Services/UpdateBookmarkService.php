@@ -22,12 +22,13 @@ final class UpdateBookmarkService
     public function fromRequest(UpdateBookmarkRequest $request): void
     {
         $newAttributes = UpdateBookmarkDataBuilder::fromRequest($request)->build();
-
         $bookmark = $this->bookmarksRepository->findById($newAttributes->id, BookmarkAttributes::only('userId,tags'));
+
+        $canAddMoreTagsToBookmark = $bookmark->tags->count() + $newAttributes->tags->count() <= setting('MAX_BOOKMARKS_TAGS');
 
         (new EnsureAuthorizedUserOwnsResource)($bookmark);
 
-        if ($bookmark->tags->count() + $newAttributes->tags->count() > setting('MAX_BOOKMARKS_TAGS')) {
+        if (!$canAddMoreTagsToBookmark) {
             throw new HttpException(['message' => 'Cannot add more tags to bookmark'], Response::HTTP_BAD_REQUEST);
         }
 

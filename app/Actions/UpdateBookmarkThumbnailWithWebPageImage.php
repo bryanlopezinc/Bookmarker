@@ -6,11 +6,11 @@ namespace App\Actions;
 
 use App\Models\Bookmark as Model;
 use App\DataTransferObjects\Bookmark;
-use App\Readers\WebPageData;
+use App\Readers\BookmarkMetaData;
 
 final class UpdateBookmarkThumbnailWithWebPageImage
 {
-    public function __construct(private WebPageData $pageData)
+    public function __construct(private BookmarkMetaData $pageData)
     {
     }
 

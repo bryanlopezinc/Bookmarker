@@ -25,7 +25,7 @@ class YoutubeHttpClientTest extends TestCase
 
         $client = new YoutubeHttpClient(app('log'));
 
-        $response = $client->getWebPageData(BookmarkBuilder::fromModel($bookmark)->build());
+        $response = $client->fetchBookmarkPageData(BookmarkBuilder::fromModel($bookmark)->build());
 
         $data = json_decode($expectedJson);
 
@@ -47,7 +47,7 @@ class YoutubeHttpClientTest extends TestCase
 
         $client = new YoutubeHttpClient(app('log'));
 
-        $client->getWebPageData(BookmarkBuilder::fromModel($bookmark)->build());
+        $client->fetchBookmarkPageData(BookmarkBuilder::fromModel($bookmark)->build());
     }
 
     public function testWillLogErrorResponse(): void
@@ -64,6 +64,6 @@ class YoutubeHttpClientTest extends TestCase
 
         $client = new YoutubeHttpClient($logger);
 
-        $this->assertFalse($client->getWebPageData(BookmarkBuilder::fromModel($bookmark)->build()));
+        $this->assertFalse($client->fetchBookmarkPageData(BookmarkBuilder::fromModel($bookmark)->build()));
     }
 }

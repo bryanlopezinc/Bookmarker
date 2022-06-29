@@ -15,7 +15,6 @@ use App\Models\UserFavouritesCount;
 use App\PaginationData;
 use App\QueryColumns\BookmarkAttributes;
 use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Collection;
 
 final class FavouritesRepository
 {
@@ -45,22 +44,33 @@ final class FavouritesRepository
         }
     }
 
-    public function exists(ResourceIDsCollection $bookmarkIDs, UserID $userId): bool
+    /**
+     * Check  if ALL of the given bookmarks exists in user favourites
+     */
+    public function containsAll(ResourceIDsCollection $bookmarkIDs, UserID $userId): bool
     {
-        $total = Favourite::where('user_id', $userId->toInt())
-            ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())
-            ->get()
-            ->count();
-
-        return $bookmarkIDs->count() === $total;
+        return $this->intersect($bookmarkIDs, $userId)->count() === $bookmarkIDs->count();
     }
 
-    public function duplicates(UserID $userID, ResourceIDsCollection $bookmarkIDs): ResourceIDsCollection
+    /**
+     * Check  if ANY of the given bookmarks exists in user favourites
+     */
+    public function contains(ResourceIDsCollection $bookmarkIDs, UserID $userID): bool
     {
-        return Favourite::where('user_id', $userID->toInt())
-            ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
-            ->get('bookmark_id')
-            ->pipe(fn (Collection $favourites) => ResourceIDsCollection::fromNativeTypes($favourites->pluck('bookmark_id')->all()));
+        return $this->intersect($bookmarkIDs, $userID)->isNotEmpty();
+    }
+
+    /**
+     * Get only the bookmark IDs which exists in user favourites record from the given bookmarkIDs.
+     */
+    public function intersect(ResourceIDsCollection $bookmarkIDs, UserID $userID): ResourceIDsCollection
+    {
+        return ResourceIDsCollection::fromNativeTypes(
+            Favourite::where('user_id', $userID->toInt())
+                ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
+                ->get(['bookmark_id'])
+                ->pluck('bookmark_id')
+        );
     }
 
     public function delete(ResourceIDsCollection $bookmarkIDs, UserID $userId): bool
@@ -96,20 +106,6 @@ final class FavouritesRepository
 
         return $favourites->setCollection(
             $favourites->getCollection()->map(fn (Model $bookmark) => BookmarkBuilder::fromModel($bookmark)->isUserFavourite(true)->build())
-        );
-    }
-
-    /**
-     * Get only the bookmark IDs which exists in user favourites record from the given bookmarkIDs.
-     */
-    public function getUserFavouritesFrom(ResourceIDsCollection $bookmarkIDs, UserID $userID): ResourceIDsCollection
-    {
-        return ResourceIDsCollection::fromNativeTypes(
-            Favourite::query()
-                ->where('user_id', $userID->toInt())
-                ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
-                ->get(['bookmark_id'])
-                ->pluck('bookmark_id')
         );
     }
 }

@@ -7,7 +7,7 @@ namespace App\Readers;
 use App\ValueObjects\Url;
 use DOMXPath;
 
-final class Reader
+final class DOMReader
 {
     private readonly DOMXPath $dOMXPath;
 

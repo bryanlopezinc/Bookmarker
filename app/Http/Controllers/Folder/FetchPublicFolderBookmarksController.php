@@ -8,11 +8,11 @@ use App\Http\Resources\FolderBookmarkResource;
 use App\Http\Resources\PaginatedResourceCollection;
 use App\PaginationData;
 use App\Rules\ResourceIdRule;
-use App\Services\FetchSharedFolderBookmarksService as Service;
+use App\Services\FetchPublicFolderBookmarksService as Service;
 use App\ValueObjects\ResourceID;
 use Illuminate\Http\Request;
 
-final class FetchSharedFolderBookmarksController
+final class FetchPublicFolderBookmarksController
 {
     public function __invoke(Request $request, Service $service): PaginatedResourceCollection
     {

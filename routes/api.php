@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers;
+use App\Http\Controllers\Auth;
 use App\Http\Controllers\Folder;
 use App\Http\Middleware\ConvertConcatenatedValuesToArrayMiddleware as ConvertStringToArray;
 use App\Http\Middleware\HandleDbTransactionsMiddleware as DBTransaction;
@@ -10,9 +11,9 @@ use Laravel\Passport\Http\Middleware\CheckClientCredentials;
 
 Route::middleware('auth:api')->group(function () {
 
-    Route::post('logout', Controllers\Auth\LogoutController::class)->name('logoutUser');
-    Route::get('users/me', Controllers\Auth\FetchUserProfileController::class)->name('authUserProfile');
-    Route::delete('users', Controllers\DeleteUserAccountController::class)->name('deleteUserAccount');
+    Route::post('logout', Auth\LogoutController::class)->name('logoutUser');
+    Route::get('users/me', Auth\FetchUserProfileController::class)->name('authUserProfile');
+    Route::delete('users', Auth\DeleteUserAccountController::class)->name('deleteUserAccount');
     Route::get('users/favourites', Controllers\FetchUserFavouritesController::class)->name('fetchUserFavourites');
     Route::get('users/bookmarks/sources', Controllers\FetchUserBookmarksSourcesController::class)->name('fetchUserSites');
     Route::get('users/tags', Controllers\FetchUserTagsController::class)->name('userTags');
@@ -70,11 +71,11 @@ Route::middleware('auth:api')->group(function () {
             ->middleware(ConvertStringToArray::keys('bookmarks'))
             ->name('removeBookmarksFromFolder');
 
-        Route::get('email/verify/{id}/{hash}', Controllers\Auth\VerifyEmailController::class)
+        Route::get('email/verify/{id}/{hash}', Auth\VerifyEmailController::class)
             ->middleware('signed')
             ->name('verification.verify');
 
-        Route::post('email/verify/resend', Controllers\Auth\ResendVerificationLinkController::class)
+        Route::post('email/verify/resend', Auth\ResendVerificationLinkController::class)
             ->middleware('throttle:6,1')
             ->name('verification.resend');
     });
@@ -84,19 +85,19 @@ Route::post('token/refresh', [Laravel\Passport\Http\Controllers\AccessTokenContr
     ->name('refreshToken')
     ->middleware('throttle');
 
-Route::post('client/oauth/token', Controllers\Auth\IssueClientTokenController::class)->name('issueClientToken');
-Route::post('users', Controllers\CreateUserController::class)->middleware([DBTransaction::class])->name('createUser');
-Route::post('login', Controllers\Auth\LoginController::class)->name('loginUser');
+Route::post('client/oauth/token', Auth\IssueClientTokenController::class)->name('issueClientToken');
+Route::post('users', Auth\CreateUserController::class)->middleware([DBTransaction::class])->name('createUser');
+Route::post('login', Auth\LoginController::class)->name('loginUser');
 
-Route::get('folders/shared/bookmarks', Folder\FetchSharedFolderBookmarksController::class)
+Route::get('folders/public/bookmarks', Folder\FetchPublicFolderBookmarksController::class)
     ->middleware([CheckClientCredentials::class])
     ->name('viewPublicfolderBookmarks');
 
-Route::post('users/password/reset-token', Controllers\Auth\RequestPasswordResetController::class)
+Route::post('users/password/reset-token', Auth\RequestPasswordResetController::class)
     ->middleware([DBTransaction::class, CheckClientCredentials::class])
     ->name('requestPasswordResetToken');
 
-Route::post('users/password/reset', Controllers\Auth\ResetPasswordController::class)
+Route::post('users/password/reset', Auth\ResetPasswordController::class)
     ->middleware([DBTransaction::class, CheckClientCredentials::class])
     ->name('resetPassword');
 

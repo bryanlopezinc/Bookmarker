@@ -11,7 +11,7 @@ use App\Repositories\FoldersRepository;
 use App\Repositories\FolderBookmarksRepository;
 use App\Exceptions\FolderNotFoundHttpResponseException;
 
-final class FetchSharedFolderBookmarksService
+final class FetchPublicFolderBookmarksService
 {
     public function __construct(
         private FolderBookmarksRepository $folderBookmarksRepository,

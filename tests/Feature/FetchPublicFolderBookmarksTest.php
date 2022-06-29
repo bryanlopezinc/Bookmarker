@@ -26,7 +26,7 @@ class FetchPublicFolderBookmarksTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/folders/shared/bookmarks', 'viewPublicfolderBookmarks');
+        $this->assertRouteIsAccessibeViaPath('v1/folders/public/bookmarks', 'viewPublicfolderBookmarks');
     }
 
     public function testUnAuthorizedClientCannotAccessRoute(): void

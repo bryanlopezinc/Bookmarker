@@ -14,7 +14,7 @@ final class DeleteBookmarkTagsController
 {
     public function __invoke(DeleteBookmarkTagsRequest $request, DeleteBookmarkTagsService $service): JsonResponse
     {
-        $service->delete(ResourceID::fromRequest($request), TagsCollection::createFromStrings($request->input('tags')));
+        $service->delete(ResourceID::fromRequest($request), TagsCollection::make($request->input('tags')));
 
         return response()->json();
     }

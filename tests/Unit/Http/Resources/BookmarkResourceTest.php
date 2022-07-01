@@ -24,7 +24,7 @@ class BookmarkResourceTest extends TestCase
     public function testAttributes(): void
     {
         $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->create())
-            ->tags(TagsCollection::createFromStrings($this->faker->unique()->words()))
+            ->tags(TagsCollection::make($this->faker->unique()->words()))
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
             ->isHealthy(false)
             ->isUserFavourite(false)
@@ -53,7 +53,7 @@ class BookmarkResourceTest extends TestCase
     public function testWillReturnCorrectDataWhenBookmarkHasNoTags(): void
     {
         $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->create())
-            ->tags(TagsCollection::createFromStrings([]))
+            ->tags(TagsCollection::make([]))
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
             ->isHealthy(false)
             ->isUserFavourite(false)
@@ -73,7 +73,7 @@ class BookmarkResourceTest extends TestCase
         $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->create([
             'description' => null,
         ]))
-            ->tags(TagsCollection::createFromStrings($this->faker->unique(true)->words()))
+            ->tags(TagsCollection::make($this->faker->unique(true)->words()))
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
             ->isHealthy(false)
             ->isUserFavourite(false)
@@ -94,7 +94,7 @@ class BookmarkResourceTest extends TestCase
         $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->create([
             'preview_image_url' => null,
         ]))
-            ->tags(TagsCollection::createFromStrings(TagFactory::new()->count(3)->make()->pluck('name')->all()))
+            ->tags(TagsCollection::make(TagFactory::new()->count(3)->make()))
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
             ->isHealthy(false)
             ->isUserFavourite(false)

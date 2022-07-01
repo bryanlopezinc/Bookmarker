@@ -49,7 +49,7 @@ final class TagsRepository
         }
 
         $newTags = $tags
-            ->except(TagsCollection::createFromStrings($existingTags->pluck('name')->all()))
+            ->except(TagsCollection::make($existingTags))
             ->toStringCollection()
             ->tap(fn (Collection $tags) => Model::insert(
                 $tags->map(fn (string $tag) => ['name' => $tag])->all()
@@ -69,7 +69,7 @@ final class TagsRepository
             ->orderByDesc('tags.id')
             ->limit($limit)
             ->get()
-            ->pipe(fn (Collection $tags) => TagsCollection::createFromStrings($tags->pluck('name')->all()));
+            ->pipe(fn (Collection $tags) => TagsCollection::make($tags));
     }
 
     /**

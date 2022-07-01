@@ -28,9 +28,9 @@ class TagsRepositoryTest extends TestCase
         $user3Tag = 'like' . rand(0, 1000);
 
         //Bookmarks by different users with similar tags
-        $repository->attach(TagsCollection::createFromStrings([$user1Tag]), $bookmark);
-        $repository->attach(TagsCollection::createFromStrings([$user2Tag]), BookmarkFactory::new()->create());
-        $repository->attach(TagsCollection::createFromStrings([$user3Tag]), BookmarkFactory::new()->create());
+        $repository->attach(TagsCollection::make([$user1Tag]), $bookmark);
+        $repository->attach(TagsCollection::make([$user2Tag]), BookmarkFactory::new()->create());
+        $repository->attach(TagsCollection::make([$user3Tag]), BookmarkFactory::new()->create());
 
         $result = $repository->search('like', new UserID($bookmark->user_id), 20);
 
@@ -50,9 +50,9 @@ class TagsRepositoryTest extends TestCase
         $user3Tag = 'like' . rand(0, 1000);
 
         //Bookmarks by different users with similar tags
-        $repository->attach(TagsCollection::createFromStrings([$user1Tag]), $bookmark);
-        $repository->attach(TagsCollection::createFromStrings([$user2Tag]), BookmarkFactory::new()->create());
-        $repository->attach(TagsCollection::createFromStrings([$user3Tag]), BookmarkFactory::new()->create());
+        $repository->attach(TagsCollection::make([$user1Tag]), $bookmark);
+        $repository->attach(TagsCollection::make([$user2Tag]), BookmarkFactory::new()->create());
+        $repository->attach(TagsCollection::make([$user3Tag]), BookmarkFactory::new()->create());
 
         /** @var array<\App\ValueObjects\Tag> */
         $result = $repository->getUsertags(new UserID($bookmark->user_id), new PaginationData)->items();
@@ -70,9 +70,9 @@ class TagsRepositoryTest extends TestCase
 
         $tags = TagFactory::new()->count(5)->create();
 
-        $repository->attach(TagsCollection::createFromStrings($tags->pluck('name')->all()), $model);
+        $repository->attach(TagsCollection::make($tags), $model);
 
-        $repository->detach(TagsCollection::createFromStrings($tags->pluck('name')->all()), new ResourceID($model->id));
+        $repository->detach(TagsCollection::make($tags), new ResourceID($model->id));
 
         $tags->each(function (Tag $tag) use ($model) {
             $this->assertDatabaseMissing(Taggable::class, [
@@ -93,10 +93,10 @@ class TagsRepositoryTest extends TestCase
 
         $tags = TagFactory::new()->count(5)->create();
 
-        $repository->attach(TagsCollection::createFromStrings($tags->pluck('name')->all()), $model);
+        $repository->attach(TagsCollection::make($tags), $model);
 
         $repository->detach(
-            TagsCollection::createFromStrings(TagFactory::new()->count(5)->create()->pluck('name')->all()),
+            TagsCollection::make(TagFactory::new()->count(5)->create()),
             new ResourceID($model->id)
         );
 
@@ -116,10 +116,10 @@ class TagsRepositoryTest extends TestCase
 
         $repository = new TagsRepository;
 
-        $repository->attach(TagsCollection::createFromStrings([$tag]), BookmarkFactory::new()->create());
-        $repository->attach(TagsCollection::createFromStrings([$tag]), BookmarkFactory::new()->create());
-        $repository->attach(TagsCollection::createFromStrings([$tag]), BookmarkFactory::new()->create());
-        $repository->attach(TagsCollection::createFromStrings([$tag]), BookmarkFactory::new()->create());
+        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->create());
+        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->create());
+        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->create());
+        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->create());
 
         $this->assertEquals(1, Tag::whereIn('name', [$tag])->get(['name'])->count());
     }

@@ -75,7 +75,7 @@ final class UpdateBookmarkDataBuilder extends Builder
      */
     public function tags(TagsCollection|array $tags): self
     {
-        $this->attributes['tags'] = is_array($tags) ? TagsCollection::createFromStrings($tags) : $tags;
+        $this->attributes['tags'] = is_array($tags) ? TagsCollection::make($tags) : $tags;
 
         return $this;
     }

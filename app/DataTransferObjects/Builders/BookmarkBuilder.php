@@ -104,11 +104,7 @@ final class BookmarkBuilder extends Builder
      */
     public function tags(TagsCollection|array $tags): self
     {
-        if (is_array($tags)) {
-            $tags = collect($tags)->map(fn (string $tag) => new Tag($tag))->pipeInto(TagsCollection::class);
-        }
-
-        $this->attributes['tags'] = $tags;
+        $this->attributes['tags'] = is_array($tags) ? TagsCollection::make($tags) : $tags;
 
         return $this;
     }

@@ -38,7 +38,7 @@ final class UserBookmarksFilters extends DataTransferObject
         });
 
         $request->whenHas('tags', function (array $tags) use (&$data) {
-            $data['tags'] = TagsCollection::createFromStrings($tags);
+            $data['tags'] = TagsCollection::make($tags);
         });
 
         $request->whenHas('sort', function (string $sort) use (&$data) {
@@ -82,7 +82,7 @@ final class UserBookmarksFilters extends DataTransferObject
         }
 
         if ($hasTag) {
-            $data['tags'] = TagsCollection::createFromStrings($request['tags']);
+            $data['tags'] = TagsCollection::make($request['tags']);
         }
 
         if ($hasSortCriteria) {

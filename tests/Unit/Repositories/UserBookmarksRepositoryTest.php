@@ -66,7 +66,7 @@ class UserBookmarksRepositoryTest extends TestCase
             'user_id' => $userId = UserFactory::new()->create()->id,
         ]);
 
-        (new TagsRepository)->attach(TagsCollection::createFromStrings(['foobar']), $models[0]);
+        (new TagsRepository)->attach(TagsCollection::make(['foobar']), $models[0]);
 
         $result = $this->repository->fetch(new UserID($userId), Data::fromArray([
             'tags' => ['foobar']

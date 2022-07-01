@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Collections;
 
+use App\Contracts\HasTagValueInterface;
 use App\ValueObjects\Tag;
 use Illuminate\Support\Collection;
 
@@ -26,11 +27,23 @@ final class TagsCollection extends BaseCollection
     }
 
     /**
-     * @param array<string> $tags
+     * @param iterable<string|Tag|HasTagValueInterface> $tags
      */
-    public static function createFromStrings(array $tags): self
+    public static function make(iterable $tags): self
     {
-        return new self(array_map(fn (string $tag) => new Tag($tag), $tags));
+        $tags = collect($tags)->map(function (string|Tag|HasTagValueInterface $tag) {
+            if (is_string($tag)) {
+                $tag = new Tag($tag);
+            }
+
+            if ($tag instanceof HasTagValueInterface) {
+                $tag = new Tag($tag->getTagValue());
+            }
+
+            return $tag;
+        });
+
+        return new self($tags);
     }
 
     /**
@@ -48,7 +61,7 @@ final class TagsCollection extends BaseCollection
      */
     public function except(TagsCollection $tags): TagsCollection
     {
-        return TagsCollection::createFromStrings(
+        return TagsCollection::make(
             $this->toStringCollection()->diff($tags->toStringCollection())->values()->all()
         );
     }

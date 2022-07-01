@@ -11,6 +11,16 @@ trait CreatesBookmark
 {
     use WithFaker;
 
+    /**
+     * @param array<string,mixed> $data
+     *
+     * ```php
+     *   $data = [
+     *         'url' => string,
+     *          'tags' => array,
+     *    ]
+     * ```
+     */
     private function saveBookmark(array $data = []): void
     {
         Bus::fake();

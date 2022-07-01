@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\BookmarkTag;
+use App\Models\Taggable;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
@@ -47,17 +47,15 @@ class DeleteBookmarkTagsTest extends TestCase
 
         $tag = TagFactory::new()->create();
 
-        BookmarkTag::create([
-            'bookmark_id' => $model->id,
-            'tag_id' => $tag->id
+        Taggable::create($tagAttributes = [
+            'taggable_id' => $model->id,
+            'tag_id' => $tag->id,
+            'tagged_by_id' => $user->id,
+            'taggable_type' => Taggable::BOOKMARK_TYPE
         ]);
 
         $this->getTestResponse(['id' => $model->id, 'tags' => $tag->name])->assertOk();
-
-        $this->assertDatabaseMissing(BookmarkTag::class, [
-            'bookmark_id' => $model->id,
-            'tag_id' => $tag->id
-        ]);
+        $this->assertDatabaseMissing(Taggable::class, $tagAttributes);
     }
 
     public function testWillReturnNotFoundResponseIfBookmarkDoesNotExists(): void

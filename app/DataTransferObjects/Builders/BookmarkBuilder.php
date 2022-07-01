@@ -11,6 +11,7 @@ use App\Models\Bookmark as Model;
 use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\BookmarkDescription;
 use App\ValueObjects\ResourceID;
+use App\ValueObjects\Tag;
 use App\ValueObjects\TimeStamp;
 use App\ValueObjects\Url;
 use App\ValueObjects\UserID;
@@ -103,7 +104,11 @@ final class BookmarkBuilder extends Builder
      */
     public function tags(TagsCollection|array $tags): self
     {
-        $this->attributes['tags'] = is_array($tags) ? TagsCollection::createFromStrings($tags) : $tags;
+        if (is_array($tags)) {
+            $tags = collect($tags)->map(fn (string $tag) => new Tag($tag))->pipeInto(TagsCollection::class);
+        }
+
+        $this->attributes['tags'] = $tags;
 
         return $this;
     }

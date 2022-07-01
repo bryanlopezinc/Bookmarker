@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Contracts\TaggableInterface;
+use App\Enums\TaggableType;
 use App\QueryColumns\BookmarkAttributes;
+use App\ValueObjects\ResourceID;
+use App\ValueObjects\UserID;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 /**
  * @property int $id
@@ -25,7 +28,7 @@ use Illuminate\Support\Facades\DB;
  * @property \Carbon\Carbon $updated_at
  * @method static Builder WithQueryOptions(BookmarkAttributes $queryOptions)
  */
-final class Bookmark extends Model
+final class Bookmark extends Model implements TaggableInterface
 {
     /**
      * {@inheritdoc}
@@ -48,12 +51,28 @@ final class Bookmark extends Model
 
     public function tags(): HasManyThrough
     {
-        return $this->hasManyThrough(Tag::class, BookmarkTag::class, 'bookmark_id', 'id', 'id', 'tag_id');
+        return $this->hasManyThrough(Tag::class, Taggable::class, 'taggable_id', 'id', 'id', 'tag_id')
+            ->where('taggable_type', Taggable::BOOKMARK_TYPE);
     }
 
     public function site(): BelongsTo
     {
         return $this->belongsTo(WebSite::class, 'site_id', 'id');
+    }
+
+    public function taggableID(): ResourceID
+    {
+        return new ResourceID($this->id);
+    }
+
+    public function taggableType(): TaggableType
+    {
+        return TaggableType::BOOKMARK;
+    }
+
+    public function taggedBy(): UserID
+    {
+        return new UserID($this->user_id);
     }
 
     /**

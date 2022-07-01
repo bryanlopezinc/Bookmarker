@@ -4,7 +4,7 @@ namespace Tests\Unit\Repositories;
 
 use App\Collections\TagsCollection;
 use App\Models\Bookmark;
-use App\Models\BookmarkTag;
+use App\Models\Taggable;
 use App\Models\Tag;
 use App\PaginationData;
 use App\Repositories\TagsRepository;
@@ -75,9 +75,11 @@ class TagsRepositoryTest extends TestCase
         $repository->detach(TagsCollection::createFromStrings($tags->pluck('name')->all()), new ResourceID($model->id));
 
         $tags->each(function (Tag $tag) use ($model) {
-            $this->assertDatabaseMissing(BookmarkTag::class, [
-                'bookmark_id' => $model->id,
-                'tag_id' => $tag->id
+            $this->assertDatabaseMissing(Taggable::class, [
+                'taggable_id' => $model->id,
+                'tag_id' => $tag->id,
+                'tagged_by_id' => $model->user_id,
+                'taggable_type' => Taggable::BOOKMARK_TYPE
             ]);
         });
     }
@@ -99,9 +101,11 @@ class TagsRepositoryTest extends TestCase
         );
 
         $tags->each(function (Tag $tag) use ($model) {
-            $this->assertDatabaseHas(BookmarkTag::class, [
-                'bookmark_id' => $model->id,
-                'tag_id' => $tag->id
+            $this->assertDatabaseHas(Taggable::class, [
+                'taggable_id' => $model->id,
+                'tag_id' => $tag->id,
+                'tagged_by_id' => $model->user_id,
+                'taggable_type' => Taggable::BOOKMARK_TYPE
             ]);
         });
     }

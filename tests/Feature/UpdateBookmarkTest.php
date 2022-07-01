@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Bookmark;
-use App\Models\BookmarkTag;
 use App\Models\Tag;
+use App\Models\Taggable;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
@@ -72,8 +72,9 @@ class UpdateBookmarkTest extends TestCase
             'title' => $title
         ]);
 
-        $this->assertDatabaseHas(BookmarkTag::class, [
-            'bookmark_id' => $model->id,
+        $this->assertDatabaseHas(Taggable::class, [
+            'taggable_id' => $model->id,
+            'taggable_type' => Taggable::BOOKMARK_TYPE,
             'tag_id' => Tag::query()->where('name', $tag)->first()->id
         ]);
     }
@@ -113,9 +114,11 @@ class UpdateBookmarkTest extends TestCase
         $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
 
         TagFactory::new()->count(10)->create()->tap(function (Collection $collection) use ($model) {
-            BookmarkTag::insert($collection->map(fn (Tag $tag) => [
-                'bookmark_id' => $model->id,
-                'tag_id' => $tag->id
+            Taggable::insert($collection->map(fn (Tag $tag) => [
+                'taggable_id' => $model->id,
+                'taggable_type' => Taggable::BOOKMARK_TYPE,
+                'tag_id' => $tag->id,
+                'tagged_by_id' => $model->user_id
             ])->all());
         });
 

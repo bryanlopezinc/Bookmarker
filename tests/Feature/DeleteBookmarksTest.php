@@ -3,11 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\Bookmark;
-use App\Models\BookmarkTag;
 use App\Models\Favourite;
+use App\Models\Taggable;
 use App\Models\UserBookmarksCount;
 use App\Models\UserFavouritesCount;
 use Database\Factories\BookmarkFactory;
+use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
@@ -70,14 +71,19 @@ class DeleteBookmarksTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->saveBookmark();
+        $this->saveBookmark(['tags' => [TagFactory::new()->make()->name]]);
 
         $bookmark = Bookmark::query()->where('user_id', $user->id)->first();
 
         $this->getTestResponse(['ids' => (string)$bookmark->id])->assertOk();
 
         $this->assertDatabaseMissing(Bookmark::class, ['id' => $bookmark->id]);
-        $this->assertDatabaseMissing(BookmarkTag::class, ['bookmark_id' => $bookmark->id]);
+
+        $this->assertDatabaseMissing(Taggable::class, [
+            'taggable_id' => $bookmark->id,
+            'tagged_by_id' => $user->id,
+            'taggable_type' => Taggable::BOOKMARK_TYPE
+        ]);
 
         $this->assertDatabaseHas(UserBookmarksCount::class, [
             'user_id' => $user->id,

@@ -7,12 +7,12 @@ namespace Tests\Unit\Jobs;
 use App\Jobs\PruneDeletedUsersData;
 use App\Models\Bookmark;
 use App\Models\BookmarkHealth;
-use App\Models\BookmarkTag;
 use App\Models\DeletedUser;
 use App\Models\Favourite;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Models\FolderBookmarksCount;
+use App\Models\Taggable;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\TagFactory;
@@ -53,9 +53,11 @@ class PruneDeletedUsersDataTest extends TestCase
                     'last_checked' => now()
                 ]);
 
-                BookmarkTag::query()->create([
-                    'bookmark_id' => $bookmark->id,
-                    'tag_id' => $tags->random()->id
+                Taggable::query()->create([
+                    'taggable_id' => $bookmark->id,
+                    'taggable_type' => Taggable::BOOKMARK_TYPE,
+                    'tag_id' => $tags->random()->id,
+                    'tagged_by_id' => $bookmark->user_id
                 ]);
 
                 Favourite::query()->create([
@@ -83,7 +85,7 @@ class PruneDeletedUsersDataTest extends TestCase
 
         $userBookmarks->each(function (Bookmark $bookmark) {
             $this->assertDatabaseMissing(BookmarkHealth::class, ['bookmark_id' => $bookmark->id]);
-            $this->assertDatabaseMissing(BookmarkTag::class, ['bookmark_id' => $bookmark->id]);
+            $this->assertDatabaseMissing(Taggable::class, ['taggable_id' => $bookmark->id]);
             $this->assertDatabaseMissing(FolderBookmark::class, ['bookmark_id' => $bookmark->id]);
         });
     }

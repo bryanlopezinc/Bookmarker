@@ -20,6 +20,10 @@ abstract class Attributes implements Arrayable
     {
         $values = [];
 
+        if (blank($attributes)) {
+            return $values;
+        }
+
         foreach (explode(',', $attributes)  as $attribute) {
             if (!array_key_exists($attribute, $attributeValueMap)) {
                 throw new \DomainException('unexpected attribute ' . $attribute);

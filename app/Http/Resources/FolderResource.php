@@ -28,6 +28,9 @@ final class FolderResource extends JsonResource
                 'date_created' => $this->folder->createdAt->toDateTimeString(),
                 'last_updated' => $this->folder->updatedAt->toDateTimeString(),
                 'is_public' => $this->folder->isPublic,
+                'tags' => $this->folder->tags->toStringCollection()->all(),
+                'has_tags' => $this->folder->tags->isNotEmpty(),
+                'tags_count' => $this->folder->tags->count(),
                 'storage' => [
                     'items_count' => $this->folder->storage->total,
                     'capacity' => $this->folder->storage::MAX,

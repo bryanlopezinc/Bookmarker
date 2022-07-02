@@ -7,6 +7,7 @@ namespace App\Http\Requests;
 use App\Rules\ResourceIdRule;
 use App\ValueObjects\FolderDescription;
 use App\ValueObjects\FolderName;
+use App\ValueObjects\Tag;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -17,7 +18,9 @@ final class CreateFolderRequest extends FormRequest
         $rules = [
             'name' => ['string', 'max:' . FolderName::MAX, 'filled'],
             'description' => ['nullable', 'string', 'max:' . FolderDescription::MAX],
-            'is_public' => ['nullable', 'bool']
+            'is_public' => ['nullable', 'bool'],
+            'tags' => ['nullable', 'filled', join(':', ['max', setting('MAX_FOLDER_TAGS')])],
+            'tags.*' => Tag::rules(['distinct:strict']),
         ];
 
         if ($this->routeIs('createFolder')) {

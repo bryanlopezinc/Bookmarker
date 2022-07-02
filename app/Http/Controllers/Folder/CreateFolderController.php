@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Folder;
 
+use App\Collections\TagsCollection;
 use App\DataTransferObjects\Builders\FolderBuilder;
 use App\Http\Requests\CreateFolderRequest;
 use App\Repositories\FoldersRepository;
@@ -21,6 +22,7 @@ final class CreateFolderController
             ->setName($request->validated('name'))
             ->setOwnerID(UserID::fromAuthUser())
             ->setisPublic($request->boolean('is_public'))
+            ->setTags(TagsCollection::make($request->validated('tags', [])))
             ->build();
 
         $repository->create($folder);

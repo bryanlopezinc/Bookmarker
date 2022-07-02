@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
+use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
+use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\AssertableJsonString;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
@@ -13,6 +15,8 @@ use Tests\TestCase;
 
 class FetchUserFoldersTest extends TestCase
 {
+    use WithFaker;
+
     protected function getTestResponse(array $parameters = []): TestResponse
     {
         return $this->getJson(route('userFolders', $parameters));
@@ -92,6 +96,9 @@ class FetchUserFoldersTest extends TestCase
                         $json->where('attributes.storage.is_full', false);
                         $json->where('attributes.storage.available', 200);
                         $json->where('attributes.storage.percentage_used', 0);
+                        $json->where('attributes.tags', []);
+                        $json->where('attributes.has_tags', false);
+                        $json->where('attributes.tags_count', 0);
 
                         //Assert the name  and decription response sent to client are sanitized
                         $json->where('attributes.name', '&lt;script&gt;alert(Cross Site Scripting)&lt;/script&gt;');
@@ -99,7 +106,7 @@ class FetchUserFoldersTest extends TestCase
 
                         (new AssertableJsonString($json->toArray()))
                             ->assertCount(2)
-                            ->assertCount(7, 'attributes')
+                            ->assertCount(10, 'attributes')
                             ->assertCount(5, 'attributes.storage')
                             ->assertStructure([
                                 "type",
@@ -110,6 +117,9 @@ class FetchUserFoldersTest extends TestCase
                                     "date_created",
                                     "last_updated",
                                     "is_public",
+                                    'tags',
+                                    'has_tags',
+                                    'tags_count',
                                     'storage' => [
                                         'items_count',
                                         'capacity',
@@ -287,5 +297,25 @@ class FetchUserFoldersTest extends TestCase
         $this->getTestResponse(['per_page' => 17])
             ->assertOk()
             ->assertJsonCount(17, 'data');
+    }
+
+    public function testWillFetchFolderTags(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $tags = TagFactory::new()->count(5)->make()->pluck('name');
+
+        $this->postJson(route('createFolder'), [
+            'name' => $this->faker->word,
+            'description' => $this->faker->sentence,
+            'tags' => $tags->implode(',')
+        ])->assertCreated();
+
+        $this->getTestResponse([])
+            ->assertOk()
+            ->assertJsonCount(5, 'data.0.attributes.tags')
+            ->assertJson(function (AssertableJson $json) use ($tags) {
+                $json->where('data.0.attributes.tags', $tags)->etc();
+            });
     }
 }

@@ -9,11 +9,13 @@ use App\Models\Taggable;
 enum TaggableType: string
 {
     case BOOKMARK = 'bookmark';
+    case FOLDER = 'folder';
 
     public function type(): int
     {
         return match ($this) {
-            self::BOOKMARK => Taggable::BOOKMARK_TYPE
+            self::BOOKMARK => Taggable::BOOKMARK_TYPE,
+            self::FOLDER => Taggable::FOLDER_TYPE
         };
     }
 }

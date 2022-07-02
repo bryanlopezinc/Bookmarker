@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects;
 
+use App\Collections\TagsCollection;
 use App\Contracts\BelongsToUserInterface;
 use App\ValueObjects\FolderDescription;
 use App\ValueObjects\FolderName;
@@ -22,6 +23,7 @@ final class Folder extends DataTransferObject implements BelongsToUserInterface
     public readonly Carbon $updatedAt;
     public readonly FolderStorage $storage;
     public readonly bool $isPublic;
+    public readonly TagsCollection $tags;
 
     public function getOwnerID(): UserID
     {

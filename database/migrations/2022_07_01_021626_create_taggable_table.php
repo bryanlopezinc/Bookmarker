@@ -28,6 +28,12 @@ return new class extends Migration
             BEFORE DELETE ON bookmarks FOR EACH ROW
             DELETE FROM taggables t  WHERE t.taggable_id = OLD.id AND t.taggable_type = 4
         SQL);
+
+        DB::unprepared(<<<SQL
+            CREATE TRIGGER delete_folder_tag_record_on_folder_delete
+            BEFORE DELETE ON folders FOR EACH ROW
+            DELETE FROM taggables t  WHERE t.taggable_id = OLD.id AND t.taggable_type = 5
+        SQL);
     }
 
     /**

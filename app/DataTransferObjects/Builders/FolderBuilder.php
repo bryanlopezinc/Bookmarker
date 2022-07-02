@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects\Builders;
 
+use App\Collections\TagsCollection;
 use App\DataTransferObjects\Folder;
+use App\Models\Folder as Model;
 use App\ValueObjects\FolderDescription;
 use App\ValueObjects\FolderName;
 use App\ValueObjects\FolderStorage;
@@ -14,6 +16,24 @@ use Carbon\Carbon;
 
 final class FolderBuilder extends Builder
 {
+    public static function fromModel(Model $folder): self
+    {
+        $attributes = $folder->toArray();
+
+        $keyExists = fn (string $key) => array_key_exists($key, $attributes);
+
+        return (new self)
+            ->when($keyExists('id'), fn (FolderBuilder $b) => $b->setID($folder->id))
+            ->when($keyExists('user_id'), fn (FolderBuilder $b) => $b->setOwnerID($folder->user_id))
+            ->when($keyExists('name'), fn (FolderBuilder $b) => $b->setName($folder->name))
+            ->when($keyExists('description'), fn (FolderBuilder $b) => $b->setDescription($folder->description))
+            ->when($keyExists('created_at'), fn (FolderBuilder $b) => $b->setCreatedAt($folder->created_at))
+            ->when($keyExists('updated_at'), fn (FolderBuilder $b) => $b->setUpdatedAt($folder->updated_at))
+            ->when($keyExists('bookmarks_count'), fn (FolderBuilder $b) => $b->setBookmarksCount((int)$folder->bookmarks_count))
+            ->when($keyExists('is_public'), fn (FolderBuilder $b) => $b->setisPublic($folder->is_public))
+            ->when($keyExists('tags'), fn (FolderBuilder $b) => $b->setTags($folder->getRelation('tags')->all()));
+    }
+
     public function setID(int $id): self
     {
         $this->attributes['folderID'] =  new ResourceID($id);
@@ -66,6 +86,13 @@ final class FolderBuilder extends Builder
     public function setisPublic(bool $isPublic): self
     {
         $this->attributes['isPublic'] = $isPublic;
+
+        return $this;
+    }
+
+    public function setTags(TagsCollection|array $tags): self
+    {
+        $this->attributes['tags'] = is_array($tags) ? TagsCollection::make($tags) : $tags;
 
         return $this;
     }

@@ -33,6 +33,9 @@ return [
     //The maximum number of tags a bookmark can have
     'MAX_BOOKMARKS_TAGS' => 15,
 
+    //The maximum number of tags a folder can have
+    'MAX_FOLDER_TAGS' => 15,
+
     //The amount of time (in minutes) an access token should live
     'ACCESS_TOKEN_EXPIRE' => 60,
 

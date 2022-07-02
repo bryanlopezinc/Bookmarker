@@ -9,6 +9,7 @@ use App\DataTransferObjects\Folder;
 use App\Enums\UserFoldersSortCriteria as SortCriteria;
 use App\Models\Folder as Model;
 use App\PaginationData;
+use App\QueryColumns\FolderAttributes;
 use App\ValueObjects\UserID;
 use Illuminate\Pagination\Paginator;
 
@@ -19,7 +20,7 @@ final class UsersFoldersRepository
      */
     public function fetch(UserID $userID, PaginationData $pagination, SortCriteria $sortCriteria = SortCriteria::NEWEST): Paginator
     {
-        $query = Model::WithBookmarksCount()->where('user_id', $userID->toInt());
+        $query = Model::onlyAttributes(new FolderAttributes())->where('user_id', $userID->toInt());
 
         $this->addSortQuery($query, $sortCriteria);
 
@@ -28,16 +29,7 @@ final class UsersFoldersRepository
 
         $result->setCollection(
             $result->getCollection()->map(function (Model $folder) {
-                return (new FolderBuilder())
-                    ->setCreatedAt($folder->created_at)
-                    ->setDescription($folder->description)
-                    ->setID($folder->id)
-                    ->setName($folder->name)
-                    ->setOwnerID($folder->user_id)
-                    ->setUpdatedAt($folder->updated_at)
-                    ->setBookmarksCount((int)$folder->bookmarks_count)
-                    ->setisPublic($folder->is_public)
-                    ->build();
+                return FolderBuilder::fromModel($folder)->build();
             })
         );
 

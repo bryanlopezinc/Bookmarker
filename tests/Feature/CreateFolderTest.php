@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Folder;
+use App\Models\Taggable;
 use App\Models\UserFoldersCount;
+use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
@@ -102,6 +104,52 @@ class CreateFolderTest extends TestCase
             'user_id' => $user->id,
             'name' => $name,
             'is_public' => true
+        ]);
+    }
+
+    public function testFolderTagsMustBeUnique(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->getTestResponse([
+            'name' => $this->faker->word,
+            'tags' => 'howTo,howTo,stackOverflow'
+        ])->assertJsonValidationErrors([
+            "tags.0" => [
+                "The tags.0 field has a duplicate value."
+            ],
+            "tags.1" => [
+                "The tags.1 field has a duplicate value."
+            ]
+        ]);
+    }
+
+    public function testFolderTagsCannotExceed_15(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->getTestResponse([
+            'name' => $this->faker->word,
+            'tags' => TagFactory::new()->count(16)->make()->pluck('name')->implode(',')
+        ])->assertJsonValidationErrors([
+            "tags" => ['The tags must not be greater than 15 characters.']
+        ]);
+    }
+
+    public function testCreateFolderWithTags(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->getTestResponse([
+            'name' => $this->faker->word,
+            'description' => $this->faker->sentence,
+            'tags' => TagFactory::new()->count(15)->make()->pluck('name')->implode(',')
+        ])->assertCreated();
+
+        $this->assertDatabaseHas(Taggable::class, [
+            'taggable_id' => Folder::query()->where('user_id', $user->id)->sole('id')->id,
+            'taggable_type' => Taggable::FOLDER_TYPE,
+            'tagged_by_id' => $user->id,
         ]);
     }
 }

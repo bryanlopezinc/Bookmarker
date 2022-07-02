@@ -257,7 +257,7 @@ class FetchUserBookmarksTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->saveBookmark(['tags' => $this->faker->words()]);
+        $this->saveBookmark(['tags' => TagFactory::new()->count(3)->make()->pluck('name')->all()]);
         $this->saveBookmark();
         $this->saveBookmark();
 

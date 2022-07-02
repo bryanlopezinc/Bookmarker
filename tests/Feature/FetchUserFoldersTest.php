@@ -99,6 +99,7 @@ class FetchUserFoldersTest extends TestCase
                         $json->where('attributes.tags', []);
                         $json->where('attributes.has_tags', false);
                         $json->where('attributes.tags_count', 0);
+                        $json->where('attributes.has_description', true);
 
                         //Assert the name  and decription response sent to client are sanitized
                         $json->where('attributes.name', '&lt;script&gt;alert(Cross Site Scripting)&lt;/script&gt;');
@@ -106,7 +107,7 @@ class FetchUserFoldersTest extends TestCase
 
                         (new AssertableJsonString($json->toArray()))
                             ->assertCount(2)
-                            ->assertCount(10, 'attributes')
+                            ->assertCount(11, 'attributes')
                             ->assertCount(5, 'attributes.storage')
                             ->assertStructure([
                                 "type",
@@ -114,6 +115,7 @@ class FetchUserFoldersTest extends TestCase
                                     "id",
                                     "name",
                                     "description",
+                                    "has_description",
                                     "date_created",
                                     "last_updated",
                                     "is_public",

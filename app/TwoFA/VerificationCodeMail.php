@@ -20,7 +20,7 @@ final class VerificationCodeMail extends Mailable
     public function build(): self
     {
         return $this->view('emails.verificationCode', [
-            'code' => $this->verificationCode->value
+            'code' => $this->verificationCode->code()
         ]);
     }
 }

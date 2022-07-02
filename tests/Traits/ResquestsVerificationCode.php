@@ -30,6 +30,6 @@ trait ResquestsVerificationCode
         app()->forgetInstance(TokenRepository::class);
         app()->forgetInstance(\League\OAuth2\Server\ResourceServer::class);
 
-        return $code->value;
+        return $code->code();
     }
 }

@@ -82,7 +82,7 @@ class RequestVerificationCodeTest extends TestCase
 
         Mail::assertSent(function (VerificationCodeMail $mail) use ($user, $verificationCode) {
             $this->assertSame($user->email, $mail->to[0]['address']);
-            $this->assertSame($verificationCode, $mail->getVerificationCode()->value);
+            $this->assertSame($verificationCode, $mail->getVerificationCode()->code());
             return true;
         });
     }

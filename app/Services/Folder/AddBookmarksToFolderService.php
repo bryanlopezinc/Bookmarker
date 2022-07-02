@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\Folder;
 
 use App\Collections\ResourceIDsCollection;
 use App\DataTransferObjects\Folder;

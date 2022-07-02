@@ -6,7 +6,7 @@ namespace App\Http\Controllers\Folder;
 
 use App\Collections\ResourceIDsCollection;
 use App\Rules\ResourceIdRule;
-use App\Services\HideFolderBookmarksService;
+use App\Services\Folder\HideFolderBookmarksService;
 use App\ValueObjects\ResourceID;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

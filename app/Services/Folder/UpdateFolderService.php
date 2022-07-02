@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\Folder;
 
 use App\Collections\TagsCollection;
 use App\DataTransferObjects\Builders\FolderBuilder;

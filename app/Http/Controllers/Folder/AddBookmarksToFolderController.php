@@ -6,14 +6,14 @@ namespace App\Http\Controllers\Folder;
 
 use App\Collections\ResourceIDsCollection as IDs;
 use App\Http\Requests\AddBookmarksToFolderRequest;
-use App\Services\AddBookmarksToFolderService;
+use App\Services\Folder\AddBookmarksToFolderService as Service;
 use App\ValueObjects\ResourceID;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 
 final class AddBookmarksToFolderController
 {
-    public function __invoke(AddBookmarksToFolderRequest $request, AddBookmarksToFolderService $service): JsonResponse
+    public function __invoke(AddBookmarksToFolderRequest $request, Service $service): JsonResponse
     {
         $service->add(
             IDs::fromNativeTypes($request->validated('bookmarks')),

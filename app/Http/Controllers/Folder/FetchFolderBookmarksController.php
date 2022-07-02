@@ -8,7 +8,7 @@ use App\Http\Resources\FolderBookmarkResource;
 use App\Http\Resources\PaginatedResourceCollection;
 use App\PaginationData;
 use App\Rules\ResourceIdRule;
-use App\Services\FetchFolderBookmarksService;
+use App\Services\Folder\FetchFolderBookmarksService;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Illuminate\Http\Request;

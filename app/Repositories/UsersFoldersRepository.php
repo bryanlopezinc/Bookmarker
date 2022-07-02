@@ -42,7 +42,7 @@ final class UsersFoldersRepository
             SortCriteria::NEWEST => $query->latest('folders.id'),
             SortCriteria::OLDEST => $query->oldest('folders.id'),
             SortCriteria::RECENTLY_UPDATED => $query->latest('folders.updated_at'),
-            SortCriteria::MOST_ITEMS => $query->orderByDesc('bookmarks_count'), // bookmarks_count is alias from App\Models\Folder::scopeWithBookmarksCount()
+            SortCriteria::MOST_ITEMS => $query->orderByDesc('bookmarks_count'), // bookmarks_count is alias from  folder bookmarks count query in App\Models\Folder
             SortCriteria::LEAST_ITEMS => $query->orderBy('bookmarks_count'),
         };
     }

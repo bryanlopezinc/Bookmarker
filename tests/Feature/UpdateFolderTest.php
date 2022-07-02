@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Folder;
+use App\Models\Tag;
+use App\Models\Taggable;
 use Database\Factories\FolderFactory;
+use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
@@ -254,5 +257,90 @@ class UpdateFolderTest extends TestCase
             'folder' => $folder->id + 1
         ])->assertNotFound()
             ->assertExactJson(['message' => "The folder does not exists"]);
+    }
+
+    public function testCanUpdateFolderTags(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $tags = TagFactory::new()->count(5)->create();
+
+        $this->getTestResponse([
+            'tags' => $tags->pluck('name')->implode(','),
+            'folder' => $folder->id
+        ])->assertOk();
+
+        $tags->each(function (Tag $tag) use ($folder) {
+            $this->assertDatabaseHas(Taggable::class, [
+                'taggable_id' => $folder->id,
+                'taggable_type' => Taggable::FOLDER_TYPE,
+                'tag_id' => $tag->id
+            ]);
+        });
+    }
+    
+    public function testCannotAttachExistingFolderTagsToFolder(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $tags = TagFactory::new()->count(6)->make()->pluck('name');
+
+        $this->getTestResponse([
+            'tags' => $tags->implode(','),
+            'folder' => $folder->id
+        ])->assertOk();
+
+        $this->getTestResponse([
+            'tags' => (string) $tags->random(),
+            'folder' => $folder->id
+        ])->assertStatus(409);
+    }
+
+    public function testCannotUpdateFolderTagsWhenFolderTagsIsGreaterThan_15(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+
+        $this->getTestResponse([
+            'tags' => TagFactory::new()->count(15)->make()->pluck('name')->implode(','),
+            'folder' => $folder->id
+        ])->assertOk();
+
+        $this->getTestResponse([
+            'tags' => TagFactory::new()->count(2)->make()->pluck('name')->implode(','),
+            'folder' => $folder->id
+        ])->assertStatus(400);
+    }
+
+    public function testTagsMustBeUnique(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->getTestResponse([
+            'folder' => 300,
+            'tags' => 'howTo,howTo,stackOverflow'
+        ])->assertJsonValidationErrors([
+            "tags.0" => [
+                "The tags.0 field has a duplicate value."
+            ],
+            "tags.1" => [
+                "The tags.1 field has a duplicate value."
+            ]
+        ]);
+    }
+
+    public function testFolderTagsCannotExceed_15(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->getTestResponse([
+            'folder' => 300,
+            'tags' => TagFactory::new()->count(16)->make()->pluck('name')->implode(',')
+        ])->assertJsonValidationErrors([
+            "tags" => ['The tags must not be greater than 15 characters.']
+        ]);
     }
 }

@@ -13,7 +13,7 @@ final class FolderAttributes extends Attributes
 
     /**
      * @param string $attributes A comma seperated list of attributes which can only be
-     * any of id,userId,storage,privacy,name,description
+     * any of id,userId,storage,privacy,name,description,tags
      */
     public static function only(string $attributes): self
     {
@@ -23,7 +23,8 @@ final class FolderAttributes extends Attributes
             'storage' => 'bookmarks_count',
             'privacy' => 'is_public',
             'name' => 'name',
-            'description' => 'description'
+            'description' => 'description',
+            'tags' => 'tags'
         ]));
 
         return new static($values);

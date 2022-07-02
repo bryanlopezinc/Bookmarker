@@ -59,7 +59,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('folders/bookmarks', Folder\FetchFolderBookmarksController::class)->name('folderBookmarks');
 
         Route::patch('folders', Folder\UpdateFolderController::class)
-            ->middleware([ConfirmPassword::class])
+            ->middleware([ConfirmPassword::class, ConvertStringToArray::keys('tags')])
             ->name('updateFolder');
 
         Route::post('bookmarks/folders', Folder\AddBookmarksToFolderController::class)

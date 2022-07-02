@@ -87,6 +87,16 @@ class FoldersRepositoryTest extends TestCase
             $folder->description;
             $folder->isPublic;
         });
+
+        $this->assertWillReturnOnlyAttributes('id,userId,name,description,privacy,tags', function (Folder $folder) {
+            $this->assertCount(6, $folder->toArray());
+            $folder->folderID;
+            $folder->ownerID;
+            $folder->name;
+            $folder->description;
+            $folder->isPublic;
+            $folder->tags;
+        });
     }
 
     private function assertWillReturnOnlyAttributes(string $attributes, \Closure $assertion): void

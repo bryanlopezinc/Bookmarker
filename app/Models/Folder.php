@@ -75,7 +75,7 @@ final class Folder extends Model implements TaggableInterface
         }
 
         if (!$attributes->isEmpty()) {
-            $builder->addSelect($this->qualifyColumns($attributes->except(['bookmarks_count'])));
+            $builder->addSelect($this->qualifyColumns($attributes->except(['bookmarks_count', 'tags'])));
         }
 
         $this->parseBookmarksCountRelationQuery($builder, $attributes);

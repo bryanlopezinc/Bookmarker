@@ -10,6 +10,7 @@ use App\Repositories\FolderBookmarksRepository;
 use App\ValueObjects\ResourceID;
 use App\Repositories\FoldersRepository;
 use App\Exceptions\HttpException;
+use App\QueryColumns\FolderAttributes as Attributes;
 
 final class RemoveBookmarksFromFolderService
 {
@@ -21,7 +22,9 @@ final class RemoveBookmarksFromFolderService
 
     public function remove(ResourceIDsCollection $bookmarkIDs, ResourceID $folderID): void
     {
-        (new EnsureAuthorizedUserOwnsResource)($this->repository->find($folderID));
+        $folder = $this->repository->find($folderID, Attributes::only('id,userId'));
+
+        (new EnsureAuthorizedUserOwnsResource)($folder);
 
         $this->ensureBookmarksExistsInFolder($folderID, $bookmarkIDs);
 

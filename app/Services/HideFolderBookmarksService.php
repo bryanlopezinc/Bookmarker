@@ -11,6 +11,7 @@ use App\Repositories\FetchBookmarksRepository;
 use App\Repositories\FolderBookmarksRepository;
 use App\Repositories\FoldersRepository;
 use App\ValueObjects\ResourceID;
+use App\QueryColumns\FolderAttributes as Attributes;
 
 final class HideFolderBookmarksService
 {
@@ -23,7 +24,9 @@ final class HideFolderBookmarksService
 
     public function hide(ResourceIDsCollection $bookmarkIDs, ResourceID $folderID): void
     {
-        (new EnsureAuthorizedUserOwnsResource)($this->foldersRepository->find($folderID));
+        $folder = $this->foldersRepository->find($folderID, Attributes::only('id,userId'));
+
+        (new EnsureAuthorizedUserOwnsResource)($folder);
 
         $this->ensureBookmarksExistsInFolder($folderID, $bookmarkIDs);
 

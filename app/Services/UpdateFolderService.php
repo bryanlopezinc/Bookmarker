@@ -10,6 +10,7 @@ use App\Repositories\FoldersRepository;
 use App\ValueObjects\FolderDescription;
 use App\ValueObjects\FolderName;
 use App\ValueObjects\ResourceID;
+use App\QueryColumns\FolderAttributes as Attributes;
 
 final class UpdateFolderService
 {
@@ -19,7 +20,10 @@ final class UpdateFolderService
 
     public function fromRequest(CreateFolderRequest $request): void
     {
-        $folder = $this->foldersRepository->find(ResourceID::fromRequest($request, 'folder'));
+        $folder = $this->foldersRepository->find(
+            ResourceID::fromRequest($request, 'folder'),
+            Attributes::only('id,userId,name,description,privacy')
+        );
 
         (new EnsureAuthorizedUserOwnsResource)($folder);
 

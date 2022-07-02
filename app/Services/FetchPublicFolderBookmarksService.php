@@ -10,6 +10,7 @@ use Illuminate\Pagination\Paginator;
 use App\Repositories\FoldersRepository;
 use App\Repositories\FolderBookmarksRepository;
 use App\Exceptions\FolderNotFoundHttpResponseException;
+use App\QueryColumns\FolderAttributes as Attributes;
 
 final class FetchPublicFolderBookmarksService
 {
@@ -24,7 +25,7 @@ final class FetchPublicFolderBookmarksService
      */
     public function fetch(ResourceID $folderID, PaginationData $pagination): Paginator
     {
-        $folder = $this->foldersRepository->find($folderID);
+        $folder = $this->foldersRepository->find($folderID, Attributes::only('privacy'));
 
         if (!$folder->isPublic) throw new FolderNotFoundHttpResponseException;
 

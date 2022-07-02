@@ -7,7 +7,7 @@ namespace App\Services;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\Repositories\{DeleteFoldersRepository, FoldersRepository};
 use App\ValueObjects\ResourceID;
-use App\Exceptions\FolderNotFoundHttpResponseException as HttpException;
+use App\QueryColumns\FolderAttributes as Attributes;
 
 final class DeleteFolderService
 {
@@ -32,7 +32,9 @@ final class DeleteFolderService
 
     private function deleteFolder(ResourceID $folderID, bool $recursive = false): void
     {
-        (new EnsureAuthorizedUserOwnsResource)($this->foldersRepository->find($folderID));
+        $folder = $this->foldersRepository->find($folderID, Attributes::only('id,userId'));
+
+        (new EnsureAuthorizedUserOwnsResource)($folder);
 
         if ($recursive) {
             $this->deleteFoldersRepository->deleteRecursive($folderID);

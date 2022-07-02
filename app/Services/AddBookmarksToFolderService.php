@@ -13,6 +13,7 @@ use App\Repositories\FolderBookmarksRepository;
 use App\ValueObjects\ResourceID;
 use App\Repositories\FoldersRepository;
 use App\Exceptions\HttpException as HttpException;
+use App\QueryColumns\FolderAttributes as Attributes;
 
 final class AddBookmarksToFolderService
 {
@@ -25,7 +26,9 @@ final class AddBookmarksToFolderService
 
     public function add(ResourceIDsCollection $bookmarkIDs, ResourceID $folderID, ResourceIDsCollection $makeHidden): void
     {
-        (new EnsureAuthorizedUserOwnsResource)($folder = $this->repository->find($folderID));
+        $folder = $this->repository->find($folderID, Attributes::only('id,userId,storage'));
+
+        (new EnsureAuthorizedUserOwnsResource)($folder);
 
         $this->ensureFolderCanContainBookmarks($bookmarkIDs, $folder);
 

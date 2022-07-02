@@ -149,8 +149,6 @@ final class FolderBookmarksRepository
     {
         FolderBookmarkModel::where('folder_id', $folderID->toInt())
             ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())
-            ->update([
-                'is_public' => false
-            ]);
+            ->update(['is_public' => false]);
     }
 }

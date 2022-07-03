@@ -69,6 +69,18 @@ class DeleteBookmarkTagsTest extends TestCase
         $this->getTestResponse(['id' => $model->id + 1, 'tags' => $this->faker->word])->assertNotFound();
     }
 
+    public function testWillReturnSuccessIfBookmarkDoesNotHaveTags(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $model = BookmarkFactory::new()->create([ 'user_id' => $user->id]);
+
+        $this->getTestResponse([
+            'id' => $model->id,
+            'tags' => $this->faker->word
+        ])->assertOk();
+    }
+
     public function testWillReturnForbiddenWhenUserDoesNotOwnBookmark(): void
     {
         Passport::actingAs(UserFactory::new()->create());

@@ -9,7 +9,6 @@ use App\Models\FolderBookmarksCount;
 use App\Models\UserBookmarksCount;
 use App\Models\UserFavouritesCount;
 use App\Repositories\DeleteBookmarksRepository;
-use App\ValueObjects\UserID;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -39,8 +38,7 @@ class DeleteBookmarksRepositoryTest extends TestCase
             'count'   => 5,
         ]);
 
-        $this->repository->deleteManyFor(
-            new UserID($user->id),
+        $this->repository->delete(
             ResourceIDsCollection::fromNativeTypes($bookmarks->pluck('id'))
         );
 
@@ -70,8 +68,7 @@ class DeleteBookmarksRepositoryTest extends TestCase
             'count' => 1
         ]);
 
-        $this->repository->deleteManyFor(
-            new UserID($userID),
+        $this->repository->delete(
             ResourceIDsCollection::fromNativeTypes($bookmarkIDs)
         );
 
@@ -106,8 +103,7 @@ class DeleteBookmarksRepositoryTest extends TestCase
             'count' => 1
         ]);
 
-        $this->repository->deleteManyFor(
-            new UserID($userID),
+        $this->repository->delete(
             ResourceIDsCollection::fromNativeTypes($bookmarkIDs)
         );
 
@@ -141,8 +137,7 @@ class DeleteBookmarksRepositoryTest extends TestCase
             'count'   => 1,
         ]);
 
-        $this->repository->deleteManyFor(
-            new UserID($user->id),
+        $this->repository->delete(
             ResourceIDsCollection::fromNativeTypes($bookmarkIDs)
         );
 
@@ -173,8 +168,7 @@ class DeleteBookmarksRepositoryTest extends TestCase
         ]);
 
         //delete all except last one which was added to favourites
-        $this->repository->deleteManyFor(
-            new UserID($user->id),
+        $this->repository->delete(
             ResourceIDsCollection::fromNativeTypes($bookmarkIDs->take(4))
         );
 

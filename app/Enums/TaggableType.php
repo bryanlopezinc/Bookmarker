@@ -6,10 +6,10 @@ namespace App\Enums;
 
 use App\Models\Taggable;
 
-enum TaggableType: string
+enum TaggableType
 {
-    case BOOKMARK = 'bookmark';
-    case FOLDER = 'folder';
+    case BOOKMARK;
+    case FOLDER;
 
     public function type(): int
     {

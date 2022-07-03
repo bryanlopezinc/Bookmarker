@@ -13,14 +13,14 @@ use Illuminate\Database\Eloquent\Collection;
 
 final class DeleteBookmarksRepository
 {
-    public function deleteManyFor(UserID $userId, ResourceIDsCollection $bookmarkIds): bool
+    public function delete(ResourceIDsCollection $bookmarkIDs): bool
     {
         //Prevent bookmark from being health checked if it has been retrieved
-        $bookmarkIds->asIntegers()->each(function (int $bookmarkID) {
+        $bookmarkIDs->asIntegers()->each(function (int $bookmarkID) {
             (new BookmarkObserver)->deleting(new Model(['id' => $bookmarkID]));
         });
 
-        return (bool) Model::query()->where('user_id', $userId->toInt())->whereIn('id', $bookmarkIds->asIntegers())->delete();
+        return (bool) Model::whereIn('id', $bookmarkIDs->asIntegers())->delete();
     }
 
     /**

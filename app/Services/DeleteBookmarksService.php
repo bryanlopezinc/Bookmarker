@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Collections\ResourceIDsCollection;
-use App\DataTransferObjects\Bookmark;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkAttributes;
 use App\Repositories\DeleteBookmarksRepository;
 use App\Repositories\FetchBookmarksRepository;
-use App\ValueObjects\UserID;
 
 final class DeleteBookmarksService
 {
@@ -30,6 +28,6 @@ final class DeleteBookmarksService
 
         $bookmarks->each(new EnsureAuthorizedUserOwnsResource);
 
-        $this->deleteBookmarks->deleteManyFor(UserID::fromAuthUser(), $bookmarkIds);
+        $this->deleteBookmarks->delete($bookmarkIds);
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Repositories;
+namespace Tests\Unit\Repositories\Folder;
 
 use Tests\TestCase;
 use App\PaginationData;
@@ -10,7 +10,7 @@ use App\DataTransferObjects\Folder;
 use Database\Factories\UserFactory;
 use App\Models\FolderBookmarksCount;
 use Database\Factories\FolderFactory;
-use App\Repositories\UsersFoldersRepository;
+use App\Repositories\Folder\UsersFoldersRepository;
 use Illuminate\Foundation\Testing\WithFaker;
 
 class UsersFoldersRepositoryTest extends TestCase

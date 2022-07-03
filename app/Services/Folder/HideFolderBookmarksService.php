@@ -8,17 +8,19 @@ use App\Collections\ResourceIDsCollection;
 use App\Exceptions\HttpException;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\Repositories\FetchBookmarksRepository;
-use App\Repositories\FolderBookmarksRepository;
-use App\Repositories\FoldersRepository;
+use App\Repositories\Folder\FetchFolderBookmarksRepository;
+use App\Repositories\Folder\FoldersRepository;
 use App\ValueObjects\ResourceID;
 use App\QueryColumns\FolderAttributes as Attributes;
+use App\Repositories\Folder\FolderBookmarkRepository;
 
 final class HideFolderBookmarksService
 {
     public function __construct(
-        private FolderBookmarksRepository $repository,
+        private FetchFolderBookmarksRepository $repository,
         private FoldersRepository $foldersRepository,
-        private FetchBookmarksRepository $bookmarksRepository
+        private FetchBookmarksRepository $bookmarksRepository,
+        private FolderBookmarkRepository $createFolderBookmark
     ) {
     }
 
@@ -30,7 +32,7 @@ final class HideFolderBookmarksService
 
         $this->ensureBookmarksExistsInFolder($folderID, $bookmarkIDs);
 
-        $this->repository->makeHidden($folderID, $bookmarkIDs);
+        $this->createFolderBookmark->makeHidden($folderID, $bookmarkIDs);
     }
 
     private function ensureBookmarksExistsInFolder(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): void

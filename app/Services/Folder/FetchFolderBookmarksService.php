@@ -7,8 +7,8 @@ namespace App\Services\Folder;
 use App\DataTransferObjects\FolderBookmark;
 use App\PaginationData;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\Repositories\FolderBookmarksRepository;
-use App\Repositories\FoldersRepository;
+use App\Repositories\Folder\FetchFolderBookmarksRepository;
+use App\Repositories\Folder\FoldersRepository;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Illuminate\Pagination\Paginator;
@@ -17,7 +17,7 @@ use App\QueryColumns\FolderAttributes as Attributes;
 final class FetchFolderBookmarksService
 {
     public function __construct(
-        private FolderBookmarksRepository $folderBookmarksRepository,
+        private FetchFolderBookmarksRepository $folderBookmarksRepository,
         private FoldersRepository $foldersRepository
     ) {
     }

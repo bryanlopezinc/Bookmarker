@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Repositories;
+namespace App\Repositories\Folder;
 
 use App\DataTransferObjects\Builders\FolderBuilder;
 use App\DataTransferObjects\Folder;

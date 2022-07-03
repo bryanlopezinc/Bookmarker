@@ -10,15 +10,18 @@ use App\DataTransferObjects\Folder;
 use App\Exceptions\HttpException;
 use App\Http\Requests\CreateFolderRequest;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\Repositories\FoldersRepository;
+use App\Repositories\Folder\FoldersRepository;
 use App\ValueObjects\ResourceID;
 use App\QueryColumns\FolderAttributes as Attributes;
+use App\Repositories\Folder\UpdateFolderRepository;
 use Illuminate\Http\Response;
 
 final class UpdateFolderService
 {
-    public function __construct(private FoldersRepository $foldersRepository)
-    {
+    public function __construct(
+        private FoldersRepository $foldersRepository,
+        private UpdateFolderRepository $updateFolderRepository
+    ) {
     }
 
     public function fromRequest(CreateFolderRequest $request): void
@@ -34,7 +37,7 @@ final class UpdateFolderService
 
         $this->ensureCanAddTagsToFolder($folder, $newAttributes->tags);
 
-        $this->foldersRepository->update($folder->folderID, $newAttributes);
+        $this->updateFolderRepository->update($folder->folderID, $newAttributes);
     }
 
     private function buildFolder(CreateFolderRequest $request, Folder $folder): Folder

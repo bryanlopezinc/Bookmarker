@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Folder;
 
 use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\Repositories\{DeleteFoldersRepository, FoldersRepository};
+use App\Repositories\DeleteFoldersRepository;
+use App\Repositories\Folder\FoldersRepository;
 use App\ValueObjects\ResourceID;
 use App\QueryColumns\FolderAttributes as Attributes;
 

@@ -9,7 +9,7 @@ use App\Http\Requests\FetchUserFoldersRequest;
 use App\Http\Resources\FolderResource;
 use App\Http\Resources\PaginatedResourceCollection;
 use App\PaginationData;
-use App\Repositories\UsersFoldersRepository;
+use App\Repositories\Folder\UsersFoldersRepository;
 use App\ValueObjects\UserID;
 
 final class FetchUserFoldersController

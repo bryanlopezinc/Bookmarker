@@ -9,18 +9,20 @@ use App\DataTransferObjects\Folder;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkAttributes;
 use App\Repositories\FetchBookmarksRepository;
-use App\Repositories\FolderBookmarksRepository;
+use App\Repositories\Folder\FetchFolderBookmarksRepository;
 use App\ValueObjects\ResourceID;
-use App\Repositories\FoldersRepository;
+use App\Repositories\Folder\FoldersRepository;
 use App\Exceptions\HttpException as HttpException;
 use App\QueryColumns\FolderAttributes as Attributes;
+use App\Repositories\Folder\FolderBookmarkRepository;
 
 final class AddBookmarksToFolderService
 {
     public function __construct(
         private FoldersRepository $repository,
         private FetchBookmarksRepository $bookmarksRepository,
-        private FolderBookmarksRepository $folderBookmarks
+        private FetchFolderBookmarksRepository $folderBookmarks,
+        private FolderBookmarkRepository $createFolderBookmark
     ) {
     }
 
@@ -36,7 +38,7 @@ final class AddBookmarksToFolderService
 
         $this->checkFolderForPossibleDuplicates($folderID, $bookmarkIDs);
 
-        $this->folderBookmarks->add($folderID, $bookmarkIDs, $makeHidden);
+        $this->createFolderBookmark->add($folderID, $bookmarkIDs, $makeHidden);
     }
 
     private function ensureFolderCanContainBookmarks(ResourceIDsCollection $bookmarks, Folder $folder): void

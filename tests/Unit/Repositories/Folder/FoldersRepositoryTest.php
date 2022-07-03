@@ -1,47 +1,19 @@
 <?php
 
-namespace Tests\Unit\Repositories;
+namespace Tests\Unit\Repositories\Folder;
 
-use App\Collections\TagsCollection;
-use App\DataTransferObjects\Builders\FolderBuilder;
 use App\DataTransferObjects\Folder;
-use App\Models\UserFoldersCount;
 use App\QueryColumns\FolderAttributes;
 use Tests\TestCase;
-use App\Repositories\FoldersRepository;
+use App\Repositories\Folder\FoldersRepository;
 use App\ValueObjects\ResourceID;
 use Database\Factories\FolderFactory;
-use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use ReflectionProperty;
 
 class FoldersRepositoryTest extends TestCase
 {
     use WithFaker;
-
-    public function testWillIncrementFoldersCount(): void
-    {
-        $folder = (new FolderBuilder())
-            ->setCreatedAt(now())
-            ->setDescription($this->faker->sentence)
-            ->setName($this->faker->word)
-            ->setOwnerID($userID = UserFactory::new()->create()->id)
-            ->setisPublic(false)
-            ->setTags(new TagsCollection([]))
-            ->build();
-
-        $repository = new FoldersRepository;
-
-        $repository->create($folder);
-        $repository->create($folder);
-        $repository->create($folder);
-
-        $this->assertDatabaseHas(UserFoldersCount::class, [
-            'user_id' => $userID,
-            'count' => 3,
-            'type' => UserFoldersCount::TYPE
-        ]);
-    }
 
     /**
      * Attributes assertions are combinations used throughOut the app.

@@ -2,22 +2,21 @@
 
 declare(strict_types=1);
 
-namespace App\Repositories;
+namespace App\Repositories\Folder;
 
 use App\Collections\ResourceIDsCollection as IDs;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\FolderBookmark;
-use App\Models\Folder as Model;
 use App\Models\FolderBookmark as FolderBookmarkModel;
-use App\Models\FolderBookmarksCount;
 use App\PaginationData;
+use App\Repositories\FavouritesRepository;
+use App\Repositories\FetchBookmarksRepository;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Collection;
 
-final class FolderBookmarksRepository
+final class FetchFolderBookmarksRepository
 {
     /**
      * @return Paginator<FolderBookmark>
@@ -97,58 +96,5 @@ final class FolderBookmarksRepository
             ->count();
 
         return $bookmarkIDs->count() === $resultCount;
-    }
-
-    public function add(ResourceID $folderID, IDs $bookmarkIDs, IDs $makeHidden): void
-    {
-        $makeHidden = $makeHidden->asIntegers();
-
-        $bookmarkIDs
-            ->asIntegers()
-            ->map(fn (int $bookmarkID) => [
-                'bookmark_id' => $bookmarkID,
-                'folder_id' => $folderID->toInt(),
-                'is_public' => $makeHidden->containsStrict($bookmarkID) ? false : true
-            ])
-            ->tap(fn (Collection $data) => FolderBookmarkModel::insert($data->all()));
-
-        $this->incrementFolderBookmarksCount($folderID, $bookmarkIDs->count());
-
-        $this->updateTimeStamp($folderID);
-    }
-
-    private function updateTimeStamp(ResourceID $folderID): void
-    {
-        Model::query()->whereKey($folderID->toInt())->first()->touch();
-    }
-
-    /**
-     * @return int number of deleted records.
-     */
-    public function removeBookmarksFromFolder(ResourceID $folderID, IDs $bookmarkIDs): int
-    {
-        $deleted = FolderBookmarkModel::where('folder_id', $folderID->toInt())->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())->delete();
-
-        if ($deleted > 0) {
-            $this->updateTimeStamp($folderID);
-        }
-
-        return $deleted;
-    }
-
-    private function incrementFolderBookmarksCount(ResourceID $folderID, int $amount): void
-    {
-        $model = FolderBookmarksCount::query()->firstOrCreate(['folder_id' => $folderID->toInt()], ['count' => $amount]);
-
-        if (!$model->wasRecentlyCreated) {
-            $model->increment('count', $amount);
-        }
-    }
-
-    public function makeHidden(ResourceID $folderID, IDs $bookmarkIDs): void
-    {
-        FolderBookmarkModel::where('folder_id', $folderID->toInt())
-            ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())
-            ->update(['is_public' => false]);
     }
 }

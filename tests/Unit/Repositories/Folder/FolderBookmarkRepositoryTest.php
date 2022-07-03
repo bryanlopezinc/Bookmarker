@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Repositories;
+namespace Tests\Unit\Repositories\Folder;
 
 use App\Collections\ResourceIDsCollection;
 use App\Models\FolderBookmark;
-use App\Repositories\FolderBookmarksRepository;
+use App\Repositories\Folder\FolderBookmarkRepository;
 use App\ValueObjects\ResourceID;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Tests\TestCase;
 
-class FolderBookmarksRepositoryTest extends TestCase
+class FolderBookmarkRepositoryTest extends TestCase
 {
     public function testFolderCannotHaveDuplicateBookmarks(): void
     {
         $this->expectExceptionCode(23000);
 
-        $repository = new FolderBookmarksRepository;
+        $repository = new FolderBookmarkRepository;
         $bookmarkIDs = BookmarkFactory::new()->count(5)->create()->pluck('id');
         $folder = FolderFactory::new()->create();
 
@@ -31,7 +31,7 @@ class FolderBookmarksRepositoryTest extends TestCase
 
     public function testWillMakeBookmarksHidden(): void
     {
-        $repository = new FolderBookmarksRepository;
+        $repository = new FolderBookmarkRepository;
         $bookmarkIDs = BookmarkFactory::new()->count(5)->create()->pluck('id');
         $folder = FolderFactory::new()->create();
 

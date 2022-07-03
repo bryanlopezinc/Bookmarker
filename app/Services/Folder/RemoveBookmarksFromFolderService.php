@@ -6,17 +6,19 @@ namespace App\Services\Folder;
 
 use App\Collections\ResourceIDsCollection;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\Repositories\FolderBookmarksRepository;
+use App\Repositories\Folder\FetchFolderBookmarksRepository;
 use App\ValueObjects\ResourceID;
-use App\Repositories\FoldersRepository;
+use App\Repositories\Folder\FoldersRepository;
 use App\Exceptions\HttpException;
 use App\QueryColumns\FolderAttributes as Attributes;
+use App\Repositories\Folder\FolderBookmarkRepository;
 
 final class RemoveBookmarksFromFolderService
 {
     public function __construct(
         private FoldersRepository $repository,
-        private FolderBookmarksRepository $folderBookmarks
+        private FetchFolderBookmarksRepository $folderBookmarks,
+        private FolderBookmarkRepository $deleteFolderBookmark
     ) {
     }
 
@@ -28,7 +30,7 @@ final class RemoveBookmarksFromFolderService
 
         $this->ensureBookmarksExistsInFolder($folderID, $bookmarkIDs);
 
-        $this->folderBookmarks->removeBookmarksFromFolder($folderID, $bookmarkIDs);
+        $this->deleteFolderBookmark->remove($folderID, $bookmarkIDs);
     }
 
     private function ensureBookmarksExistsInFolder(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): void

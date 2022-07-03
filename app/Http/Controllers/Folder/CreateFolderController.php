@@ -7,14 +7,14 @@ namespace App\Http\Controllers\Folder;
 use App\Collections\TagsCollection;
 use App\DataTransferObjects\Builders\FolderBuilder;
 use App\Http\Requests\CreateFolderRequest;
-use App\Repositories\FoldersRepository;
+use App\Repositories\Folder\CreateFolderRepository;
 use App\ValueObjects\UserID;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 
 final class CreateFolderController
 {
-    public function __invoke(CreateFolderRequest $request, FoldersRepository $repository): JsonResponse
+    public function __invoke(CreateFolderRequest $request, CreateFolderRepository $repository): JsonResponse
     {
         $folder = (new FolderBuilder())
             ->setCreatedAt(now())

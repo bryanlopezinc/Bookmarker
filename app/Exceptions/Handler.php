@@ -38,4 +38,12 @@ class Handler extends ExceptionHandler
             //
         });
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function shouldReturnJson($request, Throwable $e)
+    {
+        return true;
+    }
 }

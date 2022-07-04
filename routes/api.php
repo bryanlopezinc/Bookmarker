@@ -74,6 +74,10 @@ Route::middleware('auth:api')->group(function () {
             ->middleware(ConvertStringToArray::keys('bookmarks'))
             ->name('removeBookmarksFromFolder');
 
+        Route::delete('folders/tags/remove', Controllers\Folder\DeleteFolderTagsController::class)
+            ->middleware([ConvertStringToArray::keys('tags')])
+            ->name('deleteFolderTags');
+
         Route::get('email/verify/{id}/{hash}', Auth\VerifyEmailController::class)
             ->middleware('signed')
             ->name('verification.verify');

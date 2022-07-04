@@ -68,7 +68,7 @@ class ResetPasswordTest extends TestCase
             'password_confirmation' => self::NEW_PASSWORD,
             'token' => 'token'
         ])->assertNotFound()->assertExactJson([
-            'message' => 'Could not find user with given email'
+            'message' => 'User not found'
         ]);
     }
 
@@ -81,9 +81,10 @@ class ResetPasswordTest extends TestCase
             'password' => self::NEW_PASSWORD,
             'password_confirmation' => self::NEW_PASSWORD,
             'token' => 'token'
-        ])->assertNotFound()->assertExactJson([
-            'message' => 'Invalid reset token'
-        ]);
+        ])->assertStatus(400)
+            ->assertExactJson([
+                'message' => 'Invalid reset token'
+            ]);
     }
 
     public function testSuccessResponse(): void

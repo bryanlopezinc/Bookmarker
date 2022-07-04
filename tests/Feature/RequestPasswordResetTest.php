@@ -42,7 +42,7 @@ class RequestPasswordResetTest extends TestCase
         $this->getTestResponse(['email'  => 'non-existentUser@yahoo.com'])
             ->assertNotFound()
             ->assertExactJson([
-                'message' => 'Could not find user with given email'
+                'message' => 'User not found'
             ]);
     }
 

@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
+use App\Exceptions\UserNotFoundHttpException;
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
 use Illuminate\Contracts\Auth\PasswordBroker;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 
 final class RequestPasswordResetController
 {
@@ -27,12 +28,19 @@ final class RequestPasswordResetController
             $user->notify(new ResetPasswordNotification($token));
         });
 
-        $response = fn (string $message, int $status) => response()->json(['message' => $message], $status);
+        return $this->resolveResponse($status);
+    }
 
-        return match ($status) {
-            $this->passwordBroker::INVALID_USER => $response('Could not find user with given email', Response::HTTP_NOT_FOUND),
-            $this->passwordBroker::RESET_THROTTLED => $response('Too many requests', Response::HTTP_TOO_MANY_REQUESTS),
-            default => $response('success', Response::HTTP_OK)
-        };
+    private function resolveResponse(string $status): JsonResponse
+    {
+        if ($status === PasswordBroker::INVALID_USER) {
+            throw new UserNotFoundHttpException;
+        }
+
+        if ($status === PasswordBroker::RESET_THROTTLED) {
+            throw new  ThrottleRequestsException('Too Many Requests');
+        }
+
+        return response()->json(['message' => 'success']);
     }
 }

@@ -15,7 +15,7 @@ trait AssertsBookmarksWillBeHealthchecked
     {
         $checked = TestBookmarksHealthRepository::requestedBookmarkIDs();
 
-        collect($bookmarks)->each(fn (int $bookmarkID) => $this->assertTrue(in_array($bookmarkID, $checked,true)));
+        collect($bookmarks)->each(fn (int $bookmarkID) => $this->assertTrue(in_array($bookmarkID, $checked, true)));
     }
 
     /**

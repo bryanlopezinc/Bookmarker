@@ -7,6 +7,7 @@ namespace App;
 use App\Collections\BookmarksCollection;
 use App\Contracts\BookmarksHealthRepositoryInterface;
 use App\DataTransferObjects\Bookmark;
+use App\ValueObjects\ResourceID;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -23,21 +24,21 @@ final class HealthChecker
             return;
         }
 
-        $data = [];
+        $healthCheckResults = [];
 
         $responses = $this->getResponse(
             $bookmarks->filterByIDs($this->repository->whereNotRecentlyChecked($bookmarks->ids()))
         );
 
         foreach ($responses as $id => $response) {
-            $data[$id] = $response->status() === 404 ? false : true;
+            $healthCheckResults[] = new HealthCheckResult(new ResourceID($id), $response);
         }
 
-        if (empty($data)) {
+        if (empty($healthCheckResults)) {
             return;
         }
 
-        $this->repository->update($data);
+        $this->repository->update($healthCheckResults);
     }
 
     /**

@@ -35,7 +35,7 @@ class BookmarksHealthRepositoryServiceProvider extends ServiceProvider
         $this->app->addContextualBinding(
             HealthChecker::class,
             BookmarksHealthRepositoryInterface::class,
-            fn (Application $app) => $app->environment('testing') ? new TestBookmarksHealthRepository : $concrete
+            fn (Application $app) => $app->environment('testing') ? new TestBookmarksHealthRepository($concrete) : $concrete
         );
     }
 }

@@ -5,20 +5,20 @@ declare(strict_types=1);
 namespace App\Contracts;
 
 use App\Collections\ResourceIDsCollection;
+use App\HealthCheckResult;
 
 interface BookmarksHealthRepositoryInterface
 {
     /**
-     * Get the bookmark IDs that have not been recently checked
-     * or return the ids that have never been checked from the given bookmark IDs.
+     * Get the bookmark IDs that has not been recently checked
+     * with the ids that has never been checked from the given bookmark IDs.
      */
     public function whereNotRecentlyChecked(ResourceIDsCollection $bookmarkIDs): ResourceIDsCollection;
 
     /**
-     * update the given bookmarks health
+     * Update the given bookmarks health status.
      *
-     * @param array<int,bool> $records An associative array of health checked data
-     *  where each key is the bookmarkID and the value (a bool) indicating if the heathCheck passed or failed.
+     * @param array<HealthCheckResult> $records
      */
     public function update(array $records): void;
 }

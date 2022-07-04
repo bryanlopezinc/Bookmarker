@@ -12,7 +12,7 @@ final class TestBookmarksHealthRepository implements BookmarksHealthRepositoryIn
     /** @var array<int,bool> */
     private static $requestedBookmarkIDs = [];
 
-    public function __construct()
+    public function __construct(private BookmarksHealthRepositoryInterface $baseRepository)
     {
         if (!app()->environment('testing')) {
             throw new \RuntimeException(__CLASS__ . ' can only be used in test enviroments');
@@ -31,9 +31,12 @@ final class TestBookmarksHealthRepository implements BookmarksHealthRepositoryIn
 
     public function whereNotRecentlyChecked(ResourceIDsCollection $bookmarkIDs): ResourceIDsCollection
     {
-        $bookmarkIDs->asIntegers()->each(fn (int $bookmarkID) => static::$requestedBookmarkIDs[$bookmarkID] = true);
+        $this->baseRepository
+            ->whereNotRecentlyChecked($bookmarkIDs)
+            ->asIntegers()
+            ->each(fn (int $bookmarkID) => static::$requestedBookmarkIDs[$bookmarkID] = true);
 
-        return ResourceIDsCollection::fromNativeTypes([]);
+        return new ResourceIDsCollection([]);
     }
 
     public function update(array $records): void

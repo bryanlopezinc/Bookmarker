@@ -6,7 +6,10 @@ namespace App\Repositories;
 
 use App\Collections\ResourceIDsCollection;
 use App\Contracts\BookmarksHealthRepositoryInterface;
+use App\HealthCheckResult;
 use App\Models\BookmarkHealth;
+use App\ValueObjects\ResourceID;
+use Illuminate\Support\Collection;
 
 final class BookmarksHealthRepository implements BookmarksHealthRepositoryInterface
 {
@@ -15,17 +18,21 @@ final class BookmarksHealthRepository implements BookmarksHealthRepositoryInterf
      */
     public function whereNotRecentlyChecked(ResourceIDsCollection $bookmarkIDs): ResourceIDsCollection
     {
-        $foundBookmarkIDs = collect();
+        $bookmarkIDs = $bookmarkIDs->asIntegers();
 
-        $bookmarks = BookmarkHealth::whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())->get(['bookmark_id', 'last_checked']);
+        /** @var \Illuminate\Database\Eloquent\Collection */
+        $bookmarksHealths = BookmarkHealth::whereIn('bookmark_id', $bookmarkIDs)->get(['bookmark_id', 'last_checked']);
 
-        $foundBookmarkIDs->push(...$bookmarks->pluck('bookmark_id')->all());
+        $notCheckedRecently = $bookmarksHealths->where('last_checked', '<=', now()->subDays(setting('HEALTH_CHECK_FREQUENCY')));
 
-        return ResourceIDsCollection::fromNativeTypes(
-            $bookmarks->where('last_checked', '<=', now()->subDays(setting('HEALTH_CHECK_FREQUENCY')))
-                ->pluck('bookmark_id')
-                ->merge($bookmarkIDs->asIntegers()->diff($foundBookmarkIDs)) // merge bookmark ids that have never been checked.
-        );
+        //The bookmarkIDs that does not exists in the database.
+        $missingRecords = $bookmarkIDs->diff($bookmarksHealths->pluck('bookmark_id'));
+
+        return $notCheckedRecently
+            ->pluck('bookmark_id')
+            ->merge($missingRecords)
+            ->map(fn (int $bookmarkID) => new ResourceID($bookmarkID))
+            ->pipeInto(ResourceIDsCollection::class);
     }
 
     /**
@@ -33,16 +40,19 @@ final class BookmarksHealthRepository implements BookmarksHealthRepositoryInterf
      */
     public function update(array $records): void
     {
-        $time = now();
+        $lastChecked = now();
 
-        BookmarkHealth::whereIn('bookmark_id', array_keys($records))->delete();
+        collect($records)
+            ->tap(function (Collection $collection) {
+                $bookmarkIDs = $collection->map(fn (HealthCheckResult $result) => $result->bookmarkID->toInt())->all();
 
-        $data = collect($records)->map(fn (bool $isHealthy, int $bookmarkID) => [
-            'bookmark_id' => $bookmarkID,
-            'is_healthy' => $isHealthy,
-            'last_checked' => $time
-        ]);
-
-        BookmarkHealth::insert($data->all());
+                BookmarkHealth::whereIn('bookmark_id', $bookmarkIDs)->delete();
+            })
+            ->map(fn (HealthCheckResult $result) => [
+                'bookmark_id' => $result->bookmarkID->toInt(),
+                'is_healthy' => $result->response->status() !== 404,
+                'last_checked' => $lastChecked
+            ])
+            ->tap(fn (Collection $collection) => BookmarkHealth::insert($collection->all()));
     }
 }

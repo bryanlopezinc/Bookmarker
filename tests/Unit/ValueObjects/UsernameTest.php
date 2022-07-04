@@ -16,7 +16,7 @@ class UsernameTest extends TestCase
         $this->expectException(InvalidUsernameException::class);
         $this->expectExceptionCode(5000);
 
-        new Username(Str::random(Username::MAX + 1));
+        new Username(Str::random(Username::MAX_LENGTH + 1));
     }
 
     public function testWillThrowExceptionWhenUsernameLengthIsTooShort(): void
@@ -24,7 +24,7 @@ class UsernameTest extends TestCase
         $this->expectException(InvalidUsernameException::class);
         $this->expectExceptionCode(5001);
 
-        new Username(Str::random(Username::MIN - 1));
+        new Username(Str::random(Username::MIN_LENGTH - 1));
     }
 
     public function testWillThrowExceptionWhenUsernameContainsInvalidChars(): void
@@ -33,7 +33,7 @@ class UsernameTest extends TestCase
 
         $exceptionCode = function (string $char): int {
             try {
-                new Username(Str::random(Username::MAX - 1) . $char);
+                new Username(Str::random(Username::MAX_LENGTH - 1) . $char);
 
                 return 0;
             } catch (InvalidUsernameException $e) {

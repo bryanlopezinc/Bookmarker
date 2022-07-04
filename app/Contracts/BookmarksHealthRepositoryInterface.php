@@ -16,7 +16,7 @@ interface BookmarksHealthRepositoryInterface
 
     /**
      * update the given bookmarks health
-     * 
+     *
      * @param array<int,bool> $records An associative array of health checked data
      *  where each key is the bookmarkID and the value (a bool) indicating if the heathCheck passed or failed.
      */

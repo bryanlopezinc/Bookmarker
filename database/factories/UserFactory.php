@@ -33,7 +33,7 @@ class UserFactory extends Factory
 
     public static function randomUsername(): string
     {
-        return Str::random(Username::MAX - 2) . '_' . rand(0, 9);
+        return Str::random(Username::MAX_LENGTH - 2) . '_' . rand(0, 9);
     }
 
     /**

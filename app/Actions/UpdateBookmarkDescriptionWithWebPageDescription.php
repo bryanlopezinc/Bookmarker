@@ -28,8 +28,11 @@ final class UpdateBookmarkDescriptionWithWebPageDescription
             return;
         }
 
-        Model::query()->where('id', $bookmark->id->toInt())->update([
-            'description' => Str::limit($description, BookmarkDescription::MAX - 3)
-        ]);
+        Model::query()
+            ->where('id', $bookmark->id->toInt())
+            ->update([
+                //subtract 3 from MAX_LENGTH to accomodate the 'end' (...) value
+                'description' => Str::limit($description, BookmarkDescription::MAX_LENGTH - 3)
+            ]);
     }
 }

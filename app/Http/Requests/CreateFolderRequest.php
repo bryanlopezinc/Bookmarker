@@ -16,8 +16,8 @@ final class CreateFolderRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'name' => ['string', 'max:' . FolderName::MAX, 'filled'],
-            'description' => ['nullable', 'string', 'max:' . FolderDescription::MAX],
+            'name' => ['string', 'max:' . FolderName::MAX_LENGTH, 'filled'],
+            'description' => ['nullable', 'string', 'max:' . FolderDescription::MAX_LENGTH],
             'is_public' => ['nullable', 'bool'],
             'tags' => ['nullable', 'filled', join(':', ['max', setting('MAX_FOLDER_TAGS')])],
             'tags.*' => Tag::rules(['distinct:strict']),

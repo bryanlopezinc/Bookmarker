@@ -34,7 +34,7 @@ final class FolderResource extends JsonResource
                 'tags_count' => $this->folder->tags->count(),
                 'storage' => [
                     'items_count' => $this->folder->storage->total,
-                    'capacity' => $this->folder->storage::MAX,
+                    'capacity' => $this->folder->storage::MAX_ITEMS,
                     'is_full' => $this->folder->storage->isFull(),
                     'available' => $this->folder->storage->spaceAvailable(),
                     'percentage_used' => $this->folder->storage->percentageUsed(),

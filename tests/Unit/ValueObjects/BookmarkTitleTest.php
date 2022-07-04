@@ -30,7 +30,7 @@ class BookmarkTitleTest extends TestCase
     {
         $this->expectException(\LengthException::class);
 
-        new BookmarkTitle(str_repeat('a', BookmarkTitle::MAX + 1));
+        new BookmarkTitle(str_repeat('a', BookmarkTitle::MAX_LENGTH + 1));
     }
 
     public function testWillConvertSpecialCharacters(): void

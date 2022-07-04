@@ -29,7 +29,8 @@ final class UpdateBookmarkTitleWithWebPageTitle
         Model::query()
             ->where('id', $bookmark->id->toInt())
             ->update([
-                'title' => Str::limit($title, BookmarkTitle::MAX - 3)
+                //subtract 3 from MAX_LENGTH to accomodate the 'end' (...) value
+                'title' => Str::limit($title, BookmarkTitle::MAX_LENGTH - 3)
             ]);
     }
 }

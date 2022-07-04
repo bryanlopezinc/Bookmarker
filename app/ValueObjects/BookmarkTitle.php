@@ -6,7 +6,7 @@ namespace App\ValueObjects;
 
 final class BookmarkTitle
 {
-    public const MAX = 100;
+    public const MAX_LENGTH = 100;
 
     public function __construct(public readonly string $value)
     {
@@ -16,7 +16,7 @@ final class BookmarkTitle
     public static function rules(): array
     {
         return [
-            'filled', 'string', 'max:' . self::MAX
+            'filled', 'string', 'max:' . self::MAX_LENGTH
         ];
     }
 
@@ -29,8 +29,8 @@ final class BookmarkTitle
             return;
         }
 
-        if (mb_strlen($this->value) > self::MAX) {
-            throw new \LengthException('Bookmark title cannot be greater ' . self::MAX);
+        if (mb_strlen($this->value) > self::MAX_LENGTH) {
+            throw new \LengthException('Bookmark title cannot be greater ' . self::MAX_LENGTH);
         }
 
         if (blank($this->value)) {

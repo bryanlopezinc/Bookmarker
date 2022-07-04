@@ -6,14 +6,14 @@ namespace App\ValueObjects;
 
 final class BookmarkDescription
 {
-    public const MAX = 200;
+    public const MAX_LENGTH = 200;
 
     public function __construct(public readonly ?string $value)
     {
         if (blank($value)) return;
 
-        if (mb_strlen($value) > self::MAX) {
-            throw new \LengthException('Bookmark description cannot be greater ' . self::MAX);
+        if (mb_strlen($value) > self::MAX_LENGTH) {
+            throw new \LengthException('Bookmark description cannot be greater ' . self::MAX_LENGTH);
         }
     }
 

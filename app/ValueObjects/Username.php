@@ -10,8 +10,8 @@ use Illuminate\Http\Request;
 
 final class Username
 {
-    public const MAX = 15;
-    public const MIN = 8;
+    public const MAX_LENGTH = 15;
+    public const MIN_LENGTH = 8;
     public const REGEX = '/^[A-Za-z0-9_]+$/';
 
     public function __construct(public readonly string $value)
@@ -26,8 +26,8 @@ final class Username
     {
         return array_merge([
             'string',
-            'min:' . self::MIN,
-            'max:' . self::MAX,
+            'min:' . self::MIN_LENGTH,
+            'max:' . self::MAX_LENGTH,
             'regex:' . self::REGEX
         ], $merge);
     }
@@ -46,11 +46,11 @@ final class Username
     {
         $length = mb_strlen($this->value);
 
-        if ($length > self::MAX) {
+        if ($length > self::MAX_LENGTH) {
             throw InvalidUsernameException::dueToLengthExceeded();
         }
 
-        if ($length < self::MIN) {
+        if ($length < self::MIN_LENGTH) {
             throw InvalidUsernameException::dueToNameTooShort();
         }
 

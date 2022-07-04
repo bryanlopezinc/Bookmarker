@@ -6,7 +6,7 @@ namespace App\ValueObjects;
 
 final class FolderName
 {
-    public const MAX = 50;
+    public const MAX_LENGTH = 50;
 
     public function __construct(public readonly string $value)
     {
@@ -14,8 +14,8 @@ final class FolderName
             throw new \LengthException('Folder name cannot be empty');
         }
 
-        if (mb_strlen($value) > self::MAX) {
-            throw new \LengthException('Folder name cannot exceed ' . self::MAX);
+        if (mb_strlen($value) > self::MAX_LENGTH) {
+            throw new \LengthException('Folder name cannot exceed ' . self::MAX_LENGTH);
         }
     }
 

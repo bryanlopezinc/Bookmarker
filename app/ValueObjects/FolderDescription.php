@@ -6,7 +6,7 @@ namespace App\ValueObjects;
 
 final class FolderDescription
 {
-    public const MAX = 150;
+    public const MAX_LENGTH = 150;
 
     public function __construct(public readonly ?string $value)
     {
@@ -14,8 +14,8 @@ final class FolderDescription
             return;
         }
 
-        if (mb_strlen($value) > self::MAX) {
-            throw new \LengthException('Folder description cannot exceed ' . self::MAX);
+        if (mb_strlen($value) > self::MAX_LENGTH) {
+            throw new \LengthException('Folder description cannot exceed ' . self::MAX_LENGTH);
         }
     }
 

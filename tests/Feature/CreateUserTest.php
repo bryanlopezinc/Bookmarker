@@ -37,7 +37,7 @@ class CreateUserTest extends TestCase
         $attributes = [
             'firstname' => $this->faker->firstName,
             'lastname'  => $this->faker->lastName,
-            'username'  => Str::random(Username::MAX - 2) . '_' . rand(0, 9),
+            'username'  => Str::random(Username::MAX_LENGTH - 2) . '_' . rand(0, 9),
             'email'     => $this->faker->safeEmail,
             'password'  => $password = str::random(7) . rand(0, 9),
             'password_confirmation' => $password
@@ -66,15 +66,15 @@ class CreateUserTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['username' => 'The username has already been taken.']);
 
-        $this->getTestResponse(['username' => Str::random(Username::MAX + 1)])
+        $this->getTestResponse(['username' => Str::random(Username::MAX_LENGTH + 1)])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['username' => sprintf('The username must not be greater than %s characters.', Username::MAX)]);
+            ->assertJsonValidationErrors(['username' => sprintf('The username must not be greater than %s characters.', Username::MAX_LENGTH)]);
 
-        $this->getTestResponse(['username' => Str::random(Username::MIN - 1)])
+        $this->getTestResponse(['username' => Str::random(Username::MIN_LENGTH - 1)])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['username' => sprintf('The username must be at least %s characters.', Username::MIN)]);
+            ->assertJsonValidationErrors(['username' => sprintf('The username must be at least %s characters.', Username::MIN_LENGTH)]);
 
-        $this->getTestResponse(['username' => Str::random(Username::MIN - 1) . '!'])
+        $this->getTestResponse(['username' => Str::random(Username::MIN_LENGTH - 1) . '!'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['username' => 'The username contains invalid characters']);
     }
@@ -97,7 +97,7 @@ class CreateUserTest extends TestCase
         $response = $this->getTestResponse([
             'firstname' => $this->faker->firstName,
             'lastname'  => $this->faker->lastName,
-            'username'  => $username = Str::random(Username::MAX - 2) . '_' . rand(0, 9),
+            'username'  => $username = Str::random(Username::MAX_LENGTH - 2) . '_' . rand(0, 9),
             'email'     => $mail = $this->faker->safeEmail,
             'password'  => $password = str::random(7) . rand(0, 9),
             'password_confirmation' => $password,

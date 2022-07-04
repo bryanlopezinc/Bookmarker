@@ -15,6 +15,9 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
 
+/**
+ * @group 109
+ */
 class CreateUserTest extends TestCase
 {
     use WithFaker;
@@ -174,5 +177,19 @@ class CreateUserTest extends TestCase
         $this->getJson($uri, ['Authorization' => 'Bearer ' . static::$accessToken])->assertOk();
 
         $this->assertTrue(User::whereKey($components['id'])->sole()->email_verified_at->isToday());
+    }
+
+    public function testFirstnameMustNotBeGreaterThan_100(): void
+    {
+        $this->getTestResponse(['firstname' => str_repeat('A', 101)])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['firstname' => 'The firstname must not be greater than 100 characters.']);
+    }
+
+    public function testLastnameMustNotBeGreaterThan_100(): void
+    {
+        $this->getTestResponse(['lastname' => str_repeat('A', 101)])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['lastname' => 'The lastname must not be greater than 100 characters.']);
     }
 }

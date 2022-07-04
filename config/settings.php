@@ -63,4 +63,7 @@ return [
     //https://webclient-here.com/user-email/reset-token.
     //All extra query parameters will be reserved.
     'RESET_PASSWORD_URL' => env('RESET_PASSWORD_URL'),
+
+    'FIRSTNAME_MAX_LENGTH' => 100,
+    'LASTNAME_MAX_LENGTH' => 100,
 ];

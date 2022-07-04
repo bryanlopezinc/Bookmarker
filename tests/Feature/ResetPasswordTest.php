@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use Tests\TestCase;
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
-use Laravel\Passport\Client;
 use Laravel\Passport\Passport;
 use Database\Factories\UserFactory;
 use Illuminate\Support\Facades\Mail;
@@ -20,19 +19,7 @@ class ResetPasswordTest extends TestCase
 
     private const NEW_PASSWORD = 'abcdef123';
 
-    private static Client $client;
     private static User $user;
-
-    /**
-     * @beforeClass
-     */
-    public static function setUpSharedResources(): void
-    {
-        (new self)->setUp();
-
-        static::$client = ClientFactory::new()->asPasswordClient()->create();
-        static::$user = UserFactory::new()->create([]);
-    }
 
     protected function getTestResponse(array $parameters = [], array $headers = []): TestResponse
     {
@@ -51,7 +38,7 @@ class ResetPasswordTest extends TestCase
 
     public function testWillReturnValidationErrorsWhenRequiredAttributesAreMissing(): void
     {
-        Passport::actingAsClient(static::$client);
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         $this->getTestResponse([])
             ->assertUnprocessable()
@@ -60,7 +47,7 @@ class ResetPasswordTest extends TestCase
 
     public function testWillReturnErrorResponseWhenUserDoesNotExists(): void
     {
-        Passport::actingAsClient(static::$client);
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         $this->getTestResponse([
             'email'  => 'non-existentUser@yahoo.com',
@@ -74,10 +61,10 @@ class ResetPasswordTest extends TestCase
 
     public function testWillReturnErrorResponseWhenTokenIsInvalid(): void
     {
-        Passport::actingAsClient(static::$client);
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         $this->getTestResponse([
-            'email'  => static::$user->email,
+            'email'  => UserFactory::new()->create([])->email,
             'password' => self::NEW_PASSWORD,
             'password_confirmation' => self::NEW_PASSWORD,
             'token' => 'token'
@@ -90,16 +77,14 @@ class ResetPasswordTest extends TestCase
     public function testSuccessResponse(): void
     {
         Notification::fake();
-        Passport::actingAsClient(static::$client);
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $user = static::$user;
+        $user = UserFactory::new()->create();
+        static::$user = $user;
         $initialPassword = $user->password;
         $token = '';
 
-        $this->postJson(route('requestPasswordResetToken'), [
-            'email'  => $user->email,
-            'reset_url' => 'https://url.com?token=:token&email=:email'
-        ])->assertOk()->json('token');
+        $this->postJson(route('requestPasswordResetToken'), ['email'  => $user->email])->assertOk();
 
         Notification::assertSentTo($user, function (ResetPasswordNotification $notification) use (&$token) {
             $token = $notification->token;
@@ -125,12 +110,12 @@ class ResetPasswordTest extends TestCase
      */
     public function testUserCanLoginWithNewPasswordAfterReset(): void
     {
-        $client = static::$client;
+        $client = ClientFactory::new()->asPasswordClient()->create();
         $user = static::$user;
 
         Mail::fake();
 
-        //test with old password
+        //assert cannot login with old password
         $this->postJson(route('loginUser'), [
             'username'  => $user->username,
             'password'  => 'password',
@@ -138,11 +123,12 @@ class ResetPasswordTest extends TestCase
             'client_secret' => $client->secret,
             'grant_type' => 'password',
             'two_fa_code' => '12345',
-        ])->assertStatus(400)->assertExactJson([
-            "error" => "invalid_grant",
-            "error_description" => "The user credentials were incorrect.",
-            "message" => "The user credentials were incorrect."
-        ]);
+        ])->assertStatus(400)
+            ->assertExactJson([
+                "error" => "invalid_grant",
+                "error_description" => "The user credentials were incorrect.",
+                "message" => "The user credentials were incorrect."
+            ]);
 
         $this->postJson(route('loginUser'), [
             'username'  => $user->username,
@@ -152,5 +138,24 @@ class ResetPasswordTest extends TestCase
             'grant_type' => 'password',
             'two_fa_code' => (string) $this->getVerificationCode($user->username, self::NEW_PASSWORD),
         ])->assertOk();
+    }
+
+
+    public function testPasswordMustBeAtLeast_8_characters(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        $this->getTestResponse(['password' => 'secured'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['password' => 'The password must be at least 8 characters.']);
+    }
+
+    public function testPasswordMustContainOneNumber(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        $this->getTestResponse(['password' => 'password_password'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['password' => 'The password must contain at least one number.']);
     }
 }

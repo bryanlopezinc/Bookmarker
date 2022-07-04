@@ -15,9 +15,6 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
 
-/**
- * @group 109
- */
 class CreateUserTest extends TestCase
 {
     use WithFaker;
@@ -191,5 +188,19 @@ class CreateUserTest extends TestCase
         $this->getTestResponse(['lastname' => str_repeat('A', 101)])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['lastname' => 'The lastname must not be greater than 100 characters.']);
+    }
+
+    public function testPasswordMustBeAtLeast_8_characters(): void
+    {
+        $this->getTestResponse(['password' => 'secured'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['password' => 'The password must be at least 8 characters.']);
+    }
+
+    public function testPasswordMustContainOneNumber(): void
+    {
+        $this->getTestResponse(['password' => 'password_password'])
+        ->assertUnprocessable()
+            ->assertJsonValidationErrors(['password' => 'The password must contain at least one number.']);
     }
 }

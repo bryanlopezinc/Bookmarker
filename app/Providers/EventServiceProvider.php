@@ -4,8 +4,6 @@ namespace App\Providers;
 
 use App\Events\LoginEvent;
 use App\Listeners\Login\NotifyUserAboutNewLoginEventListener;
-use App\Models\Bookmark;
-use App\Observers\BookmarkObserver;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use App\Listeners\SendEmailVerificationNotification;
 
@@ -29,7 +27,6 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        Bookmark::observe([new BookmarkObserver]);
     }
 
     /**

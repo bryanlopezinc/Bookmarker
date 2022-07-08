@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Readers;
 
+use App\Exceptions\MalformedURLException;
 use App\ValueObjects\Url;
 use DOMXPath;
 
@@ -58,11 +59,11 @@ final class DOMReader
             '//meta[@name="twitter:image"]/@content'
         )->item(0)?->nodeValue;
 
-        if (!Url::isValid($value)) {
+        try {
+            return new Url((string)$value);
+        } catch (MalformedURLException) {
             return false;
         }
-
-        return new Url($value);
     }
 
     public function getPageTitle(): string|false

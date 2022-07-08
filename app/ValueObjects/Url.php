@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\ValueObjects;
 
+use App\Exceptions\MalformedURLException;
+
 final class Url
 {
     private readonly array $parts;
@@ -14,7 +16,7 @@ final class Url
         $this->value = (string) $value;
 
         if (filter_var($this->value, FILTER_VALIDATE_URL) === false) {
-            throw new \DomainException('Invalid url ' . $value, 5050);
+            throw new MalformedURLException($value);
         }
 
         $this->parts = parse_url($value);
@@ -30,10 +32,7 @@ final class Url
             new self($url);
 
             return true;
-        } catch (\DomainException $e) {
-            if ($e->getCode() !== 5050) {
-                throw $e;
-            }
+        } catch (MalformedURLException) {
             return false;
         }
     }

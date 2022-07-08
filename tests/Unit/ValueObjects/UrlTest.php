@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\ValueObjects;
 
+use App\Exceptions\MalformedURLException;
 use App\ValueObjects\Url;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -14,7 +15,7 @@ class UrlTest extends TestCase
 
     public function testWillThrowExceptionWhenUrlIsInvalid(): void
     {
-        $this->expectException(\DomainException::class);
+        $this->expectException(MalformedURLException::class);
 
         new Url('foo');
     }

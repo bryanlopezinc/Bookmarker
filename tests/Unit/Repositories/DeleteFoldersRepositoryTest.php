@@ -4,7 +4,7 @@ namespace Tests\Unit\Repositories;
 
 use App\Collections\TagsCollection;
 use App\Models\Taggable;
-use App\Repositories\DeleteFoldersRepository;
+use App\Repositories\Folder\DeleteFoldersRepository;
 use App\Repositories\TagsRepository;
 use App\ValueObjects\ResourceID;
 use Database\Factories\BookmarkFactory;

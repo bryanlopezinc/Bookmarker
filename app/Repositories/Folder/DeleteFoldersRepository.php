@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Repositories;
+namespace App\Repositories\Folder;
 
 use App\Models\Bookmark;
 use App\Models\Folder as Model;

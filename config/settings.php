@@ -66,4 +66,7 @@ return [
 
     'FIRSTNAME_MAX_LENGTH' => 100,
     'LASTNAME_MAX_LENGTH' => 100,
+
+    //max size (in Kb) for the chrome import file.
+    'MAX_CHROME_FILE_SIZE' => 5000,
 ];

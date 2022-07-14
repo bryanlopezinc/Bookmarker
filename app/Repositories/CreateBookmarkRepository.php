@@ -33,7 +33,8 @@ final class CreateBookmarkRepository
             'site_id' => $site->id,
             'user_id' => $bookmark->ownerId->toInt(),
             'has_custom_title'  => $bookmark->hasCustomTitle,
-            'preview_image_url' => $bookmark->hasPreviewImageUrl ? $bookmark->previewImageUrl->value : null
+            'preview_image_url' => $bookmark->hasPreviewImageUrl ? $bookmark->previewImageUrl->value : null,
+            'created_at' => $bookmark->timeCreated->timeStamp
         ])->setRelation('site', $site);
 
         $this->tagsRepository->attach($bookmark->tags, $model);

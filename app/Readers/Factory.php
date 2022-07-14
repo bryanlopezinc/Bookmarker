@@ -12,7 +12,7 @@ final class Factory implements HttpClientInterface
     public function fetchBookmarkPageData(Bookmark $bookmark): BookmarkMetaData
     {
         if ($this->isLinkToYoutubeVideo($bookmark->linkToWebPage)) {
-            return app(YoutubeHttpClient::class)->getWebPageData($bookmark);
+            return app(YoutubeHttpClient::class)->{__FUNCTION__}($bookmark);
         }
 
         return (new DefaultClient)->fetchBookmarkPageData($bookmark);

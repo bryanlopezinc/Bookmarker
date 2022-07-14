@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\DataTransferObjects\Bookmark;
 use App\ValueObjects\Url;
 use App\ValueObjects\UserID;
 use App\Http\Requests\CreateBookmarkRequest;
@@ -32,8 +33,14 @@ final class CreateBookmarkService
             ->bookmarkedById(UserID::fromAuthUser()->toInt())
             ->site(SiteBuilder::new()->domainName($url->getHostName())->name($url->value)->build())
             ->tags($request->validated('tags', []))
+            ->bookmarkedOn((string)now())
             ->build();
 
+        $this->create($bookmark);
+    }
+
+    public function create(Bookmark $bookmark): void
+    {
         UpdateBookmarkInfo::dispatch($bookmark = $this->repository->create($bookmark));
     }
 }

@@ -33,6 +33,7 @@ class CreateBookmarkRepositoryTest extends TestCase
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
             ->bookmarkedById($model['user_id'])
             ->tags([$tag = $this->faker->word])
+            ->bookmarkedOn((string) now())
             ->build();
 
         $result = $this->repository->create($bookmark);
@@ -61,6 +62,7 @@ class CreateBookmarkRepositoryTest extends TestCase
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
             ->bookmarkedById($model['user_id'])
             ->tags([$tag = TagFactory::new()->make()->name, $this->faker->word])
+            ->bookmarkedOn((string) now())
             ->build();
 
         $tagModel = Tag::query()->create(['name' => $tag]);

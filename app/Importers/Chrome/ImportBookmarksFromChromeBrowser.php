@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Importers\Chrome;
 
-use App\DataTransferObjects\Builders\BookmarkBuilder;
-use App\DataTransferObjects\Builders\SiteBuilder;
 use App\Exceptions\MalformedURLException;
 use App\Importers\FilesystemInterface;
 use App\Services\CreateBookmarkService;
@@ -27,22 +25,15 @@ final class ImportBookmarksFromChromeBrowser
 
     public function import(UserID $userID, Uuid $requestID, array $requestData): void
     {
-        $htmlFileContents = $this->getHtmlFileContents($userID, $requestID);
-
-        foreach ($this->parser->parse($htmlFileContents) as $bookmark) {
-            $this->saveBookmark($requestData, $userID, $bookmark);
-        }
-
-        $this->filesystem->delete($userID, $requestID);
-    }
-
-    private function getHtmlFileContents(UserID $userID, Uuid $requestID): string
-    {
         if (!$this->filesystem->exists($userID, $requestID)) {
             throw new FileNotFoundException();
         }
 
-        return $this->filesystem->get($userID, $requestID);
+        foreach ($this->parser->parse($this->filesystem->get($userID, $requestID)) as $bookmark) {
+            $this->saveBookmark($requestData, $userID, $bookmark);
+        }
+
+        $this->filesystem->delete($userID, $requestID);
     }
 
     private function saveBookmark(array $requestData, UserID $userID, ChromeBookmark $chromeBookmark): void
@@ -53,20 +44,12 @@ final class ImportBookmarksFromChromeBrowser
             return;
         }
 
-        $bookmark = (new BookmarkBuilder())
-            ->title($url->value)
-            ->hasCustomTitle(false)
-            ->url($url->value)
-            ->previewImageUrl('')
-            ->description(null)
-            ->descriptionWasSetByUser(false)
-            ->bookmarkedById($userID->toInt())
-            ->site(SiteBuilder::new()->domainName($url->getHostName())->name($url->value)->build())
-            ->tags($requestData['tags'] ?? [])
-            ->bookmarkedOn($this->resolveTimestamp($requestData, $chromeBookmark))
-            ->build();
-
-        $this->createBookmark->create($bookmark);
+        $this->createBookmark->fromArray([
+            'url' => $url,
+            'createdOn' => $this->resolveTimestamp($requestData, $chromeBookmark),
+            'userID' => $userID,
+            'tags' => $requestData['tags'] ?? []
+        ]);
     }
 
     private function resolveTimestamp(array $requestData, ChromeBookmark $chromeBookmark): string

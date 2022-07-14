@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Jobs\UpdateBookmarkInfo;
 use App\Models\Bookmark;
+use App\Models\Taggable;
 use App\Models\UserBookmarksCount;
 use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
@@ -103,7 +104,7 @@ class CreateBookmarksTest extends TestCase
 
     public function testWillCreateBookmark(): void
     {
-        Bus::fake();
+        Bus::fake(UpdateBookmarkInfo::class);
 
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -113,30 +114,74 @@ class CreateBookmarksTest extends TestCase
 
         $this->assertDatabaseHas(Bookmark::class, [
             'title' => $url,
+            'user_id' => $user->id,
+            'description' => null,
+            'has_custom_title' => false,
+            'description_set_by_user' => false,
+            'url' => $url
         ]);
+
+        $this->assertDatabaseHas(UserBookmarksCount::class, [
+            'user_id' => $user->id,
+            'count'   => 1,
+            'type' => UserBookmarksCount::TYPE
+        ]);
+    }
+
+    public function testCreateBookmarkWithTitle(): void
+    {
+        Bus::fake(UpdateBookmarkInfo::class);
+
+        Passport::actingAs($user = UserFactory::new()->create());
 
         $this->getTestResponse([
             'url'   => $this->faker->url,
             'title' => $title = '<h1>whatever</h1>',
-            'description' => $description = '<h2>my dog stepped on a bee :-(</h2>'
         ])->assertCreated();
 
         $this->assertDatabaseHas(Bookmark::class, [
             'title' => $title,
-            'description' => $description,
-            'user_id' => $user->id
+            'user_id' => $user->id,
+            'has_custom_title' => true,
+            'description' => null,
+            'description_set_by_user' => false,
         ]);
+    }
+
+    public function testCreateBookmarkWithDescription(): void
+    {
+        Bus::fake(UpdateBookmarkInfo::class);
+
+        Passport::actingAs($user = UserFactory::new()->create());
 
         $this->getTestResponse([
             'url'   => $this->faker->url,
-            'title' => $this->faker->word,
+            'description' => $description = '<h2>my dog stepped on a bee :-(</h2>'
+        ])->assertCreated();
+
+        $this->assertDatabaseHas(Bookmark::class, [
+            'description' => $description,
+            'user_id' => $user->id,
+            'description_set_by_user' => true,
+            'has_custom_title' => false,
+        ]);
+    }
+
+    public function testCreateBookmarkWithTags(): void
+    {
+        Bus::fake(UpdateBookmarkInfo::class);
+
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->getTestResponse([
+            'url'   => $this->faker->url,
             'tags'  => TagFactory::new()->count(3)->make()->pluck('name')->implode(',')
         ])->assertCreated();
 
-        $this->assertDatabaseHas(UserBookmarksCount::class, [
-            'user_id' => $user->id,
-            'count'   => 3,
-            'type' => UserBookmarksCount::TYPE
+        $this->assertDatabaseHas(Taggable::class, [
+            'tagged_by_id' => $user->id,
+            'taggable_id'   => Bookmark::query()->where('user_id', $user->id)->sole('id')->id,
+            'taggable_type' => Taggable::BOOKMARK_TYPE
         ]);
     }
 

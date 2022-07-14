@@ -95,7 +95,7 @@ class ImportBookmarkFromChromeTest extends TestCase
     {
         Bus::fake([UpdateBookmarkInfo::class]);
 
-        Passport::actingAs($user = UserFactory::new()->create());
+        Passport::actingAs(UserFactory::new()->create());
 
         $this->getTestResponse([
             'source' => 'chromeExportFile',

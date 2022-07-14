@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Contracts\CreateBookmarkRepositoryInterface;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\Models\Bookmark as Model;
@@ -11,7 +12,7 @@ use App\Models\UserBookmarksCount;
 use App\Models\WebSite;
 use App\ValueObjects\UserID;
 
-final class CreateBookmarkRepository
+final class CreateBookmarkRepository implements CreateBookmarkRepositoryInterface
 {
     public function __construct(private TagsRepository $tagsRepository)
     {

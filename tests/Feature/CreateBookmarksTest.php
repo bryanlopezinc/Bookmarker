@@ -112,14 +112,15 @@ class CreateBookmarksTest extends TestCase
             'url' => $url =  $this->faker->url
         ])->assertCreated();
 
-        $this->assertDatabaseHas(Bookmark::class, [
-            'title' => $url,
-            'user_id' => $user->id,
-            'description' => null,
-            'has_custom_title' => false,
-            'description_set_by_user' => false,
-            'url' => $url
-        ]);
+        /** @var Bookmark */
+        $bookmark = Bookmark::query()->where('user_id', $user->id)->sole();
+
+        $this->assertEquals($url, $bookmark->title);
+        $this->assertEquals($url, $bookmark->url);
+        $this->assertEquals($user->id, $bookmark->user_id);
+        $this->assertNull($bookmark->description);
+        $this->assertFalse($bookmark->has_custom_title);
+        $this->assertFalse($bookmark->description_set_by_user);
 
         $this->assertDatabaseHas(UserBookmarksCount::class, [
             'user_id' => $user->id,
@@ -139,13 +140,13 @@ class CreateBookmarksTest extends TestCase
             'title' => $title = '<h1>whatever</h1>',
         ])->assertCreated();
 
-        $this->assertDatabaseHas(Bookmark::class, [
-            'title' => $title,
-            'user_id' => $user->id,
-            'has_custom_title' => true,
-            'description' => null,
-            'description_set_by_user' => false,
-        ]);
+        /** @var Bookmark */
+        $bookmark = Bookmark::query()->where('user_id', $user->id)->sole();
+
+        $this->assertEquals($title, $bookmark->title);
+        $this->assertNull($bookmark->description);
+        $this->assertTrue($bookmark->has_custom_title);
+        $this->assertFalse($bookmark->description_set_by_user);
     }
 
     public function testCreateBookmarkWithDescription(): void
@@ -159,12 +160,12 @@ class CreateBookmarksTest extends TestCase
             'description' => $description = '<h2>my dog stepped on a bee :-(</h2>'
         ])->assertCreated();
 
-        $this->assertDatabaseHas(Bookmark::class, [
-            'description' => $description,
-            'user_id' => $user->id,
-            'description_set_by_user' => true,
-            'has_custom_title' => false,
-        ]);
+        /** @var Bookmark */
+        $bookmark = Bookmark::query()->where('user_id', $user->id)->sole();
+
+        $this->assertEquals($description, $bookmark->description);
+        $this->assertFalse($bookmark->has_custom_title);
+        $this->assertTrue($bookmark->description_set_by_user);
     }
 
     public function testCreateBookmarkWithTags(): void

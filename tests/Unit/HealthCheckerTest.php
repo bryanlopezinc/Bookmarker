@@ -9,52 +9,65 @@ use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\HealthChecker;
 use App\Models\Bookmark as Model;
 use App\DataTransferObjects\Bookmark;
-use App\Models\BookmarkHealth;
-use App\Repositories\BookmarksHealthRepository;
+use App\HealthCheckResult;
 use Database\Factories\BookmarkFactory;
+use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class HealthCheckerTest extends TestCase
 {
-    public function testWillCheckBookmarks(): void
+    public function testCheckBookmarksHealth(): void
     {
-        $checker = new HealthChecker(new BookmarksHealthRepository);
+        $repository = $this->getMockBuilder(BookmarksHealthRepositoryInterface::class)->getMock();
 
-        /** @var array<Bookmark> */
         $bookmarks = BookmarkFactory::new()
-            ->count(5)
-            ->create()
+            ->count(3)
+            ->state(new Sequence(
+                ['id' => 200],
+                ['id' => 250],
+                ['id' => 251],
+            ))
+            ->make()
             ->map(fn (Model $model) => BookmarkBuilder::fromModel($model)->build());
 
-        $callback = [];
+        Http::fakeSequence()
+            ->push()
+            ->push(status: 404)
+            ->dontFailWhenEmpty();
 
-        collect($bookmarks)->each(function (Bookmark $bookmark, int $key) use (&$callback) {
-            $callback[$bookmark->linkToWebPage->value] = $key === 2 ? Http::response(status: 404) : Http::response();
-        });
+        $repository->expects($this->once())
+            ->method('whereNotRecentlyChecked')
+            ->willReturn($bookmarks->map(fn (Bookmark $bookmark) => $bookmark->id)->pipeInto(ResourceIDsCollection::class));
 
-        Http::fake($callback);
+        $repository->expects($this->once())
+            ->method('update')
+            ->with($this->callback(function (array $data) {
+                /** @var HealthCheckResult[] $data */
+                foreach ($data as $healthCheckResult) {
+                    if ($healthCheckResult->bookmarkID->toInt() === 250) {
+                        $this->assertEquals(404, $healthCheckResult->response->status());
+                        continue;
+                    }
 
+                    $this->assertEquals(200, $healthCheckResult->response->status());
+                }
+
+                return true;
+            }));
+
+        $checker = new HealthChecker($repository);
         $checker->ping(new BookmarksCollection($bookmarks));
 
-        foreach ($bookmarks as $key => $bookmark) {
-            $this->assertDatabaseHas(BookmarkHealth::class, [
-                'bookmark_id' => $bookmark->id->toInt(),
-                'is_healthy' => $key === 2 ? false : true,
-            ]);
-        }
-
-        Http::assertSentCount(5);
+        Http::assertSentCount(3);
     }
 
     public function testWillNotMakeHttpRequestWhenBookmarksCollectionIsEmpty(): void
     {
         $repository = $this->getMockBuilder(BookmarksHealthRepositoryInterface::class)->getMock();
-
         $repository->expects($this->never())->method('whereNotRecentlyChecked');
 
         $checker = new HealthChecker($repository);
-
         $checker->ping(new BookmarksCollection([]));
     }
 
@@ -68,7 +81,7 @@ class HealthCheckerTest extends TestCase
         $checker = new HealthChecker($repository);
 
         $checker->ping(new BookmarksCollection([
-            BookmarkBuilder::fromModel(BookmarkFactory::new()->create())->build()
+            BookmarkBuilder::fromModel(BookmarkFactory::new()->make(['id' => 550]))->build()
         ]));
     }
 }

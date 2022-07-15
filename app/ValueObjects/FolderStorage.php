@@ -31,6 +31,10 @@ final class FolderStorage
 
     public function canContain(iterable $items): bool
     {
+        if ($this->isFull()) {
+            return false;
+        }
+
         return $this->total + count($items) <= self::MAX_ITEMS;
     }
 

@@ -38,7 +38,7 @@ class BookmarksHealthRepositoryTest extends TestCase
     {
         $bookmark = BookmarkFactory::new()->create();
 
-        $result = (new BookmarksHealthRepository)->whereNotRecentlyChecked(new ResourceIDsCollection([new ResourceID($bookmark->id)]));
+        $result = (new BookmarksHealthRepository)->whereNotRecentlyChecked((new ResourceID($bookmark->id))->toCollection());
 
         $this->assertCount(1, $result);
         $this->assertContains($bookmark->id, $result->asIntegers()->all());

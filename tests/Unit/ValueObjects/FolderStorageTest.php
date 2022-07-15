@@ -43,6 +43,7 @@ class FolderStorageTest extends TestCase
         $this->assertTrue((new FolderStorage(150))->canContain([]));
         $this->assertTrue((new FolderStorage(150))->canContain(range(1, 50)));
         $this->assertFalse((new FolderStorage(150))->canContain(range(1, 51)));
+        $this->assertFalse((new FolderStorage(FolderStorage::MAX_ITEMS))->canContain([]));
     }
 
     public function testPercentageUsed(): void

@@ -68,7 +68,7 @@ class BookmarksRepositoryTest extends TestCase
         $assertion($bookmark);
     }
 
-    public function test_is_healthy_attribute_will_return_true_when_bookmark_id_does_not_exists_in_bookmarks_health_table(): void
+    public function test_isHealthy_attribute_will_return_true_when_bookmark_id_does_not_exists_in_bookmarks_health_table(): void
     {
         $bookmark = $this->repository->findById(new ResourceID(BookmarkFactory::new()->create()->id));
 

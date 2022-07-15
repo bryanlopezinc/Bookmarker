@@ -9,7 +9,6 @@ use JsonSerializable;
 use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Contracts\Support\Arrayable;
 use App\Attributes\CheckDataTransferObjectForDefaultProperties;
-use App\Utils\ValidateClassWithAtrributes;
 
 #[CheckDataTransferObjectForDefaultProperties]
 abstract class DataTransferObject implements Jsonable, JsonSerializable, Arrayable, ArrayAccess
@@ -25,7 +24,7 @@ abstract class DataTransferObject implements Jsonable, JsonSerializable, Arrayab
 
         $this->setDtoAttributes();
 
-        (new ExecuteAfterSetUpClassAtrributes($this))->execute();
+        (new Validator\ExecuteAfterSetUpClassAtrributes($this))->execute();
     }
 
     protected function setDtoAttributes(): void

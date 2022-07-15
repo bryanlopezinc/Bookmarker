@@ -72,23 +72,22 @@ class UpdateFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        /** @var Folder */
+        $model = FolderFactory::new()->create(['user_id' => $user->id]);
 
         $this->getTestResponse([
             'name' => $name = $this->faker->word,
             'description' => $description = $this->faker->sentence,
-            'folder' => $folder->id
+            'folder' => $model->id
         ])->assertOk();
 
-        $this->assertDatabaseHas(Folder::class, [
-            'id' => $folder->id,
-            'user_id' => $user->id,
-            'name' => $name,
-            'description' => $description,
-            'is_public' => false
-        ]);
+        /** @var Folder */
+        $folder = Folder::query()->whereKey($model->id)->first();
+
+        $this->assertEquals($name, $folder->name);
+        $this->assertEquals($description, $folder->description);
+        $this->assertFalse($folder->is_public);
+        $this->assertEquals($model->created_at->timestamp, $folder->created_at->timestamp);
     }
 
     public function testMakeFolderPublic(): void
@@ -158,78 +157,85 @@ class UpdateFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        /** @var Folder */
+        $model = FolderFactory::new()->create(['user_id' => $user->id]);
 
         $this->getTestResponse([
             'description' => '',
-            'folder' => $folder->id
+            'folder' => $model->id
         ])->assertOk();
 
-        $this->assertDatabaseHas(Folder::class, [
-            'id' => $folder->id,
-            'user_id' => $user->id,
-            'name' => $folder->name,
-            'description' => null
-        ]);
+        /** @var Folder */
+        $folder = Folder::query()->whereKey($model->id)->first();
+
+        $this->assertEquals($model->name, $folder->name);
+        $this->assertNull($folder->description);
+        $this->assertFalse($folder->is_public);
+        $this->assertEquals($model->created_at->timestamp, $folder->created_at->timestamp);
     }
 
     public function testCanUpdateOnlyPrivacy(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        /** @var Folder */
+        $model = FolderFactory::new()->create(['user_id' => $user->id]);
 
         $this->getTestResponse([
             'is_public' => true,
-            'folder' => $folder->id,
+            'folder' => $model->id,
             'password' => 'password'
         ])->assertOk();
+
+        /** @var Folder */
+        $folder = Folder::query()->whereKey($model->id)->first();
+
+        $this->assertEquals($model->name, $folder->name);
+        $this->assertEquals($folder->description, $model->description);
+        $this->assertTrue($folder->is_public);
+        $this->assertEquals($model->created_at->timestamp, $folder->created_at->timestamp);
     }
 
     public function testCanUpdateOnlyDescription(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        /** @var Folder */
+        $model = FolderFactory::new()->create(['user_id' => $user->id]);
 
         $this->getTestResponse([
             'description' => $description = $this->faker->sentence,
-            'folder' => $folder->id
+            'folder' => $model->id
         ])->assertOk();
 
-        $this->assertDatabaseHas(Folder::class, [
-            'id' => $folder->id,
-            'user_id' => $user->id,
-            'name' => $folder->name,
-            'description' => $description
-        ]);
+        /** @var Folder */
+        $folder = Folder::query()->whereKey($model->id)->first();
+
+        $this->assertEquals($model->name, $folder->name);
+        $this->assertEquals($description, $folder->description);
+        $this->assertFalse($folder->is_public);
+        $this->assertEquals($model->created_at->timestamp, $folder->created_at->timestamp);
     }
 
     public function testCanUpdateOnlyName(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        /** @var Folder */
+        $model = FolderFactory::new()->create(['user_id' => $user->id]);
 
         $this->getTestResponse([
             'name' => $name = $this->faker->word,
-            'folder' => $folder->id
+            'folder' => $model->id
         ])->assertOk();
 
-        $this->assertDatabaseHas(Folder::class, [
-            'id' => $folder->id,
-            'user_id' => $user->id,
-            'name' => $name,
-            'description' => $folder->description
-        ]);
+        /** @var Folder */
+        $folder = Folder::query()->whereKey($model->id)->first();
+
+        $this->assertEquals($name, $folder->name);
+        $this->assertEquals($folder->description, $model->description);
+        $this->assertFalse($folder->is_public);
+        $this->assertEquals($model->created_at->timestamp, $folder->created_at->timestamp);
     }
 
     public function testCanUpdateOnlyOwnFolder(): void
@@ -248,9 +254,7 @@ class UpdateFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
 
         $this->getTestResponse([
             'name' => $this->faker->word,
@@ -263,23 +267,32 @@ class UpdateFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        /** @var Folder */
+        $model = FolderFactory::new()->create(['user_id' => $user->id]);
         $tags = TagFactory::new()->count(5)->create();
 
         $this->getTestResponse([
             'tags' => $tags->pluck('name')->implode(','),
-            'folder' => $folder->id
+            'folder' => $model->id
         ])->assertOk();
 
-        $tags->each(function (Tag $tag) use ($folder) {
+        $tags->each(function (Tag $tag) use ($model) {
             $this->assertDatabaseHas(Taggable::class, [
-                'taggable_id' => $folder->id,
+                'taggable_id' => $model->id,
                 'taggable_type' => Taggable::FOLDER_TYPE,
                 'tag_id' => $tag->id
             ]);
         });
+
+        /** @var Folder */
+        $folder = Folder::query()->whereKey($model->id)->first();
+
+        $this->assertEquals($model->name, $folder->name);
+        $this->assertEquals($model->description, $folder->description);
+        $this->assertFalse($folder->is_public);
+        $this->assertEquals($model->created_at->timestamp, $folder->created_at->timestamp);
     }
-    
+
     public function testCannotAttachExistingFolderTagsToFolder(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());

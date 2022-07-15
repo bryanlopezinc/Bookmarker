@@ -19,7 +19,7 @@ class YoutubeHttpClientTest extends TestCase
 
         Http::fake(fn () => Http::response($expectedJson));
 
-        $bookmark = BookmarkFactory::new()->create([
+        $bookmark = BookmarkFactory::new()->make([
             'url' => 'https://www.youtube.com/watch?v=MBO0AiAD0DQ'
         ]);
 
@@ -41,7 +41,7 @@ class YoutubeHttpClientTest extends TestCase
 
         config(['services.youtube.key' => null]);
 
-        $bookmark = BookmarkFactory::new()->create([
+        $bookmark = BookmarkFactory::new()->make([
             'url' => 'https://www.youtube.com/watch?v=MBO0AiAD0DQ'
         ]);
 
@@ -58,7 +58,7 @@ class YoutubeHttpClientTest extends TestCase
 
         Http::fake(fn () => Http::response(status: 403));
 
-        $bookmark = BookmarkFactory::new()->create([
+        $bookmark = BookmarkFactory::new()->make([
             'url' => 'https://www.youtube.com/watch?v=MBO0AiAD0DQ'
         ]);
 

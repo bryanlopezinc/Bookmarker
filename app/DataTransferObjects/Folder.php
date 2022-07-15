@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects;
 
+use App\Attributes\EnsureValidTagsCount;
 use App\Collections\TagsCollection;
 use App\Contracts\BelongsToUserInterface;
 use App\ValueObjects\FolderDescription;
@@ -13,6 +14,7 @@ use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Carbon\Carbon;
 
+#[EnsureValidTagsCount('MAX_FOLDER_TAGS', 'tags')]
 final class Folder extends DataTransferObject implements BelongsToUserInterface
 {
     public readonly ResourceID $folderID;

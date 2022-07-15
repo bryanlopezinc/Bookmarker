@@ -18,9 +18,9 @@ class TagsCollectionTest extends TestCase
 
     public function testExcept(): void
     {
-        $tags = TagsCollection::make(['monday', 'tuesday', 'wednesday', 'thursday', 'friday']);
+        $collection = TagsCollection::make(['monday', 'tuesday', 'wednesday', 'thursday', 'friday']);
 
-        $tags = $tags->except(TagsCollection::make(['monday', 'tuesday']));
+        $tags = $collection->except(TagsCollection::make(['monday', 'tuesday']));
 
         $this->assertCount(3, $tags);
         $this->assertEquals($tags->toStringCollection()->all(), ['wednesday', 'thursday', 'friday']);

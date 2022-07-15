@@ -10,7 +10,7 @@ use App\Contracts\AfterDTOSetUpHookInterface;
 #[Attribute(Attribute::TARGET_CLASS)]
 final class TestValidator implements AfterDTOSetUpHookInterface
 {
-    public static $invocationCount = 0;
+    public static int $invocationCount = 0;
 
     public function executeAfterSetUp(Object $bookmark): void
     {

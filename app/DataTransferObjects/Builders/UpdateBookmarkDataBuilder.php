@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects\Builders;
 
-use App\ValueObjects\UserID;
 use App\ValueObjects\ResourceID;
 use App\Collections\TagsCollection;
 use App\ValueObjects\BookmarkTitle;
@@ -19,7 +18,6 @@ final class UpdateBookmarkDataBuilder extends Builder
     {
         return static::new()
             ->id((int)$request->validated('id'))
-            ->UserId(UserId::fromAuthUser()->toInt())
             ->tags($request->validated('tags', []))
             ->hasTitle($request->has('title'))
             ->hasDescription($request->has('description'))
@@ -96,13 +94,6 @@ final class UpdateBookmarkDataBuilder extends Builder
     public function tags(TagsCollection|array $tags): self
     {
         $this->attributes['tags'] = is_array($tags) ? TagsCollection::make($tags) : $tags;
-
-        return $this;
-    }
-
-    public function UserId(int $userId): self
-    {
-        $this->attributes['ownerId'] = new UserID($userId);
 
         return $this;
     }

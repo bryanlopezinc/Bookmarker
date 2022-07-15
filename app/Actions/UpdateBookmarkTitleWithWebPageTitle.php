@@ -5,15 +5,19 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\DataTransferObjects\Bookmark;
-use App\Models\Bookmark as Model;
 use App\Readers\BookmarkMetaData;
 use App\ValueObjects\BookmarkTitle;
 use Illuminate\Support\Str;
+use App\Contracts\UpdateBookmarkRepositoryInterface as Repository;
+use App\DataTransferObjects\Builders\UpdateBookmarkDataBuilder;
 
 final class UpdateBookmarkTitleWithWebPageTitle
 {
-    public function __construct(private BookmarkMetaData $pageData)
+    private Repository $repository;
+
+    public function __construct(private BookmarkMetaData $pageData, Repository $repository = null)
     {
+        $this->repository = $repository ?? app(Repository::class);
     }
 
     public function __invoke(Bookmark $bookmark): void
@@ -26,11 +30,14 @@ final class UpdateBookmarkTitleWithWebPageTitle
 
         if ($title === false) return;
 
-        Model::query()
-            ->where('id', $bookmark->id->toInt())
-            ->update([
-                //subtract 3 from MAX_LENGTH to accomodate the 'end' (...) value
-                'title' => Str::limit($title, BookmarkTitle::MAX_LENGTH - 3)
-            ]);
+        //subtract 3 from MAX_LENGTH to accomodate the 'end' (...) value
+        $newTitle = Str::limit($title, BookmarkTitle::MAX_LENGTH - 3);
+
+        $this->repository->update(
+            UpdateBookmarkDataBuilder::new()
+                ->id($bookmark->id->toInt())
+                ->title($newTitle)
+                ->build()
+        );
     }
 }

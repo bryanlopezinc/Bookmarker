@@ -33,7 +33,6 @@ class UpdateBookmarkRepositoryTest extends TestCase
             ->title($this->faker->word)
             ->description($this->faker->sentence)
             ->tags(TagFactory::new()->count(3)->make()->pluck('name')->all())
-            ->UserId($model->user_id)
             ->build();
 
         $this->repository->update($data);

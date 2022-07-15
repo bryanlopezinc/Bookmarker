@@ -18,7 +18,6 @@ final class UpdateBookmarkData extends DataTransferObject
     public readonly bool $hasTitle;
     public readonly BookmarkDescription $description;
     public readonly bool $hasDescription;
-    public readonly UserID $ownerId;
     public readonly TagsCollection $tags;
     public readonly bool $hasPreviewImageUrl;
     public readonly Url $previewImageUrl;

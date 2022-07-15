@@ -35,7 +35,6 @@ class UpdateBookmarkDescriptionWithMetaTagTest extends TestCase
                 ->method('update')
                 ->willReturnCallback(function (UpdateBookmarkData $data) use ($description, $bookmark) {
                     $this->assertEquals($description, $data->description->value);
-                    $this->assertTrue($data->ownerId->equals($bookmark->ownerId));
                     $this->assertTrue($data->hasDescription);
                     $this->assertFalse($data->hasTitle);
                     $this->assertTrue($data->tags->isEmpty());

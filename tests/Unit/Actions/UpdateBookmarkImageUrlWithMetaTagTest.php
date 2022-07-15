@@ -35,7 +35,6 @@ class UpdateBookmarkImageUrlWithMetaTagTest extends TestCase
                 ->method('update')
                 ->willReturnCallback(function (UpdateBookmarkData $data) use ($url, $bookmark) {
                     $this->assertEquals($url->value, $data->previewImageUrl->value);
-                    $this->assertTrue($data->ownerId->equals($bookmark->ownerId));
                     $this->assertFalse($data->hasDescription);
                     $this->assertFalse($data->hasTitle);
                     $this->assertTrue($data->tags->isEmpty());

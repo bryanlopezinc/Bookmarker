@@ -37,7 +37,6 @@ final class UpdateBookmarkDescriptionWithWebPageDescription
 
         $this->repository->update(
             UpdateBookmarkDataBuilder::new()
-                ->UserId($bookmark->ownerId->toInt())
                 ->id($bookmark->id->toInt())
                 ->description($newDescription)
                 ->build()

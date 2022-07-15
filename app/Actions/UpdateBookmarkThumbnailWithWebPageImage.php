@@ -28,7 +28,6 @@ final class UpdateBookmarkThumbnailWithWebPageImage
 
         $this->repository->update(
             UpdateBookmarkDataBuilder::new()
-                ->UserId($bookmark->ownerId->toInt())
                 ->id($bookmark->id->toInt())
                 ->previewImageUrl($url)
                 ->build()

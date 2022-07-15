@@ -11,7 +11,6 @@ use App\ValueObjects\Uuid;
 use Illuminate\Support\Str;
 use App\ValueObjects\UserID;
 use App\Jobs\UpdateBookmarkInfo;
-use Database\Factories\UserFactory;
 use Illuminate\Support\Facades\Bus;
 use App\DataTransferObjects\Bookmark;
 use App\Importers\FilesystemInterface;
@@ -32,9 +31,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
     {
         $this->expectException(FileNotFoundException::class);
 
-        $userID = new UserID(UserFactory::new()->create()->id);
-
-        $this->getImporter()->import($userID, Uuid::generate(), []);
+        $this->getImporter()->import(new UserID(22), Uuid::generate(), []);
     }
 
     protected function getImporter(): Importer
@@ -44,7 +41,6 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
 
     public function testWillClearDataAfterImport(): void
     {
-        $userID = new UserID(UserFactory::new()->create()->id);
         $requestID = Uuid::generate();
         $DOMParser = $this->getMockBuilder(DOMParserInterface::class)->getMock();
 
@@ -58,7 +54,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
 
         $this->swap(DOMParserInterface::class, $DOMParser);
 
-        $this->getImporter()->import($userID, $requestID, []);
+        $this->getImporter()->import(new UserID(120), $requestID, []);
     }
 
     private function mockFilesystem(Closure $mock): void
@@ -102,7 +98,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
                 });
         });
 
-        $this->getImporter()->import(new UserID(UserFactory::new()->create()->id), Uuid::generate(), []);
+        $this->getImporter()->import(new UserID(200), Uuid::generate(), []);
     }
 
     public function testWillAttachOnlyUniquePocketBookmarkTagsToBookmark(): void
@@ -137,7 +133,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
                 });
         });
 
-        $this->getImporter()->import(new UserID(UserFactory::new()->create()->id), Uuid::generate(), []);
+        $this->getImporter()->import(new UserID(330), Uuid::generate(), []);
     }
 
     public function testWillNotAttachPocketBookmarkTagsToBookmarkWhenIndicated(): void
@@ -172,7 +168,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
                 });
         });
 
-        $this->getImporter()->import(new UserID(UserFactory::new()->create()->id), Uuid::generate(), ['ignore_tags' => true]);
+        $this->getImporter()->import(new UserID(7), Uuid::generate(), ['ignore_tags' => true]);
     }
 
     public function test_will_not_attach_pocket_bookmark_tags_to_bookmark_when_pocket_bookmarks_tags_count_is_greater_than_15(): void
@@ -209,7 +205,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
                 });
         });
 
-        $this->getImporter()->import(new UserID(UserFactory::new()->create()->id), Uuid::generate(), []);
+        $this->getImporter()->import(new UserID(45), Uuid::generate(), []);
     }
 
     public function testWillNotAttachIncompatiblePocketBookmarkTagsToBookmark(): void
@@ -251,7 +247,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
                 });
         });
 
-        $this->getImporter()->import(new UserID(UserFactory::new()->create()->id), Uuid::generate(), []);
+        $this->getImporter()->import(new UserID(950), Uuid::generate(), []);
     }
 
     private function mockRepository(Closure $mock): void
@@ -266,8 +262,6 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
     public function testWillUsePocketBookmarkDateByDefault(): void
     {
         Bus::fake([UpdateBookmarkInfo::class]);
-
-        $userID = new UserID(UserFactory::new()->create()->id);
 
         $html = <<<HTML
             <!DOCTYPE html>
@@ -297,7 +291,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
                 });
         });
 
-        $this->getImporter()->import($userID, Uuid::generate(), []);
+        $this->getImporter()->import(new UserID(210), Uuid::generate(), []);
     }
 
     public function testWillNotUsePocketBookmarkDateWhenIndicated(): void
@@ -332,7 +326,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
                 });
         });
 
-        $this->getImporter()->import(new UserID(UserFactory::new()->create()->id), Uuid::generate(), ['use_timestamp' => false]);
+        $this->getImporter()->import(new UserID(320), Uuid::generate(), ['use_timestamp' => false]);
     }
 
     public function testWillUseDefaultDateWhenDateIsInvalid(): void
@@ -367,7 +361,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
                 });
         });
 
-        $this->getImporter()->import(new UserID(UserFactory::new()->create()->id), Uuid::generate(), []);
+        $this->getImporter()->import(new UserID(2144), Uuid::generate(), []);
     }
 
     public function testWillNotSaveBookmarkIfUrlIsInvalid(): void
@@ -395,14 +389,12 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
             $repository->expects($this->never())->method('create');
         });
 
-        $this->getImporter()->import(new UserID(UserFactory::new()->create()->id), Uuid::generate(), []);
+        $this->getImporter()->import(new UserID(4344), Uuid::generate(), []);
     }
 
     public function testWillStoreBookmarks(): void
     {
         Bus::fake([UpdateBookmarkInfo::class]);
-
-        $userID = new UserID(UserFactory::new()->create()->id);
 
         $this->mockFilesystem(function (MockObject $filesystem) {
             $filesystem->expects($this->once())->method('exists')->willReturn(true);
@@ -415,14 +407,14 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
             $repository->expects($this->exactly(11))->method('create')->willReturn(new Bookmark([]));
         });
 
-        $this->getImporter()->import($userID, Uuid::generate(), []);
+        $this->getImporter()->import(new UserID(2302), Uuid::generate(), []);
     }
 
     public function testWillSaveCorrectData(): void
     {
         Bus::fake([UpdateBookmarkInfo::class]);
 
-        $userID = new UserID(UserFactory::new()->create()->id);
+        $userID = new UserID(rand(10, PHP_INT_MAX));
 
         $html = <<<HTML
             <!DOCTYPE html>

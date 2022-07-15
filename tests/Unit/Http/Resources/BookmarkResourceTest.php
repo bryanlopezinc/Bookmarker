@@ -23,8 +23,8 @@ class BookmarkResourceTest extends TestCase
 
     public function testAttributes(): void
     {
-        $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->create())
-            ->tags(TagsCollection::make($this->faker->unique()->words()))
+        $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->create([]))
+            ->tags(TagFactory::new()->count(3)->make()->all())
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
             ->isHealthy(false)
             ->isUserFavourite(false)
@@ -73,7 +73,7 @@ class BookmarkResourceTest extends TestCase
         $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->create([
             'description' => null,
         ]))
-            ->tags(TagsCollection::make($this->faker->unique(true)->words()))
+            ->tags(TagFactory::new()->count(3)->make()->all())
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
             ->isHealthy(false)
             ->isUserFavourite(false)
@@ -94,7 +94,7 @@ class BookmarkResourceTest extends TestCase
         $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->create([
             'preview_image_url' => null,
         ]))
-            ->tags(TagsCollection::make(TagFactory::new()->count(3)->make()))
+            ->tags(TagFactory::new()->count(3)->make()->all())
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
             ->isHealthy(false)
             ->isUserFavourite(false)

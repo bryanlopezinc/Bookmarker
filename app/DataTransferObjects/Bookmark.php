@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects;
 
+use App\Attributes\EnsureValidBookmark;
 use App\ValueObjects\Url;
 use App\ValueObjects\UserID;
 use App\ValueObjects\TimeStamp;
@@ -13,6 +14,7 @@ use App\Contracts\BelongsToUserInterface;
 use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\BookmarkDescription;
 
+#[EnsureValidBookmark]
 final class Bookmark extends DataTransferObject implements BelongsToUserInterface
 {
     public readonly ResourceID $id;

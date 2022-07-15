@@ -16,9 +16,6 @@ use App\ValueObjects\TimeStamp;
 use App\ValueObjects\Url;
 use App\ValueObjects\UserID;
 
-/**
- * Build a bookmarked webPage dataTransferObject
- */
 final class BookmarkBuilder extends Builder
 {
     public static function fromModel(Model $model): BookmarkBuilder

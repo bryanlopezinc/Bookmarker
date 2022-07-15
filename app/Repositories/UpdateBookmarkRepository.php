@@ -35,6 +35,10 @@ final class UpdateBookmarkRepository implements UpdateBookmarkRepositoryInterfac
             $model->description_set_by_user = true;
         }
 
+        if ($data->hasPreviewImageUrl) {
+            $model->preview_image_url = $data->previewImageUrl->value;
+        }
+
         $model->save();
 
         return BookmarkBuilder::fromModel($model)->build();

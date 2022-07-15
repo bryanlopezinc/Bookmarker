@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace App\Actions;
 
-use App\Models\Bookmark as Model;
 use App\DataTransferObjects\Bookmark;
 use App\Readers\BookmarkMetaData;
+use App\Contracts\UpdateBookmarkRepositoryInterface as Repository;
+use App\DataTransferObjects\Builders\UpdateBookmarkDataBuilder;
 
 final class UpdateBookmarkThumbnailWithWebPageImage
 {
-    public function __construct(private BookmarkMetaData $pageData)
+    private Repository $repository;
+
+    public function __construct(private BookmarkMetaData $pageData, Repository $repository = null)
     {
+        $this->repository = $repository ?? app(Repository::class);
     }
 
     public function __invoke(Bookmark $bookmark): void
@@ -22,8 +26,12 @@ final class UpdateBookmarkThumbnailWithWebPageImage
             return;
         }
 
-        Model::query()
-            ->where('id', $bookmark->id->toInt())
-            ->update(['preview_image_url' => $url->value]);
+        $this->repository->update(
+            UpdateBookmarkDataBuilder::new()
+                ->UserId($bookmark->ownerId->toInt())
+                ->id($bookmark->id->toInt())
+                ->previewImageUrl($url)
+                ->build()
+        );
     }
 }

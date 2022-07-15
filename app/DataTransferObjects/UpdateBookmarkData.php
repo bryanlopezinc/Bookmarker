@@ -9,6 +9,7 @@ use App\ValueObjects\ResourceID;
 use App\Collections\TagsCollection;
 use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\BookmarkDescription;
+use App\ValueObjects\Url;
 
 final class UpdateBookmarkData extends DataTransferObject
 {
@@ -19,4 +20,6 @@ final class UpdateBookmarkData extends DataTransferObject
     public readonly bool $hasDescription;
     public readonly UserID $ownerId;
     public readonly TagsCollection $tags;
+    public readonly bool $hasPreviewImageUrl;
+    public readonly Url $previewImageUrl;
 }

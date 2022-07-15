@@ -11,6 +11,7 @@ use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\BookmarkDescription;
 use App\Http\Requests\UpdateBookmarkRequest;
 use App\DataTransferObjects\UpdateBookmarkData;
+use App\ValueObjects\Url;
 
 final class UpdateBookmarkDataBuilder extends Builder
 {
@@ -31,12 +32,28 @@ final class UpdateBookmarkDataBuilder extends Builder
         return (new self)
             ->hasTitle(false)
             ->hasDescription(false)
+            ->hasPreviewImageUrl(false)
             ->tags([]);
     }
 
     public function id(int $id): self
     {
         $this->attributes['id'] = new ResourceID($id);
+
+        return $this;
+    }
+
+    public function previewImageUrl(Url $url): self
+    {
+        $this->attributes['previewImageUrl'] = $url;
+        $this->hasPreviewImageUrl(true);
+
+        return $this;
+    }
+
+    public function hasPreviewImageUrl(bool $hasPreviewImageUrl): self
+    {
+        $this->attributes['hasPreviewImageUrl'] = $hasPreviewImageUrl;
 
         return $this;
     }

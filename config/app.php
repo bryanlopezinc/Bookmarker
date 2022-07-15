@@ -184,6 +184,7 @@ return [
         App\Providers\ReaderServiceProvider::class,
         App\Providers\ChromeBookmarksImporterServiceProvider::class,
         App\Providers\ImportersFilesystemServiceProvider::class,
+        App\Providers\PocketExportFileImporterServiceProvider::class,
     ],
 
     /*

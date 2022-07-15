@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\ValueObjects;
 
+use App\Exceptions\InvalidTagException;
 use App\ValueObjects\Tag;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -12,7 +13,7 @@ class TagTest extends TestCase
 {
     public function testLengthMustNotExceedMaxLength(): void
     {
-        $this->expectException(\LengthException::class);
+        $this->expectException(InvalidTagException::class);
 
         new Tag(Str::random(Tag::MAX_LENGTH + 1));
     }
@@ -34,7 +35,7 @@ class TagTest extends TestCase
 
     public function testWillThrowExceptionWhenTagContainsSpaces(): void
     {
-        $this->expectException(\DomainException::class);
+        $this->expectException(InvalidTagException::class);
 
         new Tag('foo bar');
     }
@@ -46,7 +47,7 @@ class TagTest extends TestCase
                 new Tag(Str::random(Tag::MAX_LENGTH - 1) . $tag);
 
                 return true;
-            } catch (\DomainException) {
+            } catch (InvalidTagException) {
                 return false;
             }
         };

@@ -15,11 +15,12 @@ final class ImportBookmarkRequest extends FormRequest
         $source = $this->input('source', 0);
 
         $defaultRules = [
-            'source' => ['required', 'string', 'filled', Rule::in(['chromeExportFile'])],
+            'source' => ['required', 'string', 'filled', Rule::in(['chromeExportFile', 'pocketExportFile'])],
         ];
 
         $sourceRulesMap = [
             'chromeExportFile' => $this->chromeImportRules(),
+            'pocketExportFile' => $this->pocketImportRules()
         ];
 
         if (!isset($sourceRulesMap[$source])) {
@@ -36,6 +37,15 @@ final class ImportBookmarkRequest extends FormRequest
             'html' => ['required', 'file', 'mimes:html', join(':', ['max', setting('MAX_CHROME_FILE_SIZE')])],
             'tags' => ['nullable', join(':', ['max', setting('MAX_BOOKMARKS_TAGS')])],
             'tags.*' => Tag::rules(['distinct:strict']),
+        ];
+    }
+
+    private function pocketImportRules(): array
+    {
+        return [
+            'use_timestamp' => ['nullable', 'bool'],
+            'ignore_tags' => ['nullable', 'bool'],
+            'pocket_export_file' => ['required', 'file', 'mimes:html', join(':', ['max', setting('MAX_POCKET_FILE_SIZE')])],
         ];
     }
 }

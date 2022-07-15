@@ -69,4 +69,7 @@ return [
 
     //max size (in Kb) for the chrome import file.
     'MAX_CHROME_FILE_SIZE' => 5000,
+
+    //max size (in Kb) for the pocket import file.
+    'MAX_POCKET_FILE_SIZE' => 5000,
 ];

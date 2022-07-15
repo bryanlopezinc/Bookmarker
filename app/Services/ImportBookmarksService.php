@@ -25,6 +25,10 @@ final class ImportBookmarksService
         $requestID = Uuid::generate();
 
         foreach ($this->inputFileTypes() as $input) {
+            if (!array_key_exists($input, $validated)) {
+                continue;
+            }
+
             $this->filesystem->put($request->file($input)->getContent(), $userID, $requestID);
 
             // Remove the file from the request data because
@@ -45,6 +49,6 @@ final class ImportBookmarksService
      */
     private function inputFileTypes(): array
     {
-        return ['html'];
+        return ['html', 'pocket_export_file'];
     }
 }

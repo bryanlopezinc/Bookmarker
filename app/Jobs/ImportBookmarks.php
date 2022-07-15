@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\DataTransferObjects\ImportData;
 use App\Importers\Chrome\ImportBookmarksFromChromeBrowser as ChromeImporter;
+use App\Importers\PocketExportFile\ImportBookmarksFromPocketExportFile as PocketImporter;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -30,6 +31,10 @@ final class ImportBookmarks implements ShouldQueue
             $importData = $this->importData;
 
             $this->when($importData->source()->isFromChrome(), function (ChromeImporter $importer) use ($importData) {
+                $importer->import($importData->userID(), $importData->requestID(), $importData->data());
+            });
+
+            $this->when($importData->source()->isFromPocketExportFile(), function (PocketImporter $importer) use ($importData) {
                 $importer->import($importData->userID(), $importData->requestID(), $importData->data());
             });
         });

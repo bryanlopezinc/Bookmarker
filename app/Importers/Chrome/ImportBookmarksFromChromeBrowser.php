@@ -6,16 +6,17 @@ namespace App\Importers\Chrome;
 
 use App\Exceptions\MalformedURLException;
 use App\Importers\FilesystemInterface;
+use App\Importers\Concerns\ResolvesImportTimestamp;
 use App\Services\CreateBookmarkService;
 use App\ValueObjects\Url;
 use App\ValueObjects\UserID;
 use App\ValueObjects\Uuid;
-use Carbon\Carbon;
-use Carbon\Exceptions\InvalidFormatException;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 
 final class ImportBookmarksFromChromeBrowser
 {
+    use ResolvesImportTimestamp;
+
     public function __construct(
         private CreateBookmarkService $createBookmark,
         private FilesystemInterface $filesystem,
@@ -46,26 +47,9 @@ final class ImportBookmarksFromChromeBrowser
 
         $this->createBookmark->fromArray([
             'url' => $url,
-            'createdOn' => $this->resolveTimestamp($requestData, $chromeBookmark),
+            'createdOn' => $this->resolveImportTimestamp($requestData['use_timestamp'] ?? true, $chromeBookmark->timestamp),
             'userID' => $userID,
             'tags' => $requestData['tags'] ?? []
         ]);
-    }
-
-    private function resolveTimestamp(array $requestData, ChromeBookmark $chromeBookmark): string
-    {
-        $useBookmarkTimestamp = $requestData['use_timestamp'] ?? true;
-        $default = (string) now();
-        $addDate = $chromeBookmark->timestamp;
-
-        if ($useBookmarkTimestamp === false || blank($addDate)) {
-            return $default;
-        }
-
-        try {
-            return (string) Carbon::createFromTimestamp($addDate);
-        } catch (InvalidFormatException) {
-            return $default;
-        }
     }
 }

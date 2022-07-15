@@ -68,12 +68,12 @@ class CreateFolderTest extends TestCase
             'description' => $description = $this->faker->sentence
         ])->assertCreated();
 
-        $this->assertDatabaseHas(Folder::class, [
-            'user_id' => $user->id,
-            'name' => $name,
-            'description' => $description,
-            'is_public' => false
-        ]);
+        /** @var Folder */
+        $folder = Folder::query()->where('user_id', $user->id)->sole();
+
+        $this->assertEquals($name, $folder->name);
+        $this->assertEquals($description, $folder->description);
+        $this->assertFalse($folder->is_public);
 
         $this->assertDatabaseHas(UserFoldersCount::class, [
             'user_id' => $user->id,
@@ -96,13 +96,12 @@ class CreateFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         $this->getTestResponse([
-            'name' => $name = $this->faker->word,
+            'name' => $this->faker->word,
             'is_public' => true
         ])->assertCreated();
 
         $this->assertDatabaseHas(Folder::class, [
             'user_id' => $user->id,
-            'name' => $name,
             'is_public' => true
         ]);
     }

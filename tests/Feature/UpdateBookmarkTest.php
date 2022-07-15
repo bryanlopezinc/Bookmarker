@@ -57,9 +57,8 @@ class UpdateBookmarkTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $model = BookmarkFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        /** @var Bookmark */
+        $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
 
         $this->getTestResponse([
             'id' => $model->id,
@@ -68,13 +67,17 @@ class UpdateBookmarkTest extends TestCase
             'description' => $description = $this->faker->sentence
         ])->assertOk();
 
-        $this->assertDatabaseHas(Bookmark::class, [
-            'id' => $model->id,
-            'title' => $title,
-            'has_custom_title' => true,
-            'description' => $description,
-            'description_set_by_user' => true,
-        ]);
+        /** @var Bookmark */
+        $bookmark = Bookmark::query()->whereKey($model->id)->sole();
+
+        $this->assertEquals($title, $bookmark->title);
+        $this->assertTrue($bookmark->has_custom_title);
+        $this->assertEquals($description, $bookmark->description);
+        $this->assertTrue($bookmark->description_set_by_user);
+        $this->assertEquals($model->preview_image_url, $bookmark->preview_image_url);
+        $this->assertEquals($model->url, $bookmark->url);
+        $this->assertEquals($model->site_id, $bookmark->site_id);
+        $this->assertEquals($model->created_at->timestamp, $bookmark->created_at->timestamp);
 
         $this->assertDatabaseHas(Taggable::class, [
             'taggable_id' => $model->id,
@@ -89,22 +92,24 @@ class UpdateBookmarkTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         /** @var Bookmark */
-        $model = BookmarkFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
 
         $this->getTestResponse([
             'id' => $model->id,
             'tags' => $tag = $this->faker->word,
         ])->assertOk();
 
-        $this->assertDatabaseHas(Bookmark::class, [
-            'id' => $model->id,
-            'title' => $model->title,
-            'has_custom_title' => false,
-            'description' => $model->description,
-            'description_set_by_user' => false,
-        ]);
+        /** @var Bookmark */
+        $bookmark = Bookmark::query()->whereKey($model->id)->sole();
+
+        $this->assertEquals($model->title, $bookmark->title);
+        $this->assertFalse($bookmark->has_custom_title);
+        $this->assertEquals($model->description, $bookmark->description);
+        $this->assertFalse($bookmark->description_set_by_user);
+        $this->assertEquals($model->preview_image_url, $bookmark->preview_image_url);
+        $this->assertEquals($model->url, $bookmark->url);
+        $this->assertEquals($model->site_id, $bookmark->site_id);
+        $this->assertEquals($model->created_at->timestamp, $bookmark->created_at->timestamp);
 
         $this->assertDatabaseHas(Taggable::class, [
             'taggable_id' => $model->id,
@@ -119,22 +124,24 @@ class UpdateBookmarkTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         /** @var Bookmark */
-        $model = BookmarkFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
 
         $this->getTestResponse([
             'id' => $model->id,
             'title' => $title = $this->faker->sentence
         ])->assertOk();
 
-        $this->assertDatabaseHas(Bookmark::class, [
-            'id' => $model->id,
-            'title' => $title,
-            'has_custom_title' => true,
-            'description' => $model->description,
-            'description_set_by_user' => false,
-        ]);
+        /** @var Bookmark */
+        $bookmark = Bookmark::query()->whereKey($model->id)->sole();
+
+        $this->assertEquals($title, $bookmark->title);
+        $this->assertTrue($bookmark->has_custom_title);
+        $this->assertEquals($model->description, $bookmark->description);
+        $this->assertFalse($bookmark->description_set_by_user);
+        $this->assertEquals($model->preview_image_url, $bookmark->preview_image_url);
+        $this->assertEquals($model->url, $bookmark->url);
+        $this->assertEquals($model->site_id, $bookmark->site_id);
+        $this->assertEquals($model->created_at->timestamp, $bookmark->created_at->timestamp);
     }
 
     public function testCanUpdateOnlyDescription(): void
@@ -142,22 +149,24 @@ class UpdateBookmarkTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         /** @var Bookmark */
-        $model = BookmarkFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
 
         $this->getTestResponse([
             'id' => $model->id,
             'description' => $description = $this->faker->sentence
         ])->assertOk();
 
-        $this->assertDatabaseHas(Bookmark::class, [
-            'id' => $model->id,
-            'title' => $model->title,
-            'has_custom_title' => false,
-            'description' => $description,
-            'description_set_by_user' => true,
-        ]);
+        /** @var Bookmark */
+        $bookmark = Bookmark::query()->whereKey($model->id)->sole();
+
+        $this->assertEquals($model->title, $bookmark->title);
+        $this->assertFalse($bookmark->has_custom_title);
+        $this->assertEquals($description, $bookmark->description);
+        $this->assertTrue($bookmark->description_set_by_user);
+        $this->assertEquals($model->preview_image_url, $bookmark->preview_image_url);
+        $this->assertEquals($model->url, $bookmark->url);
+        $this->assertEquals($model->site_id, $bookmark->site_id);
+        $this->assertEquals($model->created_at->timestamp, $bookmark->created_at->timestamp);
     }
 
     public function testWillReturnBadRequestResponseWhenBookmarkTagsLengthIsExceeded(): void

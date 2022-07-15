@@ -19,23 +19,23 @@ class UsersFoldersRepositoryTest extends TestCase
 
     public function testWillFetchCorrectBookmarksCount(): void
     {
-        $foldersBookmarksCountTable = [];
+        $foldersBookmarksCount = [];
 
         FolderFactory::new()->count(10)->create([
             'user_id' => $userID = UserFactory::new()->create()->id
-        ])->each(function (Model $folder) use (&$foldersBookmarksCountTable) {
+        ])->each(function (Model $folder) use (&$foldersBookmarksCount) {
             FolderBookmarksCount::create([
                 'folder_id' => $folder->id,
-                'count' => $foldersBookmarksCountTable[$folder->id] = rand(1, 200)
+                'count' => $foldersBookmarksCount[$folder->id] = rand(1, 200)
             ]);
         });
 
         (new UsersFoldersRepository)
             ->fetch(new UserID($userID), PaginationData::new())
             ->getCollection()
-            ->each(function (Folder $folder) use ($foldersBookmarksCountTable) {
+            ->each(function (Folder $folder) use ($foldersBookmarksCount) {
                 $this->assertEquals(
-                    $foldersBookmarksCountTable[$folder->folderID->toInt()],
+                $foldersBookmarksCount[$folder->folderID->toInt()],
                     $folder->storage->total
                 );
             });

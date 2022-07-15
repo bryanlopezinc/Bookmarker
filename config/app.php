@@ -176,7 +176,6 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-        App\Providers\BookmarksHealthRepositoryServiceProvider::class,
 
         App\IpGeoLocation\ServiceProvider::class,
         App\DeviceDetector\ServiceProvider::class,

@@ -49,7 +49,7 @@ class UpdateBookmarkTest extends TestCase
         $this->getTestResponse([
             'id' => 112
         ])->assertJsonValidationErrors([
-            'title' => 'The title field is required when none of tags are present.'
+            'title' => 'The title field is required when none of tags / description are present.'
         ]);
     }
 
@@ -63,17 +63,22 @@ class UpdateBookmarkTest extends TestCase
 
         $this->getTestResponse([
             'id' => $model->id,
+            'title' => $title = $title = $this->faker->sentence,
             'tags' => $tag = $this->faker->word,
-            'title' => $title = $this->faker->sentence
+            'description' => $description = $this->faker->sentence
         ])->assertOk();
 
         $this->assertDatabaseHas(Bookmark::class, [
             'id' => $model->id,
-            'title' => $title
+            'title' => $title,
+            'has_custom_title' => true,
+            'description' => $description,
+            'description_set_by_user' => true,
         ]);
 
         $this->assertDatabaseHas(Taggable::class, [
             'taggable_id' => $model->id,
+            'tagged_by_id' => $user->id,
             'taggable_type' => Taggable::BOOKMARK_TYPE,
             'tag_id' => Tag::query()->where('name', $tag)->first()->id
         ]);
@@ -83,28 +88,76 @@ class UpdateBookmarkTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
+        /** @var Bookmark */
         $model = BookmarkFactory::new()->create([
             'user_id' => $user->id
         ]);
 
         $this->getTestResponse([
             'id' => $model->id,
-            'tags' => $this->faker->word,
+            'tags' => $tag = $this->faker->word,
         ])->assertOk();
+
+        $this->assertDatabaseHas(Bookmark::class, [
+            'id' => $model->id,
+            'title' => $model->title,
+            'has_custom_title' => false,
+            'description' => $model->description,
+            'description_set_by_user' => false,
+        ]);
+
+        $this->assertDatabaseHas(Taggable::class, [
+            'taggable_id' => $model->id,
+            'tagged_by_id' => $user->id,
+            'taggable_type' => Taggable::BOOKMARK_TYPE,
+            'tag_id' => Tag::query()->where('name', $tag)->first()->id
+        ]);
     }
 
     public function testCanUpdateOnlyTitle(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
+        /** @var Bookmark */
         $model = BookmarkFactory::new()->create([
             'user_id' => $user->id
         ]);
 
         $this->getTestResponse([
             'id' => $model->id,
-            'title' => $this->faker->sentence
+            'title' => $title = $this->faker->sentence
         ])->assertOk();
+
+        $this->assertDatabaseHas(Bookmark::class, [
+            'id' => $model->id,
+            'title' => $title,
+            'has_custom_title' => true,
+            'description' => $model->description,
+            'description_set_by_user' => false,
+        ]);
+    }
+
+    public function testCanUpdateOnlyDescription(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        /** @var Bookmark */
+        $model = BookmarkFactory::new()->create([
+            'user_id' => $user->id
+        ]);
+
+        $this->getTestResponse([
+            'id' => $model->id,
+            'description' => $description = $this->faker->sentence
+        ])->assertOk();
+
+        $this->assertDatabaseHas(Bookmark::class, [
+            'id' => $model->id,
+            'title' => $model->title,
+            'has_custom_title' => false,
+            'description' => $description,
+            'description_set_by_user' => true,
+        ]);
     }
 
     public function testWillReturnBadRequestResponseWhenBookmarkTagsLengthIsExceeded(): void

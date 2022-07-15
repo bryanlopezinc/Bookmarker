@@ -4,16 +4,20 @@ declare(strict_types=1);
 
 namespace App\Actions;
 
+use App\Contracts\UpdateBookmarkRepositoryInterface as Repository;
 use App\DataTransferObjects\Bookmark;
-use App\Models\Bookmark as Model;
+use App\DataTransferObjects\Builders\UpdateBookmarkDataBuilder;
 use App\Readers\BookmarkMetaData;
 use App\ValueObjects\BookmarkDescription;
 use Illuminate\Support\Str;
 
 final class UpdateBookmarkDescriptionWithWebPageDescription
 {
-    public function __construct(private BookmarkMetaData $pageData)
+    private Repository $repository;
+
+    public function __construct(private BookmarkMetaData $pageData, Repository $repository = null)
     {
+        $this->repository = $repository ?? app(Repository::class);
     }
 
     public function __invoke(Bookmark $bookmark): void
@@ -28,11 +32,15 @@ final class UpdateBookmarkDescriptionWithWebPageDescription
             return;
         }
 
-        Model::query()
-            ->where('id', $bookmark->id->toInt())
-            ->update([
-                //subtract 3 from MAX_LENGTH to accomodate the 'end' (...) value
-                'description' => Str::limit($description, BookmarkDescription::MAX_LENGTH - 3)
-            ]);
+        //subtract 3 from MAX_LENGTH to accomodate the 'end' (...) value
+        $newDescription = Str::limit($description, BookmarkDescription::MAX_LENGTH - 3);
+
+        $this->repository->update(
+            UpdateBookmarkDataBuilder::new()
+                ->UserId($bookmark->ownerId->toInt())
+                ->id($bookmark->id->toInt())
+                ->description($newDescription)
+                ->build()
+        );
     }
 }

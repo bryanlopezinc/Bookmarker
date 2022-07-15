@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Tests\Unit\Actions;
 
 use App\Actions\UpdateBookmarkDescriptionWithWebPageDescription as UpdateBookmarkDescription;
+use App\Contracts\UpdateBookmarkRepositoryInterface;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
-use App\Models\Bookmark;
+use App\DataTransferObjects\UpdateBookmarkData;
 use App\Readers\BookmarkMetaData;
 use App\ValueObjects\Url;
 use Database\Factories\BookmarkFactory;
 use Illuminate\Foundation\Testing\WithFaker;
+use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
 class UpdateBookmarkDescriptionWithMetaTagTest extends TestCase
@@ -28,17 +30,34 @@ class UpdateBookmarkDescriptionWithMetaTagTest extends TestCase
             'siteName' => $this->faker->word,
         ]);
 
-        (new UpdateBookmarkDescription($data))($bookmark);
+        $this->mockRepository(function (MockObject $repository) use ($description, $bookmark) {
+            $repository->expects($this->once())
+                ->method('update')
+                ->willReturnCallback(function (UpdateBookmarkData $data) use ($description, $bookmark) {
+                    $this->assertEquals($description, $data->description->value);
+                    $this->assertTrue($data->ownerId->equals($bookmark->ownerId));
+                    $this->assertTrue($data->hasDescription);
+                    $this->assertFalse($data->hasTitle);
+                    $this->assertTrue($data->tags->isEmpty());
+                    return $bookmark;
+                });
+        });
 
-        $this->assertDatabaseHas(Bookmark::class, [
-            'id'   => $model->id,
-            'description' => $description
-        ]);
+        (new UpdateBookmarkDescription($data))($bookmark);
+    }
+
+    private function mockRepository(\Closure $mock): void
+    {
+        $repository = $this->getMockBuilder(UpdateBookmarkRepositoryInterface::class)->getMock();
+
+        $mock($repository);
+
+        $this->swap(UpdateBookmarkRepositoryInterface::class, $repository);
     }
 
     public function testWillNotUpdateDescriptionIfDescriptionWasSetByuser(): void
     {
-        $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->create([
+        $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->create([
             'description_set_by_user' => true
         ]))->build();
 
@@ -49,17 +68,16 @@ class UpdateBookmarkDescriptionWithMetaTagTest extends TestCase
             'imageUrl' => new Url($this->faker->url)
         ]);
 
-        (new UpdateBookmarkDescription($data))($bookmark);
+        $this->mockRepository(function (MockObject $repository) use ($bookmark) {
+            $repository->expects($this->never())->method('update')->willReturn($bookmark);
+        });
 
-        $this->assertDatabaseHas(Bookmark::class, [
-            'id'   => $model->id,
-            'description' => $bookmark->description->value
-        ]);
+        (new UpdateBookmarkDescription($data))($bookmark);
     }
 
-    public function testWillNotUpdateDescriptionIfNoTagIsPresent(): void
+    public function testWillNotUpdateDescriptionIfNoDescriptionTagIsPresent(): void
     {
-        $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->create())->build();
+        $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->create())->build();
 
         $data = BookmarkMetaData::fromArray([
             'description' => false,
@@ -68,12 +86,11 @@ class UpdateBookmarkDescriptionWithMetaTagTest extends TestCase
             'imageUrl' => new Url($this->faker->url)
         ]);
 
-        (new UpdateBookmarkDescription($data))($bookmark);
+        $this->mockRepository(function (MockObject $repository) use ($bookmark) {
+            $repository->expects($this->never())->method('update')->willReturn($bookmark);
+        });
 
-        $this->assertDatabaseHas(Bookmark::class, [
-            'id'   => $model->id,
-            'description' => $model->description
-        ]);
+        (new UpdateBookmarkDescription($data))($bookmark);
     }
 
     public function testWill_LimitDescriptionIfPageDescriptionIsTooLong(): void
@@ -87,8 +104,15 @@ class UpdateBookmarkDescriptionWithMetaTagTest extends TestCase
             'siteName' => $this->faker->word,
         ]);
 
-        (new UpdateBookmarkDescription($data))($bookmark);
+        $this->mockRepository(function (MockObject $repository) use ($bookmark) {
+            $repository->expects($this->once())
+                ->method('update')
+                ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
+                    $this->assertEquals(200, strlen($data->description->value));
+                    return $bookmark;
+                });
+        });
 
-        $this->assertEquals(200, strlen(Bookmark::whereKey($bookmark->id->toInt())->first()->description));
+        (new UpdateBookmarkDescription($data))($bookmark);
     }
 }

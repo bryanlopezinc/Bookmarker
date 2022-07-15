@@ -28,7 +28,10 @@ final class UpdateBookmarkDataBuilder extends Builder
 
     public static function new(): self
     {
-        return new self;
+        return (new self)
+            ->hasTitle(false)
+            ->hasDescription(false)
+            ->tags([]);
     }
 
     public function id(int $id): self

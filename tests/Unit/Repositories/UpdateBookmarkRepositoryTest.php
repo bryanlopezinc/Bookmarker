@@ -46,28 +46,4 @@ class UpdateBookmarkRepositoryTest extends TestCase
             'description_set_by_user' => true
         ]);
     }
-
-    public function testWillUpdateOnlySpecifiedData(): void
-    {
-        /** @var Bookmark */
-        $model = BookmarkFactory::new()->create();
-
-        $data = UpdateBookmarkDataBuilder::new()
-            ->id($model->id)
-            ->title($this->faker->word)
-            ->UserId($model->user_id)
-            ->hasDescription(false)
-            ->tags([])
-            ->build();
-
-        $this->repository->update($data);
-
-        $this->assertDatabaseHas(Bookmark::class, [
-            'id' => $model->id,
-            'has_custom_title' => true,
-            'title' => $data->title->value,
-            'description' => $model->description,
-            'description_set_by_user' => false
-        ]);
-    }
 }

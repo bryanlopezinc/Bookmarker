@@ -14,7 +14,6 @@ use App\ValueObjects\UserID;
 use App\ValueObjects\Uuid;
 use ArrayIterator;
 use Closure;
-use Database\Factories\UserFactory;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Bus;
@@ -29,9 +28,7 @@ class ImportChromeBookmarksTest extends TestCase
     {
         $this->expectException(FileNotFoundException::class);
 
-        $userID = new UserID(UserFactory::new()->create()->id);
-
-        $this->getImporter()->import($userID, Uuid::generate(), []);
+        $this->getImporter()->import(new UserID(21), Uuid::generate(), []);
     }
 
     protected function getImporter(): Importer
@@ -41,7 +38,6 @@ class ImportChromeBookmarksTest extends TestCase
 
     public function testWillClearDataAfterImport(): void
     {
-        $userID = new UserID(UserFactory::new()->create()->id);
         $requestID = Uuid::generate();
         $DOMParser = $this->getMockBuilder(DOMParserInterface::class)->getMock();
 
@@ -55,7 +51,7 @@ class ImportChromeBookmarksTest extends TestCase
 
         $this->swap(DOMParserInterface::class, $DOMParser);
 
-        $this->getImporter()->import($userID, $requestID, []);
+        $this->getImporter()->import(new UserID(21), $requestID, []);
     }
 
     private function mockFilesystem(Closure $mock): void
@@ -72,7 +68,6 @@ class ImportChromeBookmarksTest extends TestCase
         Bus::fake([UpdateBookmarkInfo::class]);
 
         $url = $this->faker->url;
-        $userID = new UserID(UserFactory::new()->create()->id);
         $tag = $this->faker->word;
 
         $html = <<<HTML
@@ -99,7 +94,7 @@ class ImportChromeBookmarksTest extends TestCase
                 });
         });
 
-        $this->getImporter()->import($userID, Uuid::generate(), ['tags' => [$tag]]);
+        $this->getImporter()->import(new UserID(21), Uuid::generate(), ['tags' => [$tag]]);
     }
 
     private function mockRepository(Closure $mock): void
@@ -114,8 +109,6 @@ class ImportChromeBookmarksTest extends TestCase
     public function testWillUseChromeBookmarkDateByDefault(): void
     {
         Bus::fake([UpdateBookmarkInfo::class]);
-
-        $userID = new UserID(UserFactory::new()->create()->id);
 
         $html = <<<HTML
             <!DOCTYPE NETSCAPE-Bookmark-file-1>
@@ -141,14 +134,13 @@ class ImportChromeBookmarksTest extends TestCase
                 });
         });
 
-        $this->getImporter()->import($userID, Uuid::generate(), []);
+        $this->getImporter()->import(new UserID(21), Uuid::generate(), []);
     }
 
     public function testWillNotUseChromeBookmarkDateWhenIndicated(): void
     {
         Bus::fake([UpdateBookmarkInfo::class]);
 
-        $userID = new UserID(UserFactory::new()->create()->id);
         $html = <<<HTML
             <!DOCTYPE NETSCAPE-Bookmark-file-1>
             <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
@@ -173,14 +165,13 @@ class ImportChromeBookmarksTest extends TestCase
                 });
         });
 
-        $this->getImporter()->import($userID, Uuid::generate(), ['use_timestamp' => false]);
+        $this->getImporter()->import(new UserID(21), Uuid::generate(), ['use_timestamp' => false]);
     }
 
     public function testWillUseDefaultDateWhenDateIsInvalid(): void
     {
         Bus::fake([UpdateBookmarkInfo::class]);
 
-        $userID = new UserID(UserFactory::new()->create()->id);
         $html = <<<HTML
             <!DOCTYPE NETSCAPE-Bookmark-file-1>
             <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
@@ -205,13 +196,11 @@ class ImportChromeBookmarksTest extends TestCase
                 });
         });
 
-        $this->getImporter()->import($userID, Uuid::generate(), []);
+        $this->getImporter()->import(new UserID(21), Uuid::generate(), []);
     }
 
     public function testWillNotSaveBookmarkIfUrlIsInvalid(): void
     {
-        $userID = new UserID(UserFactory::new()->create()->id);
-
         $html = <<<HTML
             <!DOCTYPE NETSCAPE-Bookmark-file-1>
             <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
@@ -231,14 +220,12 @@ class ImportChromeBookmarksTest extends TestCase
             $repository->expects($this->never())->method('create');
         });
 
-        $this->getImporter()->import($userID, Uuid::generate(), []);
+        $this->getImporter()->import(new UserID(21), Uuid::generate(), []);
     }
 
     public function testWillStoreBookmarks(): void
     {
         Bus::fake([UpdateBookmarkInfo::class]);
-
-        $userID = new UserID(UserFactory::new()->create()->id);
 
         $this->mockFilesystem(function (MockObject $filesystem) {
             $filesystem->expects($this->once())->method('exists')->willReturn(true);
@@ -251,14 +238,14 @@ class ImportChromeBookmarksTest extends TestCase
             $repository->expects($this->exactly(111))->method('create')->willReturn(new Bookmark([]));
         });
 
-        $this->getImporter()->import($userID, Uuid::generate(), []);
+        $this->getImporter()->import(new UserID(21), Uuid::generate(), []);
     }
 
     public function testWillSaveCorrectData(): void
     {
         Bus::fake([UpdateBookmarkInfo::class]);
 
-        $userID = new UserID(UserFactory::new()->create()->id);
+        $userID = new UserID(5430);
 
         $html = <<<HTML
             <!DOCTYPE NETSCAPE-Bookmark-file-1>

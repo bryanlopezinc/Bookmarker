@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs;
 
+use App\Contracts\UpdateBookmarkRepositoryInterface;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\Jobs\UpdateBookmarkInfo;
-use App\Models\Bookmark;
 use App\Readers\HttpClientInterface;
 use Database\Factories\BookmarkFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -18,28 +18,17 @@ class UpdateBookmarkInfoTest extends TestCase
 
     public function test_will_not_perform_updates_when_web_page_request_fails(): void
     {
-        $bookmark = BookmarkFactory::new()->create();
+        $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
 
         $client = $this->getMockBuilder(HttpClientInterface::class)->getMock();
+        $repository = $this->getMockBuilder(UpdateBookmarkRepositoryInterface::class)->getMock();
+
         $client->method('fetchBookmarkPageData')->willReturn(false);
+        $repository->expects($this->never())->method('update');
+        $this->swap(UpdateBookmarkRepositoryInterface::class, $repository);
 
         $job = (new UpdateBookmarkInfo(BookmarkBuilder::fromModel($bookmark)->build()));
 
         $job->handle($client);
-
-        /** @var Bookmark */
-        $resullt = Bookmark::query()->where('id', $bookmark->id)->first();
-
-        $actual = collect([
-            'preview_image_url' => $resullt->preview_image_url,
-            'description' => $resullt->description,
-            'title' => $resullt->title,
-            'has_custom_title' => false,
-            'description_set_by_user' => false
-        ])->sortKeys();
-
-        $expected = collect($bookmark->toArray())->only($actual->keys())->sortKeys();
-
-        $this->assertEquals($expected, $actual);
     }
 }

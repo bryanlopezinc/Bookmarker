@@ -23,7 +23,7 @@ use App\ValueObjects\BookmarkTitle;
 
 final class UpdateBookmarkInfo implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, ReflectsClosures;
+    use Dispatchable, InteractsWithQueue, Queueable;
 
     public function __construct(private Bookmark $bookmark)
     {

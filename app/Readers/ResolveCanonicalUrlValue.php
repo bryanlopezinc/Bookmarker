@@ -16,7 +16,7 @@ final class ResolveCanonicalUrlValue
 
     public function __invoke(): Url|false
     {
-        if ($this->canonicalUrlIsResolvedUrlPath()) {
+        if ($this->isRelativeUrl()) {
             return $this->removeQueryParametersFromResolvedUrl();
         }
 
@@ -44,7 +44,7 @@ final class ResolveCanonicalUrlValue
         return new Url($url);
     }
 
-    private function canonicalUrlIsResolvedUrlPath(): bool
+    private function isRelativeUrl(): bool
     {
         return $this->value === $this->resolvedUrl->getPath();
     }

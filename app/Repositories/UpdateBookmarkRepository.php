@@ -51,6 +51,10 @@ final class UpdateBookmarkRepository implements UpdateBookmarkRepositoryInterfac
             $model->resolved_url = $data->resolvedUrl->value;
         }
 
+        if ($data->hasResolvedAt) {
+            $model->resolved_at = $data->resolvedAt;
+        }
+
         $model->save();
 
         return BookmarkBuilder::fromModel($model)->build();

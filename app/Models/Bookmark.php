@@ -28,6 +28,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
  * @property string $url_canonical
  * @property string $url_canonical_hash
  * @property string $resolved_url
+ *  @property \Carbon\Carbon|null $resolved_at
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  * @method static Builder WithQueryOptions(BookmarkAttributes $queryOptions)
@@ -50,7 +51,8 @@ final class Bookmark extends Model implements TaggableInterface
     protected $casts = [
         'has_custom_title' => 'bool',
         'description_set_by_user' => 'bool',
-        'is_healthy' => 'bool'
+        'is_healthy' => 'bool',
+        'resolved_at' => 'datetime'
     ];
 
     /**

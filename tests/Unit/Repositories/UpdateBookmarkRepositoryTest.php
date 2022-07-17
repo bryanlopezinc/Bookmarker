@@ -73,6 +73,14 @@ class UpdateBookmarkRepositoryTest extends TestCase
                 ]);
             }
         );
+
+        $this->assertUpdatedAttributesEquals(
+            Builder::new()->resolvedAt(now()),
+            function (array $updatedAttributes) {
+                $this->assertCount(1, $updatedAttributes);
+                $this->assertArrayHasKey('resolved_at', $updatedAttributes);
+            }
+        );
     }
 
     private function assertUpdatedAttributesEquals(Builder $updateData, \Closure $assertFn)
@@ -91,7 +99,7 @@ class UpdateBookmarkRepositoryTest extends TestCase
         $updatedBookmark->offsetUnset('updated_at');
         $model->offsetUnset('updated_at');
 
-        $updatedAttributes = array_diff($updatedBookmark->toArray(), $model->toArray());
+        $updatedAttributes = array_diff_assoc($updatedBookmark->toArray(), $model->toArray());
 
         $assertFn($updatedAttributes);
     }

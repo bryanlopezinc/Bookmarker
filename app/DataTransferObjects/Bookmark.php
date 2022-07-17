@@ -14,6 +14,7 @@ use App\Contracts\BelongsToUserInterface;
 use App\Contracts\HashedUrlInterface;
 use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\BookmarkDescription;
+use Carbon\Carbon;
 
 #[EnsureValidTagsCount('MAX_BOOKMARKS_TAGS', 'tags')]
 final class Bookmark extends DataTransferObject implements BelongsToUserInterface
@@ -37,6 +38,8 @@ final class Bookmark extends DataTransferObject implements BelongsToUserInterfac
     public readonly Url $canonicalUrl;
     public readonly HashedUrlInterface $canonicalUrlHash;
     public readonly Url $resolvedUrl;
+    public readonly Carbon $resolvedAt;
+    public readonly bool  $IsResolved;
 
     public function getOwnerID(): UserID
     {

@@ -32,7 +32,8 @@ final class BuildBookmarkFromModel
             ->when($keyExists('is_user_favourite'), fn (BookmarkBuilder $b) => $b->isUserFavourite($model->is_user_favourite))
             ->when($keyExists('url_canonical_hash'), fn (BookmarkBuilder $b) => $b->canonicalUrlHash($model->url_canonical_hash))
             ->when($keyExists('resolved_url'), fn (BookmarkBuilder $b) => $b->canonicalUrl($model->resolved_url))
-            ->when($keyExists('url_canonical'), fn (BookmarkBuilder $b) => $b->resolvedUrl($model->url_canonical));
+            ->when($keyExists('url_canonical'), fn (BookmarkBuilder $b) => $b->resolvedUrl($model->url_canonical))
+            ->when($keyExists('resolved_at'), fn (BookmarkBuilder $b) => $b->resolvedAt($model->resolved_at));
     }
 
     private function siteBuilderCallback(Bookmark $bookmark): callable

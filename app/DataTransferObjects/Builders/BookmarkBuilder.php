@@ -15,6 +15,7 @@ use App\ValueObjects\ResourceID;
 use App\ValueObjects\TimeStamp;
 use App\ValueObjects\Url;
 use App\ValueObjects\UserID;
+use Carbon\Carbon;
 
 final class BookmarkBuilder extends Builder
 {
@@ -156,8 +157,28 @@ final class BookmarkBuilder extends Builder
     }
 
     public function resolvedUrl(Url|string $url): self
-    { 
+    {
         $this->attributes['resolvedUrl'] = is_string($url) ? new Url($url) : $url;
+
+        return $this;
+    }
+
+    public function resolvedAt(?Carbon $date): self
+    {
+        if ($date === null) {
+            $this->IsResolved(false);
+            return $this;
+        }
+
+        $this->IsResolved(true);
+        $this->attributes['resolvedAt'] = $date;
+
+        return $this;
+    }
+
+    public function IsResolved(bool $IsResolved): self
+    {
+        $this->attributes['IsResolved'] = $IsResolved;
 
         return $this;
     }

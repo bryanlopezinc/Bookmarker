@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects;
 
-use App\ValueObjects\UserID;
 use App\ValueObjects\ResourceID;
 use App\Collections\TagsCollection;
 use App\Contracts\HashedUrlInterface;
 use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\BookmarkDescription;
 use App\ValueObjects\Url;
+use Carbon\Carbon;
 
 final class UpdateBookmarkData extends DataTransferObject
 {
@@ -28,4 +28,6 @@ final class UpdateBookmarkData extends DataTransferObject
     public readonly HashedUrlInterface $canonicalUrlHash;
     public readonly Url $resolvedUrl;
     public readonly bool $hasResolvedUrl;
+    public readonly bool $hasResolvedAt;
+    public readonly Carbon $resolvedAt;
 }

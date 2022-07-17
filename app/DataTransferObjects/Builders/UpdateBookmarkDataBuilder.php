@@ -12,6 +12,7 @@ use App\ValueObjects\BookmarkDescription;
 use App\Http\Requests\UpdateBookmarkRequest;
 use App\DataTransferObjects\UpdateBookmarkData;
 use App\ValueObjects\Url;
+use Carbon\Carbon;
 
 final class UpdateBookmarkDataBuilder extends Builder
 {
@@ -36,7 +37,23 @@ final class UpdateBookmarkDataBuilder extends Builder
             ->hasCanonicalUrl(false)
             ->hasCanonicalUrlHash(false)
             ->hasResolvedUrl(false)
+            ->hasResolvedAt(false)
             ->tags([]);
+    }
+
+    public function hasResolvedAt(bool $hasResolvedAt = true): self
+    {
+        $this->attributes['hasResolvedAt'] = $hasResolvedAt;
+
+        return $this;
+    }
+
+    public function resolvedAt(Carbon $date): self
+    {
+        $this->hasResolvedAt();
+        $this->attributes['resolvedAt'] = $date;
+
+        return $this;
     }
 
     public function id(int $id): self

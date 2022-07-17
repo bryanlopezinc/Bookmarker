@@ -29,6 +29,7 @@ class BookmarksRepositoryTest extends TestCase
             $expected = collect((new \ReflectionClass($bookmark::class))->getProperties(ReflectionProperty::IS_PUBLIC))
                 ->map(fn (ReflectionProperty $property) => $property->name)
                 ->reject('isUserFavourite')
+                ->reject('resolvedAt') // nullable attribute. Will not be set because IsResolved is false by default
                 ->sort()
                 ->values()
                 ->all();

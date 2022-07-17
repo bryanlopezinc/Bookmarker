@@ -19,6 +19,7 @@ return new class extends Migration
             $table->boolean('has_custom_title');
             $table->string('url');
             $table->string('resolved_url');
+            $table->timestamp('resolved_at')->nullable();
             $table->string('url_canonical');
             $table->string('url_canonical_hash', 20);
             $table->string('description', 200)->nullable();

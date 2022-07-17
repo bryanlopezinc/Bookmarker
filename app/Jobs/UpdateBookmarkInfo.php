@@ -12,6 +12,8 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use App\Actions;
+use App\Contracts\UpdateBookmarkRepositoryInterface as Repository;
+use App\DataTransferObjects\Builders\UpdateBookmarkDataBuilder as Builder;
 use App\Readers\HttpClientInterface;
 
 final class UpdateBookmarkInfo implements ShouldQueue
@@ -22,7 +24,7 @@ final class UpdateBookmarkInfo implements ShouldQueue
     {
     }
 
-    public function handle(HttpClientInterface $client): void
+    public function handle(HttpClientInterface $client, Repository $repository): void
     {
         $data = $client->fetchBookmarkPageData($this->bookmark);
 
@@ -36,5 +38,12 @@ final class UpdateBookmarkInfo implements ShouldQueue
         (new Actions\UpdateBookmarkTitleWithWebPageTitle($data))($this->bookmark);
         (new Actions\UpdateBookmarkCanonicalUrlWithWebPageData($data))($this->bookmark);
         (new Actions\UpdateBookmarkResolvedUrl($data))($this->bookmark);
+
+        $repository->update(
+            Builder::new()
+                ->id($this->bookmark->id->toInt())
+                ->resolvedAt(now())
+                ->build()
+        );
     }
 }

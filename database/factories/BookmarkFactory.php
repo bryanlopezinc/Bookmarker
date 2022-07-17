@@ -34,7 +34,8 @@ final class BookmarkFactory extends Factory
             'user_id' => UserFactory::new()->create()->id,
             'url_canonical' => $url,
             'url_canonical_hash' => (string) $hasher->hashCanonicalUrl(new Url($url)),
-            'resolved_url' => $url
+            'resolved_url' => $url,
+            'resolved_at' => null
         ];
     }
 }

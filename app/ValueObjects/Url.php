@@ -5,21 +5,26 @@ declare(strict_types=1);
 namespace App\ValueObjects;
 
 use App\Exceptions\MalformedURLException;
+use Spatie\Url\Url as SpatieUrl;
+use Spatie\Url\Exceptions\InvalidArgument;
 
 final class Url
 {
-    private readonly array $parts;
-    public readonly string $value;
+    private readonly SpatieUrl $url;
 
     public function __construct(string|\Stringable $value)
     {
-        $this->value = (string) $value;
+        $exception = new MalformedURLException((string)$value);
 
-        if (filter_var($this->value, FILTER_VALIDATE_URL) === false) {
-            throw new MalformedURLException($value);
+        try {
+            $this->url = SpatieUrl::fromString((string) $value);
+
+            if (filter_var($value, FILTER_VALIDATE_URL) === false) {
+                throw $exception;
+            }
+        } catch (InvalidArgument) {
+            throw $exception;
         }
-
-        $this->parts = parse_url($this->value);
     }
 
     public static function isValid(mixed $url): bool
@@ -30,21 +35,20 @@ final class Url
 
         try {
             new self($url);
-
             return true;
         } catch (MalformedURLException) {
             return false;
         }
     }
 
-    public function getHostName(): string
+    public function getHost(): string
     {
-        return $this->parts['host'];
+        return $this->url->getHost();
     }
 
     public function getPath(): string
     {
-        return $this->parts['path'] ?? '';
+        return $this->url->getPath();
     }
 
     /**
@@ -54,18 +58,11 @@ final class Url
      */
     public  function parseQuery(): array
     {
-        $result = [];
-        $queryString = $this->parts['query'] ?? '';
+        return $this->url->getAllQueryParameters();
+    }
 
-        if (blank($queryString)) {
-            return $result;
-        }
-
-        foreach (explode('&', $queryString) as $query) {
-            [$key, $value] = explode('=', $query);
-            $result[$key] = $value;
-        }
-
-        return $result;
+    public function toString(): string
+    {
+        return (string) $this->url;
     }
 }

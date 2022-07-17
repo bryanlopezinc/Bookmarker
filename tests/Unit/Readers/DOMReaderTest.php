@@ -112,7 +112,7 @@ class DOMReaderTest extends TestCase
                 <meta property="og:image" content="https://image.com/smike.png">
         HTML);
 
-        $this->assertEquals('https://image.com/smike.png', (new Reader($html, new Url($this->faker->url)))->getPreviewImageUrl()->value);
+        $this->assertEquals('https://image.com/smike.png', (new Reader($html, new Url($this->faker->url)))->getPreviewImageUrl()->toString());
     }
 
     public function test_will_read_twitter_Image_tag_if_og_image_tag_is_missing(): void
@@ -121,7 +121,7 @@ class DOMReaderTest extends TestCase
                 <meta name="twitter:image" content="https://twitter.png">
         HTML);
 
-        $this->assertEquals('https://twitter.png', (new Reader($html, new Url($this->faker->url)))->getPreviewImageUrl()->value);
+        $this->assertEquals('https://twitter.png', (new Reader($html, new Url($this->faker->url)))->getPreviewImageUrl()->toString());
     }
 
     public function test_will_return_false_If_og_Image_tag_is_invalid(): void
@@ -274,7 +274,7 @@ class DOMReaderTest extends TestCase
 
         $this->assertEquals(
             $url,
-            (new Reader($html, new Url($url)))->getCanonicalUrl()->value
+            (new Reader($html, new Url($url)))->getCanonicalUrl()->toString()
         );
     }
 
@@ -288,7 +288,7 @@ class DOMReaderTest extends TestCase
 
         $this->assertEquals(
             $url,
-            (new Reader($html, new Url($url)))->getCanonicalUrl()->value
+            (new Reader($html, new Url($url)))->getCanonicalUrl()->toString()
         );
     }
 }

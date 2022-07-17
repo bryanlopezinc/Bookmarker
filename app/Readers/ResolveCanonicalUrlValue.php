@@ -35,7 +35,7 @@ final class ResolveCanonicalUrlValue
 
     private function removeQueryParametersFromResolvedUrl(): Url
     {
-        $url = SpatieUrl::fromString($this->resolvedUrl->value)->withPath($this->value);
+        $url = SpatieUrl::fromString($this->resolvedUrl->toString())->withPath($this->value);
 
         foreach (array_keys($url->getAllQueryParameters()) as $key) {
             $url = $url->withoutQueryParameter($key);
@@ -55,6 +55,6 @@ final class ResolveCanonicalUrlValue
             return false;
         }
 
-        return $url->getHostName() === $this->resolvedUrl->getHostName() && filled($url->getPath());
+        return $url->getHost() === $this->resolvedUrl->getHost() && filled($url->getPath());
     }
 }

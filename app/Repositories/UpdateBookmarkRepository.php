@@ -36,11 +36,11 @@ final class UpdateBookmarkRepository implements UpdateBookmarkRepositoryInterfac
         }
 
         if ($data->hasPreviewImageUrl) {
-            $model->preview_image_url = $data->previewImageUrl->value;
+            $model->preview_image_url = $data->previewImageUrl->toString();
         }
 
         if ($data->hasCanonicalUrl) {
-            $model->url_canonical = $data->canonicalUrl->value;
+            $model->url_canonical = $data->canonicalUrl->toString();
         }
 
         if ($data->hasCanonicalUrlHash) {
@@ -48,7 +48,7 @@ final class UpdateBookmarkRepository implements UpdateBookmarkRepositoryInterfac
         }
 
         if ($data->hasResolvedUrl) {
-            $model->resolved_url = $data->resolvedUrl->value;
+            $model->resolved_url = $data->resolvedUrl->toString();
         }
 
         if ($data->hasResolvedAt) {

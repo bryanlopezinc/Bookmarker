@@ -266,7 +266,7 @@ class ImportChromeBookmarksTest extends TestCase
             $repository->expects($this->exactly(1))
                 ->method('create')
                 ->willReturnCallback(function (Bookmark $bookmark) use ($userID) {
-                    $this->assertEquals("https://www.askapache.com/htaccess/", $bookmark->linkToWebPage->value);
+                    $this->assertEquals("https://www.askapache.com/htaccess/", $bookmark->linkToWebPage->toString());
                     $this->assertEquals(1505762363, $bookmark->timeCreated->timestamp);
                     $this->assertTrue($bookmark->description->isEmpty());
                     $this->assertFalse($bookmark->descriptionWasSetByUser);

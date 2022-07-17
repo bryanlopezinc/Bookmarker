@@ -28,17 +28,17 @@ final class CreateBookmarkRepository implements CreateBookmarkRepositoryInterfac
 
         $model = Model::query()->create([
             'title' => $bookmark->title->value,
-            'url'  => $bookmark->linkToWebPage->value,
+            'url'  => $bookmark->linkToWebPage->toString(),
             'description' => $bookmark->description->value,
             'description_set_by_user' => $bookmark->descriptionWasSetByUser,
             'site_id' => $site->id,
             'user_id' => $bookmark->ownerId->toInt(),
             'has_custom_title'  => $bookmark->hasCustomTitle,
-            'preview_image_url' => $bookmark->hasPreviewImageUrl ? $bookmark->previewImageUrl->value : null,
+            'preview_image_url' => $bookmark->hasPreviewImageUrl ? $bookmark->previewImageUrl->toString() : null,
             'created_at' => $bookmark->timeCreated,
-            'url_canonical' => $bookmark->canonicalUrl->value,
+            'url_canonical' => $bookmark->canonicalUrl->toString(),
             'url_canonical_hash' => (string) $bookmark->canonicalUrlHash,
-            'resolved_url' => $bookmark->resolvedUrl->value
+            'resolved_url' => $bookmark->resolvedUrl->toString()
         ])->setRelation('site', $site);
 
         $this->tagsRepository->attach($bookmark->tags, $model);

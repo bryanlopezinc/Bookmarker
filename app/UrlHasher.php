@@ -18,7 +18,7 @@ final class UrlHasher implements UrlHasherInterface
     public function hashCanonicalUrl(Url $url): HashedUrl
     {
         return (new HashedUrl)->make(
-            hash($this->algo, $url->value, options: $this->options)
+            hash($this->algo, $url->toString(), options: $this->options)
         );
     }
 }

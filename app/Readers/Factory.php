@@ -20,6 +20,6 @@ final class Factory implements HttpClientInterface
 
     private function isLinkToYoutubeVideo(Url $url): bool
     {
-        return str_starts_with($url->value, 'https://www.youtube.com/watch');
+        return str_starts_with($url->toString(), 'https://www.youtube.com/watch');
     }
 }

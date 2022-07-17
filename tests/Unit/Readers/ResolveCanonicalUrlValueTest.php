@@ -10,16 +10,16 @@ use Tests\TestCase;
 
 class ResolveCanonicalUrlValueTest extends TestCase
 {
-    public function testWillReturnCorrectValueWhenUrl_IsPath(): void
+    public function testWillReturnCorrectValueWhenUrl_IsRelative(): void
     {
         $resolver = new ResolveCanonicalUrlValue('/trending/php', new Url('https://github.com/trending/php'));
-        $this->assertEquals('https://github.com/trending/php', $resolver()->value);
+        $this->assertEquals('https://github.com/trending/php', $resolver()->toString());
 
         $resolver = new ResolveCanonicalUrlValue('/trending/php', new Url('https://github.com/trending/php?since=daily&spoken_language_code=en'));
-        $this->assertEquals('https://github.com/trending/php', $resolver()->value);
+        $this->assertEquals('https://github.com/trending/php', $resolver()->toString());
     }
 
-    public function testWillReturnFalseWhenUrlPathIsNotSame(): void
+    public function testWillReturnFalseWhenRelativePathIsNotSame(): void
     {
         $resolver = new ResolveCanonicalUrlValue('/explore', new Url('https://github.com/trending/php'));
         $this->assertFalse($resolver());

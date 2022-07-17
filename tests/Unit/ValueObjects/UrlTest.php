@@ -34,13 +34,13 @@ class UrlTest extends TestCase
     {
         $url = new Url('https://laravel.com/docs/9.x/encryption');
 
-        $this->assertEquals('laravel.com', $url->getHostName());
+        $this->assertEquals('laravel.com', $url->getHost());
     }
 
     public function testGetPath(): void
     {
         $this->assertEquals('/docs/9.x/encryption', (new Url('https://laravel.com/docs/9.x/encryption'))->getPath());
-        $this->assertEquals('', (new Url('https://laravel.com'))->getPath());
+        $this->assertEquals('/', (new Url('https://laravel.com'))->getPath());
     }
 
     public function testParseQuery(): void
@@ -56,8 +56,6 @@ class UrlTest extends TestCase
             'utm_source' => 'bryan',
         ];
 
-        $actual = $url->parseQuery();
-
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($expected, $url->parseQuery());
     }
 }

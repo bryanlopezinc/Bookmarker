@@ -56,7 +56,7 @@ final class YoutubeHttpClient implements HttpClientInterface
 
     private function getVideoID(Url $url): string
     {
-        $parts = parse_url($url->value);
+        $parts = parse_url($url->toString());
 
         parse_str($parts['query'], $query);
 

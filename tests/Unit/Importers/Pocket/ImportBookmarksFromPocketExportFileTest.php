@@ -439,7 +439,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
             $repository->expects($this->exactly(1))
                 ->method('create')
                 ->willReturnCallback(function (Bookmark $bookmark) use ($userID) {
-                    $this->assertEquals("https://cai.tools.sap/blog/top-telegram-bots-2017/", $bookmark->linkToWebPage->value);
+                    $this->assertEquals("https://cai.tools.sap/blog/top-telegram-bots-2017/", $bookmark->linkToWebPage->toString());
                     $this->assertEquals(1627725769, $bookmark->timeCreated->timestamp);
                     $this->assertTrue($bookmark->description->isEmpty());
                     $this->assertFalse($bookmark->descriptionWasSetByUser);

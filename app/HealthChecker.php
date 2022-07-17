@@ -43,7 +43,7 @@ final class HealthChecker
             return collect($bookmarks)->map(function (Bookmark $bookmark) use ($pool) {
                 return $pool->as((string)$bookmark->id->toInt())
                     ->accept('text/html')
-                    ->get($bookmark->linkToWebPage->value);
+                    ->get($bookmark->linkToWebPage->toString());
             })->all();
         });
     }

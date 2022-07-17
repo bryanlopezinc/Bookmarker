@@ -102,11 +102,11 @@ class UpdateBookmarkInfoTest extends TestCase
             $mock->expects($this->once())
                 ->method('update')
                 ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark, $canonicalUrl, $description, $imageUrl, $title, $resolvedUrl) {
-                    $this->assertEquals($canonicalUrl->value, $data->canonicalUrl->value);
+                    $this->assertEquals($canonicalUrl->toString(), $data->canonicalUrl->toString());
                     $this->assertEquals($description, $data->description->value);
-                    $this->assertEquals($imageUrl->value, $data->previewImageUrl->value);
+                    $this->assertEquals($imageUrl->toString(), $data->previewImageUrl->toString());
                     $this->assertEquals($title, $data->title->value);
-                    $this->assertEquals($resolvedUrl->value, $data->resolvedUrl->value);
+                    $this->assertEquals($resolvedUrl->toString(), $data->resolvedUrl->toString());
                     $this->assertTrue($data->hasResolvedAt);
                     $this->assertTrue($data->resolvedAt->isSameMinute());
                     $this->assertTrue($data->hasCanonicalUrl);
@@ -125,7 +125,7 @@ class UpdateBookmarkInfoTest extends TestCase
             $repository->expects($this->once())
                 ->method('hashCanonicalUrl')
                 ->with($this->callback(function (Url $url) use ($canonicalUrl) {
-                    $this->assertEquals($url->value, $canonicalUrl->value);
+                    $this->assertEquals($url->toString(), $canonicalUrl->toString());
                     return true;
                 }));
         });

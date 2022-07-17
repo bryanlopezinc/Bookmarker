@@ -72,14 +72,14 @@ final class CreateBookmarkService
         [$url, $userID] = [$attributes->get('url'), $attributes->get('userID')];
 
         $bookmark = BookmarkBuilder::new()
-            ->title($attributes->get('title', $url->value))
+            ->title($attributes->get('title', $url->toString()))
             ->hasCustomTitle($attributes->get('hasCustomTitle', false))
-            ->url($url->value)
+            ->url($url->toString())
             ->previewImageUrl('')
             ->description($attributes->get('description'))
             ->descriptionWasSetByUser($attributes->get('descriptionSetByUser', false))
             ->bookmarkedById($userID->toInt())
-            ->site(SiteBuilder::new()->domainName($url->getHostName())->name($url->value)->build())
+            ->site(SiteBuilder::new()->domainName($url->getHost())->name($url->toString())->build())
             ->tags($attributes->get('tags', []))
             ->bookmarkedOn($attributes->get('createdOn'))
             ->canonicalUrl($url)

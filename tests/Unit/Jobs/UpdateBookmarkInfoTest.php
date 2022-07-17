@@ -5,14 +5,20 @@ declare(strict_types=1);
 namespace Tests\Unit\Jobs;
 
 use App\Contracts\UpdateBookmarkRepositoryInterface as Repository;
+use App\Contracts\UrlHasherInterface;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\UpdateBookmarkData;
 use App\Jobs\UpdateBookmarkInfo;
+use App\Models\Bookmark;
+use App\Models\WebSite;
 use App\Readers\BookmarkMetaData;
 use App\Readers\HttpClientInterface;
 use App\ValueObjects\Url;
+use Closure;
 use Database\Factories\BookmarkFactory;
+use Database\Factories\SiteFactory;
 use Illuminate\Foundation\Testing\WithFaker;
+use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
 class UpdateBookmarkInfoTest extends TestCase
@@ -23,46 +29,334 @@ class UpdateBookmarkInfoTest extends TestCase
     {
         $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
 
-        $client = $this->getMockBuilder(HttpClientInterface::class)->getMock();
-        $repository = $this->getMockBuilder(Repository::class)->getMock();
+        $this->mockClient(function (MockObject $mock) {
+            $mock->method('fetchBookmarkPageData')->willReturn(false);
+        });
 
-        $client->method('fetchBookmarkPageData')->willReturn(false);
-        $repository->expects($this->never())->method('update');
-        $this->swap(Repository::class, $repository);
+        $this->mockRepository(function (MockObject $mock) {
+            $mock->expects($this->never())->method('update');
+        });
 
-        $job = (new UpdateBookmarkInfo(BookmarkBuilder::fromModel($bookmark)->build()));
-
-        $job->handle($client, app(Repository::class));
+        $this->handleUpdateBookmarkJob($bookmark);
     }
 
     public function test_will_update_resolved_at_attrbute_after_updates(): void
     {
         $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
 
+        $this->mockClient(function (MockObject $mock) {
+            $mock->method('fetchBookmarkPageData')
+                ->willReturn(BookmarkMetaData::fromArray([
+                    'description' => false,
+                    'title' => false,
+                    'siteName' => false,
+                    'imageUrl' => false,
+                    'canonicalUrl' => false,
+                    'reosolvedUrl' => new Url($this->faker->url)
+                ]));
+        });
+
+        $this->mockRepository(function (MockObject $mock) use ($bookmark) {
+            $mock->expects($this->once())
+                ->method('update')
+                ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
+                    $this->assertTrue($data->hasResolvedAt);
+                    $this->assertTrue($data->resolvedAt->isSameMinute());
+                    $this->assertFalse($data->hasCanonicalUrl);
+                    $this->assertFalse($data->hasCanonicalUrlHash);
+                    $this->assertFalse($data->hasDescription);
+                    $this->assertFalse($data->hasPreviewImageUrl);
+                    $this->assertFalse($data->hasTitle);
+                    $this->assertTrue($data->hasResolvedUrl);
+
+                    return BookmarkBuilder::fromModel($bookmark)->build();
+                });
+        });
+
+        $this->handleUpdateBookmarkJob($bookmark);
+    }
+
+    public function testWillUpdateBookmark(): void
+    {
+        $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
+
+        $canonicalUrl = new Url($this->faker->url);
+        $description = $this->faker->sentences(1, true);
+        $imageUrl = new Url($this->faker->url);
+        $title = $this->faker->sentences(1, true);
+        $resolvedUrl = new Url($this->faker->url);
+
+        $this->mockClient(function (MockObject $mock) use ($canonicalUrl, $description, $imageUrl, $title, $resolvedUrl) {
+            $mock->method('fetchBookmarkPageData')
+                ->willReturn(BookmarkMetaData::fromArray([
+                    'description' => $description,
+                    'title' => $title,
+                    'siteName' => false,
+                    'imageUrl' => $imageUrl,
+                    'canonicalUrl' => $canonicalUrl,
+                    'reosolvedUrl' => $resolvedUrl
+                ]));
+        });
+
+        $this->mockRepository(function (MockObject $mock) use ($bookmark, $canonicalUrl, $description, $imageUrl, $title, $resolvedUrl) {
+            $mock->expects($this->once())
+                ->method('update')
+                ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark, $canonicalUrl, $description, $imageUrl, $title, $resolvedUrl) {
+                    $this->assertEquals($canonicalUrl->value, $data->canonicalUrl->value);
+                    $this->assertEquals($description, $data->description->value);
+                    $this->assertEquals($imageUrl->value, $data->previewImageUrl->value);
+                    $this->assertEquals($title, $data->title->value);
+                    $this->assertEquals($resolvedUrl->value, $data->resolvedUrl->value);
+                    $this->assertTrue($data->hasResolvedAt);
+                    $this->assertTrue($data->resolvedAt->isSameMinute());
+                    $this->assertTrue($data->hasCanonicalUrl);
+                    $this->assertTrue($data->hasCanonicalUrlHash);
+                    $this->assertTrue($data->hasDescription);
+                    $this->assertTrue($data->hasPreviewImageUrl);
+                    $this->assertTrue($data->hasTitle);
+                    $this->assertTrue($data->hasResolvedUrl);
+
+                    return BookmarkBuilder::fromModel($bookmark)->build();
+                });
+        });
+
+
+        $this->mockUrlHasher(function (MockObject $repository) use ($canonicalUrl) {
+            $repository->expects($this->once())
+                ->method('hashCanonicalUrl')
+                ->with($this->callback(function (Url $url) use ($canonicalUrl) {
+                    $this->assertEquals($url->value, $canonicalUrl->value);
+                    return true;
+                }));
+        });
+
+        $this->handleUpdateBookmarkJob($bookmark);
+    }
+
+    public function testWillNotUpdateDescriptionIfDescriptionWasSetByuser(): void
+    {
+        $bookmark = BookmarkFactory::new()->make([
+            'id' => 5001,
+            'description_set_by_user' => true
+        ]);
+
+        $this->mockClient(function (MockObject $mock) {
+            $mock->method('fetchBookmarkPageData')
+                ->willReturn(BookmarkMetaData::fromArray([
+                    'description' => $this->faker->sentence,
+                    'imageUrl' => false,
+                    'title' => false,
+                    'siteName' => false,
+                    'canonicalUrl' => false,
+                    'reosolvedUrl' => new Url($this->faker->url)
+                ]));
+        });
+
+        $this->mockRepository(function (MockObject $repository) use ($bookmark) {
+            $repository->expects($this->once())
+                ->method('update')
+                ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
+                    $this->assertFalse($data->hasDescription);
+
+                    return BookmarkBuilder::fromModel($bookmark)->build();
+                });
+        });
+
+        $this->handleUpdateBookmarkJob($bookmark);
+    }
+
+    public function testWill_LimitDescriptionIfPageDescriptionIsTooLong(): void
+    {
+        $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
+        $description = str_repeat('B', 201);
+
+        $this->mockClient(function (MockObject $mock) use ($description) {
+            $mock->method('fetchBookmarkPageData')
+                ->willReturn(BookmarkMetaData::fromArray([
+                    'description' => $description,
+                    'imageUrl' => false,
+                    'title' => false,
+                    'siteName' => false,
+                    'canonicalUrl' => false,
+                    'reosolvedUrl' => new Url($this->faker->url)
+                ]));
+        });
+
+        $this->mockRepository(function (MockObject $repository) use ($bookmark) {
+            $repository->expects($this->once())
+                ->method('update')
+                ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
+                    $this->assertTrue($data->hasDescription);
+                    $this->assertEquals(200, strlen($data->description->value));
+
+                    return BookmarkBuilder::fromModel($bookmark)->build();
+                });
+        });
+
+        $this->handleUpdateBookmarkJob($bookmark);
+    }
+
+    public function testWill_LimitTitleIfPageTitleIsTooLong(): void
+    {
+        $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
+
+        $this->mockClient(function (MockObject $mock) {
+            $mock->method('fetchBookmarkPageData')
+                ->willReturn(BookmarkMetaData::fromArray([
+                    'description' => false,
+                    'imageUrl' => false,
+                    'title' => str_repeat('A', 200),
+                    'siteName' => false,
+                    'canonicalUrl' => false,
+                    'reosolvedUrl' => new Url($this->faker->url)
+                ]));
+        });
+
+        $this->mockRepository(function (MockObject $repository) use ($bookmark) {
+            $repository->expects($this->once())
+                ->method('update')
+                ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
+                    $this->assertTrue($data->hasTitle);
+                    $this->assertEquals(100, strlen($data->title->value));
+
+                    return BookmarkBuilder::fromModel($bookmark)->build();
+                });
+        });
+
+        $this->handleUpdateBookmarkJob($bookmark);
+    }
+
+    public function testWillUpdateSiteName(): void
+    {
+        $site = SiteFactory::new()->create();
+
+        $bookmark = BookmarkFactory::new()->create([
+            'site_id' => $site->id
+        ])->setRelation('site', $site);
+
+        $this->mockClient(function (MockObject $mock) {
+            $mock->method('fetchBookmarkPageData')
+                ->willReturn(BookmarkMetaData::fromArray([
+                    'description' => false,
+                    'imageUrl' => false,
+                    'title' => false,
+                    'siteName' => 'PlayStation',
+                    'canonicalUrl' => false,
+                    'reosolvedUrl' => new Url($this->faker->url)
+                ]));
+        });
+
+        $this->handleUpdateBookmarkJob($bookmark);
+
+        $this->assertDatabaseHas(WebSite::class, [
+            'id'   => $site->id,
+            'name' => 'PlayStation'
+        ]);
+    }
+
+    public function testWillNotUpdateNameWhenSiteNameDataIsFalse(): void
+    {
+        $site = SiteFactory::new()->create();
+
+        $bookmark = BookmarkFactory::new()->create([
+            'site_id' =>  $site->id
+        ])->setRelation('site', $site);
+
+        $data = BookmarkMetaData::fromArray([
+            'siteName' => false,
+            'description' => implode(' ', $this->faker->sentences()),
+            'imageUrl' => new Url($this->faker->url),
+            'title' => $this->faker->sentence,
+            'canonicalUrl' => new Url($this->faker->url),
+            'reosolvedUrl' => new Url($this->faker->url)
+        ]);
+
+        $this->mockClient(function (MockObject $mock) {
+            $mock->method('fetchBookmarkPageData')
+                ->willReturn(BookmarkMetaData::fromArray([
+                    'description' => false,
+                    'imageUrl' => false,
+                    'title' => false,
+                    'siteName' => false,
+                    'canonicalUrl' => false,
+                    'reosolvedUrl' => new Url($this->faker->url)
+                ]));
+        });
+
+        $this->handleUpdateBookmarkJob($bookmark);
+
+        $this->assertDatabaseHas(WebSite::class, [
+            'id'   => $site->id,
+            'name' => $site->name
+        ]);
+    }
+
+    public function testWillNotUpdateNameIfNameHasBeenUpdated(): void
+    {
+        $site = SiteFactory::new()->create([
+            'name_updated_at' => now(),
+            'name' => 'foosite'
+        ]);
+
+        $bookmark = BookmarkFactory::new()->create([
+            'site_id' => $site->id
+        ])->setRelation('site', $site);
+
+        $this->mockClient(function (MockObject $mock) {
+            $mock->method('fetchBookmarkPageData')
+                ->willReturn(BookmarkMetaData::fromArray([
+                    'description' => false,
+                    'imageUrl' => false,
+                    'title' => false,
+                    'siteName' => 'PlayStation',
+                    'canonicalUrl' => false,
+                    'reosolvedUrl' => new Url($this->faker->url)
+                ]));
+        });
+
+        $this->handleUpdateBookmarkJob($bookmark);
+
+        $this->assertDatabaseHas(WebSite::class, [
+            'id'   => $site->id,
+            'name' => 'foosite'
+        ]);
+    }
+
+    private function mockClient(Closure $mock): void
+    {
         $client = $this->getMockBuilder(HttpClientInterface::class)->getMock();
+
+        $mock($client);
+
+        $this->swap(HttpClientInterface::class, $client);
+    }
+
+    private function mockRepository(Closure $mock): void
+    {
         $repository = $this->getMockBuilder(Repository::class)->getMock();
 
-        $client->method('fetchBookmarkPageData')
-            ->willReturn(BookmarkMetaData::fromArray([
-                'description' => false,
-                'title' => false,
-                'siteName' => false,
-                'imageUrl' => false,
-                'canonicalUrl' => false,
-                'reosolvedUrl' => new Url($this->faker->url)
-            ]));
-
-        $repository->expects($this->exactly(2))
-            ->method('update')
-            ->withConsecutive([], [$this->callback(function (UpdateBookmarkData $data) {
-                $this->assertTrue($data->hasResolvedAt);
-                $this->assertTrue($data->resolvedAt->isSameMinute());
-                return true;
-            })])
-            ->willReturn(BookmarkBuilder::fromModel($bookmark)->build());
+        $mock($repository);
 
         $this->swap(Repository::class, $repository);
+    }
 
-        (new UpdateBookmarkInfo(BookmarkBuilder::fromModel($bookmark)->build()))->handle($client, $repository);
+    private function handleUpdateBookmarkJob(Bookmark $bookmark)
+    {
+        $job = (new UpdateBookmarkInfo(BookmarkBuilder::fromModel($bookmark)->build()));
+
+        $job->handle(
+            app(HttpClientInterface::class),
+            app(Repository::class),
+            app(UrlHasherInterface::class)
+        );
+    }
+
+    private function mockUrlHasher(\Closure $mock): void
+    {
+        $hasher = $this->getMockBuilder(UrlHasherInterface::class)->getMock();
+
+        $mock($hasher);
+
+        $this->swap(UrlHasherInterface::class, $hasher);
     }
 }

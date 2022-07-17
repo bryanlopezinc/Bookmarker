@@ -37,6 +37,15 @@ class DOMReaderTest extends TestCase
         $this->assertEquals($description, (new Reader($html, new Url($this->faker->url)))->getPageDescription());
     }
 
+    public function test_will_return_false_when_og_description_tag_is_blank(): void
+    {
+        $html = $this->html(<<<HTML
+                <meta property="og:description" content=" ">
+        HTML);
+
+        $this->assertFalse((new Reader($html, new Url($this->faker->url)))->getPageDescription());
+    }
+
     private function html(string $insert = ''): string
     {
         $html = <<<HTML
@@ -68,6 +77,15 @@ class DOMReaderTest extends TestCase
         $this->assertEquals($description, (new Reader($html, new Url($this->faker->url)))->getPageDescription());
     }
 
+    public function test_will_return_false_when_description_meta_tag_is_blank(): void
+    {
+        $html = $this->html(<<<HTML
+                <meta name="description" content="  ">
+        HTML);
+
+        $this->assertFalse((new Reader($html, new Url($this->faker->url)))->getPageDescription());
+    }
+
     public function test_will_read_twiiter_tag_If_no_description_tags_are_present(): void
     {
         $description = $this->faker->sentence;
@@ -77,6 +95,15 @@ class DOMReaderTest extends TestCase
         HTML);
 
         $this->assertEquals($description, (new Reader($html, new Url($this->faker->url)))->getPageDescription());
+    }
+
+    public function test_will_return_false_twitter_description_tag_is_blank(): void
+    {
+        $html = $this->html(<<<HTML
+                <meta name="twitter:description" content="  ">
+        HTML);
+
+        $this->assertFalse((new Reader($html, new Url($this->faker->url)))->getPageDescription());
     }
 
     public function test_will_read_og_Image_tag(): void
@@ -128,6 +155,16 @@ class DOMReaderTest extends TestCase
         $this->assertEquals($title, (new Reader($html, new Url($this->faker->url)))->getPageTitle());
     }
 
+    public function test_will_return_false_when_og_title_is_blank(): void
+    {
+        $html = $this->html(<<<HTML
+                <meta property="og:title" content="  ">
+                <title>Page Title</title>
+        HTML);
+
+        $this->assertFalse((new Reader($html, new Url($this->faker->url)))->getPageTitle());
+    }
+
     public function test_will_read_title_tag_if_og_title_tag_Is_absent(): void
     {
         $title = $this->faker->title;
@@ -140,6 +177,15 @@ class DOMReaderTest extends TestCase
         $this->assertEquals($title, (new Reader($html, new Url($this->faker->url)))->getPageTitle());
     }
 
+    public function test_will_return_false_when_title_tag_is_blank(): void
+    {
+        $html = $this->html(<<<HTML
+                <title></title>
+        HTML);
+
+        $this->assertFalse((new Reader($html, new Url($this->faker->url)))->getPageTitle());
+    }
+
     public function test_will_read_twitter_tag_if_no_title_tags_are_found(): void
     {
         $title = $this->faker->title;
@@ -149,6 +195,15 @@ class DOMReaderTest extends TestCase
         HTML);
 
         $this->assertEquals($title, (new Reader($html, new Url($this->faker->url)))->getPageTitle());
+    }
+
+    public function test_will_return_false_when_twiiter_title_tag_is_blank(): void
+    {
+        $html = $this->html(<<<HTML
+                <meta name="twitter:title" content="  ">
+        HTML);
+
+        $this->assertFalse((new Reader($html, new Url($this->faker->url)))->getPageTitle());
     }
 
     public function test_will_encode_title_tag_content_when_invalid(): void
@@ -218,7 +273,7 @@ class DOMReaderTest extends TestCase
         HTML);
 
         $this->assertEquals(
-           $url,
+            $url,
             (new Reader($html, new Url($url)))->getCanonicalUrl()->value
         );
     }

@@ -78,9 +78,9 @@ final class UpdateBookmarkDataBuilder extends Builder
         return $this;
     }
 
-    public function title(string $title): self
+    public function title(string |BookmarkTitle $title): self
     {
-        $this->attributes['title'] = new BookmarkTitle($title);
+        $this->attributes['title'] = is_string($title) ? new BookmarkTitle($title) : $title;
 
         $this->hasTitle(true);
 
@@ -94,9 +94,9 @@ final class UpdateBookmarkDataBuilder extends Builder
         return $this;
     }
 
-    public function description(string $description): self
+    public function description(string|BookmarkDescription $description): self
     {
-        $this->attributes['description'] = new BookmarkDescription($description);
+        $this->attributes['description'] = is_string($description) ? new BookmarkDescription($description) : $description;
 
         $this->hasDescription(true);
 

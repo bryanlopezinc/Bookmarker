@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\ValueObjects;
 
+use Illuminate\Support\Str;
+
 final class BookmarkTitle
 {
     public const MAX_LENGTH = 100;
@@ -18,6 +20,23 @@ final class BookmarkTitle
         return [
             'filled', 'string', 'max:' . self::MAX_LENGTH
         ];
+    }
+
+    public static function fromLongtText(string $text): self
+    {
+        try {
+            $bookmarkTitle = new self($text);
+            return $bookmarkTitle;
+        } catch (\LengthException $e) {
+            if ($e->getCode() === 5000) {
+                throw $e;
+            }
+
+            return new self(
+                //subtract 3 from MAX_LENGTH to accomodate the 'end' (...) value
+                Str::limit($text, BookmarkTitle::MAX_LENGTH - 3)
+            );
+        }
     }
 
     private function validate(): void

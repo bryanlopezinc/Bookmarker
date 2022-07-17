@@ -37,7 +37,9 @@ final class YoutubeHttpClient implements HttpClientInterface
             'title' => $response->json('items.0.snippet.title'),
             'description' => $response->json('items.0.snippet.description'),
             'imageUrl' => new Url($response->json('items.0.snippet.thumbnails.medium.url')),
-            'siteName' => self::SITE_NAME
+            'siteName' => self::SITE_NAME,
+            'canonicalUrl' => $bookmark->canonicalUrl,
+            'reosolvedUrl' => $bookmark->resolvedUrl
         ]);
     }
 

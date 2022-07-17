@@ -39,6 +39,18 @@ final class UpdateBookmarkRepository implements UpdateBookmarkRepositoryInterfac
             $model->preview_image_url = $data->previewImageUrl->value;
         }
 
+        if ($data->hasCanonicalUrl) {
+            $model->url_canonical = $data->canonicalUrl->value;
+        }
+
+        if ($data->hasCanonicalUrlHash) {
+            $model->url_canonical_hash = (string)$data->canonicalUrlHash;
+        }
+
+        if ($data->hasResolvedUrl) {
+            $model->resolved_url = $data->resolvedUrl->value;
+        }
+
         $model->save();
 
         return BookmarkBuilder::fromModel($model)->build();

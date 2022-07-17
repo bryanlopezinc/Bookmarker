@@ -29,7 +29,10 @@ final class BuildBookmarkFromModel
             ->when($keyExists('tags'), $this->tagsBuilderCallback($attributes))
             ->when($keyExists('site'), $this->siteBuilderCallback($model))
             ->when($keyExists('is_healthy'), fn (BookmarkBuilder $b) => $b->isHealthy(is_null($model->is_healthy) ? true :  (bool)$model->is_healthy))
-            ->when($keyExists('is_user_favourite'), fn (BookmarkBuilder $b) => $b->isUserFavourite($model->is_user_favourite));
+            ->when($keyExists('is_user_favourite'), fn (BookmarkBuilder $b) => $b->isUserFavourite($model->is_user_favourite))
+            ->when($keyExists('url_canonical_hash'), fn (BookmarkBuilder $b) => $b->canonicalUrlHash($model->url_canonical_hash))
+            ->when($keyExists('resolved_url'), fn (BookmarkBuilder $b) => $b->canonicalUrl($model->resolved_url))
+            ->when($keyExists('url_canonical'), fn (BookmarkBuilder $b) => $b->resolvedUrl($model->url_canonical));
     }
 
     private function siteBuilderCallback(Bookmark $bookmark): callable

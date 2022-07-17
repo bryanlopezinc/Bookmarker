@@ -11,6 +11,7 @@ use App\ValueObjects\TimeStamp;
 use App\ValueObjects\ResourceID;
 use App\Collections\TagsCollection;
 use App\Contracts\BelongsToUserInterface;
+use App\Contracts\HashedUrlInterface;
 use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\BookmarkDescription;
 
@@ -33,6 +34,9 @@ final class Bookmark extends DataTransferObject implements BelongsToUserInterfac
     public readonly TagsCollection $tags;
     public bool $isHealthy;
     public bool $isUserFavourite;
+    public readonly Url $canonicalUrl;
+    public readonly HashedUrlInterface $canonicalUrlHash;
+    public readonly Url $resolvedUrl;
 
     public function getOwnerID(): UserID
     {

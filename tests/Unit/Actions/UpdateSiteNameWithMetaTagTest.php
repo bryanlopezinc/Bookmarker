@@ -29,6 +29,8 @@ class UpdateSiteNameWithMetaTagTest extends TestCase
             'description' => implode(' ', $this->faker->sentences()),
             'imageUrl' => new Url($this->faker->url),
             'title' => $this->faker->sentence,
+            'canonicalUrl' => new Url($this->faker->url),
+            'reosolvedUrl' => new Url($this->faker->url)
         ]);
 
         (new UpdateSiteName($data))($bookmark);
@@ -50,6 +52,8 @@ class UpdateSiteNameWithMetaTagTest extends TestCase
             'description' => implode(' ', $this->faker->sentences()),
             'imageUrl' => new Url($this->faker->url),
             'title' => $this->faker->sentence,
+            'canonicalUrl' => new Url($this->faker->url),
+            'reosolvedUrl' => new Url($this->faker->url)
         ]);
 
         (new UpdateSiteName($data))($bookmark);
@@ -71,6 +75,8 @@ class UpdateSiteNameWithMetaTagTest extends TestCase
             'description' => implode(' ', $this->faker->sentences()),
             'imageUrl' => new Url($this->faker->url),
             'title' => $this->faker->sentence,
+            'canonicalUrl' => new Url($this->faker->url),
+            'reosolvedUrl' => new Url($this->faker->url)
         ]);
 
         (new UpdateSiteName($data))($bookmark);

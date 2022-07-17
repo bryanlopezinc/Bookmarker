@@ -25,6 +25,9 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
  * @property string|null $preview_image_url
  * @property int $user_id foreign key to \App\Models\User
  * @property int $site_id foreign key to \App\Models\WebSite
+ * @property string $url_canonical
+ * @property string $url_canonical_hash
+ * @property string $resolved_url
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  * @method static Builder WithQueryOptions(BookmarkAttributes $queryOptions)

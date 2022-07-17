@@ -6,7 +6,7 @@ namespace App\Actions;
 
 use App\Contracts\UpdateBookmarkRepositoryInterface as Repository;
 use App\DataTransferObjects\Bookmark;
-use App\DataTransferObjects\Builders\UpdateBookmarkDataBuilder;
+use App\DataTransferObjects\Builders\UpdateBookmarkDataBuilder as Builder;
 use App\Readers\BookmarkMetaData;
 use App\ValueObjects\BookmarkDescription;
 use Illuminate\Support\Str;
@@ -36,7 +36,7 @@ final class UpdateBookmarkDescriptionWithWebPageDescription
         $newDescription = Str::limit($description, BookmarkDescription::MAX_LENGTH - 3);
 
         $this->repository->update(
-            UpdateBookmarkDataBuilder::new()
+            Builder::new()
                 ->id($bookmark->id->toInt())
                 ->description($newDescription)
                 ->build()

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Actions;
 
-use App\Actions\UpdateBookmarkThumbnailWithWebPageImage as UpdateBookmarkImage;
+use App\Actions\UpdateBookmarkResolvedUrl;
 use App\Contracts\UpdateBookmarkRepositoryInterface;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\UpdateBookmarkData;
@@ -15,40 +15,40 @@ use Illuminate\Foundation\Testing\WithFaker;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
-class UpdateBookmarkImageUrlWithMetaTagTest extends TestCase
+class UpdateBookmarkResolvedUrlTest extends TestCase
 {
     use WithFaker;
 
-    public function testWillUpdateImageUrl(): void
+    public function testWillUpdateBookmarkResolvedUrl(): void
     {
-        $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->make(['id' => 22]))->build();
+        $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->make(['id' => 400]))->build();
 
         $data = BookmarkMetaData::fromArray([
-            'imageUrl' => $url = new Url($this->faker->url),
-            'description' => implode(' ', $this->faker->sentences()),
+            'description' => $this->faker->sentence,
+            'imageUrl' => new Url($this->faker->url),
             'title' => $this->faker->sentence,
             'siteName' => $this->faker->word,
             'canonicalUrl' => new Url($this->faker->url),
-            'reosolvedUrl' => new Url($this->faker->url)
+            'reosolvedUrl' => $url = new Url($this->faker->url)
         ]);
 
         $this->mockRepository(function (MockObject $repository) use ($url, $bookmark) {
             $repository->expects($this->once())
                 ->method('update')
                 ->willReturnCallback(function (UpdateBookmarkData $data) use ($url, $bookmark) {
-                    $this->assertEquals($url->value, $data->previewImageUrl->value);
+                    $this->assertEquals($url->value, $data->resolvedUrl->value);
                     $this->assertFalse($data->hasDescription);
                     $this->assertFalse($data->hasTitle);
                     $this->assertTrue($data->tags->isEmpty());
                     $this->assertFalse($data->hasCanonicalUrlHash);
                     $this->assertFalse($data->hasCanonicalUrl);
-                    $this->assertFalse($data->hasResolvedUrl);
-                    $this->assertTrue($data->hasPreviewImageUrl);
+                    $this->assertTrue($data->hasResolvedUrl);
+                    $this->assertFalse($data->hasPreviewImageUrl);
                     return $bookmark;
                 });
         });
 
-        (new UpdateBookmarkImage($data))($bookmark);
+        (new UpdateBookmarkResolvedUrl($data))($bookmark);
     }
 
     private function mockRepository(\Closure $mock): void
@@ -58,25 +58,5 @@ class UpdateBookmarkImageUrlWithMetaTagTest extends TestCase
         $mock($repository);
 
         $this->swap(UpdateBookmarkRepositoryInterface::class, $repository);
-    }
-
-    public function testWillNotUpdateImageUrlWhenImageUrl_IsInvalid(): void
-    {
-        $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->make())->build();
-
-        $data = BookmarkMetaData::fromArray([
-            'imageUrl' => false,
-            'description' => implode(' ', $this->faker->sentences()),
-            'title' => $this->faker->sentence,
-            'siteName' => $this->faker->word,
-            'canonicalUrl' => new Url($this->faker->url),
-            'reosolvedUrl' => new Url($this->faker->url)
-        ]);
-
-        $this->mockRepository(function (MockObject $repository) use ($bookmark) {
-            $repository->expects($this->never())->method('update')->willReturn($bookmark);
-        });
-
-        (new UpdateBookmarkImage($data))($bookmark);
     }
 }

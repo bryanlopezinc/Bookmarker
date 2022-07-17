@@ -11,8 +11,9 @@ use DOMXPath;
 final class DOMReader
 {
     private readonly DOMXPath $dOMXPath;
+    private readonly Url $resolvedUrl;
 
-    public function __construct(string $source)
+    public function __construct(string $source, Url $resolvedUrl)
     {
         libxml_use_internal_errors(true);
 
@@ -20,6 +21,7 @@ final class DOMReader
         $documnet->loadHTML($source);
 
         $this->dOMXPath = new DOMXPath($documnet);
+        $this->resolvedUrl = $resolvedUrl;
     }
 
     public function getPageDescription(): string|false
@@ -86,6 +88,16 @@ final class DOMReader
         )->item(0)?->nodeValue;
 
         return $this->filterValue($name);
+    }
+
+    public function getCanonicalUrl(): Url|false
+    {
+        $value = $this->evalute(
+            '//link[@rel="canonical"]/@href',
+            '//meta[@property="og:url"]/@content',
+        )->item(0)?->nodeValue;
+
+        return (new ResolveCanonicalUrlValue((string) $value, $this->resolvedUrl))();
     }
 
     private function filterValue(?string $value): string|false

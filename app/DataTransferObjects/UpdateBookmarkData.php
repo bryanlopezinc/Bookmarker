@@ -7,6 +7,7 @@ namespace App\DataTransferObjects;
 use App\ValueObjects\UserID;
 use App\ValueObjects\ResourceID;
 use App\Collections\TagsCollection;
+use App\Contracts\HashedUrlInterface;
 use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\BookmarkDescription;
 use App\ValueObjects\Url;
@@ -21,4 +22,10 @@ final class UpdateBookmarkData extends DataTransferObject
     public readonly TagsCollection $tags;
     public readonly bool $hasPreviewImageUrl;
     public readonly Url $previewImageUrl;
+    public readonly Url $canonicalUrl;
+    public readonly bool $hasCanonicalUrl;
+    public readonly bool $hasCanonicalUrlHash;
+    public readonly HashedUrlInterface $canonicalUrlHash;
+    public readonly Url $resolvedUrl;
+    public readonly bool $hasResolvedUrl;
 }

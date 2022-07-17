@@ -34,5 +34,7 @@ final class UpdateBookmarkInfo implements ShouldQueue
         (new Actions\UpdateBookmarkDescriptionWithWebPageDescription($data))($this->bookmark);
         (new Actions\UpdateSiteNameWithWebPageSiteName($data))($this->bookmark);
         (new Actions\UpdateBookmarkTitleWithWebPageTitle($data))($this->bookmark);
+        (new Actions\UpdateBookmarkCanonicalUrlWithWebPageData($data))($this->bookmark);
+        (new Actions\UpdateBookmarkResolvedUrl($data))($this->bookmark);
     }
 }

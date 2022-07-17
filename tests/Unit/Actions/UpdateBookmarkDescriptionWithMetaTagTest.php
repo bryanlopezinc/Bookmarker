@@ -28,6 +28,8 @@ class UpdateBookmarkDescriptionWithMetaTagTest extends TestCase
             'imageUrl' => new Url($this->faker->url),
             'title' => $this->faker->sentence,
             'siteName' => $this->faker->word,
+            'canonicalUrl' => new Url($this->faker->url),
+            'reosolvedUrl' => new Url($this->faker->url)
         ]);
 
         $this->mockRepository(function (MockObject $repository) use ($description, $bookmark) {
@@ -38,6 +40,10 @@ class UpdateBookmarkDescriptionWithMetaTagTest extends TestCase
                     $this->assertTrue($data->hasDescription);
                     $this->assertFalse($data->hasTitle);
                     $this->assertTrue($data->tags->isEmpty());
+                    $this->assertFalse($data->hasCanonicalUrlHash);
+                    $this->assertFalse($data->hasCanonicalUrl);
+                    $this->assertFalse($data->hasResolvedUrl);
+                    $this->assertFalse($data->hasPreviewImageUrl);
                     return $bookmark;
                 });
         });
@@ -64,7 +70,9 @@ class UpdateBookmarkDescriptionWithMetaTagTest extends TestCase
             'description' => implode(' ', $this->faker->sentences()),
             'title' => $this->faker->sentence,
             'siteName' => $this->faker->word,
-            'imageUrl' => new Url($this->faker->url)
+            'imageUrl' => new Url($this->faker->url),
+            'canonicalUrl' => new Url($this->faker->url),
+            'reosolvedUrl' => new Url($this->faker->url)
         ]);
 
         $this->mockRepository(function (MockObject $repository) use ($bookmark) {
@@ -82,7 +90,9 @@ class UpdateBookmarkDescriptionWithMetaTagTest extends TestCase
             'description' => false,
             'title' => $this->faker->sentence,
             'siteName' => $this->faker->word,
-            'imageUrl' => new Url($this->faker->url)
+            'imageUrl' => new Url($this->faker->url),
+            'canonicalUrl' => new Url($this->faker->url),
+            'reosolvedUrl' => new Url($this->faker->url)
         ]);
 
         $this->mockRepository(function (MockObject $repository) use ($bookmark) {
@@ -101,6 +111,8 @@ class UpdateBookmarkDescriptionWithMetaTagTest extends TestCase
             'imageUrl' => new Url($this->faker->url),
             'title' => $this->faker->sentence,
             'siteName' => $this->faker->word,
+            'canonicalUrl' => $url = new Url($this->faker->url),
+            'reosolvedUrl' => new Url($this->faker->url)
         ]);
 
         $this->mockRepository(function (MockObject $repository) use ($bookmark) {

@@ -105,18 +105,17 @@ class CreateBookmarksTest extends TestCase
     public function testWillCreateBookmark(): void
     {
         Bus::fake(UpdateBookmarkInfo::class);
-
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->getTestResponse([
-            'url' => $url =  $this->faker->url
-        ])->assertCreated();
+        $this->getTestResponse(['url' => $url =  $this->faker->url])->assertCreated();
 
         /** @var Bookmark */
         $bookmark = Bookmark::query()->where('user_id', $user->id)->sole();
 
         $this->assertEquals($url, $bookmark->title);
         $this->assertEquals($url, $bookmark->url);
+        $this->assertEquals($url, $bookmark->url_canonical);
+        $this->assertEquals($url, $bookmark->resolved_url);
         $this->assertEquals($user->id, $bookmark->user_id);
         $this->assertNull($bookmark->description);
         $this->assertFalse($bookmark->has_custom_title);

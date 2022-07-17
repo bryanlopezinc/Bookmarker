@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Contracts\UrlHasherInterface;
 use App\Models\Bookmark;
-use App\Models\Tag;
+use App\ValueObjects\Url;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 final class BookmarkFactory extends Factory
@@ -19,6 +20,9 @@ final class BookmarkFactory extends Factory
      */
     public function definition()
     {
+        /** @var UrlHasherInterface */
+        $hasher = app(UrlHasherInterface::class);
+
         return [
             'title' => $url = $this->faker->url(),
             'has_custom_title' => false,
@@ -27,7 +31,10 @@ final class BookmarkFactory extends Factory
             'description_set_by_user' => false,
             'preview_image_url' => $this->faker->url,
             'site_id' => SiteFactory::new()->create()->id,
-            'user_id' => UserFactory::new()->create()->id
+            'user_id' => UserFactory::new()->create()->id,
+            'url_canonical' => $url,
+            'url_canonical_hash' => (string) $hasher->hashCanonicalUrl(new Url($url)),
+            'resolved_url' => $url
         ];
     }
 }

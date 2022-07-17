@@ -9,7 +9,7 @@ use App\Readers\BookmarkMetaData;
 use App\ValueObjects\BookmarkTitle;
 use Illuminate\Support\Str;
 use App\Contracts\UpdateBookmarkRepositoryInterface as Repository;
-use App\DataTransferObjects\Builders\UpdateBookmarkDataBuilder;
+use App\DataTransferObjects\Builders\UpdateBookmarkDataBuilder as Builder;
 
 final class UpdateBookmarkTitleWithWebPageTitle
 {
@@ -34,7 +34,7 @@ final class UpdateBookmarkTitleWithWebPageTitle
         $newTitle = Str::limit($title, BookmarkTitle::MAX_LENGTH - 3);
 
         $this->repository->update(
-            UpdateBookmarkDataBuilder::new()
+            Builder::new()
                 ->id($bookmark->id->toInt())
                 ->title($newTitle)
                 ->build()

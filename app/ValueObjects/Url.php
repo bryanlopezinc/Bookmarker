@@ -19,7 +19,7 @@ final class Url
             throw new MalformedURLException($value);
         }
 
-        $this->parts = parse_url($value);
+        $this->parts = parse_url($this->value);
     }
 
     public static function isValid(mixed $url): bool

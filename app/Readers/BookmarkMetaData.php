@@ -13,6 +13,8 @@ final class BookmarkMetaData extends DataTransferObject
     public readonly string|false $title;
     public readonly string|false $hostSiteName;
     public readonly Url|false $thumbnailUrl;
+    public readonly Url|false $canonicalUrl;
+    public readonly Url $reosolvedUrl;
 
     /**
      * @param array<string,mixed> $data
@@ -22,7 +24,9 @@ final class BookmarkMetaData extends DataTransferObject
      *         'description' => string|false,
      *          'title' => string|false,
      *          'siteName' => string|false,
-     *          'imageUrl' => App\ValueObjects\Url::class|false
+     *          'imageUrl' => App\ValueObjects\Url::class|false,
+     *          'canonicalUrl' => App\ValueObjects\Url::class|false,
+     *          'reosolvedUrl' => App\ValueObjects\Url::class
      *    ]
      * ```
      */
@@ -32,7 +36,9 @@ final class BookmarkMetaData extends DataTransferObject
             'description' => $data['description'],
             'title' => $data['title'],
             'hostSiteName' => $data['siteName'],
-            'thumbnailUrl' => $data['imageUrl']
+            'thumbnailUrl' => $data['imageUrl'],
+            'canonicalUrl' => $data['canonicalUrl'],
+            'reosolvedUrl' => $data['reosolvedUrl']
         ]);
     }
 }

@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\DataTransferObjects\Builders;
 
 use App\Collections\TagsCollection;
+use App\Contracts\HashedUrlInterface;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\WebSite;
 use App\Models\Bookmark as Model;
 use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\BookmarkDescription;
 use App\ValueObjects\ResourceID;
-use App\ValueObjects\Tag;
 use App\ValueObjects\TimeStamp;
 use App\ValueObjects\Url;
 use App\ValueObjects\UserID;
@@ -144,6 +144,30 @@ final class BookmarkBuilder extends Builder
     public function isUserFavourite(bool $value): self
     {
         $this->attributes['isUserFavourite'] = $value;
+
+        return $this;
+    }
+
+    public function canonicalUrl(Url|string $url): self
+    {
+        $this->attributes['canonicalUrl'] = is_string($url) ? new Url($url) : $url;
+
+        return $this;
+    }
+
+    public function resolvedUrl(Url|string $url): self
+    { 
+        $this->attributes['resolvedUrl'] = is_string($url) ? new Url($url) : $url;
+
+        return $this;
+    }
+
+    public function canonicalUrlHash(HashedUrlInterface|string $hash): self
+    {
+        /** @var HashedUrlInterface */
+        $hashedUrlInterface = app(HashedUrlInterface::class);
+
+        $this->attributes['canonicalUrlHash'] = is_string($hash) ? $hashedUrlInterface->make($hash) : $hash;
 
         return $this;
     }

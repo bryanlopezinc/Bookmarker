@@ -5,21 +5,23 @@ declare(strict_types=1);
 namespace Tests\Unit\Readers;
 
 use App\Readers\DOMReader as Reader;
+use App\ValueObjects\Url;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
-class ReaderTest extends TestCase
+class DOMReaderTest extends TestCase
 {
     use WithFaker;
 
     public function test_default(): void
     {
-        $reader = new Reader($this->html());
+        $reader = new Reader($this->html(), new Url($this->faker->url));
 
         $this->assertFalse($reader->getSiteName());
         $this->assertFalse($reader->getPageDescription());
         $this->assertFalse($reader->getPreviewImageUrl());
         $this->assertFalse($reader->getPageTitle());
+        $this->assertFalse($reader->getCanonicalUrl());
     }
 
     public function test_will_first_attempt_to_read_og_description_tag(): void
@@ -32,7 +34,7 @@ class ReaderTest extends TestCase
                 <meta property="og:description" content="$description">
         HTML);
 
-        $this->assertEquals($description, (new Reader($html))->getPageDescription());
+        $this->assertEquals($description, (new Reader($html, new Url($this->faker->url)))->getPageDescription());
     }
 
     private function html(string $insert = ''): string
@@ -63,7 +65,7 @@ class ReaderTest extends TestCase
                 <meta name="twitter:description" content="Twitter Description">
         HTML);
 
-        $this->assertEquals($description, (new Reader($html))->getPageDescription());
+        $this->assertEquals($description, (new Reader($html, new Url($this->faker->url)))->getPageDescription());
     }
 
     public function test_will_read_twiiter_tag_If_no_description_tags_are_present(): void
@@ -74,7 +76,7 @@ class ReaderTest extends TestCase
                 <meta name="twitter:description" content="$description">
         HTML);
 
-        $this->assertEquals($description, (new Reader($html))->getPageDescription());
+        $this->assertEquals($description, (new Reader($html, new Url($this->faker->url)))->getPageDescription());
     }
 
     public function test_will_read_og_Image_tag(): void
@@ -83,7 +85,7 @@ class ReaderTest extends TestCase
                 <meta property="og:image" content="https://image.com/smike.png">
         HTML);
 
-        $this->assertEquals('https://image.com/smike.png', (new Reader($html))->getPreviewImageUrl()->value);
+        $this->assertEquals('https://image.com/smike.png', (new Reader($html, new Url($this->faker->url)))->getPreviewImageUrl()->value);
     }
 
     public function test_will_read_twitter_Image_tag_if_og_image_tag_is_missing(): void
@@ -92,7 +94,7 @@ class ReaderTest extends TestCase
                 <meta name="twitter:image" content="https://twitter.png">
         HTML);
 
-        $this->assertEquals('https://twitter.png', (new Reader($html))->getPreviewImageUrl()->value);
+        $this->assertEquals('https://twitter.png', (new Reader($html, new Url($this->faker->url)))->getPreviewImageUrl()->value);
     }
 
     public function test_will_return_false_If_og_Image_tag_is_invalid(): void
@@ -101,7 +103,7 @@ class ReaderTest extends TestCase
                 <meta property="og:image" content="<script> alert('hacked') </script>">
         HTML);
 
-        $this->assertFalse((new Reader($html))->getPreviewImageUrl());
+        $this->assertFalse((new Reader($html, new Url($this->faker->url)))->getPreviewImageUrl());
     }
 
     public function test_will_return_false_If_twiiter_Image_tag_is_invalid(): void
@@ -110,7 +112,7 @@ class ReaderTest extends TestCase
                 <meta name="twitter:image" content="<script> alert('hacked') </script>">
         HTML);
 
-        $this->assertFalse((new Reader($html))->getPreviewImageUrl());
+        $this->assertFalse((new Reader($html, new Url($this->faker->url)))->getPreviewImageUrl());
     }
 
     public function test_will_first_read_og_title_tag(): void
@@ -123,7 +125,7 @@ class ReaderTest extends TestCase
                 <title>Page Title</title>
         HTML);
 
-        $this->assertEquals($title, (new Reader($html))->getPageTitle());
+        $this->assertEquals($title, (new Reader($html, new Url($this->faker->url)))->getPageTitle());
     }
 
     public function test_will_read_title_tag_if_og_title_tag_Is_absent(): void
@@ -135,7 +137,7 @@ class ReaderTest extends TestCase
                 <meta name="twitter:title" content="Why are cryto gurus silent :-)">
         HTML);
 
-        $this->assertEquals($title, (new Reader($html))->getPageTitle());
+        $this->assertEquals($title, (new Reader($html, new Url($this->faker->url)))->getPageTitle());
     }
 
     public function test_will_read_twitter_tag_if_no_title_tags_are_found(): void
@@ -146,7 +148,7 @@ class ReaderTest extends TestCase
                 <meta name="twitter:title" content="$title">
         HTML);
 
-        $this->assertEquals($title, (new Reader($html))->getPageTitle());
+        $this->assertEquals($title, (new Reader($html, new Url($this->faker->url)))->getPageTitle());
     }
 
     public function test_will_encode_title_tag_content_when_invalid(): void
@@ -155,7 +157,7 @@ class ReaderTest extends TestCase
                 <title><script>alert('hacked')</script></title>
         HTML);
 
-        $this->assertEquals('alert(&#039;hacked&#039;)', (new Reader($html))->getPageTitle());
+        $this->assertEquals('alert(&#039;hacked&#039;)', (new Reader($html, new Url($this->faker->url)))->getPageTitle());
     }
 
     public function test_will_encode_twitter_title_tag_content_when_invalid(): void
@@ -164,7 +166,7 @@ class ReaderTest extends TestCase
                 <meta name="twitter:title" content=alert('hacked')>
         HTML);
 
-        $this->assertEquals('alert(&#039;hacked&#039;)', (new Reader($html))->getPageTitle());
+        $this->assertEquals('alert(&#039;hacked&#039;)', (new Reader($html, new Url($this->faker->url)))->getPageTitle());
     }
 
     public function test_will_encode_og_title_when_invalid(): void
@@ -173,7 +175,7 @@ class ReaderTest extends TestCase
                 <meta property="og:title" content="<script>alert('hacked')</script>">
         HTML);
 
-        $this->assertEquals('&lt;script&gt;alert(&#039;hacked&#039;)&lt;/script&gt;', (new Reader($html))->getPageTitle());
+        $this->assertEquals('&lt;script&gt;alert(&#039;hacked&#039;)&lt;/script&gt;', (new Reader($html, new Url($this->faker->url)))->getPageTitle());
     }
 
     public function test_will_read_application_name_tag_first(): void
@@ -184,7 +186,7 @@ class ReaderTest extends TestCase
                 <meta name="twitter:site" content="@USERNAME">
         HTML);
 
-        $this->assertEquals('Xbox', (new Reader($html))->getSiteName());
+        $this->assertEquals('Xbox', (new Reader($html, new Url($this->faker->url)))->getSiteName());
     }
 
     public function test_will_read_og_site_name_If_no_application_name_tag(): void
@@ -194,7 +196,7 @@ class ReaderTest extends TestCase
                 <meta name="twitter:site" content="@USERNAME">
         HTML);
 
-        $this->assertEquals('PlayStation', (new Reader($html))->getSiteName());
+        $this->assertEquals('PlayStation', (new Reader($html, new Url($this->faker->url)))->getSiteName());
     }
 
     public function test_will_read_twitter_tag_If_no_application_name_tags_are_found(): void
@@ -203,6 +205,35 @@ class ReaderTest extends TestCase
                 <meta name="twitter:site" content="@RickRoss">
         HTML);
 
-        $this->assertEquals('@RickRoss', (new Reader($html))->getSiteName());
+        $this->assertEquals('@RickRoss', (new Reader($html, new Url($this->faker->url)))->getSiteName());
+    }
+
+    public function test_will_first_read_canonical_tag(): void
+    {
+        $url = 'https://www.foo.com/en/path/to/baz';
+
+        $html = $this->html(<<<HTML
+                <link rel="canonical" href="$url">
+                <meta property="og:url" content="https://www.rottentomatoes.com/m/thor_love_and_thunder">
+        HTML);
+
+        $this->assertEquals(
+           $url,
+            (new Reader($html, new Url($url)))->getCanonicalUrl()->value
+        );
+    }
+
+    public function test_will_fallback_to_ogUrl_when_no_canonical_tag(): void
+    {
+        $url = 'https://www.foo.com/en/path/to/baz';
+
+        $html = $this->html(<<<HTML
+                <meta property="og:url" content="$url">
+        HTML);
+
+        $this->assertEquals(
+            $url,
+            (new Reader($html, new Url($url)))->getCanonicalUrl()->value
+        );
     }
 }

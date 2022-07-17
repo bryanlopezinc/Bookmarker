@@ -6,6 +6,7 @@ namespace App\DataTransferObjects\Builders;
 
 use App\ValueObjects\ResourceID;
 use App\Collections\TagsCollection;
+use App\Contracts\HashedUrlInterface;
 use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\BookmarkDescription;
 use App\Http\Requests\UpdateBookmarkRequest;
@@ -31,6 +32,10 @@ final class UpdateBookmarkDataBuilder extends Builder
             ->hasTitle(false)
             ->hasDescription(false)
             ->hasPreviewImageUrl(false)
+            ->hasResolvedUrl(false)
+            ->hasCanonicalUrl(false)
+            ->hasCanonicalUrlHash(false)
+            ->hasResolvedUrl(false)
             ->tags([]);
     }
 
@@ -94,6 +99,51 @@ final class UpdateBookmarkDataBuilder extends Builder
     public function tags(TagsCollection|array $tags): self
     {
         $this->attributes['tags'] = is_array($tags) ? TagsCollection::make($tags) : $tags;
+
+        return $this;
+    }
+
+    public function resolvedUrl(Url $url): self
+    {
+        $this->hasResolvedUrl();
+        $this->attributes['resolvedUrl'] = $url;
+
+        return $this;
+    }
+
+    public function hasResolvedUrl(bool $hasResolvedUrl = true): self
+    {
+        $this->attributes['hasResolvedUrl'] = $hasResolvedUrl;
+
+        return $this;
+    }
+
+    public function canonicalUrl(Url $url): self
+    {
+        $this->hasCanonicalUrl();
+        $this->attributes['canonicalUrl'] = $url;
+
+        return $this;
+    }
+
+    public function hasCanonicalUrl(bool $hasCanonicalUrl = true): self
+    {
+        $this->attributes['hasCanonicalUrl'] = $hasCanonicalUrl;
+
+        return $this;
+    }
+
+    public function canonicalUrlHash(HashedUrlInterface $hash): self
+    {
+        $this->hasCanonicalUrlHash();
+        $this->attributes['canonicalUrlHash'] =  $hash;
+
+        return $this;
+    }
+
+    public function hasCanonicalUrlHash(bool $hasCanonicalUrlHash = true): self
+    {
+        $this->attributes['hasCanonicalUrlHash'] = $hasCanonicalUrlHash;
 
         return $this;
     }

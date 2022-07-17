@@ -29,24 +29,20 @@ class CreateBookmarkRepositoryTest extends TestCase
 
     public function testWillSaveBookmarks(): void
     {
+        /** @var Bookmark $model */
         $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->make())
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
             ->bookmarkedById($model['user_id'])
             ->tags([$tag = $this->faker->word])
             ->bookmarkedOn((string) now())
+            ->canonicalUrl($model->url_canonical)
+            ->canonicalUrlHash($model->url_canonical_hash)
+            ->resolvedUrl($model->resolved_url)
             ->build();
 
         $result = $this->repository->create($bookmark);
 
-        $this->assertDatabaseHas(Tag::class, [
-            'name' => $tag
-        ]);
-
-        $this->assertDatabaseHas(Bookmark::class, [
-            'id' => $result->id->toInt(),
-            'has_custom_title' => false,
-            'description_set_by_user' => false
-        ]);
+        $this->assertDatabaseHas(Tag::class, ['name' => $tag]);
 
         $this->assertDatabaseHas(Taggable::class, [
             'taggable_id' => $result->id->toInt(),
@@ -58,11 +54,15 @@ class CreateBookmarkRepositoryTest extends TestCase
 
     public function testWillAttachExistingTagsToNewBookmark(): void
     {
+        /** @var Bookmark $model */
         $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->make())
             ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
             ->bookmarkedById($model['user_id'])
             ->tags([$tag = TagFactory::new()->make()->name, $this->faker->word])
             ->bookmarkedOn((string) now())
+            ->canonicalUrl($model->url_canonical)
+            ->canonicalUrlHash($model->url_canonical_hash)
+            ->resolvedUrl($model->resolved_url)
             ->build();
 
         $tagModel = Tag::query()->create(['name' => $tag]);

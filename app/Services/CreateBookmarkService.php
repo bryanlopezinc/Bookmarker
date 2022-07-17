@@ -11,12 +11,13 @@ use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\Builders\SiteBuilder;
 use App\Jobs\UpdateBookmarkInfo;
 use App\Contracts\CreateBookmarkRepositoryInterface as Repository;
+use App\Contracts\UrlHasherInterface;
 use Illuminate\Http\Resources\MissingValue;
 use Symfony\Component\HttpFoundation\ParameterBag;
 
 final class CreateBookmarkService
 {
-    public function __construct(private Repository $repository)
+    public function __construct(private Repository $repository, private UrlHasherInterface $urlHasher)
     {
     }
 
@@ -81,6 +82,9 @@ final class CreateBookmarkService
             ->site(SiteBuilder::new()->domainName($url->getHostName())->name($url->value)->build())
             ->tags($attributes->get('tags', []))
             ->bookmarkedOn($attributes->get('createdOn'))
+            ->canonicalUrl($url)
+            ->canonicalUrlHash($this->urlHasher->hashCanonicalUrl($url))
+            ->resolvedUrl($url)
             ->build();
 
         UpdateBookmarkInfo::dispatch($this->repository->create($bookmark));

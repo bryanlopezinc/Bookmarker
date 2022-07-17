@@ -30,6 +30,8 @@ class UpdateBookmarkTitleWithMetaTagTest extends TestCase
             'description' => implode(' ', $this->faker->sentences()),
             'siteName' => $this->faker->word,
             'imageUrl' => new Url($this->faker->url),
+            'canonicalUrl' => new Url($this->faker->url),
+            'reosolvedUrl' => new Url($this->faker->url)
         ]);
 
         $this->mockRepository(function (MockObject $repository) use ($title, $bookmark) {
@@ -41,6 +43,9 @@ class UpdateBookmarkTitleWithMetaTagTest extends TestCase
                     $this->assertEquals($data->title->value, $title);
                     $this->assertEquals($data->id->toInt(), $bookmark->id->toInt());
                     $this->assertTrue($data->tags->isEmpty());
+                    $this->assertFalse($data->hasCanonicalUrlHash);
+                    $this->assertFalse($data->hasCanonicalUrl);
+                    $this->assertFalse($data->hasResolvedUrl);
                     return $bookmark;
                 });
         });
@@ -70,6 +75,8 @@ class UpdateBookmarkTitleWithMetaTagTest extends TestCase
             'description' => implode(' ', $this->faker->sentences()),
             'siteName' => $this->faker->word,
             'imageUrl' => new Url($this->faker->url),
+            'canonicalUrl' => new Url($this->faker->url),
+            'reosolvedUrl' => new Url($this->faker->url)
         ]);
 
         $this->mockRepository(function (MockObject $repository) use ($bookmark) {
@@ -88,6 +95,8 @@ class UpdateBookmarkTitleWithMetaTagTest extends TestCase
             'description' => implode(' ', $this->faker->sentences()),
             'siteName' => $this->faker->word,
             'imageUrl' => new Url($this->faker->url),
+            'canonicalUrl' => new Url($this->faker->url),
+            'reosolvedUrl' => new Url($this->faker->url)
         ]);
 
         $this->mockRepository(function (MockObject $repository) use ($bookmark) {
@@ -106,6 +115,8 @@ class UpdateBookmarkTitleWithMetaTagTest extends TestCase
             'imageUrl' => new Url($this->faker->url),
             'description' => $this->faker->sentence,
             'siteName' => $this->faker->word,
+            'canonicalUrl' => new Url($this->faker->url),
+            'reosolvedUrl' => new Url($this->faker->url)
         ]);
 
         $this->mockRepository(function (MockObject $repository) use ($bookmark) {

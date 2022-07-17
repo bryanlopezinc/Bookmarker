@@ -286,7 +286,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
             $repository->expects($this->exactly(1))
                 ->method('create')
                 ->willReturnCallback(function (Bookmark $bookmark) {
-                    $this->assertEquals($bookmark->timeCreated->timeStamp->year, 2021);
+                    $this->assertEquals($bookmark->timeCreated->year, 2021);
                     return $bookmark;
                 });
         });
@@ -321,7 +321,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
             $repository->expects($this->exactly(1))
                 ->method('create')
                 ->willReturnCallback(function (Bookmark $bookmark) {
-                    $this->assertTrue($bookmark->timeCreated->timeStamp->isToday());
+                    $this->assertTrue($bookmark->timeCreated->isToday());
                     return $bookmark;
                 });
         });
@@ -356,7 +356,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
             $repository->expects($this->once())
                 ->method('create')
                 ->willReturnCallback(function (Bookmark $bookmark) {
-                    $this->assertTrue($bookmark->timeCreated->timeStamp->isToday());
+                    $this->assertTrue($bookmark->timeCreated->isToday());
                     return $bookmark;
                 });
         });
@@ -440,7 +440,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
                 ->method('create')
                 ->willReturnCallback(function (Bookmark $bookmark) use ($userID) {
                     $this->assertEquals("https://cai.tools.sap/blog/top-telegram-bots-2017/", $bookmark->linkToWebPage->value);
-                    $this->assertEquals(1627725769, $bookmark->timeCreated->timeStamp->timestamp);
+                    $this->assertEquals(1627725769, $bookmark->timeCreated->timestamp);
                     $this->assertTrue($bookmark->description->isEmpty());
                     $this->assertFalse($bookmark->descriptionWasSetByUser);
                     $this->assertEquals('cai.tools.sap', $bookmark->fromWebSite->domainName->value);

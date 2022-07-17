@@ -10,6 +10,7 @@ use App\ValueObjects\DomainName;
 use App\ValueObjects\NonEmptyString;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\TimeStamp;
+use Carbon\Carbon;
 
 final class SiteBuilder extends Builder
 {
@@ -28,20 +29,12 @@ final class SiteBuilder extends Builder
             ->when($keyExists('id'), fn (SiteBuilder $sb) => $sb->id($model['id']))
             ->when($keyExists('host'), fn (SiteBuilder $sb) => $sb->domainName($model['host']))
             ->when($keyExists('name'), fn (SiteBuilder $sb) => $sb->name($model['name']))
-            ->when($keyExists('created_at'), fn (SiteBuilder $sb) => $sb->createdAt((string)$model['created_at']))
             ->when($keyExists('name_updated_at'), fn (SiteBuilder $sb) => $sb->nameUpdatedAt((string)$model['name_updated_at']));
     }
 
     public function id(int $id): self
     {
         $this->attributes['id'] = new ResourceID($id);
-
-        return $this;
-    }
-
-    public function createdAt(string $date): self
-    {
-        $this->attributes['timeCreated'] = new TimeStamp($date);
 
         return $this;
     }
@@ -55,7 +48,7 @@ final class SiteBuilder extends Builder
         }
 
         $this->attributes['nameHasBeenUpdated'] = true;
-        $this->attributes['nameUpdatedAt'] = new TimeStamp($date);
+        $this->attributes['nameUpdatedAt'] = Carbon::parse($date);
 
         return $this;
     }

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects;
 
+use App\Attributes\EnsureHasDatetimeformat;
 use App\Attributes\EnsureValidTagsCount;
 use App\ValueObjects\Url;
 use App\ValueObjects\UserID;
-use App\ValueObjects\TimeStamp;
 use App\ValueObjects\ResourceID;
 use App\Collections\TagsCollection;
 use App\Contracts\BelongsToUserInterface;
@@ -17,6 +17,7 @@ use App\ValueObjects\BookmarkDescription;
 use Carbon\Carbon;
 
 #[EnsureValidTagsCount('MAX_BOOKMARKS_TAGS', 'tags')]
+#[EnsureHasDatetimeformat(['timeCreated', 'timeUpdated', 'resolvedAt'])]
 final class Bookmark extends DataTransferObject implements BelongsToUserInterface
 {
     public readonly ResourceID $id;
@@ -29,8 +30,8 @@ final class Bookmark extends DataTransferObject implements BelongsToUserInterfac
     public readonly bool $descriptionWasSetByUser;
     public readonly ResourceID $webPagesiteId;
     public readonly UserID $ownerId;
-    public readonly TimeStamp $timeCreated;
-    public readonly TimeStamp $timeUpdated;
+    public readonly Carbon $timeCreated;
+    public readonly Carbon $timeUpdated;
     public readonly WebSite $fromWebSite;
     public readonly TagsCollection $tags;
     public bool $isHealthy;

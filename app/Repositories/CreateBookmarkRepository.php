@@ -35,7 +35,7 @@ final class CreateBookmarkRepository implements CreateBookmarkRepositoryInterfac
             'user_id' => $bookmark->ownerId->toInt(),
             'has_custom_title'  => $bookmark->hasCustomTitle,
             'preview_image_url' => $bookmark->hasPreviewImageUrl ? $bookmark->previewImageUrl->value : null,
-            'created_at' => $bookmark->timeCreated->timeStamp,
+            'created_at' => $bookmark->timeCreated,
             'url_canonical' => $bookmark->canonicalUrl->value,
             'url_canonical_hash' => (string) $bookmark->canonicalUrlHash,
             'resolved_url' => $bookmark->resolvedUrl->value

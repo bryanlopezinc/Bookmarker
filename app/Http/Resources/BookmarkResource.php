@@ -33,9 +33,9 @@ final class BookmarkResource extends JsonResource
                 'is_healthy' => $this->bookmark->isHealthy,
                 'is_user_favourite' => $this->bookmark->isUserFavourite,
                 'created_on' => [
-                    'date_readable' => $this->bookmark->timeCreated->timeStamp->diffForHumans(),
-                    'date_time' => $this->bookmark->timeCreated->timeStamp->toDateTimeString(),
-                    'date' => $this->bookmark->timeCreated->timeStamp->toDateString(),
+                    'date_readable' => $this->bookmark->timeCreated->diffForHumans(),
+                    'date_time' => $this->bookmark->timeCreated->toDateTimeString(),
+                    'date' => $this->bookmark->timeCreated->toDateString(),
                 ]
             ]
         ];

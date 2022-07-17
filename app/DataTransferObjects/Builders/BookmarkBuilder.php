@@ -12,7 +12,6 @@ use App\Models\Bookmark as Model;
 use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\BookmarkDescription;
 use App\ValueObjects\ResourceID;
-use App\ValueObjects\TimeStamp;
 use App\ValueObjects\Url;
 use App\ValueObjects\UserID;
 use Carbon\Carbon;
@@ -43,7 +42,7 @@ final class BookmarkBuilder extends Builder
 
     public function updatedAt(string $date): self
     {
-        $this->attributes['timeUpdated'] = new TimeStamp($date);
+        $this->attributes['timeUpdated'] = Carbon::parse($date);
 
         return $this;
     }
@@ -130,7 +129,7 @@ final class BookmarkBuilder extends Builder
 
     public function bookmarkedOn(string $date): self
     {
-        $this->attributes['timeCreated'] = new TimeStamp($date);
+        $this->attributes['timeCreated'] = Carbon::parse($date);
 
         return $this;
     }

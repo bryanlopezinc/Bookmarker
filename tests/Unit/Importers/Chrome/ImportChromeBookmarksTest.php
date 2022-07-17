@@ -129,7 +129,7 @@ class ImportChromeBookmarksTest extends TestCase
             $repository->expects($this->exactly(1))
                 ->method('create')
                 ->willReturnCallback(function (Bookmark $bookmark) {
-                    $this->assertEquals($bookmark->timeCreated->timeStamp->year, 2017);
+                    $this->assertEquals($bookmark->timeCreated->year, 2017);
                     return $bookmark;
                 });
         });
@@ -160,7 +160,7 @@ class ImportChromeBookmarksTest extends TestCase
             $repository->expects($this->exactly(1))
                 ->method('create')
                 ->willReturnCallback(function (Bookmark $bookmark) {
-                    $this->assertTrue($bookmark->timeCreated->timeStamp->isToday());
+                    $this->assertTrue($bookmark->timeCreated->isToday());
                     return $bookmark;
                 });
         });
@@ -191,7 +191,7 @@ class ImportChromeBookmarksTest extends TestCase
             $repository->expects($this->once())
                 ->method('create')
                 ->willReturnCallback(function (Bookmark $bookmark) {
-                    $this->assertTrue($bookmark->timeCreated->timeStamp->isToday());
+                    $this->assertTrue($bookmark->timeCreated->isToday());
                     return $bookmark;
                 });
         });
@@ -267,7 +267,7 @@ class ImportChromeBookmarksTest extends TestCase
                 ->method('create')
                 ->willReturnCallback(function (Bookmark $bookmark) use ($userID) {
                     $this->assertEquals("https://www.askapache.com/htaccess/", $bookmark->linkToWebPage->value);
-                    $this->assertEquals(1505762363, $bookmark->timeCreated->timeStamp->timestamp);
+                    $this->assertEquals(1505762363, $bookmark->timeCreated->timestamp);
                     $this->assertTrue($bookmark->description->isEmpty());
                     $this->assertFalse($bookmark->descriptionWasSetByUser);
                     $this->assertEquals('askapache.com', $bookmark->fromWebSite->domainName->value);

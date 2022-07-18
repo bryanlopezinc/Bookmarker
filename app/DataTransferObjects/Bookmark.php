@@ -17,7 +17,6 @@ use App\ValueObjects\BookmarkDescription;
 use Carbon\Carbon;
 
 #[EnsureValidTagsCount('MAX_BOOKMARKS_TAGS', 'tags')]
-#[EnsureHasDatetimeformat(['timeCreated', 'timeUpdated', 'resolvedAt'])]
 final class Bookmark extends DataTransferObject implements BelongsToUserInterface
 {
     public readonly ResourceID $id;

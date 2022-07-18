@@ -32,7 +32,7 @@ final class UpdateBookmarkInfo implements ShouldQueue
 
     public function handle(HttpClientInterface $client, Repository $repository, UrlHasherInterface $urlHasher): void
     {
-        if (!$this->canOpenUrl($this->bookmark->linkToWebPage)) {
+        if (!$this->canOpenUrl($this->bookmark->url)) {
             return;
         }
 

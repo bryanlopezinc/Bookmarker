@@ -75,7 +75,7 @@ final class CreateBookmarkService
             ->title($attributes->get('title', $url->toString()))
             ->hasCustomTitle($attributes->get('hasCustomTitle', false))
             ->url($url->toString())
-            ->previewImageUrl('')
+            ->hasThumbnailUrl('')
             ->description($attributes->get('description'))
             ->descriptionWasSetByUser($attributes->get('descriptionSetByUser', false))
             ->bookmarkedById($userID->toInt())

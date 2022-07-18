@@ -23,9 +23,9 @@ final class Bookmark extends DataTransferObject implements BelongsToUserInterfac
     public readonly ResourceID $id;
     public readonly BookmarkTitle $title;
     public readonly bool $hasCustomTitle;
-    public readonly Url $linkToWebPage;
-    public readonly Url $previewImageUrl;
-    public readonly bool $hasPreviewImageUrl;
+    public readonly Url $url;
+    public readonly Url $thumbnailUrl;
+    public readonly bool $hasThumbnailUrl;
     public readonly BookmarkDescription $description;
     public readonly bool $descriptionWasSetByUser;
     public readonly ResourceID $webPagesiteId;

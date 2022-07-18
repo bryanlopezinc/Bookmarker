@@ -21,7 +21,7 @@ final class YoutubeHttpClient implements HttpClientInterface
     public function fetchBookmarkPageData(Bookmark $bookmark): BookmarkMetaData|false
     {
         $response = Http::get('https://www.googleapis.com/youtube/v3/videos', [
-            'id' => $this->getVideoID($bookmark->linkToWebPage),
+            'id' => $this->getVideoID($bookmark->url),
             'key' => $this->getGoogleApiKey(),
             'part' => 'snippet',
             'fields' => 'items(snippet/title,snippet/description,snippet/thumbnails)'

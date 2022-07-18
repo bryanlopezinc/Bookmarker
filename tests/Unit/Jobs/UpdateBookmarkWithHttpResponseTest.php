@@ -8,7 +8,7 @@ use App\Contracts\UpdateBookmarkRepositoryInterface as Repository;
 use App\Contracts\UrlHasherInterface;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\UpdateBookmarkData;
-use App\Jobs\UpdateBookmarkInfo;
+use App\Jobs\UpdateBookmarkWithHttpResponse;
 use App\Models\Bookmark;
 use App\Models\WebSite;
 use App\Readers\BookmarkMetaData;
@@ -21,7 +21,7 @@ use Illuminate\Foundation\Testing\WithFaker;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
-class UpdateBookmarkInfoTest extends TestCase
+class UpdateBookmarkWithHttpResponseTest extends TestCase
 {
     use WithFaker;
 
@@ -375,7 +375,7 @@ class UpdateBookmarkInfoTest extends TestCase
 
     private function handleUpdateBookmarkJob(Bookmark $bookmark)
     {
-        $job = (new UpdateBookmarkInfo(BookmarkBuilder::fromModel($bookmark)->build()));
+        $job = (new UpdateBookmarkWithHttpResponse(BookmarkBuilder::fromModel($bookmark)->build()));
 
         $job->handle(
             app(HttpClientInterface::class),

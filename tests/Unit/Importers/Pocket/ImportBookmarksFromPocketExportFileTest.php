@@ -10,7 +10,7 @@ use Tests\TestCase;
 use App\ValueObjects\Uuid;
 use Illuminate\Support\Str;
 use App\ValueObjects\UserID;
-use App\Jobs\UpdateBookmarkInfo;
+use App\Jobs\UpdateBookmarkWithHttpResponse;
 use Illuminate\Support\Facades\Bus;
 use App\DataTransferObjects\Bookmark;
 use App\Importers\FilesystemInterface;
@@ -68,7 +68,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
 
     public function testWillAttachPocketBookmarkTagsToBookmarkByDefault(): void
     {
-        Bus::fake([UpdateBookmarkInfo::class]);
+        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         $html = <<<HTML
             <!DOCTYPE html>
@@ -103,7 +103,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
 
     public function testWillAttachOnlyUniquePocketBookmarkTagsToBookmark(): void
     {
-        Bus::fake([UpdateBookmarkInfo::class]);
+        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         $html = <<<HTML
             <!DOCTYPE html>
@@ -138,7 +138,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
 
     public function testWillNotAttachPocketBookmarkTagsToBookmarkWhenIndicated(): void
     {
-        Bus::fake([UpdateBookmarkInfo::class]);
+        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         $html = <<<HTML
             <!DOCTYPE html>
@@ -173,7 +173,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
 
     public function test_will_not_attach_pocket_bookmark_tags_to_bookmark_when_pocket_bookmarks_tags_count_is_greater_than_15(): void
     {
-        Bus::fake([UpdateBookmarkInfo::class]);
+        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         $tags = TagFactory::new()->count(16)->make()->pluck('name')->implode(',');
 
@@ -210,7 +210,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
 
     public function testWillNotAttachIncompatiblePocketBookmarkTagsToBookmark(): void
     {
-        Bus::fake([UpdateBookmarkInfo::class]);
+        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         $tags = implode(',', [
             Str::random(Tag::MAX_LENGTH + 1),
@@ -261,7 +261,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
 
     public function testWillUsePocketBookmarkDateByDefault(): void
     {
-        Bus::fake([UpdateBookmarkInfo::class]);
+        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         $html = <<<HTML
             <!DOCTYPE html>
@@ -296,7 +296,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
 
     public function testWillNotUsePocketBookmarkDateWhenIndicated(): void
     {
-        Bus::fake([UpdateBookmarkInfo::class]);
+        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         $html = <<<HTML
             <!DOCTYPE html>
@@ -331,7 +331,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
 
     public function testWillUseDefaultDateWhenDateIsInvalid(): void
     {
-        Bus::fake([UpdateBookmarkInfo::class]);
+        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         $html = <<<HTML
             <!DOCTYPE html>
@@ -394,7 +394,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
 
     public function testWillStoreBookmarks(): void
     {
-        Bus::fake([UpdateBookmarkInfo::class]);
+        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         $this->mockFilesystem(function (MockObject $filesystem) {
             $filesystem->expects($this->once())->method('exists')->willReturn(true);
@@ -412,7 +412,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
 
     public function testWillSaveCorrectData(): void
     {
-        Bus::fake([UpdateBookmarkInfo::class]);
+        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         $userID = new UserID(rand(10, PHP_INT_MAX));
 

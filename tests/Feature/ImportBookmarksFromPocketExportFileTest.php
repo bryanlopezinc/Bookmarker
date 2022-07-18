@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\UpdateBookmarkInfo;
+use App\Jobs\UpdateBookmarkWithHttpResponse;
 use App\Models\Bookmark;
 use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
@@ -66,7 +66,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
 
     public function testWillImportBookmarks(): void
     {
-        Bus::fake([UpdateBookmarkInfo::class]);
+        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         Passport::actingAs($user = UserFactory::new()->create());
 

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\UpdateBookmarkInfo;
+use App\Jobs\UpdateBookmarkWithHttpResponse;
 use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
@@ -93,7 +93,7 @@ class ImportBookmarkFromChromeTest extends TestCase
 
     public function testWillImportBookmarks(): void
     {
-        Bus::fake([UpdateBookmarkInfo::class]);
+        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         Passport::actingAs(UserFactory::new()->create());
 

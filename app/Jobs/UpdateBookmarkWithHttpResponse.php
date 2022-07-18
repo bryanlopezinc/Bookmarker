@@ -20,7 +20,7 @@ use App\ValueObjects\BookmarkDescription;
 use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\Url;
 
-final class UpdateBookmarkInfo implements ShouldQueue
+final class UpdateBookmarkWithHttpResponse implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 

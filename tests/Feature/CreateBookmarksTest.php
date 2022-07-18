@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\UpdateBookmarkInfo;
+use App\Jobs\UpdateBookmarkWithHttpResponse;
 use App\Models\Bookmark;
 use App\Models\Taggable;
 use App\Models\UserBookmarksCount;
@@ -112,7 +112,7 @@ class CreateBookmarksTest extends TestCase
 
     public function testWillCreateBookmark(): void
     {
-        Bus::fake(UpdateBookmarkInfo::class);
+        Bus::fake(UpdateBookmarkWithHttpResponse::class);
         Passport::actingAs($user = UserFactory::new()->create());
 
         $this->getTestResponse(['url' => $url =  $this->faker->url])->assertCreated();
@@ -138,7 +138,7 @@ class CreateBookmarksTest extends TestCase
 
     public function testCreateBookmarkWithTitle(): void
     {
-        Bus::fake(UpdateBookmarkInfo::class);
+        Bus::fake(UpdateBookmarkWithHttpResponse::class);
 
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -158,7 +158,7 @@ class CreateBookmarksTest extends TestCase
 
     public function testCreateBookmarkWithDescription(): void
     {
-        Bus::fake(UpdateBookmarkInfo::class);
+        Bus::fake(UpdateBookmarkWithHttpResponse::class);
 
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -177,7 +177,7 @@ class CreateBookmarksTest extends TestCase
 
     public function testCreateBookmarkWithTags(): void
     {
-        Bus::fake(UpdateBookmarkInfo::class);
+        Bus::fake(UpdateBookmarkWithHttpResponse::class);
 
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -195,13 +195,13 @@ class CreateBookmarksTest extends TestCase
 
     public function testWillDispatchJob(): void
     {
-        Bus::fake(UpdateBookmarkInfo::class);
+        Bus::fake(UpdateBookmarkWithHttpResponse::class);
 
         Passport::actingAs(UserFactory::new()->create());
 
         $this->withoutExceptionHandling()->getTestResponse(['url' => $url = $this->faker->url])->assertCreated();
 
-        Bus::assertDispatchedTimes(UpdateBookmarkInfo::class, 1);
+        Bus::assertDispatchedTimes(UpdateBookmarkWithHttpResponse::class, 1);
     }
 
     public function testEventHandlerWillHandleEvent(): void

@@ -9,7 +9,7 @@ use App\ValueObjects\UserID;
 use App\Http\Requests\CreateBookmarkRequest;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\Builders\SiteBuilder;
-use App\Jobs\UpdateBookmarkInfo;
+use App\Jobs\UpdateBookmarkWithHttpResponse;
 use App\Contracts\CreateBookmarkRepositoryInterface as Repository;
 use App\Contracts\UrlHasherInterface;
 use Illuminate\Http\Resources\MissingValue;
@@ -87,6 +87,6 @@ final class CreateBookmarkService
             ->resolvedUrl($url)
             ->build();
 
-        UpdateBookmarkInfo::dispatch($this->repository->create($bookmark));
+        UpdateBookmarkWithHttpResponse::dispatch($this->repository->create($bookmark));
     }
 }

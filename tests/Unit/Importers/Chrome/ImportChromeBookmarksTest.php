@@ -9,7 +9,7 @@ use App\DataTransferObjects\Bookmark;
 use App\Importers\Chrome\ImportBookmarksFromChromeBrowser as Importer;
 use App\Importers\Chrome\DOMParserInterface;
 use App\Importers\FilesystemInterface;
-use App\Jobs\UpdateBookmarkInfo;
+use App\Jobs\UpdateBookmarkWithHttpResponse;
 use App\ValueObjects\UserID;
 use App\ValueObjects\Uuid;
 use ArrayIterator;
@@ -65,7 +65,7 @@ class ImportChromeBookmarksTest extends TestCase
 
     public function testWillAttachTagsToBookmarks(): void
     {
-        Bus::fake([UpdateBookmarkInfo::class]);
+        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         $url = $this->faker->url;
         $tag = $this->faker->word;
@@ -108,7 +108,7 @@ class ImportChromeBookmarksTest extends TestCase
 
     public function testWillUseChromeBookmarkDateByDefault(): void
     {
-        Bus::fake([UpdateBookmarkInfo::class]);
+        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         $html = <<<HTML
             <!DOCTYPE NETSCAPE-Bookmark-file-1>
@@ -139,7 +139,7 @@ class ImportChromeBookmarksTest extends TestCase
 
     public function testWillNotUseChromeBookmarkDateWhenIndicated(): void
     {
-        Bus::fake([UpdateBookmarkInfo::class]);
+        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         $html = <<<HTML
             <!DOCTYPE NETSCAPE-Bookmark-file-1>
@@ -170,7 +170,7 @@ class ImportChromeBookmarksTest extends TestCase
 
     public function testWillUseDefaultDateWhenDateIsInvalid(): void
     {
-        Bus::fake([UpdateBookmarkInfo::class]);
+        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         $html = <<<HTML
             <!DOCTYPE NETSCAPE-Bookmark-file-1>
@@ -225,7 +225,7 @@ class ImportChromeBookmarksTest extends TestCase
 
     public function testWillStoreBookmarks(): void
     {
-        Bus::fake([UpdateBookmarkInfo::class]);
+        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         $this->mockFilesystem(function (MockObject $filesystem) {
             $filesystem->expects($this->once())->method('exists')->willReturn(true);
@@ -243,7 +243,7 @@ class ImportChromeBookmarksTest extends TestCase
 
     public function testWillSaveCorrectData(): void
     {
-        Bus::fake([UpdateBookmarkInfo::class]);
+        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         $userID = new UserID(5430);
 

@@ -40,31 +40,37 @@ class UpdateBookmarkInfoTest extends TestCase
         $this->handleUpdateBookmarkJob($bookmark);
     }
 
-    public function test_will_not_perform_updates_when_bookmark_url_is_not_http_protocol(): void
+    public function test_will_not_make_http_requests_when_bookmark_url_is_not_http_protocol(): void
     {
+        /** @var Bookmark */
+        $bookmark = BookmarkFactory::new()->make([
+            'id' => 3982,
+            'url' => 'payto://iban/DE75512108001245126199?amount=EUR:200.0&message=hello'
+        ]);
+
         $this->mockClient(function (MockObject $mock) {
             $mock->expects($this->never())->method('fetchBookmarkPageData');
         });
 
-        $this->mockRepository(function (MockObject $mock) {
-            $mock->expects($this->never())->method('update');
+        $this->mockRepository(function (MockObject $mock) use ($bookmark) {
+            $mock->expects($this->once())
+                ->method('update')
+                ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
+                    $this->assertEquals($bookmark->url, $data->resolvedUrl->toString());
+                    $this->assertTrue($data->hasResolvedAt);
+                    $this->assertTrue($data->resolvedAt->isSameMinute());
+                    $this->assertFalse($data->hasCanonicalUrl);
+                    $this->assertFalse($data->hasCanonicalUrlHash);
+                    $this->assertFalse($data->hasDescription);
+                    $this->assertFalse($data->hasPreviewImageUrl);
+                    $this->assertFalse($data->hasTitle);
+                    $this->assertTrue($data->hasResolvedUrl);
+
+                    return BookmarkBuilder::fromModel($bookmark)->build();
+                });
         });
 
-        foreach ([
-            'chrome://flags', 'adiumxtra://www.adiumxtras.com/download/0000',
-            'dns://192.168.1.1/ftp.example.org?type=A', 'facetime://+19995551234', 'feed://example.com/rss.xml',
-            'git://github.com/user/project-name.git', 'lastfm://bryan/king/astro', 'market://details?id=Package_name',
-            'payto://iban/DE75512108001245126199?amount=EUR:200.0&message=hello',
-            'sgn://social-network.example.com/?ident=bob',
-            'webcal://example.com/calendar.ics',
-        ] as $url) {
-            $bookmark = BookmarkFactory::new()->make([
-                'id' => 5001,
-                'url' => $url
-            ]);
-
-            $this->handleUpdateBookmarkJob($bookmark);
-        }
+        $this->handleUpdateBookmarkJob($bookmark);
     }
 
     public function test_will_update_resolved_at_attrbute_after_updates(): void

@@ -5,26 +5,24 @@ declare(strict_types=1);
 namespace App\ValueObjects;
 
 use App\Exceptions\MalformedURLException;
-use Spatie\Url\Url as SpatieUrl;
-use Spatie\Url\Exceptions\InvalidArgument;
+use Illuminate\Support\Facades\Validator;
+use Spatie\Url\QueryParameterBag;
 
 final class Url
 {
-    private readonly SpatieUrl $url;
+    private readonly array $parts;
+    private readonly string $url;
 
-    public function __construct(string|\Stringable $value)
+    public function __construct(string|\Stringable $url)
     {
-        $exception = new MalformedURLException((string)$value);
+        $url = (string) $url;
 
-        try {
-            $this->url = SpatieUrl::fromString((string) $value);
-
-            if (filter_var($value, FILTER_VALIDATE_URL) === false) {
-                throw $exception;
-            }
-        } catch (InvalidArgument) {
-            throw $exception;
+        if (Validator::make(['value' => $url], ['value' => ['filled', 'url']])->fails()) {
+            throw MalformedURLException::invalidFormat($url);
         }
+
+        $this->parts = parse_url($url);
+        $this->url = $url;
     }
 
     public static function isValid(mixed $url): bool
@@ -43,12 +41,12 @@ final class Url
 
     public function getHost(): string
     {
-        return $this->url->getHost();
+        return $this->parts['host'] ?? '';
     }
 
     public function getPath(): string
     {
-        return $this->url->getPath();
+        return $this->parts['path'] ?? '/';
     }
 
     /**
@@ -58,7 +56,22 @@ final class Url
      */
     public  function parseQuery(): array
     {
-        return $this->url->getAllQueryParameters();
+        return QueryParameterBag::fromString($this->parts['query'] ?? '')->all();
+    }
+
+    private function getScheme(): string
+    {
+        return $this->parts['scheme'] ?? '';
+    }
+
+    public function isHttp(): bool
+    {
+        return $this->getScheme() === 'http';
+    }
+
+    public function isHttps(): bool
+    {
+        return $this->getScheme() === 'https';
     }
 
     public function toString(): string

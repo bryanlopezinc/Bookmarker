@@ -20,6 +20,7 @@ use App\Models\WebSite;
 use App\Readers\BookmarkMetaData;
 use App\ValueObjects\BookmarkDescription;
 use App\ValueObjects\BookmarkTitle;
+use App\ValueObjects\Url;
 
 final class UpdateBookmarkInfo implements ShouldQueue
 {
@@ -31,6 +32,10 @@ final class UpdateBookmarkInfo implements ShouldQueue
 
     public function handle(HttpClientInterface $client, Repository $repository, UrlHasherInterface $urlHasher): void
     {
+        if (!$this->canOpenUrl($this->bookmark->linkToWebPage)) {
+            return;
+        }
+
         $data = $client->fetchBookmarkPageData($this->bookmark);
         $builder = Builder::new();
 
@@ -54,6 +59,11 @@ final class UpdateBookmarkInfo implements ShouldQueue
         $this->updateSiteName($data);
 
         $repository->update($builder->build());
+    }
+
+    private function canOpenUrl(Url $url): bool
+    {
+        return $url->isHttp() || $url->isHttps();
     }
 
     private function setDescriptionAttribute(Builder &$builder, BookmarkMetaData $data): void

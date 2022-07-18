@@ -102,6 +102,14 @@ class CreateBookmarksTest extends TestCase
         ]);
     }
 
+    public function testUrlMustNotBeHttp(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->getTestResponse(['url' => 'chrome://flags'])->assertCreated();
+        $this->getTestResponse(['url' => 'sgn://social-network.example.com/?ident=bob'])->assertCreated();
+    }
+
     public function testWillCreateBookmark(): void
     {
         Bus::fake(UpdateBookmarkInfo::class);

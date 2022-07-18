@@ -8,8 +8,8 @@ use InvalidArgumentException;
 
 final class MalformedURLException extends InvalidArgumentException
 {
-    public function __construct(string $url)
+    public static function invalidFormat(string $url)
     {
-        parent::__construct("The given url [$url] is invalid");
+        return new self("The given url [$url] is invalid");
     }
 }

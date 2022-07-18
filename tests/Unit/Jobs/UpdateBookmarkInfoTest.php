@@ -40,6 +40,33 @@ class UpdateBookmarkInfoTest extends TestCase
         $this->handleUpdateBookmarkJob($bookmark);
     }
 
+    public function test_will_not_perform_updates_when_bookmark_url_is_not_http_protocol(): void
+    {
+        $this->mockClient(function (MockObject $mock) {
+            $mock->expects($this->never())->method('fetchBookmarkPageData');
+        });
+
+        $this->mockRepository(function (MockObject $mock) {
+            $mock->expects($this->never())->method('update');
+        });
+
+        foreach ([
+            'chrome://flags', 'adiumxtra://www.adiumxtras.com/download/0000',
+            'dns://192.168.1.1/ftp.example.org?type=A', 'facetime://+19995551234', 'feed://example.com/rss.xml',
+            'git://github.com/user/project-name.git', 'lastfm://bryan/king/astro', 'market://details?id=Package_name',
+            'payto://iban/DE75512108001245126199?amount=EUR:200.0&message=hello',
+            'sgn://social-network.example.com/?ident=bob',
+            'webcal://example.com/calendar.ics',
+        ] as $url) {
+            $bookmark = BookmarkFactory::new()->make([
+                'id' => 5001,
+                'url' => $url
+            ]);
+
+            $this->handleUpdateBookmarkJob($bookmark);
+        }
+    }
+
     public function test_will_update_resolved_at_attrbute_after_updates(): void
     {
         $bookmark = BookmarkFactory::new()->make(['id' => 5001]);

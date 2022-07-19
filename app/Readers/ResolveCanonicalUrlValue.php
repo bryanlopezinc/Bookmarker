@@ -10,7 +10,7 @@ use Spatie\Url\Url as SpatieUrl;
 
 final class ResolveCanonicalUrlValue
 {
-    public function __construct(private string $value, private Url $resolvedUrl)
+    public function __construct(private string $canonicalUrl, private Url $resolvedUrl)
     {
     }
 
@@ -21,21 +21,21 @@ final class ResolveCanonicalUrlValue
         }
 
         try {
-            $url = new Url($this->value);
+            $canonicalUrl = new Url($this->canonicalUrl);
         } catch (MalformedURLException) {
             return false;
         }
 
-        if (!$this->isValid($url)) {
+        if (!$this->isValid($canonicalUrl)) {
             return false;
         }
 
-        return $url;
+        return $canonicalUrl;
     }
 
     private function removeQueryParametersFromResolvedUrl(): Url
     {
-        $url = SpatieUrl::fromString($this->resolvedUrl->toString())->withPath($this->value);
+        $url = SpatieUrl::fromString($this->resolvedUrl->toString())->withPath($this->canonicalUrl);
 
         foreach (array_keys($url->getAllQueryParameters()) as $key) {
             $url = $url->withoutQueryParameter($key);
@@ -46,15 +46,19 @@ final class ResolveCanonicalUrlValue
 
     private function isRelativeUrl(): bool
     {
-        return $this->value === $this->resolvedUrl->getPath();
+        return $this->canonicalUrl === $this->resolvedUrl->getPath();
     }
 
-    private function isValid(Url $url): bool
+    private function isValid(Url $canonicalUrl): bool
     {
-        if ($url->getPath() === '/') {
+        if ($canonicalUrl->toString() === $this->resolvedUrl->toString()) {
+            return true;
+        }
+
+        if ($canonicalUrl->getPath() === '/') {
             return false;
         }
 
-        return $url->getHost() === $this->resolvedUrl->getHost() && filled($url->getPath());
+        return $canonicalUrl->getHost() === $this->resolvedUrl->getHost() && filled($canonicalUrl->getPath());
     }
 }

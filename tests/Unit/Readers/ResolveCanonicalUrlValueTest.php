@@ -55,4 +55,16 @@ class ResolveCanonicalUrlValueTest extends TestCase
         $resolver = new ResolveCanonicalUrlValue('foobar', new Url('https://github.com/trending/php'));
         $this->assertFalse($resolver());
     }
+
+    public function testWillReturnCorrectUrl(): void
+    {
+        $resolver = new ResolveCanonicalUrlValue('https://github.com/trending/php', new Url('https://github.com/trending/php'));
+        $this->assertEquals($resolver()->toString(), 'https://github.com/trending/php');
+
+        $resolver = new ResolveCanonicalUrlValue('https://github.com', new Url('https://github.com'));
+        $this->assertEquals($resolver()->toString(), 'https://github.com');
+
+        $resolver = new ResolveCanonicalUrlValue('https://github.com/trending/php', new Url('https://github.com/trending/php?since=daily&spoken_language_code=en'));
+        $this->assertEquals('https://github.com/trending/php', $resolver()->toString());
+    }
 }

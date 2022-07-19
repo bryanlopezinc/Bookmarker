@@ -68,15 +68,21 @@ final class BookmarkBuilder extends Builder
         return $this;
     }
 
-    public function hasThumbnailUrl(string $url): self
+    public function thumbnailUrl(string|Url $url): self
     {
-        if (blank($url)) {
-            $this->attributes['hasThumbnailUrl'] = false;
-
+        if ($url instanceof Url) {
+            $this->attributes['hasThumbnailUrl'] = true;
+            $this->attributes['thumbnailUrl'] = $url;
+            
             return $this;
         }
 
-        $this->attributes['hasThumbnailUrl'] = true;
+        $this->attributes['hasThumbnailUrl'] = filled($url);
+
+        if (blank($url)) {
+            return $this;
+        }
+
         $this->attributes['thumbnailUrl'] = new Url($url);
 
         return $this;

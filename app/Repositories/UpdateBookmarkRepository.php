@@ -20,39 +20,41 @@ final class UpdateBookmarkRepository implements UpdateBookmarkRepositoryInterfac
     {
         /** @var Model */
         $model = Model::query()
-            ->whereKey($data->id->toInt())
+            ->whereKey($data->bookmark->id->toInt())
             ->first(['title', 'has_custom_title', 'description', 'description_set_by_user', 'user_id', 'id']);
 
-        $this->tagsRepository->attach($data->tags, $model);
+        if ($data->hasTags()) {
+            $this->tagsRepository->attach($data->bookmark->tags, $model);
+        }
 
-        if ($data->hasTitle) {
-            $model->title = $data->title->value;
+        if ($data->hasTitle()) {
+            $model->title = $data->bookmark->title->value;
             $model->has_custom_title = true;
         }
 
-        if ($data->hasDescription) {
-            $model->description = $data->description->value;
+        if ($data->hasDescription()) {
+            $model->description = $data->bookmark->description->value;
             $model->description_set_by_user = true;
         }
 
-        if ($data->hasPreviewImageUrl) {
-            $model->preview_image_url = $data->previewImageUrl->toString();
+        if ($data->hasThumbnailUrl()) {
+            $model->preview_image_url = $data->bookmark->thumbnailUrl->toString();
         }
 
-        if ($data->hasCanonicalUrl) {
-            $model->url_canonical = $data->canonicalUrl->toString();
+        if ($data->hasCanonicalUrl()) {
+            $model->url_canonical = $data->bookmark->canonicalUrl->toString();
         }
 
-        if ($data->hasCanonicalUrlHash) {
-            $model->url_canonical_hash = (string)$data->canonicalUrlHash;
+        if ($data->hasCanonicalUrlHash()) {
+            $model->url_canonical_hash = (string)$data->bookmark->canonicalUrlHash;
         }
 
-        if ($data->hasResolvedUrl) {
-            $model->resolved_url = $data->resolvedUrl->toString();
+        if ($data->hasResolvedUrl()) {
+            $model->resolved_url = $data->bookmark->resolvedUrl->toString();
         }
 
-        if ($data->hasResolvedAt) {
-            $model->resolved_at = $data->resolvedAt;
+        if ($data->hasResolvedAt()) {
+            $model->resolved_at = $data->bookmark->resolvedAt;
         }
 
         $model->save();

@@ -3,7 +3,8 @@
 namespace Tests\Unit\Repositories;
 
 use App\Contracts\UrlHasherInterface;
-use App\DataTransferObjects\Builders\UpdateBookmarkDataBuilder as Builder;
+use App\DataTransferObjects\Builders\BookmarkBuilder as Builder;
+use App\DataTransferObjects\UpdateBookmarkData as Data;
 use App\Models\Bookmark;
 use App\Repositories\UpdateBookmarkRepository;
 use App\ValueObjects\Url;
@@ -39,7 +40,7 @@ class UpdateBookmarkRepositoryTest extends TestCase
         });
 
         $this->assertUpdatedAttributesEquals(
-            Builder::new()->previewImageUrl(new Url('https://www.images.com/tv/foo.png')),
+            Builder::new()->thumbnailUrl(new Url('https://www.images.com/tv/foo.png')),
             function (array $updatedAttributes) {
                 $this->assertEquals($updatedAttributes, [
                     'preview_image_url' => 'https://www.images.com/tv/foo.png',
@@ -91,7 +92,7 @@ class UpdateBookmarkRepositoryTest extends TestCase
         /** @var Bookmark */
         $model = BookmarkFactory::new()->create();
 
-        $repository->update($updateData->id($model->id)->build());
+        $repository->update(new Data($updateData->id($model->id)->build()));
 
         /** @var Bookmark */
         $updatedBookmark = Bookmark::query()->whereKey($model->id)->first();
@@ -99,8 +100,8 @@ class UpdateBookmarkRepositoryTest extends TestCase
         $updatedBookmark->offsetUnset('updated_at');
         $model->offsetUnset('updated_at');
 
-        $updatedAttributes = array_diff_assoc($updatedBookmark->toArray(), $model->toArray());
-
-        $assertFn($updatedAttributes);
+        $assertFn(
+            array_diff_assoc($updatedBookmark->toArray(), $model->toArray())
+        );
     }
 }

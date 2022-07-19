@@ -56,15 +56,15 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             $mock->expects($this->once())
                 ->method('update')
                 ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
-                    $this->assertEquals($bookmark->url, $data->resolvedUrl->toString());
-                    $this->assertTrue($data->hasResolvedAt);
-                    $this->assertTrue($data->resolvedAt->isSameMinute());
-                    $this->assertFalse($data->hasCanonicalUrl);
-                    $this->assertFalse($data->hasCanonicalUrlHash);
-                    $this->assertFalse($data->hasDescription);
-                    $this->assertFalse($data->hasPreviewImageUrl);
-                    $this->assertFalse($data->hasTitle);
-                    $this->assertTrue($data->hasResolvedUrl);
+                    $this->assertEquals($bookmark->url, $data->bookmark->resolvedUrl->toString());
+                    $this->assertTrue($data->hasResolvedAt());
+                    $this->assertTrue($data->bookmark->resolvedAt->isSameMinute());
+                    $this->assertFalse($data->hasCanonicalUrl());
+                    $this->assertFalse($data->hasCanonicalUrlHash());
+                    $this->assertFalse($data->hasDescription());
+                    $this->assertFalse($data->hasThumbnailUrl());
+                    $this->assertFalse($data->hasTitle());
+                    $this->assertTrue($data->hasResolvedUrl());
 
                     return BookmarkBuilder::fromModel($bookmark)->build();
                 });
@@ -93,14 +93,14 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             $mock->expects($this->once())
                 ->method('update')
                 ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
-                    $this->assertTrue($data->hasResolvedAt);
-                    $this->assertTrue($data->resolvedAt->isSameMinute());
-                    $this->assertFalse($data->hasCanonicalUrl);
-                    $this->assertFalse($data->hasCanonicalUrlHash);
-                    $this->assertFalse($data->hasDescription);
-                    $this->assertFalse($data->hasPreviewImageUrl);
-                    $this->assertFalse($data->hasTitle);
-                    $this->assertTrue($data->hasResolvedUrl);
+                    $this->assertTrue($data->hasResolvedAt());
+                    $this->assertTrue($data->bookmark->resolvedAt->isSameMinute());
+                    $this->assertFalse($data->hasCanonicalUrl());
+                    $this->assertFalse($data->hasCanonicalUrlHash());
+                    $this->assertFalse($data->hasDescription());
+                    $this->assertFalse($data->hasThumbnailUrl());
+                    $this->assertFalse($data->hasTitle());
+                    $this->assertTrue($data->hasResolvedUrl());
 
                     return BookmarkBuilder::fromModel($bookmark)->build();
                 });
@@ -135,19 +135,19 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             $mock->expects($this->once())
                 ->method('update')
                 ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark, $canonicalUrl, $description, $imageUrl, $title, $resolvedUrl) {
-                    $this->assertEquals($canonicalUrl->toString(), $data->canonicalUrl->toString());
-                    $this->assertEquals($description, $data->description->value);
-                    $this->assertEquals($imageUrl->toString(), $data->previewImageUrl->toString());
-                    $this->assertEquals($title, $data->title->value);
-                    $this->assertEquals($resolvedUrl->toString(), $data->resolvedUrl->toString());
-                    $this->assertTrue($data->hasResolvedAt);
-                    $this->assertTrue($data->resolvedAt->isSameMinute());
-                    $this->assertTrue($data->hasCanonicalUrl);
-                    $this->assertTrue($data->hasCanonicalUrlHash);
-                    $this->assertTrue($data->hasDescription);
-                    $this->assertTrue($data->hasPreviewImageUrl);
-                    $this->assertTrue($data->hasTitle);
-                    $this->assertTrue($data->hasResolvedUrl);
+                    $this->assertEquals($canonicalUrl->toString(), $data->bookmark->canonicalUrl->toString());
+                    $this->assertEquals($description, $data->bookmark->description->value);
+                    $this->assertEquals($imageUrl->toString(), $data->bookmark->thumbnailUrl->toString());
+                    $this->assertEquals($title, $data->bookmark->title->value);
+                    $this->assertEquals($resolvedUrl->toString(), $data->bookmark->resolvedUrl->toString());
+                    $this->assertTrue($data->hasResolvedAt());
+                    $this->assertTrue($data->bookmark->resolvedAt->isSameMinute());
+                    $this->assertTrue($data->hasCanonicalUrl());
+                    $this->assertTrue($data->hasCanonicalUrlHash());
+                    $this->assertTrue($data->hasDescription());
+                    $this->assertTrue($data->hasThumbnailUrl());
+                    $this->assertTrue($data->hasTitle());
+                    $this->assertTrue($data->hasResolvedUrl());
 
                     return BookmarkBuilder::fromModel($bookmark)->build();
                 });
@@ -189,7 +189,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             $repository->expects($this->once())
                 ->method('update')
                 ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
-                    $this->assertFalse($data->hasDescription);
+                    $this->assertFalse($data->hasDescription());
 
                     return BookmarkBuilder::fromModel($bookmark)->build();
                 });
@@ -219,8 +219,8 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             $repository->expects($this->once())
                 ->method('update')
                 ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
-                    $this->assertTrue($data->hasDescription);
-                    $this->assertEquals(200, strlen($data->description->value));
+                    $this->assertTrue($data->hasDescription());
+                    $this->assertEquals(200, strlen($data->bookmark->description->value));
 
                     return BookmarkBuilder::fromModel($bookmark)->build();
                 });
@@ -249,8 +249,8 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             $repository->expects($this->once())
                 ->method('update')
                 ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
-                    $this->assertTrue($data->hasTitle);
-                    $this->assertEquals(100, strlen($data->title->value));
+                    $this->assertTrue($data->hasTitle());
+                    $this->assertEquals(100, strlen($data->bookmark->title->value));
 
                     return BookmarkBuilder::fromModel($bookmark)->build();
                 });

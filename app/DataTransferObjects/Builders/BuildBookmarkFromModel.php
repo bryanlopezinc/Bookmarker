@@ -21,7 +21,7 @@ final class BuildBookmarkFromModel
             ->when($keyExists('title'), fn (BookmarkBuilder $b) => $b->title($model->title))
             ->when($keyExists('has_custom_title'), fn (BookmarkBuilder $b) => $b->hasCustomTitle($model->getAttribute('has_custom_title')))
             ->when($keyExists('url'), fn (BookmarkBuilder $b) => $b->url($model->url))
-            ->when($keyExists('preview_image_url'), fn (BookmarkBuilder $b) => $b->hasThumbnailUrl((string)$model->preview_image_url))
+            ->when($keyExists('preview_image_url'), fn (BookmarkBuilder $b) => $b->thumbnailUrl((string)$model->preview_image_url))
             ->when($keyExists('site_id'), fn (BookmarkBuilder $b) => $b->siteId($model->site_id))
             ->when($keyExists('user_id'), fn (BookmarkBuilder $b) => $b->bookmarkedById($model->user_id))
             ->when($keyExists('created_at'), fn (BookmarkBuilder $b) => $b->bookmarkedOn((string)$model->created_at))

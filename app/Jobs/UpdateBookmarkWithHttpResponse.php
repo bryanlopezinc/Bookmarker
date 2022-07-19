@@ -13,7 +13,8 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use App\Contracts\UpdateBookmarkRepositoryInterface as Repository;
 use App\Contracts\UrlHasherInterface;
-use App\DataTransferObjects\Builders\UpdateBookmarkDataBuilder as Builder;
+use App\DataTransferObjects\Builders\BookmarkBuilder as Builder;
+use App\DataTransferObjects\UpdateBookmarkData as Data;
 use App\Models\WebSite;
 use App\Readers\BookmarkMetaData;
 use App\ValueObjects\BookmarkDescription;
@@ -33,7 +34,7 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
         $builder = Builder::new()->id($this->bookmark->id->toInt())->resolvedAt(now());
 
         if (!$this->canOpenUrl($this->bookmark->url)) {
-            $repository->update($builder->resolvedUrl($this->bookmark->url)->build());
+            $repository->update(new Data($builder->resolvedUrl($this->bookmark->url)->build()));
             return;
         }
 
@@ -46,7 +47,7 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
         $builder->resolvedUrl($data->reosolvedUrl);
 
         if ($data->thumbnailUrl !== false) {
-            $builder->previewImageUrl($data->thumbnailUrl);
+            $builder->thumbnailUrl($data->thumbnailUrl->toString());
         }
 
         if ($data->canonicalUrl !== false) {
@@ -57,7 +58,7 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
         $this->seTtitleAttributes($builder, $data);
         $this->updateSiteName($data);
 
-        $repository->update($builder->build());
+        $repository->update(new Data($builder->build()));
     }
 
     private function canOpenUrl(Url $url): bool
@@ -71,7 +72,7 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
             return;
         }
 
-        $builder->description(BookmarkDescription::fromLongtText($data->description));
+        $builder->description(BookmarkDescription::fromLongtText($data->description)->value);
     }
 
     private function seTtitleAttributes(Builder &$builder, BookmarkMetaData $data): void
@@ -80,7 +81,7 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
             return;
         }
 
-        $builder->title(BookmarkTitle::fromLongtText($data->title));
+        $builder->title(BookmarkTitle::fromLongtText($data->title)->value);
     }
 
     private function updateSiteName(BookmarkMetaData $data): void

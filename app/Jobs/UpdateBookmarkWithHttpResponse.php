@@ -50,7 +50,7 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
         }
 
         if ($data->canonicalUrl !== false) {
-            $builder->canonicalUrl($data->canonicalUrl)->canonicalUrlHash($urlHasher->hashCanonicalUrl($data->canonicalUrl));
+            $builder->canonicalUrl($data->canonicalUrl)->canonicalUrlHash($urlHasher->hashUrl($data->canonicalUrl));
         }
 
         $this->setDescriptionAttribute($builder, $data);

@@ -83,7 +83,7 @@ final class CreateBookmarkService
             ->tags($attributes->get('tags', []))
             ->bookmarkedOn($attributes->get('createdOn'))
             ->canonicalUrl($url)
-            ->canonicalUrlHash($this->urlHasher->hashCanonicalUrl($url))
+            ->canonicalUrlHash($this->urlHasher->hashUrl($url))
             ->resolvedUrl($url)
             ->build();
 

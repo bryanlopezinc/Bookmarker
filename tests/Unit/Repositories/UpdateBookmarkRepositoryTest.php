@@ -57,7 +57,7 @@ class UpdateBookmarkRepositoryTest extends TestCase
         );
 
         $this->assertUpdatedAttributesEquals(
-            Builder::new()->canonicalUrlHash($hash = $hasher->hashCanonicalUrl(new Url($this->faker->url))),
+            Builder::new()->canonicalUrlHash($hash = $hasher->hashUrl(new Url($this->faker->url))),
             function (array $updatedAttributes) use ($hash) {
                 $this->assertEquals($updatedAttributes, [
                     'url_canonical_hash' => (string) $hash

@@ -8,5 +8,5 @@ use App\ValueObjects\Url;
 
 interface UrlHasherInterface
 {
-    public function hashCanonicalUrl(Url $url): HashedUrlInterface;
+    public function hashUrl(Url $url): HashedUrlInterface;
 }

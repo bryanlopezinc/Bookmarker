@@ -156,7 +156,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
 
         $this->mockUrlHasher(function (MockObject $repository) use ($canonicalUrl) {
             $repository->expects($this->once())
-                ->method('hashCanonicalUrl')
+                ->method('hashUrl')
                 ->with($this->callback(function (Url $url) use ($canonicalUrl) {
                     $this->assertEquals($url->toString(), $canonicalUrl->toString());
                     return true;

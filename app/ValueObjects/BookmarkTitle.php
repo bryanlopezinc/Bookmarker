@@ -41,9 +41,9 @@ final class BookmarkTitle
 
     private function validate(): void
     {
-        //The bookmarks title can be the webPage url
-        // because the default title is the webPage url
-        //before it is updated or the webpage has no title tags in its raw html.
+        //The bookmarks title can be the bookmark url
+        // because the default title is the bookmark url
+        //before it is updated or the bookmark page has no title tags in its raw html.
         if (Url::isValid($this->value)) {
             return;
         }

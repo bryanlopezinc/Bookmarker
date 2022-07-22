@@ -15,9 +15,9 @@ enum ImportSource
     public static function fromRequest(ImportBookmarkRequest $request): self
     {
         return match ($request->validated('source')) {
-            'chromeExportFile' => self::CHROME_FILE,
-            'pocketExportFile' => self::POCKET_EXPORT_FILE,
-            'safariExportFile' => self::SAFARI_FILE
+            $request::CHROME => self::CHROME_FILE,
+            $request::POCKET => self::POCKET_EXPORT_FILE,
+            $request::SAFARI => self::SAFARI_FILE
         };
     }
 

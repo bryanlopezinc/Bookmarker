@@ -10,18 +10,23 @@ use Illuminate\Validation\Rule;
 
 final class ImportBookmarkRequest extends FormRequest
 {
+    /** import sources */
+    public const CHROME = 'chromeExportFile';
+    public const POCKET = 'pocketExportFile';
+    public const SAFARI = 'safariExportFile';
+
     public function rules(): array
     {
         $source = $this->input('source', 0);
 
         $defaultRules = [
-            'source' => ['required', 'string', 'filled', Rule::in(['chromeExportFile', 'pocketExportFile', 'safariExportFile'])],
+            'source' => ['required', 'string', 'filled', Rule::in([self::CHROME, self::POCKET, self::SAFARI])],
         ];
 
         $sourceRulesMap = [
-            'chromeExportFile' => $this->chromeImportRules(),
-            'pocketExportFile' => $this->pocketImportRules(),
-            'safariExportFile' => $this->safariImportRules(),
+            self::CHROME => $this->chromeImportRules(),
+            self::POCKET => $this->pocketImportRules(),
+            self::SAFARI => $this->safariImportRules(),
         ];
 
         if (!isset($sourceRulesMap[$source])) {

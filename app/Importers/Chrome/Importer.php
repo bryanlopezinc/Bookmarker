@@ -20,7 +20,7 @@ final class Importer
     public function __construct(
         private CreateBookmarkService $createBookmark,
         private FilesystemInterface $filesystem,
-        private DOMParserInterface $parser
+        private DOMParserInterface $parser = new DOMParser
     ) {
     }
 

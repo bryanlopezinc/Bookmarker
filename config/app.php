@@ -181,7 +181,6 @@ return [
         App\DeviceDetector\ServiceProvider::class,
         App\TwoFA\ServiceProvider::class,
         App\Providers\ReaderServiceProvider::class,
-        App\Providers\ChromeBookmarksImporterServiceProvider::class,
         App\Providers\ImportersFilesystemServiceProvider::class,
         App\Providers\PocketExportFileImporterServiceProvider::class,
         App\Providers\SafariExportFileImporterServiceProvider::class,

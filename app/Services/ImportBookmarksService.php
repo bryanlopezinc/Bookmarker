@@ -49,6 +49,6 @@ final class ImportBookmarksService
      */
     private function inputFileTypes(): array
     {
-        return ['html', 'pocket_export_file'];
+        return ['html', 'pocket_export_file', 'safari_html'];
     }
 }

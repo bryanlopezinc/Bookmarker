@@ -72,4 +72,7 @@ return [
 
     //max size (in Kb) for the pocket import file.
     'MAX_POCKET_FILE_SIZE' => 5000,
+
+    //max size (in Kb) for the safari import file.
+    'MAX_SAFARI_FILE_SIZE' => 5000,
 ];

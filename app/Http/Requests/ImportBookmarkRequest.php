@@ -15,12 +15,13 @@ final class ImportBookmarkRequest extends FormRequest
         $source = $this->input('source', 0);
 
         $defaultRules = [
-            'source' => ['required', 'string', 'filled', Rule::in(['chromeExportFile', 'pocketExportFile'])],
+            'source' => ['required', 'string', 'filled', Rule::in(['chromeExportFile', 'pocketExportFile', 'safariExportFile'])],
         ];
 
         $sourceRulesMap = [
             'chromeExportFile' => $this->chromeImportRules(),
-            'pocketExportFile' => $this->pocketImportRules()
+            'pocketExportFile' => $this->pocketImportRules(),
+            'safariExportFile' => $this->safariImportRules(),
         ];
 
         if (!isset($sourceRulesMap[$source])) {
@@ -28,6 +29,15 @@ final class ImportBookmarkRequest extends FormRequest
         }
 
         return array_merge($defaultRules, $sourceRulesMap[$source]);
+    }
+
+    private function safariImportRules(): array
+    {
+        return [
+            'safari_html' => ['required', 'file', 'mimes:html', join(':', ['max', setting('MAX_SAFARI_FILE_SIZE')])],
+            'tags' => ['nullable', join(':', ['max', setting('MAX_BOOKMARKS_TAGS')])],
+            'tags.*' => Tag::rules(['distinct:strict']),
+        ];
     }
 
     private function chromeImportRules(): array

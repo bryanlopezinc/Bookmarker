@@ -6,7 +6,6 @@ namespace App\Importers\Safari;
 
 use App\Exceptions\MalformedURLException;
 use App\Importers\FilesystemInterface;
-use App\Importers\Concerns\ResolvesImportTimestamp;
 use App\Services\CreateBookmarkService;
 use App\ValueObjects\Url;
 use App\ValueObjects\UserID;
@@ -15,12 +14,10 @@ use Illuminate\Contracts\Filesystem\FileNotFoundException;
 
 final class Importer
 {
-    use ResolvesImportTimestamp;
-
     public function __construct(
         private CreateBookmarkService $createBookmark,
         private FilesystemInterface $filesystem,
-        private DOMParserInterface $parser
+        private DOMParserInterface $parser = new DOMParser
     ) {
     }
 

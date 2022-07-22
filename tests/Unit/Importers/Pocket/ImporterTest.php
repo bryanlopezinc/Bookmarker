@@ -17,13 +17,13 @@ use App\Importers\FilesystemInterface;
 use Illuminate\Foundation\Testing\WithFaker;
 use PHPUnit\Framework\MockObject\MockObject;
 use App\Contracts\CreateBookmarkRepositoryInterface;
-use App\Importers\PocketExportFile\DOMParserInterface;
+use App\Importers\Pocket\DOMParserInterface;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
-use App\Importers\PocketExportFile\ImportBookmarksFromPocketExportFile as Importer;
+use App\Importers\Pocket\Importer as Importer;
 use App\ValueObjects\Tag;
 use Database\Factories\TagFactory;
 
-class ImportBookmarksFromPocketExportFileTest extends TestCase
+class ImporterTest extends TestCase
 {
     use WithFaker;
 

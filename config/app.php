@@ -182,7 +182,6 @@ return [
         App\TwoFA\ServiceProvider::class,
         App\Providers\ReaderServiceProvider::class,
         App\Providers\ImportersFilesystemServiceProvider::class,
-        App\Providers\PocketExportFileImporterServiceProvider::class,
         App\Providers\SafariExportFileImporterServiceProvider::class,
         App\Providers\RepositoryServiceProvider::class,
     ],

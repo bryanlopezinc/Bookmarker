@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Importers\PocketExportFile;
+namespace App\Importers\Pocket;
 
 use DOMXPath;
 use Generator;
@@ -57,12 +57,12 @@ final class DOMParser implements Iterator, DOMParserInterface
         return $this->collection->key();
     }
 
-    public function current(): PocketBookmark
+    public function current(): Bookmark
     {
         /** @var \DOMElement */
         $DOMElement = $this->collection->current();
 
-        return new PocketBookmark(
+        return new Bookmark(
             $DOMElement->getAttribute('href'),
             $DOMElement->getAttribute('time_added'),
             explode(',', $DOMElement->getAttribute('tags')),

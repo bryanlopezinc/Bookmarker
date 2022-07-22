@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Importers\PocketExportFile;
+namespace App\Importers\Pocket;
 
 use App\Exceptions\InvalidTagException;
 use App\Exceptions\MalformedURLException;
@@ -15,14 +15,14 @@ use App\ValueObjects\UserID;
 use App\ValueObjects\Uuid;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 
-final class ImportBookmarksFromPocketExportFile
+final class Importer
 {
     use ResolvesImportTimestamp;
 
     public function __construct(
         private CreateBookmarkService $createBookmark,
         private FilesystemInterface $filesystem,
-        private DOMParserInterface $parser
+        private DOMParserInterface $parser = new DOMParser
     ) {
     }
 
@@ -39,7 +39,7 @@ final class ImportBookmarksFromPocketExportFile
         $this->filesystem->delete($userID, $requestID);
     }
 
-    private function saveBookmark(array $requestData, UserID $userID, PocketBookmark $pocketBookmark): void
+    private function saveBookmark(array $requestData, UserID $userID, Bookmark $pocketBookmark): void
     {
         try {
             $url = new Url($pocketBookmark->url);
@@ -55,7 +55,7 @@ final class ImportBookmarksFromPocketExportFile
         ]);
     }
 
-    private function resolveTags(array $requestData, PocketBookmark $pocketBookmark): array
+    private function resolveTags(array $requestData, Bookmark $pocketBookmark): array
     {
         $tags = [];
 

@@ -35,7 +35,7 @@ final class ImportBookmarks implements ShouldQueue
                 $importer->import($importData->userID(), $importData->requestID(), $importData->data());
             });
 
-            $this->when($importData->source()->isFromPocketExportFile(), function (PocketImporter $importer) use ($importData) {
+            $this->when($importData->source()->isFromPocket(), function (PocketImporter $importer) use ($importData) {
                 $importer->import($importData->userID(), $importData->requestID(), $importData->data());
             });
 

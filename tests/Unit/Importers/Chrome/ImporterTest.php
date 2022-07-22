@@ -6,7 +6,7 @@ namespace Tests\Unit\Importers\Chrome;
 
 use App\Contracts\CreateBookmarkRepositoryInterface;
 use App\DataTransferObjects\Bookmark;
-use App\Importers\Chrome\ImportBookmarksFromChromeBrowser as Importer;
+use App\Importers\Chrome\Importer as Importer;
 use App\Importers\Chrome\DOMParserInterface;
 use App\Importers\FilesystemInterface;
 use App\Jobs\UpdateBookmarkWithHttpResponse;
@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
-class ImportChromeBookmarksTest extends TestCase
+class ImporterTest extends TestCase
 {
     use WithFaker;
 

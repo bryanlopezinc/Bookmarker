@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\DataTransferObjects\ImportData;
-use App\Importers\Chrome\ImportBookmarksFromChromeBrowser as ChromeImporter;
+use App\Importers\Chrome\Importer as ChromeImporter;
 use App\Importers\PocketExportFile\ImportBookmarksFromPocketExportFile as PocketImporter;
 use App\Importers\Safari\Importer as SafariImporter;
 use Illuminate\Bus\Queueable;

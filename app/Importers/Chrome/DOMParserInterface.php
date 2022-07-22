@@ -9,7 +9,7 @@ use Traversable;
 interface DOMParserInterface
 {
     /**
-     * @return Traversable<ChromeBookmark>
+     * @return Traversable<Bookmark>
      */
     public function parse(string $html): Traversable;
 }

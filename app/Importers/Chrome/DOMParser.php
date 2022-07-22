@@ -57,12 +57,12 @@ final class DOMParser implements Iterator, DOMParserInterface
         return $this->collection->key();
     }
 
-    public function current(): ChromeBookmark
+    public function current(): Bookmark
     {
         /** @var \DOMElement */
         $DOMElement = $this->collection->current();
 
-        return new ChromeBookmark(
+        return new Bookmark(
             $DOMElement->getAttribute('href'),
             $DOMElement->getAttribute('add_date'),
         );

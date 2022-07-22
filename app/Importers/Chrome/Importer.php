@@ -13,7 +13,7 @@ use App\ValueObjects\UserID;
 use App\ValueObjects\Uuid;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 
-final class ImportBookmarksFromChromeBrowser
+final class Importer
 {
     use ResolvesImportTimestamp;
 
@@ -37,7 +37,7 @@ final class ImportBookmarksFromChromeBrowser
         $this->filesystem->delete($userID, $requestID);
     }
 
-    private function saveBookmark(array $requestData, UserID $userID, ChromeBookmark $chromeBookmark): void
+    private function saveBookmark(array $requestData, UserID $userID, Bookmark $chromeBookmark): void
     {
         try {
             $url = new Url($chromeBookmark->url);

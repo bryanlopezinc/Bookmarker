@@ -15,11 +15,12 @@ use Illuminate\Support\Collection;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
 use Tests\Traits\CreatesBookmark;
 
 class DeleteFolderTest extends TestCase
 {
-    use WithFaker, CreatesBookmark;
+    use WithFaker, CreatesBookmark,AssertsBookmarksWillBeHealthchecked;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
@@ -150,6 +151,8 @@ class DeleteFolderTest extends TestCase
             //Assert bookmark in folder was deleted
             $this->assertDatabaseMissing(Bookmark::class, ['id' => $bookmark->id,]);
         });
+
+        $this->assertBookmarksHealthWillNotBeChecked($userBookmarks->pluck('id')->all());
     }
 
     public function testCanOnlyDeleteOwnFolder(): void

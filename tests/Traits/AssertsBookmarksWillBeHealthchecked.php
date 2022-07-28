@@ -19,12 +19,12 @@ trait AssertsBookmarksWillBeHealthchecked
     }
 
     /**
-     * @param array<int> bookmarks
+     * @param array<int> bookmarkIDs
      */
-    protected function assertBookmarksHealthWillNotBeChecked(array $bookmarks): void
+    protected function assertBookmarksHealthWillNotBeChecked(array $bookmarkIDs): void
     {
         $checked = TestBookmarksHealthRepository::requestedBookmarkIDs();
 
-        collect($bookmarks)->each(fn (int $bookmarkID) => $this->assertFalse(in_array($bookmarkID, $checked, true)));
+        collect($bookmarkIDs)->each(fn (int $bookmarkID) => $this->assertFalse(in_array($bookmarkID, $checked, true)));
     }
 }

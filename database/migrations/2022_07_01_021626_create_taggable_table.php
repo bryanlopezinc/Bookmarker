@@ -19,7 +19,6 @@ return new class extends Migration
             $table->foreignId('tag_id')->constrained('tags');
             $table->foreignId('taggable_id');
             $table->unsignedTinyInteger('taggable_type');
-            $table->foreignId('tagged_by_id')->index();
             $table->unique(['tag_id', 'taggable_id', 'taggable_type']);
         });
 

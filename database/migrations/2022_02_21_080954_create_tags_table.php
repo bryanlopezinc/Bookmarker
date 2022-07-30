@@ -15,7 +15,9 @@ return new class extends Migration
     {
         Schema::create('tags', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 22)->unique();
+            $table->string('name', 22);
+            $table->foreignId('created_by');
+            $table->unique(['created_by', 'name']);
             $table->timestamp('created_at')->useCurrent();
         });
     }

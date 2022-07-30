@@ -38,7 +38,6 @@ class DeleteFoldersRepositoryTest extends TestCase
         $this->assertDatabaseHas(Taggable::class,$folderTagsData = [
             'taggable_id' => $folder->id,
             'taggable_type' => Taggable::FOLDER_TYPE,
-            'tagged_by_id' => $user->id
         ]);
 
         $this->repository->delete(new ResourceID($folder->id));
@@ -46,7 +45,6 @@ class DeleteFoldersRepositoryTest extends TestCase
         $this->assertDatabaseHas(Taggable::class, [
             'taggable_id' => $bookmark->id,
             'taggable_type' => Taggable::BOOKMARK_TYPE,
-            'tagged_by_id' => $user->id
         ]);
 
         $this->assertDatabaseMissing(Taggable::class, $folderTagsData);

@@ -48,7 +48,6 @@ class CreateBookmarkRepositoryTest extends TestCase
             'taggable_id' => $result->id->toInt(),
             'taggable_type' => Taggable::BOOKMARK_TYPE,
             'tag_id' => Tag::query()->where('name', $tag)->first()->id,
-            'tagged_by_id' => $bookmark->ownerId->toInt()
         ]);
     }
 
@@ -65,7 +64,10 @@ class CreateBookmarkRepositoryTest extends TestCase
             ->resolvedUrl($model->resolved_url)
             ->build();
 
-        $tagModel = Tag::query()->create(['name' => $tag]);
+        $tagModel = Tag::query()->create([
+            'name' => $tag,
+            'created_by' => $model['user_id']
+        ]);
 
         $result = $this->repository->create($bookmark);
 

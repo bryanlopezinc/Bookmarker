@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $tag_id
  * @property int $taggable_id
  * @property int $taggable_type
- * @property int $tagged_by_id
  */
 final class Taggable extends Model
 {

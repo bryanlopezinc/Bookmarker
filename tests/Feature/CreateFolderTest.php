@@ -148,7 +148,6 @@ class CreateFolderTest extends TestCase
         $this->assertDatabaseHas(Taggable::class, [
             'taggable_id' => Folder::query()->where('user_id', $user->id)->sole('id')->id,
             'taggable_type' => Taggable::FOLDER_TYPE,
-            'tagged_by_id' => $user->id,
         ]);
     }
 }

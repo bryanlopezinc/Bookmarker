@@ -81,7 +81,6 @@ class DeleteBookmarksTest extends TestCase
 
         $this->assertDatabaseMissing(Taggable::class, [
             'taggable_id' => $bookmark->id,
-            'tagged_by_id' => $user->id,
             'taggable_type' => Taggable::BOOKMARK_TYPE
         ]);
 

@@ -42,12 +42,11 @@ class DeleteFolderTagsTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         $model = FolderFactory::new()->create(['user_id' => $user->id]);
-        $tag = TagFactory::new()->create();
+        $tag = TagFactory::new()->create(['created_by' => $user->id]);
 
         Taggable::create($tagAttributes = [
             'taggable_id' => $model->id,
             'tag_id' => $tag->id,
-            'tagged_by_id' => $user->id,
             'taggable_type' => Taggable::FOLDER_TYPE
         ]);
 

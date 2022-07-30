@@ -29,7 +29,7 @@ class PruneDeletedUsersDataTest extends TestCase
         DeletedUser::truncate();
 
         $user = UserFactory::new()->create();
-        $tags = TagFactory::new()->count(5)->create();
+        $tags = TagFactory::new()->count(5)->create(['created_by' => $user->id]);
 
         DeletedUser::query()->create(['user_id' => $user->id]);
 
@@ -57,7 +57,6 @@ class PruneDeletedUsersDataTest extends TestCase
                     'taggable_id' => $bookmark->id,
                     'taggable_type' => Taggable::BOOKMARK_TYPE,
                     'tag_id' => $tags->random()->id,
-                    'tagged_by_id' => $bookmark->user_id
                 ]);
 
                 Favourite::query()->create([

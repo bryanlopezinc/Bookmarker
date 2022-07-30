@@ -187,7 +187,6 @@ class CreateBookmarksTest extends TestCase
         ])->assertCreated();
 
         $this->assertDatabaseHas(Taggable::class, [
-            'tagged_by_id' => $user->id,
             'taggable_id'   => Bookmark::query()->where('user_id', $user->id)->sole('id')->id,
             'taggable_type' => Taggable::BOOKMARK_TYPE
         ]);

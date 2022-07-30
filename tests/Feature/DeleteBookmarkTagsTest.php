@@ -45,12 +45,11 @@ class DeleteBookmarkTagsTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $tag = TagFactory::new()->create();
+        $tag = TagFactory::new()->create(['created_by' => $model->user_id]);
 
         Taggable::create($tagAttributes = [
             'taggable_id' => $model->id,
             'tag_id' => $tag->id,
-            'tagged_by_id' => $user->id,
             'taggable_type' => Taggable::BOOKMARK_TYPE
         ]);
 

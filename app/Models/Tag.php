@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * @property int $id primary key
+ * @property int $created_by
  * @property string $name
  * @property \Carbon\Carbon $created_at
  */

@@ -269,7 +269,7 @@ class UpdateFolderTest extends TestCase
 
         /** @var Folder */
         $model = FolderFactory::new()->create(['user_id' => $user->id]);
-        $tags = TagFactory::new()->count(5)->create();
+        $tags = TagFactory::new()->count(5)->create(['created_by' => $user->id]);
 
         $this->getTestResponse([
             'tags' => $tags->pluck('name')->implode(','),

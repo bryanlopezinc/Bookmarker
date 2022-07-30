@@ -23,11 +23,10 @@ final class TagsRepository
             return;
         }
 
-        if (filled($tagIds = $this->insertGetTagIds($tags))) {
+        if (filled($tagIds = $this->insertGetIDs($tags, $tagable->taggedBy()))) {
             Taggable::insert(array_map(fn (int $tagID) => [
                 'taggable_id' => $tagable->taggableID()->toInt(),
                 'taggable_type' => $tagable->taggableType()->type(),
-                'tagged_by_id' => $tagable->taggedBy()->toInt(),
                 'tag_id' => $tagID
             ], $tagIds));
         }
@@ -38,10 +37,12 @@ final class TagsRepository
      *
      * @return array<int>
      */
-    private function insertGetTagIds(TagsCollection $tags): array
+    private function insertGetIDs(TagsCollection $tags, UserID $userID): array
     {
         /** @var \Illuminate\Database\Eloquent\Collection */
-        $existingTags = Model::whereIn('name', $tags->toStringCollection()->all())->get();
+        $existingTags = Model::where('created_by', $userID->toInt())
+            ->whereIn('name', $tags->toStringCollection()->all())
+            ->get();
 
         //All tags exists. Nothing to insert.
         if ($existingTags->count() === $tags->count()) {
@@ -52,10 +53,15 @@ final class TagsRepository
             ->except(TagsCollection::make($existingTags))
             ->toStringCollection()
             ->tap(fn (Collection $tags) => Model::insert(
-                $tags->map(fn (string $tag) => ['name' => $tag])->all()
+                $tags->map(fn (string $tag) => [
+                    'name' => $tag,
+                    'created_by' => $userID->toInt()
+                ])->all()
             ));
 
-        return $existingTags->merge(Model::whereIn('name', $newTags->all())->get())->pluck('id')->all();
+        return $existingTags->merge(
+            Model::where('created_by', $userID->toInt())->whereIn('name', $newTags->all())->get()
+        )->pluck('id')->all();
     }
 
     /**
@@ -63,8 +69,8 @@ final class TagsRepository
      */
     public function search(string $tag, UserID $userID, int $limit): TagsCollection
     {
-        return Model::join('taggables', 'tags.id', '=', 'taggables.tag_id')
-            ->where('tagged_by_id', $userID->toInt())
+        return Model::query()
+            ->where('created_by', $userID->toInt())
             ->where('tags.name', 'LIKE', "%$tag%")
             ->orderByDesc('tags.id')
             ->limit($limit)
@@ -78,8 +84,8 @@ final class TagsRepository
     public function getUsertags(UserID $userID, PaginationData $pagination): Paginator
     {
         /** @var Paginator */
-        $result = Model::join('taggables', 'tags.id', '=', 'taggables.tag_id')
-            ->where('tagged_by_id', $userID->toInt())
+        $result = Model::query()
+            ->where('created_by', $userID->toInt())
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
 
         return $result->setCollection(

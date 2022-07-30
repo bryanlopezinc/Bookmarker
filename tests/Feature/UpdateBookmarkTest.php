@@ -81,7 +81,6 @@ class UpdateBookmarkTest extends TestCase
 
         $this->assertDatabaseHas(Taggable::class, [
             'taggable_id' => $model->id,
-            'tagged_by_id' => $user->id,
             'taggable_type' => Taggable::BOOKMARK_TYPE,
             'tag_id' => Tag::query()->where('name', $tag)->first()->id
         ]);
@@ -113,9 +112,11 @@ class UpdateBookmarkTest extends TestCase
 
         $this->assertDatabaseHas(Taggable::class, [
             'taggable_id' => $model->id,
-            'tagged_by_id' => $user->id,
             'taggable_type' => Taggable::BOOKMARK_TYPE,
-            'tag_id' => Tag::query()->where('name', $tag)->first()->id
+            'tag_id' => Tag::query()->where([
+                'name' => $tag,
+                'created_by' => $user->id,
+            ])->first()->id
         ]);
     }
 
@@ -175,14 +176,16 @@ class UpdateBookmarkTest extends TestCase
 
         $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
 
-        TagFactory::new()->count(10)->create()->tap(function (Collection $collection) use ($model) {
-            Taggable::insert($collection->map(fn (Tag $tag) => [
-                'taggable_id' => $model->id,
-                'taggable_type' => Taggable::BOOKMARK_TYPE,
-                'tag_id' => $tag->id,
-                'tagged_by_id' => $model->user_id
-            ])->all());
-        });
+        TagFactory::new()
+            ->count(10)
+            ->create(['created_by' => $model->user_id])
+            ->tap(function (Collection $collection) use ($model) {
+                Taggable::insert($collection->map(fn (Tag $tag) => [
+                    'taggable_id' => $model->id,
+                    'taggable_type' => Taggable::BOOKMARK_TYPE,
+                    'tag_id' => $tag->id,
+                ])->all());
+            });
 
         $this->getTestResponse([
             'id' => $model->id,

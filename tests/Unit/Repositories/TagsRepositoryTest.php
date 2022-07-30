@@ -12,6 +12,7 @@ use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\TagFactory;
+use Database\Factories\UserFactory;
 use Tests\TestCase;
 
 class TagsRepositoryTest extends TestCase
@@ -40,35 +41,28 @@ class TagsRepositoryTest extends TestCase
 
     public function testGetUserTagsMethodWillReturnOnlyTagsCreatedByUser(): void
     {
-        $repository = new TagsRepository;
-
         /** @var Bookmark */
         $bookmark = BookmarkFactory::new()->create();
+        $repository = new TagsRepository;
+        $tag = TagFactory::new()->make()->name;
 
-        $user1Tag = 'like' . rand(0, 1000);
-        $user2Tag = 'like' . rand(0, 1000);
-        $user3Tag = 'like' . rand(0, 1000);
-
-        //Bookmarks by different users with similar tags
-        $repository->attach(TagsCollection::make([$user1Tag]), $bookmark);
-        $repository->attach(TagsCollection::make([$user2Tag]), BookmarkFactory::new()->create());
-        $repository->attach(TagsCollection::make([$user3Tag]), BookmarkFactory::new()->create());
+        $repository->attach($tags =TagsCollection::make([$tag]), $bookmark);
+        $repository->attach($tags, BookmarkFactory::new()->create());
+        $repository->attach($tags,  BookmarkFactory::new()->create());
 
         /** @var array<\App\ValueObjects\Tag> */
         $result = $repository->getUsertags(new UserID($bookmark->user_id), new PaginationData)->items();
 
         $this->assertCount(1, $result);
-        $this->assertEquals($user1Tag, $result[0]->value);
+        $this->assertEquals($tag, $result[0]->value);
     }
 
     public function testWillDetachBookmarkTags(): void
     {
-        $repository =  new TagsRepository;
-
         /** @var Bookmark */
         $model = BookmarkFactory::new()->create();
-
-        $tags = TagFactory::new()->count(5)->create();
+        $repository =  new TagsRepository;
+        $tags = TagFactory::new()->count(5)->create(['created_by' => $model->user_id]);
 
         $repository->attach(TagsCollection::make($tags), $model);
 
@@ -78,7 +72,6 @@ class TagsRepositoryTest extends TestCase
             $this->assertDatabaseMissing(Taggable::class, [
                 'taggable_id' => $model->id,
                 'tag_id' => $tag->id,
-                'tagged_by_id' => $model->user_id,
                 'taggable_type' => Taggable::BOOKMARK_TYPE
             ]);
         });
@@ -86,17 +79,15 @@ class TagsRepositoryTest extends TestCase
 
     public function testWillNotDetachBookmarkTags(): void
     {
-        $repository =  new TagsRepository;
-
         /** @var Bookmark */
         $model = BookmarkFactory::new()->create();
-
-        $tags = TagFactory::new()->count(5)->create();
+        $repository =  new TagsRepository;
+        $tags = TagFactory::new()->count(5)->create(['created_by' => $model->user_id]);
 
         $repository->attach(TagsCollection::make($tags), $model);
 
         $repository->detach(
-            TagsCollection::make(TagFactory::new()->count(5)->create()),
+            TagsCollection::make(TagFactory::new()->count(5)->create(['created_by' => $model->user_id])),
             new ResourceID($model->id)
         );
 
@@ -104,7 +95,6 @@ class TagsRepositoryTest extends TestCase
             $this->assertDatabaseHas(Taggable::class, [
                 'taggable_id' => $model->id,
                 'tag_id' => $tag->id,
-                'tagged_by_id' => $model->user_id,
                 'taggable_type' => Taggable::BOOKMARK_TYPE
             ]);
         });
@@ -112,15 +102,15 @@ class TagsRepositoryTest extends TestCase
 
     public function testWillNotDuplicateTags(): void
     {
-        $tag  = 'like' . rand(0, 1000);
-
+        $user = UserFactory::new()->create();
+        $tag  = TagFactory::new()->make()->name;
         $repository = new TagsRepository;
 
-        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->create());
-        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->create());
-        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->create());
-        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->create());
+        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->create(['user_id' => $user->id]));
+        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->create(['user_id' => $user->id]));
+        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->create(['user_id' => $user->id]));
+        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->create(['user_id' => $user->id]));
 
-        $this->assertEquals(1, Tag::whereIn('name', [$tag])->get(['name'])->count());
+        $this->assertEquals(1, Tag::where('created_by', $user->id)->whereIn('name', [$tag])->get(['name'])->count());
     }
 }

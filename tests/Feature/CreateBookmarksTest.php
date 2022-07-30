@@ -51,8 +51,7 @@ class CreateBookmarksTest extends TestCase
 
         $this->getTestResponse(['url' => 'foo bar'])->assertJsonValidationErrorFor('url');
         $this->getTestResponse(['tags' => ['foo', 'bar'], ...$valid])->assertJsonValidationErrorFor('tags');
-        $this->getTestResponse(['tags' => 'foo,bar,foo bar,', ...$valid])->assertJsonValidationErrorFor('tags.2');
-        $this->getTestResponse(['tags' => '#foo', ...$valid])->assertJsonValidationErrorFor('tags.0');
+        $this->getTestResponse(['tags' => 'foo,bar,foobarzawqwe234urklslss,', ...$valid])->assertJsonValidationErrorFor('tags.2');
         $this->getTestResponse(['title' => ' ', ...$valid])->assertJsonValidationErrorFor('title');
     }
 

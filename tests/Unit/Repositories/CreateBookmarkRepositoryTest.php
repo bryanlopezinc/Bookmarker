@@ -42,12 +42,12 @@ class CreateBookmarkRepositoryTest extends TestCase
 
         $result = $this->repository->create($bookmark);
 
-        $this->assertDatabaseHas(Tag::class, ['name' => $tag]);
+        $this->assertDatabaseHas(Tag::class, ['name' => $tag, 'created_by' => $bookmark->ownerId->toInt()]);
 
         $this->assertDatabaseHas(Taggable::class, [
             'taggable_id' => $result->id->toInt(),
             'taggable_type' => Taggable::BOOKMARK_TYPE,
-            'tag_id' => Tag::query()->where('name', $tag)->first()->id,
+            'tag_id' => Tag::query()->where('name', $tag)->where('created_by', $bookmark->ownerId->toInt())->first()->id,
         ]);
     }
 

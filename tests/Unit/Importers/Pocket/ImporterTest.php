@@ -213,10 +213,7 @@ class ImporterTest extends TestCase
         Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         $tags = implode(',', [
-            Str::random(Tag::MAX_LENGTH + 1),
-            ' ',
-            '@#tag',
-            'bot'
+            Str::random(Tag::MAX_LENGTH + 1), ' ', 'bot'
         ]);
 
         $html = <<<HTML

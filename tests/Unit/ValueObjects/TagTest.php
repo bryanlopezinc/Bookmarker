@@ -24,6 +24,7 @@ class TagTest extends TestCase
 
         new Tag(Str::random(Tag::MAX_LENGTH));
         new Tag('123456');
+        new Tag('foo bar foo');
     }
 
     public function testWillThrowExceptionWhenTagIsEmpty(): void
@@ -33,21 +34,14 @@ class TagTest extends TestCase
         new Tag('      ');
     }
 
-    public function testWillThrowExceptionWhenTagContainsSpaces(): void
+    public function testWillNotThrowExceptionWhenTagContainsSpecialCharacters(): void
     {
-        $this->expectException(InvalidTagException::class);
-
-        new Tag('foo bar');
-    }
-
-    public function testWillThrowExceptionWhenTagContainsInvalidCharacter(): void
-    {
-        $assertInvalid = function (string $tag): bool {
+        $isValid = function (string $tag): bool {
             try {
                 new Tag(Str::random(Tag::MAX_LENGTH - 1) . $tag);
 
                 return true;
-            } catch (InvalidTagException) {
+            } catch (InvalidTagException $e) {dd($e->getMessage());
                 return false;
             }
         };
@@ -55,7 +49,7 @@ class TagTest extends TestCase
         $values = '~,`,!,@,#,$,%,^,&,*,(,),_,-,=,+,{,[,],},:,;,",\\,|,<,>,.,?,/';
 
         foreach (explode(',', $values) as $tag) {
-            $this->assertFalse($assertInvalid($tag), 'validation failed for ' . $tag);
+            $this->assertTrue($isValid($tag), 'validation failed for ' . $tag);
         }
     }
 }

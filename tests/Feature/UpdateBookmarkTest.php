@@ -82,7 +82,7 @@ class UpdateBookmarkTest extends TestCase
         $this->assertDatabaseHas(Taggable::class, [
             'taggable_id' => $model->id,
             'taggable_type' => Taggable::BOOKMARK_TYPE,
-            'tag_id' => Tag::query()->where('name', $tag)->first()->id
+            'tag_id' => Tag::query()->where(['name' => $tag, 'created_by' => $user->id])->first()->id
         ]);
     }
 

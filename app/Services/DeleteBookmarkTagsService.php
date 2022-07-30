@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Collections\TagsCollection;
+use App\Events\TagsDetachedEvent;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkAttributes;
 use App\ValueObjects\ResourceID;
 use App\Repositories\FetchBookmarksRepository;
 use App\Repositories\TagsRepository;
+use App\ValueObjects\UserID;
 
 final class DeleteBookmarkTagsService
 {
@@ -30,5 +32,7 @@ final class DeleteBookmarkTagsService
         }
 
         $this->tagsRepository->detach($tagsCollection, $bookmarkId);
+
+        event(new TagsDetachedEvent($bookmark->tags, UserID::fromAuthUser()));
     }
 }

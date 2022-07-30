@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Events\LoginEvent;
+use App\Listeners\DeleteUnusedTags;
 use App\Listeners\Login\NotifyUserAboutNewLoginEventListener;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use App\Listeners\SendEmailVerificationNotification;
@@ -18,6 +19,7 @@ class EventServiceProvider extends ServiceProvider
         LoginEvent::class => [NotifyUserAboutNewLoginEventListener::class],
         \App\Events\RegisteredEvent::class => [SendEmailVerificationNotification::class],
         \App\Events\ResendEmailVerificationLinkRequested::class => [SendEmailVerificationNotification::class],
+        \App\Events\TagsDetachedEvent::class => [DeleteUnusedTags::class],
     ];
 
     /**

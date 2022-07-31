@@ -13,7 +13,7 @@ use App\Exceptions\BookmarkNotFoundException;
 use App\QueryColumns\BookmarkAttributes;
 use Illuminate\Support\Collection;
 
-final class FetchBookmarksRepository
+class FetchBookmarksRepository
 {
     /**
      * @throws BookmarkNotFoundException
@@ -32,8 +32,9 @@ final class FetchBookmarksRepository
     /**
      * @return Collection<Bookmark>
      */
-    public function findManyById(ResourceIDsCollection $IDs, BookmarkAttributes $columns = new BookmarkAttributes()): Collection
+    public function findManyById(ResourceIDsCollection $IDs, ?BookmarkAttributes $columns = null): Collection
     {
+        $columns = $columns ?: new BookmarkAttributes();
         $originalRequestedColums = $columns->toArray();
 
         //Force bookmark to be health checked by model event observer.

@@ -13,11 +13,13 @@ use App\Models\Bookmark;
 use App\Models\WebSite;
 use App\Readers\BookmarkMetaData;
 use App\Readers\HttpClientInterface;
+use App\Repositories\FetchBookmarksRepository;
 use App\ValueObjects\Url;
 use Closure;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\SiteFactory;
 use Illuminate\Foundation\Testing\WithFaker;
+use Mockery\MockInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
@@ -25,9 +27,32 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
 {
     use WithFaker;
 
-    public function test_will_not_perform_updates_when_web_page_request_fails(): void
+    public function test_will_not_perform_any_update_if_bookmark_has_been_deleted(): void
     {
         $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
+
+        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findManyById')->once()->andReturn(collect());
+        });
+
+        $this->mockClient(function (MockObject $mock) {
+            $mock->expects($this->never())->method('fetchBookmarkPageData');
+        });
+
+        $this->mockRepository(function (MockObject $mock) {
+            $mock->expects($this->never())->method('update');
+        });
+
+        $this->handleUpdateBookmarkJob($bookmark);
+    }
+
+    public function test_will_not_perform_any_update_if_web_page_request_fails(): void
+    {
+        $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
+
+        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
+        });
 
         $this->mockClient(function (MockObject $mock) {
             $mock->method('fetchBookmarkPageData')->willReturn(false);
@@ -40,13 +65,17 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         $this->handleUpdateBookmarkJob($bookmark);
     }
 
-    public function test_will_not_make_http_requests_when_bookmark_url_is_not_http_protocol(): void
+    public function test_will_not_make_http_requests_if_bookmark_url_is_not_http_protocol(): void
     {
         /** @var Bookmark */
         $bookmark = BookmarkFactory::new()->make([
             'id' => 3982,
             'url' => 'payto://iban/DE75512108001245126199?amount=EUR:200.0&message=hello'
         ]);
+
+        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
+        });
 
         $this->mockClient(function (MockObject $mock) {
             $mock->expects($this->never())->method('fetchBookmarkPageData');
@@ -76,6 +105,10 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
     public function test_will_update_resolved_at_attrbute_after_updates(): void
     {
         $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
+
+        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
+        });
 
         $this->mockClient(function (MockObject $mock) {
             $mock->method('fetchBookmarkPageData')
@@ -112,6 +145,10 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
     public function testWillUpdateBookmark(): void
     {
         $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
+
+        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
+        });
 
         $canonicalUrl = new Url($this->faker->url);
         $description = $this->faker->sentences(1, true);
@@ -173,6 +210,10 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             'description_set_by_user' => true
         ]);
 
+        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
+        });
+
         $this->mockClient(function (MockObject $mock) {
             $mock->method('fetchBookmarkPageData')
                 ->willReturn(BookmarkMetaData::fromArray([
@@ -203,6 +244,10 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
         $description = str_repeat('B', 201);
 
+        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
+        });
+
         $this->mockClient(function (MockObject $mock) use ($description) {
             $mock->method('fetchBookmarkPageData')
                 ->willReturn(BookmarkMetaData::fromArray([
@@ -232,6 +277,10 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
     public function testWill_LimitTitleIfPageTitleIsTooLong(): void
     {
         $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
+
+        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
+        });
 
         $this->mockClient(function (MockObject $mock) {
             $mock->method('fetchBookmarkPageData')
@@ -267,6 +316,10 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             'site_id' => $site->id
         ])->setRelation('site', $site);
 
+        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
+        });
+
         $this->mockClient(function (MockObject $mock) {
             $mock->method('fetchBookmarkPageData')
                 ->willReturn(BookmarkMetaData::fromArray([
@@ -287,7 +340,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         ]);
     }
 
-    public function testWillNotUpdateNameWhenSiteNameDataIsFalse(): void
+    public function testWillNotUpdateNameIfSiteNameDataIsFalse(): void
     {
         $site = SiteFactory::new()->create();
 
@@ -295,14 +348,9 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             'site_id' =>  $site->id
         ])->setRelation('site', $site);
 
-        $data = BookmarkMetaData::fromArray([
-            'siteName' => false,
-            'description' => implode(' ', $this->faker->sentences()),
-            'imageUrl' => new Url($this->faker->url),
-            'title' => $this->faker->sentence,
-            'canonicalUrl' => new Url($this->faker->url),
-            'reosolvedUrl' => new Url($this->faker->url)
-        ]);
+        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
+        });
 
         $this->mockClient(function (MockObject $mock) {
             $mock->method('fetchBookmarkPageData')
@@ -334,6 +382,10 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         $bookmark = BookmarkFactory::new()->create([
             'site_id' => $site->id
         ])->setRelation('site', $site);
+
+        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
+        });
 
         $this->mockClient(function (MockObject $mock) {
             $mock->method('fetchBookmarkPageData')
@@ -380,7 +432,8 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         $job->handle(
             app(HttpClientInterface::class),
             app(Repository::class),
-            app(UrlHasherInterface::class)
+            app(UrlHasherInterface::class),
+            app(FetchBookmarksRepository::class)
         );
     }
 

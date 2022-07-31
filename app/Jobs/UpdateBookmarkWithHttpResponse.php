@@ -17,6 +17,7 @@ use App\DataTransferObjects\Builders\BookmarkBuilder as Builder;
 use App\DataTransferObjects\UpdateBookmarkData as Data;
 use App\Models\WebSite;
 use App\Readers\BookmarkMetaData;
+use App\Repositories\FetchBookmarksRepository;
 use App\ValueObjects\BookmarkDescription;
 use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\Url;
@@ -29,16 +30,28 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
     {
     }
 
-    public function handle(HttpClientInterface $client, Repository $repository, UrlHasherInterface $urlHasher): void
-    {
-        $builder = Builder::new()->id($this->bookmark->id->toInt())->resolvedAt(now());
+    public function handle(
+        HttpClientInterface $client,
+        Repository $repository,
+        UrlHasherInterface $urlHasher,
+        FetchBookmarksRepository $bookmarkRepository = new FetchBookmarksRepository
+    ): void {
 
-        if (!$this->canOpenUrl($this->bookmark->url)) {
-            $repository->update(new Data($builder->resolvedUrl($this->bookmark->url)->build()));
+        /** @var Bookmark */
+        $bookmark = $bookmarkRepository->findManyById($this->bookmark->id->toCollection())->first();
+
+        if ($bookmark === null) {
             return;
         }
 
-        $data = $client->fetchBookmarkPageData($this->bookmark);
+        $builder = Builder::new()->id($bookmark->id->toInt())->resolvedAt(now());
+
+        if (!$this->canOpenUrl($bookmark->url)) {
+            $repository->update(new Data($builder->resolvedUrl($bookmark->url)->build()));
+            return;
+        }
+
+        $data = $client->fetchBookmarkPageData($bookmark);
 
         if ($data === false) {
             return;
@@ -54,9 +67,9 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
             $builder->canonicalUrl($data->canonicalUrl)->canonicalUrlHash($urlHasher->hashUrl($data->canonicalUrl));
         }
 
-        $this->setDescriptionAttribute($builder, $data);
-        $this->seTtitleAttributes($builder, $data);
-        $this->updateSiteName($data);
+        $this->setDescriptionAttribute($builder, $data, $bookmark);
+        $this->seTtitleAttributes($builder, $data, $bookmark);
+        $this->updateSiteName($data, $bookmark);
 
         $repository->update(new Data($builder->build()));
     }
@@ -66,25 +79,25 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
         return $url->isHttp() || $url->isHttps();
     }
 
-    private function setDescriptionAttribute(Builder &$builder, BookmarkMetaData $data): void
+    private function setDescriptionAttribute(Builder &$builder, BookmarkMetaData $data, Bookmark $bookmark): void
     {
-        if ($this->bookmark->descriptionWasSetByUser || $data->description === false) {
+        if ($bookmark->descriptionWasSetByUser || $data->description === false) {
             return;
         }
 
         $builder->description(BookmarkDescription::fromLongtText($data->description)->value);
     }
 
-    private function seTtitleAttributes(Builder &$builder, BookmarkMetaData $data): void
+    private function seTtitleAttributes(Builder &$builder, BookmarkMetaData $data, Bookmark $bookmark): void
     {
-        if ($this->bookmark->hasCustomTitle || $data->title === false) {
+        if ($bookmark->hasCustomTitle || $data->title === false) {
             return;
         }
 
         $builder->title(BookmarkTitle::fromLongtText($data->title)->value);
     }
 
-    private function updateSiteName(BookmarkMetaData $data): void
+    private function updateSiteName(BookmarkMetaData $data, Bookmark $bookmark): void
     {
         $sitename = $data->hostSiteName;
 
@@ -92,9 +105,9 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
             return;
         }
 
-        $site = WebSite::query()->where('id', $this->bookmark->fromWebSite->id->toInt())->first(['name', 'id', 'host']);
+        $site = WebSite::query()->where('id', $bookmark->fromWebSite->id->toInt())->first(['name', 'id', 'host']);
 
-        if (!$this->bookmark->fromWebSite->nameHasBeenUpdated) {
+        if (!$bookmark->fromWebSite->nameHasBeenUpdated) {
             $site->update([
                 'name' => $sitename,
                 'name_updated_at' => now()

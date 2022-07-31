@@ -21,12 +21,14 @@ final class HealthChecker
 
     public function ping(BookmarksCollection $bookmarks): void
     {
-        if ($bookmarks->isEmpty()) {
+        $bookmarksWithHttpUrl = $bookmarks->filter(fn (Bookmark $bookmark): bool => $bookmark->url->isHttps() || $bookmark->url->isHttp());
+
+        if ($bookmarksWithHttpUrl->isEmpty()) {
             return;
         }
 
         $responses = $this->makeRequests(
-            $bookmarks->filterByIDs($this->repository->whereNotRecentlyChecked($bookmarks->ids()))
+            $bookmarksWithHttpUrl->filterByIDs($this->repository->whereNotRecentlyChecked($bookmarksWithHttpUrl->ids()))
         );
 
         collect($responses)

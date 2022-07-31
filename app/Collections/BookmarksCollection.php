@@ -19,6 +19,14 @@ final class BookmarksCollection extends BaseCollection
     }
 
     /**
+     * @param callable(Bookmark, int): bool $callback
+     */
+    public function filter(callable $callback): BookmarksCollection
+    {
+        return $this->collection->filter($callback)->pipeInto(self::class);
+    }
+
+    /**
      * Get only the bookmarks with given ids
      */
     public function filterByIDs(ResourceIDsCollection $collection): BookmarksCollection

@@ -36,9 +36,9 @@ class BookmarkDescriptionTest extends TestCase
 
     public function testWillLimitDescription(): void
     {
-        $this->assertEquals(200, strlen(BookmarkDescription::fromLongtText(str_repeat('B', 201))->value));
-        $this->assertEquals(str_repeat('B', 200), BookmarkDescription::fromLongtText(str_repeat('B', 200))->value);
-        $this->assertEquals(str_repeat('B', 99), BookmarkDescription::fromLongtText(str_repeat('B', 99))->value);
-        $this->assertEquals('', BookmarkDescription::fromLongtText('')->value);
+        $this->assertEquals(200, strlen(BookmarkDescription::limit(str_repeat('B', 201))->value));
+        $this->assertEquals(str_repeat('B', 200), BookmarkDescription::limit(str_repeat('B', 200))->value);
+        $this->assertEquals(str_repeat('B', 99), BookmarkDescription::limit(str_repeat('B', 99))->value);
+        $this->assertEquals('', BookmarkDescription::limit('')->value);
     }
 }

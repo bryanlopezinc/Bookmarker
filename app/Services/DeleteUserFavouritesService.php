@@ -6,12 +6,12 @@ namespace App\Services;
 
 use App\Collections\ResourceIDsCollection;
 use App\Exceptions\HttpException;
-use App\Repositories\FavouritesRepository;
+use App\Repositories\FavouriteRepository;
 use App\ValueObjects\UserID;
 
 final class DeleteUserFavouritesService
 {
-    public function __construct(private FavouritesRepository $repository)
+    public function __construct(private FavouriteRepository $repository)
     {
     }
 

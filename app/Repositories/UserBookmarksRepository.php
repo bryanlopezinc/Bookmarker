@@ -18,7 +18,7 @@ use Illuminate\Support\Collection;
 
 final class UserBookmarksRepository
 {
-    public function __construct(private FavouritesRepository $userFavourites)
+    public function __construct(private FavouriteRepository $userFavourites)
     {
     }
 

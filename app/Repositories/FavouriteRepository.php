@@ -16,7 +16,7 @@ use App\PaginationData;
 use App\QueryColumns\BookmarkAttributes;
 use Illuminate\Pagination\Paginator;
 
-final class FavouritesRepository
+final class FavouriteRepository
 {
     public function create(ResourceID $bookmarkId, UserID $userId): bool
     {

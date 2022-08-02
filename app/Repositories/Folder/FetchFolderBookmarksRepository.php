@@ -10,7 +10,7 @@ use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\FolderBookmark;
 use App\Models\FolderBookmark as FolderBookmarkModel;
 use App\PaginationData;
-use App\Repositories\FavouritesRepository;
+use App\Repositories\FavouriteRepository;
 use App\Repositories\FetchBookmarksRepository;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
@@ -53,7 +53,7 @@ final class FetchFolderBookmarksRepository
         $bookmarkIDs = IDs::fromNativeTypes($result->getCollection()->pluck('bookmark_id'));
 
         $favourites = isset($options['userID'])
-            ? (new FavouritesRepository)->intersect($bookmarkIDs, $options['userID'])->asIntegers()
+            ? (new FavouriteRepository)->intersect($bookmarkIDs, $options['userID'])->asIntegers()
             : collect();
 
         $result->setCollection(

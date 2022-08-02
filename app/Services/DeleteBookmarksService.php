@@ -7,14 +7,14 @@ namespace App\Services;
 use App\Collections\ResourceIDsCollection;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkAttributes;
-use App\Repositories\DeleteBookmarksRepository;
+use App\Repositories\DeleteBookmarkRepository;
 use App\Repositories\FetchBookmarksRepository;
 
 final class DeleteBookmarksService
 {
     public function __construct(
         private FetchBookmarksRepository $bookmarksRepository,
-        private DeleteBookmarksRepository $deleteBookmarks
+        private DeleteBookmarkRepository $deleteBookmarks
     ) {
     }
 

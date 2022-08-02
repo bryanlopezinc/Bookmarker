@@ -8,21 +8,21 @@ use App\Models\FolderBookmark;
 use App\Models\FolderBookmarksCount;
 use App\Models\UserBookmarksCount;
 use App\Models\UserFavouritesCount;
-use App\Repositories\DeleteBookmarksRepository;
+use App\Repositories\DeleteBookmarkRepository;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Tests\TestCase;
 
-class DeleteBookmarksRepositoryTest extends TestCase
+class DeleteBookmarkRepositoryTest extends TestCase
 {
-    private DeleteBookmarksRepository $repository;
+    private DeleteBookmarkRepository $repository;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->repository = app(DeleteBookmarksRepository::class);
+        $this->repository = app(DeleteBookmarkRepository::class);
     }
 
     public function testWillDecrementUserBookmarksCount(): void

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Repositories\DeleteBookmarksRepository;
+use App\Repositories\DeleteBookmarkRepository;
 use Illuminate\Http\Request;
 use App\Rules\ResourceIdRule;
 use App\ValueObjects\ResourceID;
@@ -16,7 +16,7 @@ use App\ValueObjects\UserID;
  */
 final class DeleteBookmarksFromSiteController
 {
-    public function __invoke(Request $request, DeleteBookmarksRepository $repository): JsonResponse
+    public function __invoke(Request $request, DeleteBookmarkRepository $repository): JsonResponse
     {
         $request->validate([
             'site_id' => ['required', new ResourceIdRule]

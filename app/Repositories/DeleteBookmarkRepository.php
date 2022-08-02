@@ -11,7 +11,7 @@ use App\Observers\BookmarkObserver;
 use App\ValueObjects\UserID;
 use Illuminate\Database\Eloquent\Collection;
 
-final class DeleteBookmarksRepository
+final class DeleteBookmarkRepository
 {
     public function delete(ResourceIDsCollection $bookmarkIDs): bool
     {

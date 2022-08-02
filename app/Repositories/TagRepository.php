@@ -15,7 +15,7 @@ use App\ValueObjects\Tag;
 use App\ValueObjects\UserID;
 use Illuminate\Pagination\Paginator;
 
-final class TagsRepository
+final class TagRepository
 {
     public function attach(TagsCollection $tags, TaggableInterface $tagable): void
     {

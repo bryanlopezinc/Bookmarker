@@ -7,7 +7,7 @@ use App\Models\Bookmark;
 use App\Models\Taggable;
 use App\Models\Tag;
 use App\PaginationData;
-use App\Repositories\TagsRepository;
+use App\Repositories\TagRepository;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Database\Factories\BookmarkFactory;
@@ -15,11 +15,11 @@ use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Tests\TestCase;
 
-class TagsRepositoryTest extends TestCase
+class TagRepositoryTest extends TestCase
 {
     public function testWillReturnOnlyTagsCreatedByUser(): void
     {
-        $repository = new TagsRepository;
+        $repository = new TagRepository;
 
         /** @var Bookmark */
         $bookmark = BookmarkFactory::new()->create();
@@ -43,7 +43,7 @@ class TagsRepositoryTest extends TestCase
     {
         /** @var Bookmark */
         $bookmark = BookmarkFactory::new()->create();
-        $repository = new TagsRepository;
+        $repository = new TagRepository;
         $tag = TagFactory::new()->make()->name;
 
         $repository->attach($tags =TagsCollection::make([$tag]), $bookmark);
@@ -61,7 +61,7 @@ class TagsRepositoryTest extends TestCase
     {
         /** @var Bookmark */
         $model = BookmarkFactory::new()->create();
-        $repository =  new TagsRepository;
+        $repository =  new TagRepository;
         $tags = TagFactory::new()->count(5)->create(['created_by' => $model->user_id]);
 
         $repository->attach(TagsCollection::make($tags), $model);
@@ -81,7 +81,7 @@ class TagsRepositoryTest extends TestCase
     {
         /** @var Bookmark */
         $model = BookmarkFactory::new()->create();
-        $repository =  new TagsRepository;
+        $repository =  new TagRepository;
         $tags = TagFactory::new()->count(5)->create(['created_by' => $model->user_id]);
 
         $repository->attach(TagsCollection::make($tags), $model);
@@ -104,7 +104,7 @@ class TagsRepositoryTest extends TestCase
     {
         $user = UserFactory::new()->create();
         $tag  = TagFactory::new()->make()->name;
-        $repository = new TagsRepository;
+        $repository = new TagRepository;
 
         $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->create(['user_id' => $user->id]));
         $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->create(['user_id' => $user->id]));

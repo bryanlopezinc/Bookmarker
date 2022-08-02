@@ -6,7 +6,7 @@ namespace App\Repositories\Folder;
 
 use App\DataTransferObjects\Folder;
 use App\Models\Folder as Model;
-use App\Repositories\TagsRepository;
+use App\Repositories\TagRepository;
 use App\ValueObjects\ResourceID;
 
 final class UpdateFolderRepository
@@ -21,6 +21,6 @@ final class UpdateFolderRepository
             'is_public' => $newAttributes->isPublic
         ]);
 
-        (new TagsRepository)->attach($newAttributes->tags, $folder);
+        (new TagRepository)->attach($newAttributes->tags, $folder);
     }
 }

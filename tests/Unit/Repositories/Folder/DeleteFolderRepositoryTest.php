@@ -5,7 +5,7 @@ namespace Tests\Unit\Repositories\Folder;
 use App\Collections\TagsCollection;
 use App\Models\Taggable;
 use App\Repositories\Folder\DeleteFolderRepository;
-use App\Repositories\TagsRepository;
+use App\Repositories\TagRepository;
 use App\ValueObjects\ResourceID;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
@@ -32,8 +32,8 @@ class DeleteFolderRepositoryTest extends TestCase
         $folder = FolderFactory::new()->create(['user_id' => $user->id]);
         $tags = TagsCollection::make(TagFactory::new()->count(5)->make());
 
-        (new TagsRepository)->attach($tags, $bookmark);
-        (new TagsRepository)->attach($tags, $folder);
+        (new TagRepository)->attach($tags, $bookmark);
+        (new TagRepository)->attach($tags, $folder);
 
         $this->assertDatabaseHas(Taggable::class,$folderTagsData = [
             'taggable_id' => $folder->id,

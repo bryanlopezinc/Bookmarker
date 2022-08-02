@@ -6,7 +6,7 @@ use App\Collections\TagsCollection;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\UserBookmarksFilters as Data;
 use App\Models\Favourite;
-use App\Repositories\TagsRepository;
+use App\Repositories\TagRepository;
 use App\Repositories\UserBookmarksRepository;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
@@ -66,7 +66,7 @@ class UserBookmarksRepositoryTest extends TestCase
             'user_id' => $userId = UserFactory::new()->create()->id,
         ]);
 
-        (new TagsRepository)->attach(TagsCollection::make(['foobar']), $models[0]);
+        (new TagRepository)->attach(TagsCollection::make(['foobar']), $models[0]);
 
         $result = $this->repository->fetch(new UserID($userId), Data::fromArray([
             'tags' => ['foobar']

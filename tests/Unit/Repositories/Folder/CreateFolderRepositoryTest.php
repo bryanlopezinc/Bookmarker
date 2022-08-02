@@ -7,7 +7,7 @@ use App\DataTransferObjects\Builders\FolderBuilder;
 use App\Models\UserFoldersCount;
 use App\Repositories\Folder\CreateFolderRepository;
 use Tests\TestCase;
-use App\Repositories\TagsRepository;
+use App\Repositories\TagRepository;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 
@@ -26,7 +26,7 @@ class CreateFolderRepositoryTest extends TestCase
             ->setTags(new TagsCollection([]))
             ->build();
 
-        $repository = new CreateFolderRepository(new TagsRepository);
+        $repository = new CreateFolderRepository(new TagRepository);
 
         $repository->create($folder);
         $repository->create($folder);

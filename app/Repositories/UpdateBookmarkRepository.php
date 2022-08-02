@@ -12,7 +12,7 @@ use App\DataTransferObjects\Builders\BookmarkBuilder;
 
 final class UpdateBookmarkRepository implements UpdateBookmarkRepositoryInterface
 {
-    public function __construct(private TagsRepository $tagsRepository)
+    public function __construct(private TagRepository $tagsRepository)
     {
     }
 

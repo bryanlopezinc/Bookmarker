@@ -14,7 +14,7 @@ use App\ValueObjects\UserID;
 
 final class CreateBookmarkRepository implements CreateBookmarkRepositoryInterface
 {
-    public function __construct(private TagsRepository $tagsRepository)
+    public function __construct(private TagRepository $tagsRepository)
     {
     }
 

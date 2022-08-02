@@ -7,12 +7,12 @@ namespace App\Repositories\Folder;
 use App\DataTransferObjects\Folder;
 use App\Models\Folder as Model;
 use App\Models\UserFoldersCount;
-use App\Repositories\TagsRepository;
+use App\Repositories\TagRepository;
 use App\ValueObjects\UserID;
 
 final class CreateFolderRepository
 {
-    public function __construct(private TagsRepository $tagsRepository)
+    public function __construct(private TagRepository $tagsRepository)
     {
     }
 

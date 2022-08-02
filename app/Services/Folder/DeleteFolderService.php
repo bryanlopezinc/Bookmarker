@@ -6,7 +6,7 @@ namespace App\Services\Folder;
 
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\Repositories\Folder\DeleteFolderRepository;
-use App\Repositories\Folder\FoldersRepository;
+use App\Repositories\Folder\FolderRepository;
 use App\ValueObjects\ResourceID;
 use App\QueryColumns\FolderAttributes as Attributes;
 
@@ -14,7 +14,7 @@ final class DeleteFolderService
 {
     public function __construct(
         private DeleteFolderRepository $deleteFolderRepository,
-        private FoldersRepository $foldersRepository
+        private FolderRepository $folderRepository
     ) {
     }
 
@@ -33,7 +33,7 @@ final class DeleteFolderService
 
     private function deleteFolder(ResourceID $folderID, bool $recursive = false): void
     {
-        $folder = $this->foldersRepository->find($folderID, Attributes::only('id,userId'));
+        $folder = $this->folderRepository->find($folderID, Attributes::only('id,userId'));
 
         (new EnsureAuthorizedUserOwnsResource)($folder);
 

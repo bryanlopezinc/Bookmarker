@@ -5,13 +5,13 @@ namespace Tests\Unit\Repositories\Folder;
 use App\DataTransferObjects\Folder;
 use App\QueryColumns\FolderAttributes;
 use Tests\TestCase;
-use App\Repositories\Folder\FoldersRepository;
+use App\Repositories\Folder\FolderRepository;
 use App\ValueObjects\ResourceID;
 use Database\Factories\FolderFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use ReflectionProperty;
 
-class FoldersRepositoryTest extends TestCase
+class FolderRepositoryTest extends TestCase
 {
     use WithFaker;
 
@@ -73,7 +73,7 @@ class FoldersRepositoryTest extends TestCase
 
     private function assertWillReturnOnlyAttributes(string $attributes, \Closure $assertion): void
     {
-        $repository = new FoldersRepository;
+        $repository = new FolderRepository;
         $folderID = new ResourceID(FolderFactory::new()->create()->id);
 
         $folder = $repository->find($folderID, FolderAttributes::only($attributes));

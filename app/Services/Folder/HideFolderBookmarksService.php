@@ -9,7 +9,7 @@ use App\Exceptions\HttpException;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\Repositories\FetchBookmarksRepository;
 use App\Repositories\Folder\FetchFolderBookmarksRepository;
-use App\Repositories\Folder\FoldersRepository;
+use App\Repositories\Folder\FolderRepository;
 use App\ValueObjects\ResourceID;
 use App\QueryColumns\FolderAttributes as Attributes;
 use App\Repositories\Folder\FolderBookmarkRepository;
@@ -18,7 +18,7 @@ final class HideFolderBookmarksService
 {
     public function __construct(
         private FetchFolderBookmarksRepository $repository,
-        private FoldersRepository $foldersRepository,
+        private FolderRepository $folderRepository,
         private FetchBookmarksRepository $bookmarksRepository,
         private FolderBookmarkRepository $createFolderBookmark
     ) {
@@ -26,7 +26,7 @@ final class HideFolderBookmarksService
 
     public function hide(ResourceIDsCollection $bookmarkIDs, ResourceID $folderID): void
     {
-        $folder = $this->foldersRepository->find($folderID, Attributes::only('id,userId'));
+        $folder = $this->folderRepository->find($folderID, Attributes::only('id,userId'));
 
         (new EnsureAuthorizedUserOwnsResource)($folder);
 

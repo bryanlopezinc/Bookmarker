@@ -9,14 +9,14 @@ use App\Events\TagsDetachedEvent;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\FolderAttributes;
 use App\ValueObjects\ResourceID;
-use App\Repositories\Folder\FoldersRepository;
+use App\Repositories\Folder\FolderRepository;
 use App\Repositories\TagsRepository;
 use App\ValueObjects\UserID;
 
 final class DetachFolderTagsService
 {
     public function __construct(
-        private FoldersRepository $repository,
+        private FolderRepository $repository,
         private TagsRepository $tagsRepository
     ) {
     }

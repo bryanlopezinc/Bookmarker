@@ -8,7 +8,7 @@ use App\Collections\ResourceIDsCollection;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\Repositories\Folder\FetchFolderBookmarksRepository;
 use App\ValueObjects\ResourceID;
-use App\Repositories\Folder\FoldersRepository;
+use App\Repositories\Folder\FolderRepository;
 use App\Exceptions\HttpException;
 use App\QueryColumns\FolderAttributes as Attributes;
 use App\Repositories\Folder\FolderBookmarkRepository;
@@ -16,7 +16,7 @@ use App\Repositories\Folder\FolderBookmarkRepository;
 final class RemoveBookmarksFromFolderService
 {
     public function __construct(
-        private FoldersRepository $repository,
+        private FolderRepository $repository,
         private FetchFolderBookmarksRepository $folderBookmarks,
         private FolderBookmarkRepository $deleteFolderBookmark
     ) {

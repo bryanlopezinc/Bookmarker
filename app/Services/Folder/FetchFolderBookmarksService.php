@@ -8,7 +8,7 @@ use App\DataTransferObjects\FolderBookmark;
 use App\PaginationData;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\Repositories\Folder\FetchFolderBookmarksRepository;
-use App\Repositories\Folder\FoldersRepository;
+use App\Repositories\Folder\FolderRepository;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Illuminate\Pagination\Paginator;
@@ -18,7 +18,7 @@ final class FetchFolderBookmarksService
 {
     public function __construct(
         private FetchFolderBookmarksRepository $folderBookmarksRepository,
-        private FoldersRepository $foldersRepository
+        private FolderRepository $folderRepository
     ) {
     }
 
@@ -27,7 +27,7 @@ final class FetchFolderBookmarksService
      */
     public function fetch(ResourceID $folderID, PaginationData $pagination, UserID $userID): Paginator
     {
-        $folder = $this->foldersRepository->find($folderID, Attributes::only('id,userId'));
+        $folder = $this->folderRepository->find($folderID, Attributes::only('id,userId'));
 
         (new EnsureAuthorizedUserOwnsResource)($folder);
 

@@ -11,7 +11,7 @@ use App\QueryColumns\BookmarkAttributes;
 use App\Repositories\FetchBookmarksRepository;
 use App\Repositories\Folder\FetchFolderBookmarksRepository;
 use App\ValueObjects\ResourceID;
-use App\Repositories\Folder\FoldersRepository;
+use App\Repositories\Folder\FolderRepository;
 use App\Exceptions\HttpException as HttpException;
 use App\QueryColumns\FolderAttributes as Attributes;
 use App\Repositories\Folder\FolderBookmarkRepository;
@@ -19,7 +19,7 @@ use App\Repositories\Folder\FolderBookmarkRepository;
 final class AddBookmarksToFolderService
 {
     public function __construct(
-        private FoldersRepository $repository,
+        private FolderRepository $repository,
         private FetchBookmarksRepository $bookmarksRepository,
         private FetchFolderBookmarksRepository $folderBookmarks,
         private FolderBookmarkRepository $createFolderBookmark

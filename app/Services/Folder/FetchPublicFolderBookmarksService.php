@@ -7,7 +7,7 @@ namespace App\Services\Folder;
 use App\PaginationData;
 use App\ValueObjects\ResourceID;
 use Illuminate\Pagination\Paginator;
-use App\Repositories\Folder\FoldersRepository;
+use App\Repositories\Folder\FolderRepository;
 use App\Repositories\Folder\FetchFolderBookmarksRepository;
 use App\Exceptions\FolderNotFoundHttpResponseException;
 use App\QueryColumns\FolderAttributes as Attributes;
@@ -16,7 +16,7 @@ final class FetchPublicFolderBookmarksService
 {
     public function __construct(
         private FetchFolderBookmarksRepository $folderBookmarksRepository,
-        private FoldersRepository $foldersRepository
+        private FolderRepository $folderRepository
     ) {
     }
 
@@ -25,7 +25,7 @@ final class FetchPublicFolderBookmarksService
      */
     public function fetch(ResourceID $folderID, PaginationData $pagination): Paginator
     {
-        $folder = $this->foldersRepository->find($folderID, Attributes::only('privacy'));
+        $folder = $this->folderRepository->find($folderID, Attributes::only('privacy'));
 
         if (!$folder->isPublic) throw new FolderNotFoundHttpResponseException;
 

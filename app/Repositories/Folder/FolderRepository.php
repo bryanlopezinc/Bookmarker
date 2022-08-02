@@ -11,7 +11,7 @@ use App\Models\Folder as Model;
 use App\QueryColumns\FolderAttributes;
 use App\ValueObjects\ResourceID;
 
-final class FoldersRepository
+final class FolderRepository
 {
     /**
      * @throws FolderNotFoundHttpResponseException

@@ -1,10 +1,10 @@
 <?php
 
-namespace Tests\Unit\Repositories;
+namespace Tests\Unit\Repositories\Folder;
 
 use App\Collections\TagsCollection;
 use App\Models\Taggable;
-use App\Repositories\Folder\DeleteFoldersRepository;
+use App\Repositories\Folder\DeleteFolderRepository;
 use App\Repositories\TagsRepository;
 use App\ValueObjects\ResourceID;
 use Database\Factories\BookmarkFactory;
@@ -13,15 +13,15 @@ use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Tests\TestCase;
 
-class DeleteFoldersRepositoryTest extends TestCase
+class DeleteFolderRepositoryTest extends TestCase
 {
-    private DeleteFoldersRepository $repository;
+    private DeleteFolderRepository $repository;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->repository = app(DeleteFoldersRepository::class);
+        $this->repository = app(DeleteFolderRepository::class);
     }
 
     public function testWillDeleteOnlyFolderTags(): void

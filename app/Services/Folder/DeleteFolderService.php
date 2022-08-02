@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Folder;
 
 use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\Repositories\Folder\DeleteFoldersRepository;
+use App\Repositories\Folder\DeleteFolderRepository;
 use App\Repositories\Folder\FoldersRepository;
 use App\ValueObjects\ResourceID;
 use App\QueryColumns\FolderAttributes as Attributes;
@@ -13,7 +13,7 @@ use App\QueryColumns\FolderAttributes as Attributes;
 final class DeleteFolderService
 {
     public function __construct(
-        private DeleteFoldersRepository $deleteFoldersRepository,
+        private DeleteFolderRepository $deleteFolderRepository,
         private FoldersRepository $foldersRepository
     ) {
     }
@@ -38,9 +38,9 @@ final class DeleteFolderService
         (new EnsureAuthorizedUserOwnsResource)($folder);
 
         if ($recursive) {
-            $this->deleteFoldersRepository->deleteRecursive($folderID);
+            $this->deleteFolderRepository->deleteRecursive($folderID);
         } else {
-            $this->deleteFoldersRepository->delete($folderID);
+            $this->deleteFolderRepository->delete($folderID);
         }
     }
 }

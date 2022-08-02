@@ -10,7 +10,7 @@ use App\Models\FolderBookmark;
 use App\ValueObjects\ResourceID;
 use Illuminate\Database\Eloquent\Collection;
 
-final class DeleteFoldersRepository
+final class DeleteFolderRepository
 {
     public function delete(ResourceID $folderID): bool
     {

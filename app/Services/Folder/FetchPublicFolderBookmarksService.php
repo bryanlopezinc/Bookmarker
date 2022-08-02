@@ -11,6 +11,7 @@ use App\Repositories\Folder\FolderRepository;
 use App\Repositories\Folder\FetchFolderBookmarksRepository;
 use App\Exceptions\FolderNotFoundHttpResponseException;
 use App\QueryColumns\FolderAttributes as Attributes;
+use App\DataTransferObjects\FolderBookmark;
 
 final class FetchPublicFolderBookmarksService
 {

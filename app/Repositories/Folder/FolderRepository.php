@@ -18,7 +18,7 @@ final class FolderRepository
      */
     public function find(ResourceID $folderID, FolderAttributes $attributes = new FolderAttributes): Folder
     {
-        /** @var Model */
+        /** @var Model|null */
         $model = Model::onlyAttributes($attributes)->whereKey($folderID->toInt())->first();
 
         if ($model === null) {

@@ -8,7 +8,7 @@ use App\Collections\ResourceIDsCollection as IDs;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\FolderBookmark;
-use App\Models\FolderBookmark as FolderBookmarkModel;
+use App\Models\FolderBookmark as Model;
 use App\PaginationData;
 use App\Repositories\FavouriteRepository;
 use App\Repositories\FetchBookmarksRepository;
@@ -45,7 +45,7 @@ final class FetchFolderBookmarksRepository
     private function getBookmarks(ResourceID $folderID, PaginationData $pagination, array $options): Paginator
     {
         /** @var Paginator */
-        $result = FolderBookmarkModel::query()
+        $result = Model::query()
             ->where('folder_id', $folderID->toInt())
             ->when($options['onlyPublic'], fn ($query) => $query->where('is_public', true))
             ->simplePaginate($pagination->perPage(), ['bookmark_id', 'is_public'], page: $pagination->page());
@@ -66,7 +66,7 @@ final class FetchFolderBookmarksRepository
 
                     return new FolderBookmark(
                         $bookmark,
-                        $result->getCollection()->filter(fn (FolderBookmarkModel $model) => $model->bookmark_id === $bookmark->id->toInt())->sole()->is_public
+                        $result->getCollection()->filter(fn (Model $model) => $model->bookmark_id === $bookmark->id->toInt())->sole()->is_public
                     );
                 })
         );
@@ -79,10 +79,13 @@ final class FetchFolderBookmarksRepository
      */
     public function contains(IDs $bookmarkIDs, ResourceID $folderID): bool
     {
-        return FolderBookmarkModel::where('folder_id', $folderID->toInt())
+        if ($bookmarkIDs->isEmpty()) {
+            return false;
+        }
+
+        return Model::where('folder_id', $folderID->toInt())
             ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
-            ->get('bookmark_id')
-            ->isNotEmpty();
+            ->count() > 0;
     }
 
     /**
@@ -90,11 +93,12 @@ final class FetchFolderBookmarksRepository
      */
     public function containsAll(IDs $bookmarkIDs, ResourceID $folderID): bool
     {
-        $resultCount = FolderBookmarkModel::where('folder_id', $folderID->toInt())
-            ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
-            ->get('bookmark_id')
-            ->count();
+        if ($bookmarkIDs->isEmpty()) {
+            return false;
+        }
 
-        return $bookmarkIDs->count() === $resultCount;
+        return Model::where('folder_id', $folderID->toInt())
+            ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
+            ->count() === $bookmarkIDs->count();
     }
 }

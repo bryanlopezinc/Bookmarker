@@ -8,7 +8,7 @@ use InvalidArgumentException;
 
 final class MalformedURLException extends InvalidArgumentException
 {
-    public static function invalidFormat(string $url)
+    public static function invalidFormat(string $url): self
     {
         return new self("The given url [$url] is invalid");
     }

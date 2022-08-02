@@ -41,7 +41,7 @@ class TagTest extends TestCase
                 new Tag(Str::random(Tag::MAX_LENGTH - 1) . $tag);
 
                 return true;
-            } catch (InvalidTagException $e) {dd($e->getMessage());
+            } catch (InvalidTagException) {
                 return false;
             }
         };

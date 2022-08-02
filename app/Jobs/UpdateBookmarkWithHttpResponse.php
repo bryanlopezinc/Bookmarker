@@ -37,7 +37,7 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
         FetchBookmarksRepository $bookmarkRepository = new FetchBookmarksRepository
     ): void {
 
-        /** @var Bookmark */
+        /** @var Bookmark|null */
         $bookmark = $bookmarkRepository->findManyById($this->bookmark->id->toCollection())->first();
 
         if ($bookmark === null) {

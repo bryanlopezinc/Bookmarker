@@ -37,8 +37,8 @@ abstract class Attributes implements Arrayable
 
     /**
      * Check if ALL the given columns exists.
-     * 
-     * @param array<string>|string $field
+     *
+     * @param array<string>|string $columns
      */
     final public function has(string|array $columns): bool
     {

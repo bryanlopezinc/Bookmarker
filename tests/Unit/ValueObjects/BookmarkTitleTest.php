@@ -43,17 +43,17 @@ class BookmarkTitleTest extends TestCase
 
     public function testWillLimitTitle(): void
     {
-        $this->assertEquals(100, strlen(BookmarkTitle::fromLongtText(str_repeat('B', 101))->value));
-        $this->assertEquals(100, strlen(BookmarkTitle::fromLongtText(str_repeat('B', 200))->value));
-        $this->assertEquals(str_repeat('B', 100), BookmarkTitle::fromLongtText(str_repeat('B', 100))->value);
-        $this->assertEquals(str_repeat('B', 99), BookmarkTitle::fromLongtText(str_repeat('B', 99))->value);
-        $this->assertEquals($url = $this->faker->url, BookmarkTitle::fromLongtText($url)->value);
+        $this->assertEquals(100, strlen(BookmarkTitle::limit(str_repeat('B', 101))->value));
+        $this->assertEquals(100, strlen(BookmarkTitle::limit(str_repeat('B', 200))->value));
+        $this->assertEquals(str_repeat('B', 100), BookmarkTitle::limit(str_repeat('B', 100))->value);
+        $this->assertEquals(str_repeat('B', 99), BookmarkTitle::limit(str_repeat('B', 99))->value);
+        $this->assertEquals($url = $this->faker->url, BookmarkTitle::limit($url)->value);
     }
 
     public function testLimitWillThrowExceptionWhenTitleIsEmpty(): void
     {
         $this->expectException(\LengthException::class);
 
-        BookmarkTitle::fromLongtText('');
+        BookmarkTitle::limit('');
     }
 }

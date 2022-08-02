@@ -22,7 +22,7 @@ final class BookmarkTitle
         ];
     }
 
-    public static function fromLongtText(string $text): self
+    public static function limit(string $text): self
     {
         try {
             $bookmarkTitle = new self($text);

@@ -94,7 +94,7 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
             return;
         }
 
-        $builder->title(BookmarkTitle::fromLongtText($data->title)->value);
+        $builder->title(BookmarkTitle::limit($data->title)->value);
     }
 
     private function updateSiteName(BookmarkMetaData $data, Bookmark $bookmark): void

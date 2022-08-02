@@ -10,10 +10,10 @@ use App\DataTransferObjects\Folder;
 use Database\Factories\UserFactory;
 use App\Models\FolderBookmarksCount;
 use Database\Factories\FolderFactory;
-use App\Repositories\Folder\UsersFoldersRepository;
+use App\Repositories\Folder\UserFoldersRepository;
 use Illuminate\Foundation\Testing\WithFaker;
 
-class UsersFoldersRepositoryTest extends TestCase
+class UserFoldersRepositoryTest extends TestCase
 {
     use WithFaker;
 
@@ -30,7 +30,7 @@ class UsersFoldersRepositoryTest extends TestCase
             ]);
         });
 
-        (new UsersFoldersRepository)
+        (new UserFoldersRepository)
             ->fetch(new UserID($userID), PaginationData::new())
             ->getCollection()
             ->each(function (Folder $folder) use ($foldersBookmarksCount) {

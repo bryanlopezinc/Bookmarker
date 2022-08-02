@@ -9,12 +9,12 @@ use App\Http\Requests\FetchUserFoldersRequest;
 use App\Http\Resources\FolderResource;
 use App\Http\Resources\PaginatedResourceCollection;
 use App\PaginationData;
-use App\Repositories\Folder\UsersFoldersRepository;
+use App\Repositories\Folder\UserFoldersRepository;
 use App\ValueObjects\UserID;
 
 final class FetchUserFoldersController
 {
-    public function __invoke(FetchUserFoldersRequest $request, UsersFoldersRepository $repository): PaginatedResourceCollection
+    public function __invoke(FetchUserFoldersRequest $request, UserFoldersRepository $repository): PaginatedResourceCollection
     {
         $request->validate([...PaginationData::new()->asValidationRules()]);
 

@@ -13,7 +13,7 @@ use App\QueryColumns\FolderAttributes;
 use App\ValueObjects\UserID;
 use Illuminate\Pagination\Paginator;
 
-final class UsersFoldersRepository
+final class UserFoldersRepository
 {
     /**
      * @return Paginator<Folder>

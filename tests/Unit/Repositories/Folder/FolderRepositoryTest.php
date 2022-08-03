@@ -2,12 +2,15 @@
 
 namespace Tests\Unit\Repositories\Folder;
 
+use App\Collections\TagsCollection;
 use App\DataTransferObjects\Folder;
 use App\QueryColumns\FolderAttributes;
 use Tests\TestCase;
 use App\Repositories\Folder\FolderRepository;
+use App\Repositories\TagRepository;
 use App\ValueObjects\ResourceID;
 use Database\Factories\FolderFactory;
+use Database\Factories\TagFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use ReflectionProperty;
 
@@ -79,5 +82,21 @@ class FolderRepositoryTest extends TestCase
         $folder = $repository->find($folderID, FolderAttributes::only($attributes));
 
         $assertion($folder);
+    }
+
+    public function testWillReturnTags(): void
+    {
+        $model = FolderFactory::new()->create();
+        $repository = new FolderRepository;
+        $tags = TagFactory::new()->count(5)->make();
+
+        (new TagRepository)->attach(TagsCollection::make($tags), $model);
+
+        $folder = $repository->find(new ResourceID($model->id));
+
+        $this->assertEquals(
+            [],
+            $folder->tags->toStringCollection()->diff($tags->pluck('name'))->all(),
+        );
     }
 }

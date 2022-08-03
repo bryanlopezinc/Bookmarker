@@ -35,9 +35,22 @@ class UserFoldersRepositoryTest extends TestCase
             ->getCollection()
             ->each(function (Folder $folder) use ($foldersBookmarksCount) {
                 $this->assertEquals(
-                $foldersBookmarksCount[$folder->folderID->toInt()],
+                    $foldersBookmarksCount[$folder->folderID->toInt()],
                     $folder->storage->total
                 );
+            });
+    }
+
+    public function testWillReturnCorrectFolderTags(): void
+    {
+        $userID = UserFactory::new()->create()->id;
+        FolderFactory::new()->count(5)->create(['user_id' => $userID]);
+
+        (new UserFoldersRepository)
+            ->fetch(new UserID($userID), PaginationData::new())
+            ->getCollection()
+            ->each(function (Folder $folder) {
+                $this->assertTrue($folder->tags->isEmpty());
             });
     }
 }

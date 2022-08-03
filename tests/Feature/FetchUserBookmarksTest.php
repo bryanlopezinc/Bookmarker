@@ -7,6 +7,7 @@ use Database\Factories\BookmarkFactory;
 use Database\Factories\BookmarkHealthFactory;
 use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
+use Illuminate\Support\Collection;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
@@ -85,7 +86,7 @@ class FetchUserBookmarksTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        BookmarkFactory::new()->count(10)->create([
+        $userBookmarks = BookmarkFactory::new()->count(10)->create([
             'user_id' => $user->id,
             'title' => '<h1>did you forget something?</h1>',
             'description' => 'And <h1>spoof!</h1>'
@@ -94,14 +95,17 @@ class FetchUserBookmarksTest extends TestCase
         $this->getTestResponse([])
             ->assertOk()
             ->assertJsonCount(10, 'data')
-            ->assertJson(function (AssertableJson $json) {
+            ->assertJson(function (AssertableJson $json) use ($userBookmarks) {
                 $json->etc()
                     ->where('links.first', route('fetchUserBookmarks', ['per_page' => 15, 'page' => 1]))
                     ->fromArray($json->toArray()['data'])
-                    ->each(function (AssertableJson $json) {
+                    ->each(function (AssertableJson $json) use ($userBookmarks) {
                         $this->assertBookmarkJson($json->toArray());
-                        //Assert sanitized attributes was sent to client.
-                        $json->where('attributes.title', '&lt;h1&gt;did you forget something?&lt;/h1&gt;');
+                        $json->where('attributes.id', fn (int $id) => $userBookmarks->pluck('id')->containsStrict($id));
+                        $json->where('attributes.tags', []);
+                        $json->where('attributes.has_tags', false);
+                        $json->where('attributes.tags_count', 0);
+                        $json->where('attributes.title', '&lt;h1&gt;did you forget something?&lt;/h1&gt;'); //Assert sanitized attributes was sent to client.
                         $json->where('attributes.description', 'And &lt;h1&gt;spoof!&lt;/h1&gt;');
                         $json->where('attributes.is_user_favourite', false)->etc();
                     });
@@ -394,6 +398,26 @@ class FetchUserBookmarksTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJson(function (AssertableJson $assert) use ($bookmarkWithDeadLink) {
                 $assert->where('data.0.attributes.id', $bookmarkWithDeadLink->id)->etc();
+            });
+    }
+
+    public function testWillFetchBookmarkTags(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $tags = TagFactory::new()->count(5)->make()->pluck('name');
+
+        $this->saveBookmark(['tags' => $tags->all()]);
+
+        $this->getTestResponse([])
+            ->assertOk()
+            ->assertJsonCount(5, 'data.0.attributes.tags')
+            ->assertJson(function (AssertableJson $json) use ($tags) {
+                $json->where('data.0.attributes.tags', function (Collection $bookmarkTags) use ($tags) {
+                    $this->assertEquals($tags->sortDesc()->values(), $bookmarkTags->sortDesc()->values());
+
+                    return true;
+                })->etc();
             });
     }
 }

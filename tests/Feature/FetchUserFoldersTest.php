@@ -7,6 +7,7 @@ use Database\Factories\FolderFactory;
 use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Collection;
 use Illuminate\Testing\AssertableJsonString;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
@@ -267,7 +268,7 @@ class FetchUserFoldersTest extends TestCase
         );
     }
 
-    public function testIsPublicAttributeWillBetrue(): void
+    public function testIsPublicAttributeWillBeTrue(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -317,7 +318,11 @@ class FetchUserFoldersTest extends TestCase
             ->assertOk()
             ->assertJsonCount(5, 'data.0.attributes.tags')
             ->assertJson(function (AssertableJson $json) use ($tags) {
-                $json->where('data.0.attributes.tags', $tags)->etc();
+                $json->where('data.0.attributes.tags', function (Collection $folderTags) use ($tags) {
+                    $this->assertEquals($tags->sortDesc()->values(), $folderTags->sortDesc()->values());
+
+                    return true;
+                })->etc();
             });
     }
 }

@@ -58,6 +58,7 @@ Route::middleware('auth:api')->group(function () {
             ->middleware(ConvertStringToArray::keys('tags'))
             ->name('createFolder');
 
+        Route::get('folders', Folder\FetchFolderController::class)->name('fetchFolder');
         Route::delete('folders', Folder\DeleteFolderController::class)->name('deleteFolder');
         Route::get('users/folders', Folder\FetchUserFoldersController::class)->name('userFolders');
         Route::get('folders/bookmarks', Folder\FetchFolderBookmarksController::class)->name('folderBookmarks');

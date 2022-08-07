@@ -17,7 +17,8 @@
         "laravel/sanctum": "^2.14",
         "laravel/tinker": "^2.7",
         "mobiledetect/mobiledetectlib": "^2.8",
-        "spatie/url": "^2.1"
+        "spatie/url": "^2.1",
+        "zbateson/mail-mime-parser": "^2.2"
     },
     "require-dev": {
         "brianium/paratest": "^6.4",

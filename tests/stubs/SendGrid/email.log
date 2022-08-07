@@ -1,0 +1,32 @@
+Received: by s.sendgrid.net with SMTP id zTXu5SScCj Sun, 07 Aug 2022 19:29:29 +0000 (UTC)
+Received: from sonic307-9.consmr.mail.ne1.yahoo.com (unknown [66.163.190.32]) by s.sendgrid.net (Postfix) with ESMTPS id BB820141174 for <add@save.app.com>; Sun,  7 Aug 2022 19:29:29 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yahoo.com; s=s2048; t=1659900569; bh=uPLoegFA9gS0Lxgec7oFA/vz0oUuqvFDepiDhOA7Lrs=; h=Date:From:To:Subject:References:From:Subject:Reply-To; b=QDJrO1SUMmXp1kLlKMnqLSJODuNMEVRTh3zhgZmpypEA6ughUiB9T973E55vUYiPCetVdSnuZ31i+vBOqHmH9d2kdXjOPlKQgYtnp9lWSQWMbtbkSJIkkRgM4Wi3s9JbEnNW7UTc3DNbQhF+PIhXqRes4VZ+8+IPI0344XNTEpqQVJk/2U4s51Zc0sXMw8cqPEW1WSH7NM4nxW4/GE+QIRKQdzy8XNiEsXePJ3PwtqcWjbGVMfVW0wTIS4xLUqYGuWv8knmKASpFyWsjUZvbmlvXONUFf53b1bTlcOgYXA1njgZo6tL+iYcGffM0dbbaOpGmmUbqnsTEm7tBcee5Qw==
+X-SONIC-DKIM-SIGN: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yahoo.com; s=s2048; t=1659900569; bh=MOMjYzW7MTo0p75MnHyrYsmbShYzo3QlfPXcahmJWmU=; h=X-Sonic-MF:Date:From:To:Subject:From:Subject; b=YPSscPi1PrTVgeIcQt/AWAI9pyoyEA06Yy6aw9fRCznQrxyxNxaps6u0auwvEKWlTieMdIyGP6h7sVMMZMnlsKCB9+WKR6S/A9s6YHgjWypg1MX9jRXt7AkGtOBO1myrUr6gb7Lu45j/+TXNcwouxyQTC4ESFNlS8E/tMwYPSWhl5dYSdAik/23S/w9crJqU4HieXBV7j2gy6vvFcmZlorU4kTNXMxvOIAWWdnq/9AEkV60SHvpQ6QMEC9h3QkPSNS6WDpxBajpIzSgAsiA1dBwt9DIKkg3mlym9RXh6FQWOPfM+8m9Nn47tggOl5650SRsZMJgtUIMkwT7beK8eEg==
+X-YMail-OSG: RCkupG0VM1nMrubArf33ep9ctnDoWHoo3MsiJpKC2Sw8hzXzlU333dcastBlfxV vR8DZWJXZluqqfIsbTg3QTx3cZwkS1aJV20aIvgRKrrr03C79wEEkahflqPEqVEddwzzO7VZ.roF 4WkZAUJz0k2q09WEYpKw3erH04Q.BEhmx1xn3cRsNEi5.51Z8sVH1p3VOALpVyZJHLpA3ews.7NE LnRjjk1qr0K.xAyKMOJSYedRRe7NtniGIjac0oogcglDkbN7Ux6XGd85bXii9yDYLsC5YeaFEfe_ 1sF_dW3Nru8odgp4yeMGZsNh4yveLE2M7mgaQ30ugb554RVNV5PwNYlD08dNlubVxZjtfPMh_2eJ S7t2vQTgD_pXdB5MrQR6SUJ8nutosHjfmA4luroX8Um9svGJbEZXVJFn4ic7xG_OVBEwn.9A.fnb .otwd1TXcja1DF9LiWhA7dG0aC1mUEtXq4pugfmnlhkbOey.hxmk6toUglHmJNatBHKzzgW8Rb6s L.Wy6139aL6AtYcbHxCjVqjITPBvSNWZUxkDro.I2wCWO9rU5bbXen_hAe7gFxT_fQpwc1PlizsI wkStmashlRkuYg5NrZoO9XMW8eeqQp531fkXUDklwjzLlhBrbUvmznf8pYhBrp0Ms4vi5VPFNknhU ukYdIGcJteFzMhTRY4luz86JpFYVmvAm4fa06ZQ1EAwrrwdXreVQw0GZHm61eFecrynTIREmhcri wNBr5zXtZZFVNi9POQsvkULiEAPQYXZ44zARqMi6yubi9Ik_fluxeku_CiwR4mnXRowiVPN6SWIW zmLuch5c59cJp_7Qo9juctGn8ufoTFazWmeiuGYY_KmvCd5oeyOmYsRTo63bnLXbRjSUWthLzA8R _CpazscoFkK5HeYU_C_SRJABwMaOWdafoK06U5lxtdR6MyIdP3TLgHwCMFDCFfgJM5dFh8NTV9V1 q06RQOgMvywMJP7N6NQinUQQa_m.sAzwP4MLn9x7Zo2CtrVr07CQ0beiECuaftIZwr_9bGgX6KHm nMRY.B94vC4I26BO_f2QoJZZQuMtvO6Eflcw9Nf3444haYL3a0.7NYUPSpHHnFz443CtUZ.P0mUu y6_gZfEgW5b3abjAPncCPzpd7jOj6Z.ODrsJ5jAYosMJ7semV5amN1btdb5530oIKuxXYjubeuFO yRhgu2.9syzEx3F534GadeCV24kbshAamfykY1F6bGftdQfBgQLkRTmHH6jSyAkSUvHbFtP86FOx MN4Riod4YTkjWmPGeCA4Nm46x9RBZvMk33VK6_cmiztDSsSN4vT2yLa6GkEgulwidfM71kGIE51E u9FLlObRKNcH6RELUA7AZmal17EgTBdGgwTgl6y3nGvnWPZAhONALB9h8xfE.ka3qtIKCubBJMCJ kxbpvjm6hicMfdLs1HuV9_2thv5fsuCMjpCuq5xy_0u6EGYLDFdAk4gRaUj_caazeVCaMibOMi2J 5dXS2HmH8bJRigvDlhTW35gG4tVrSG3qcQHJhCeENV1AO1WoV88vfpXK9WEw7LQt._9s_Z6_LaO_ b0CUbwGdu7lV6yzs88Y7SFgrqzVtEIfGp_SNqGNyKrtbR7Q5E7IGd.Q7bbG_Xu05vbyvYnr1IPy4 g.YWiqlqvALL0q57_ngHP9D6WV7iaG9aFL4ELVS4oJt.dPGdrCQLrHI6R9X9MeNDEsGz8ekqANEF uJS1yq8c7iqiH8IXKhpyEVrheIUdwrNuU2VPnHGm0SiG1qNw3Qyb0Q7JyTmzMaphUskk23ya7eRZ nwAXo3i4pSbZzjdPqhPxYPNTSGRYkS_L3uyvFmmRykZvtN5QkF.MD9sVPOnCdnIY37HII6mXp8Jl 9wFKfrsOwgil2cpZP8DUd8oJzIM_pkw8AAfBoe0LuvIXAQZH48n53dFnJTgrzJjJMXl1zgFifF66 bcqed4dJIhdzIG5_Fgua3cpNGJf8a10BACX8H5k6BBsPtOFftQyh75xUpTh3Ou7Uw6kEUhQ4k7Eu o1oB64d3VDg2QaLjySlINYEoJO4352g2GpcFDW4cJkpQscAvZ4BuqcdkGmEcsBVFjGlvpiT8Q8Ww sji_xSpYS9QDXiEGp_642FRQ6IgXYxtFzBRlrATI9kM2tf1PN3oZOPooJ8I3IFTbUMlCY2sIlP8o DCS1emcFiGuAX3xMSbG3Bl4S_rb8buAFH8m2eIKaCixhWzKUkreHqOHvYbVDpf1pL9hsaOmjIfms -
+X-Sonic-MF: <:sender>
+Received: from sonic.gate.mail.ne1.yahoo.com by sonic307.consmr.mail.ne1.yahoo.com with HTTP; Sun, 7 Aug 2022 19:29:29 +0000
+Date: Sun, 7 Aug 2022 19:29:28 +0000 (UTC)
+From: bryan  <:sender>
+To: "add@save.app.com" <add@save.app.com>
+Message-ID: <360776491.1947971.1659900568673@mail.yahoo.com>
+Subject:
+MIME-Version: 1.0
+Content-Type: multipart/alternative;  boundary="----=_Part_1947970_1842006611.1659900568672"
+References: <360776491.1947971.1659900568673.ref@mail.yahoo.com>
+X-Mailer: WebService/1.1.20491 YMailNorrin
+
+------=_Part_1947970_1842006611.1659900568672
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+{url}
+
+
+
+
+------=_Part_1947970_1842006611.1659900568672
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+<html><head></head><body><div class="yahoo-style-wrap" style="font-family:Helvetica Neue, Helvetica, Arial, sans-serif;font-size:13px;"><div><a href={url} rel="nofollow" target="_blank" class="">{url}</a><br></div><div><br></div><div><br></div><div><br></div></div></body></html>
+------=_Part_1947970_1842006611.1659900568672--

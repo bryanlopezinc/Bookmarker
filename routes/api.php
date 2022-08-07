@@ -93,6 +93,8 @@ Route::middleware('auth:api')->group(function () {
     });
 }); // End auth middleware
 
+Route::post('email/save_url', Controllers\SendGrid\Controller::class)->name('saveBookmarkFromEmail');
+
 Route::post('token/refresh', [Laravel\Passport\Http\Controllers\AccessTokenController::class, 'issueToken'])
     ->name('refreshToken')
     ->middleware('throttle');

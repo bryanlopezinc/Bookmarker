@@ -1,0 +1,16 @@
+{
+    "dkim" : "{@yahoo.com : pass}",
+    "to" : "\"add@save.app.com\" <add@save.app.com>",
+    "from" : "Bryan <bryan@example.com>",
+    "sender_ip" : "66.163.185.32",
+    "spam_report" : "Spam detection software, running on the system \"mx0110p1mdw1.sendgrid.net\", has NOT identified this incoming email as spam. The original message has been attached to this so you can view it or label similar future email. If you have any questions, see @@CONTACT_ADDRESS@@ for details. Content preview: Laravel - The PHP Framework For Web Artisans | | | | | | | [...] Content analysis details: (1.0 points, 5.0 required) pts rule name description ---- ---------------------- -------------------------------------------------- 0.0 FREEMAIL_FROM Sender email is commonly abused enduser mail provider (bryan[at]example.com) 1.0 FORGED_YAHOO_RCVD 'From' yahoo.com does not match 'Received' headers 0.0 HTML_MESSAGE BODY: HTML included in message",
+    "envelope" : {"to":["add@save.app.com"],"from":"bryan@example.com"},
+    "subject" :"",
+    "spam_score" : 1.024,
+    "charsets" : {
+        "to": "UTF-8",
+        "subject": "UTF-8",
+        "from": "UTF-8"
+    },
+    "SPF" : "pass"
+}

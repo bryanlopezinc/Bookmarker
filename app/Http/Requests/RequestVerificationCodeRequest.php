@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\TwoFA\Requests;
+namespace App\Http\Requests;
 
 use App\Rules\UsernameOrEmailRule;
 use Illuminate\Foundation\Http\FormRequest;

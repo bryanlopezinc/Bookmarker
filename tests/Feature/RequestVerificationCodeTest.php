@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\TwoFA\VerificationCode;
-use App\TwoFA\VerificationCodeGeneratorInterface;
-use App\TwoFA\VerificationCodeMail;
+use App\ValueObjects\VerificationCode;
+use App\Contracts\VerificationCodeGeneratorInterface;
+use App\Mail\VerificationCodeMail;
 use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Mail;

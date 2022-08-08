@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Rules\UsernameOrEmailRule;
-use App\TwoFA\InvalidVerificationCodeException;
-use App\TwoFA\VerificationCode;
+use App\Exceptions\InvalidVerificationCodeException;
+use App\ValueObjects\VerificationCode;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 

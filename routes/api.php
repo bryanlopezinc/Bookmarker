@@ -115,6 +115,6 @@ Route::post('users/password/reset', Auth\ResetPasswordController::class)
     ->middleware([DBTransaction::class, CheckClientCredentials::class])
     ->name('resetPassword');
 
-Route::post('users/request-verification-code', App\TwoFA\Controllers\RequestVerificationCodeController::class)
+Route::post('users/request-verification-code', App\Http\Controllers\Auth\RequestVerificationCodeController::class)
     ->middleware([DBTransaction::class, CheckClientCredentials::class])
     ->name('requestVerificationCode');

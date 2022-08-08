@@ -179,7 +179,6 @@ return [
 
         App\IpGeoLocation\ServiceProvider::class,
         App\DeviceDetector\ServiceProvider::class,
-        App\TwoFA\ServiceProvider::class,
         App\Providers\ReaderServiceProvider::class,
         App\Providers\ImportersFilesystemServiceProvider::class,
         App\Providers\RepositoryServiceProvider::class,

@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\TwoFA;
+namespace App\Repositories;
 
-use App\TwoFA\Cache\VerificationCodesRepository;
+use App\Cache\VerificationCodesRepository;
 use App\ValueObjects\UserID;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Repositories\UserRepositoryInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
+use App\ValueObjects\VerificationCode;
 
 final class VerifyVerificationCode implements UserRepositoryInterface
 {

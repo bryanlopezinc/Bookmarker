@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\TwoFA\Services;
+namespace App\Services;
 
 use App\DataTransferObjects\User;
 use App\Exceptions\InvalidUsernameException;
 use App\QueryColumns\UserAttributes;
 use App\Repositories\UserRepository;
-use App\TwoFA\Cache\VerificationCodesRepository;
-use App\TwoFA\Requests\RequestVerificationCodeRequest as Request;
-use App\TwoFA\SendVerificationCodeJob;
-use App\TwoFA\VerificationCodeGeneratorInterface;
+use App\Cache\VerificationCodesRepository;
+use App\Http\Requests\RequestVerificationCodeRequest as Request;
+use App\Jobs\SendVerificationCodeJob;
+use App\Contracts\VerificationCodeGeneratorInterface;
 use App\ValueObjects\{Email, Username};
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Http\Exceptions\HttpResponseException;

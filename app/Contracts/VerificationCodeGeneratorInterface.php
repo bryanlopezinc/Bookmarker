@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\TwoFA;
+namespace App\Contracts;
+
+use App\ValueObjects\VerificationCode;
 
 interface VerificationCodeGeneratorInterface
 {

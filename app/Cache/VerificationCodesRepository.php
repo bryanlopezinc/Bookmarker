@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\TwoFA\Cache;
+namespace App\Cache;
 
-use App\TwoFA\VerificationCode;
+use App\ValueObjects\VerificationCode;
 use App\ValueObjects\UserID;
 use Illuminate\Contracts\Cache\Repository;
 

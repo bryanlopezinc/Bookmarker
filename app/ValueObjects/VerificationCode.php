@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\TwoFA;
+namespace App\ValueObjects;
 
+use App\Exceptions\InvalidVerificationCodeException;
 use App\ValueObjects\PositiveNumber;
 use Illuminate\Support\Facades\Crypt;
 
@@ -18,7 +19,7 @@ final class VerificationCode
         $this->value = $value;
 
         new PositiveNumber($value);
-        
+
         $length = strlen((string)$value);
 
         if ($length !== self::LENGTH) {

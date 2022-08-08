@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\TwoFA;
+namespace App\Mail;
 
 use Illuminate\Mail\Mailable;
+use App\ValueObjects\VerificationCode;
 
 final class VerificationCodeMail extends Mailable
 {

@@ -8,9 +8,11 @@ use App\Contracts\UrlHasherInterface;
 use App\HashedUrl;
 use App\Jobs\CheckBookmarksHealth;
 use App\Observers\BookmarkObserver;
-use App\TwoFA\Cache\VerificationCodesRepository;
-use App\TwoFA\VerifyVerificationCode;
+use App\Cache\VerificationCodesRepository;
+use App\Contracts\VerificationCodeGeneratorInterface;
+use App\Repositories\VerifyVerificationCode;
 use App\UrlHasher;
+use App\Utils\VerificationCodeGenerator;
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Bridge\UserRepository;
@@ -38,6 +40,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->terminating(function (BookmarkObserver $observer) {
             CheckBookmarksHealth::dispatch(new BookmarksCollection($observer->getRetrievedBookmarks()));
         });
+
+        $this->app->bind(VerificationCodeGeneratorInterface::class, VerificationCodeGenerator::class);
 
         $this->bindUrlHasher();
     }

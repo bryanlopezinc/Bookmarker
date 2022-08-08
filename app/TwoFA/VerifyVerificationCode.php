@@ -37,7 +37,7 @@ final class VerifyVerificationCode implements UserRepositoryInterface
             $this->throwException();
         };
 
-        if (!$this->verificatioCodeMatches(VerificationCode::fromString($request->input('two_fa_code')), $userID)) {
+        if (!$this->verificationCodeMatches(VerificationCode::fromString($request->input('two_fa_code')), $userID)) {
             $this->throwException();
         };
 
@@ -46,9 +46,9 @@ final class VerifyVerificationCode implements UserRepositoryInterface
         return $user;
     }
 
-    private function verificatioCodeMatches(VerificationCode $code, UserID $userID): bool
+    private function verificationCodeMatches(VerificationCode $code, UserID $userID): bool
     {
-        return $this->verificationCodes->get($userID)->verificationCode->equals($code);
+        return $this->verificationCodes->get($userID)->equals($code);
     }
 
     private function throwException(): void

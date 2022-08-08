@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\TwoFA\Cache;
 
-use App\TwoFA\TwoFactorData;
+use App\TwoFA\VerificationCode;
 use App\ValueObjects\UserID;
 use Illuminate\Contracts\Cache\Repository;
 
@@ -14,9 +14,9 @@ final class VerificationCodesRepository
     {
     }
 
-    public function put(TwoFactorData $data, \DateTimeInterface|\DateInterval|int  $expireAfter): bool
+    public function put(UserID $userID, VerificationCode $code, \DateTimeInterface|\DateInterval|int  $expireAfter): bool
     {
-        return  $this->repository->put($this->parseKey($data->userID), $data, $expireAfter);
+        return  $this->repository->put($this->parseKey($userID), $code, $expireAfter);
     }
 
     public function has(UserID $userID): bool
@@ -24,7 +24,7 @@ final class VerificationCodesRepository
         return $this->repository->has($this->parseKey($userID));
     }
 
-    public function get(UserID $userID): TwoFactorData
+    public function get(UserID $userID): VerificationCode
     {
         return $this->repository->get($this->parseKey($userID));
     }

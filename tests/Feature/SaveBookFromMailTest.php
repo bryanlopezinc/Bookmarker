@@ -13,9 +13,6 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Mail;
 
-/**
- * @group 119
- */
 class SaveBookFromMailTest extends TestCase
 {
     use WithFaker;

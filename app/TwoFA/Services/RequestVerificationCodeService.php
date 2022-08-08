@@ -8,24 +8,21 @@ use App\DataTransferObjects\User;
 use App\Exceptions\InvalidUsernameException;
 use App\QueryColumns\UserAttributes;
 use App\Repositories\UserRepository;
-use App\TwoFA\Cache\RecentlySentVerificationCodesRepository;
 use App\TwoFA\Cache\VerificationCodesRepository;
 use App\TwoFA\Requests\RequestVerificationCodeRequest as Request;
-use App\TwoFA\{SendVerificationCodeJob, TwoFactorData};
+use App\TwoFA\SendVerificationCodeJob;
 use App\TwoFA\VerificationCodeGeneratorInterface;
 use App\ValueObjects\{Email, Username};
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Response;
-use Illuminate\Support\InteractsWithTime;
+use Illuminate\Support\Facades\RateLimiter;
 
 final class RequestVerificationCodeService
 {
-    use InteractsWithTime;
-
     public function __construct(
         private readonly VerificationCodesRepository $tokens,
-        private readonly RecentlySentVerificationCodesRepository $recentTokens,
         private readonly UserRepository $userRepository,
         private readonly VerificationCodeGeneratorInterface $codeGenerator
     ) {
@@ -33,17 +30,28 @@ final class RequestVerificationCodeService
 
     public function __invoke(Request $request): void
     {
+        $maxRequestsPerMinute = 1;
+
         $this->ensureValidCrendentials($user = $this->getUser($request), $request);
 
-        $this->ensureCanRequestNewVerificationCode($user);
+        $verificationCodeSent = RateLimiter::attempt($this->key($user), $maxRequestsPerMinute, function () use ($user) {
+            $this->tokens->put(
+                $user->id,
+                $verificationCode = $this->codeGenerator->generate(),
+                now()->addMinutes(setting('VERIFICATION_CODE_EXPIRE'))
+            );
 
-        $twoFactorData = new TwoFactorData($user->id, $this->codeGenerator->generate(), $retryAfter = now()->addSeconds(59));
+            SendVerificationCodeJob::dispatch($user->email, $verificationCode);
+        });
 
-        $this->tokens->put($twoFactorData, now()->addMinutes(setting('VERIFICATION_CODE_EXPIRE')));
+        if (!$verificationCodeSent) {
+            throw new  ThrottleRequestsException('Too Many Requests');
+        }
+    }
 
-        $this->recentTokens->put($user->id, $retryAfter);
-
-        SendVerificationCodeJob::dispatch($user->email, $twoFactorData->verificationCode);
+    private function key(User $user): string
+    {
+        return 'sent2fa::' . $user->id->toInt();
     }
 
     private function getUser(Request $request): User|false
@@ -54,15 +62,6 @@ final class RequestVerificationCodeService
             return $this->userRepository->findByUsername(Username::fromRequest($request), $attributes);
         } catch (InvalidUsernameException) {
             return $this->userRepository->findByEmail(new Email($request->validated('username')), $attributes);
-        }
-    }
-
-    private function ensureCanRequestNewVerificationCode(User $user): void
-    {
-        if ($this->recentTokens->has($user->id)) {
-            throw new HttpResponseException(response()->json([
-                'message' => sprintf('retry after  %s seconds', $this->secondsUntil($this->tokens->get($user->id)->retryAfter))
-            ], Response::HTTP_TOO_MANY_REQUESTS,));
         }
     }
 

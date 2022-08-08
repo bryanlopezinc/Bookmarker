@@ -6,7 +6,7 @@ namespace App\Services;
 
 use App\Exceptions\MalformedURLException;
 use App\Mail\EmailNotRegisteredMail;
-use App\MailParser;
+use App\Utils\MailParser;
 use App\QueryColumns\UserAttributes;
 use App\Repositories\UserRepository;
 use App\ValueObjects\Email;

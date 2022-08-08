@@ -11,7 +11,7 @@ use App\Observers\BookmarkObserver;
 use App\Cache\VerificationCodesRepository;
 use App\Contracts\VerificationCodeGeneratorInterface;
 use App\Repositories\VerifyVerificationCode;
-use App\UrlHasher;
+use App\Utils\UrlHasher;
 use App\Utils\VerificationCodeGenerator;
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Support\ServiceProvider;

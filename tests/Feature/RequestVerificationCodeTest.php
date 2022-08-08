@@ -25,7 +25,7 @@ class RequestVerificationCodeTest extends TestCase
         $this->assertRouteIsAccessibeViaPath('v1/users/request-verification-code', 'requestVerificationCode');
     }
 
-    public function testUnAuthorizedClientCannotAccessRoute():void
+    public function testUnAuthorizedClientCannotAccessRoute(): void
     {
         $this->getTestResponse()->assertUnauthorized();
     }
@@ -139,7 +139,7 @@ class RequestVerificationCodeTest extends TestCase
             'password' => 'password',
         ])->assertStatus(Response::HTTP_TOO_MANY_REQUESTS);
 
-        $this->travel(60)->seconds();
+        $this->travel(62)->seconds();
 
         $this->getTestResponse([
             'username'  => $username,

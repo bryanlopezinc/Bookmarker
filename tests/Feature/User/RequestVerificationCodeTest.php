@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\User;
 
 use App\ValueObjects\VerificationCode;
 use App\Contracts\VerificationCodeGeneratorInterface;

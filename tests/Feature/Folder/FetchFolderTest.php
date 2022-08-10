@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Folder;
 
 use App\Models\Folder as Model;
 use Database\Factories\FolderFactory;

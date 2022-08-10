@@ -1,9 +1,9 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Import;
 
 use App\Jobs\UpdateBookmarkWithHttpResponse;
-use App\Models\Bookmark;
+use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
@@ -12,7 +12,7 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 
-class ImportBookmarksFromPocketExportFileTest extends TestCase
+class ImportBookmarkFromChromeTest extends TestCase
 {
     private function getTestResponse(array $parameters = []): TestResponse
     {
@@ -56,27 +56,50 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
         Passport::actingAs(UserFactory::new()->create());
 
         $this->getTestResponse([
-            'source' => 'pocketExportFile',
-            'pocket_export_file' => UploadedFile::fake()->create('file.html', 5001),
+            'source' => 'chromeExportFile',
+            'html' => UploadedFile::fake()->create('file.html', 5001),
         ])->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'pocket_export_file' => ['The pocket export file must not be greater than 5000 kilobytes.']
+                'html' => ['The html must not be greater than 5000 kilobytes.']
             ]);
+    }
+
+    public function testCannotAddMoreThan_15_Tags(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $tags = TagFactory::new()->count(16)->make()->pluck('name')->implode(',');
+
+        $this->getTestResponse([
+            'source' => 'chromeExportFile',
+            'tags' => $tags
+        ])->assertJsonValidationErrors([
+            'tags' => 'The tags must not be greater than 15 characters.'
+        ]);
+    }
+
+    public function testTagsMustBeUnique(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->getTestResponse([
+            'source' => 'chromeExportFile',
+            'tags' => 'howTo,howTo,stackOverflow'
+        ])->assertJsonValidationErrors([
+            "tags.0" => ["The tags.0 field has a duplicate value."],
+            "tags.1" => ["The tags.1 field has a duplicate value."]
+        ]);
     }
 
     public function testWillImportBookmarks(): void
     {
         Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        $content = file_get_contents(base_path('tests/stubs/imports/pocketExportFile.html'));
+        Passport::actingAs(UserFactory::new()->create());
 
         $this->getTestResponse([
-            'source' => 'pocketExportFile',
-            'pocket_export_file' => UploadedFile::fake()->createWithContent('file.html', $content),
+            'source' => 'chromeExportFile',
+            'html' => UploadedFile::fake()->createWithContent('file.html', file_get_contents(base_path('tests/stubs/imports/chromeExportFile.html'))),
         ])->assertStatus(Response::HTTP_PROCESSING);
-
-        $this->assertEquals(Bookmark::query()->where('user_id', $user->id)->count(), 11);
     }
 }

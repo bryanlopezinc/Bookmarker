@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Folder;
 
 use App\Models\Taggable;
 use Database\Factories\FolderFactory;

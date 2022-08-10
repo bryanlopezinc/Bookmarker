@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\User;
 
 use App\Notifications\ResetPasswordNotification;
 use Database\Factories\UserFactory;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\User;
 
 use Database\Factories\UserFactory;
 use Illuminate\Testing\Fluent\AssertableJson;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Import;
 
 use App\Jobs\UpdateBookmarkWithHttpResponse;
 use Database\Factories\TagFactory;
@@ -12,7 +12,7 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 
-class ImportBookmarkFromChromeTest extends TestCase
+class ImportBookmarksFromSafariExportFileTest extends TestCase
 {
     private function getTestResponse(array $parameters = []): TestResponse
     {
@@ -56,11 +56,11 @@ class ImportBookmarkFromChromeTest extends TestCase
         Passport::actingAs(UserFactory::new()->create());
 
         $this->getTestResponse([
-            'source' => 'chromeExportFile',
-            'html' => UploadedFile::fake()->create('file.html', 5001),
+            'source' => 'safariExportFile',
+            'safari_html' => UploadedFile::fake()->create('file.html', 5001),
         ])->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'html' => ['The html must not be greater than 5000 kilobytes.']
+                'safari_html' => ['The safari html must not be greater than 5000 kilobytes.']
             ]);
     }
 
@@ -71,7 +71,7 @@ class ImportBookmarkFromChromeTest extends TestCase
         $tags = TagFactory::new()->count(16)->make()->pluck('name')->implode(',');
 
         $this->getTestResponse([
-            'source' => 'chromeExportFile',
+            'source' => 'safariExportFile',
             'tags' => $tags
         ])->assertJsonValidationErrors([
             'tags' => 'The tags must not be greater than 15 characters.'
@@ -83,7 +83,7 @@ class ImportBookmarkFromChromeTest extends TestCase
         Passport::actingAs(UserFactory::new()->create());
 
         $this->getTestResponse([
-            'source' => 'chromeExportFile',
+            'source' => 'safariExportFile',
             'tags' => 'howTo,howTo,stackOverflow'
         ])->assertJsonValidationErrors([
             "tags.0" => ["The tags.0 field has a duplicate value."],
@@ -98,8 +98,8 @@ class ImportBookmarkFromChromeTest extends TestCase
         Passport::actingAs(UserFactory::new()->create());
 
         $this->getTestResponse([
-            'source' => 'chromeExportFile',
-            'html' => UploadedFile::fake()->createWithContent('file.html', file_get_contents(base_path('tests/stubs/imports/chromeExportFile.html'))),
+            'source' => 'safariExportFile',
+            'safari_html' => UploadedFile::fake()->createWithContent('file.html', file_get_contents(base_path('tests/stubs/imports/SafariExportFile.html'))),
         ])->assertStatus(Response::HTTP_PROCESSING);
     }
 }

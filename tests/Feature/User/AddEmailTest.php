@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\User;
 
 use App\Mail\VerificationCodeMail;
 use App\Models\SecondaryEmail;
@@ -137,7 +137,7 @@ class AddEmailTest extends TestCase
         [$johnny, $hector] = UserFactory::new()->count(2)->create()->all();
 
         Passport::actingAs($hector);
-        
+
         $this->addEmailToAccount(['email' => $johnny->email])
             ->assertForbidden()
             ->assertExactJson([

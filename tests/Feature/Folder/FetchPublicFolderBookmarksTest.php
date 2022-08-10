@@ -1,48 +1,49 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Folder;
 
-use App\Models\Folder;
 use App\Models\FolderBookmark;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
+use Illuminate\Support\Collection;
 use Illuminate\Testing\AssertableJsonString;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
+use Laravel\Passport\Database\Factories\ClientFactory;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
 
-class FetchFolderBookmarksTest extends TestCase
+class FetchPublicFolderBookmarksTest extends TestCase
 {
     use AssertsBookmarksWillBeHealthchecked;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
-        return $this->getJson(route('folderBookmarks', $parameters));
+        return $this->getJson(route('viewPublicfolderBookmarks', $parameters));
     }
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/folders/bookmarks', 'folderBookmarks');
+        $this->assertRouteIsAccessibeViaPath('v1/folders/public/bookmarks', 'viewPublicfolderBookmarks');
     }
 
-    public function testUnAuthorizedUserCannotAccessRoute(): void
+    public function testUnAuthorizedClientCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->getTestResponse(['folder_id' => 400])->assertUnauthorized();
     }
 
     public function testRequiredAttributesMustBePresent(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         $this->getTestResponse()->assertJsonValidationErrors(['folder_id']);
     }
 
     public function testPaginationDataMustBeValid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         $this->getTestResponse(['per_page' => 3])
             ->assertUnprocessable()
@@ -71,45 +72,44 @@ class FetchFolderBookmarksTest extends TestCase
 
     public function testFetchFolderBookmarks(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        //user bookmarks not in folder
-        BookmarkFactory::new()->count(5)->create([
-            'user_id' => $user->id
-        ]);
+        $user = UserFactory::new()->create();
 
-        $bookmarkShouldBePublicFn = fn (int $bookmarkID) => $bookmarkID % 2 === 0;
+        $privateFolderBookmarkIDs = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
+        $publicFolderBookmarkIDs = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
+        $folder = FolderFactory::new()->public()->create(['user_id' => $user->id]);
 
-        $bookmarkIDs = BookmarkFactory::new()->count(5)->create([
-            'user_id' => $user->id
-        ])->pluck('id');
-
-        $folder = FolderFactory::new()->afterCreating(fn (Folder $folder) => FolderBookmark::insert(
-            $bookmarkIDs->map(fn (int $bookmarkID) => [
+        $publicFolderBookmarkIDs->tap(fn (Collection $collection) => FolderBookmark::insert(
+            $collection->map(fn (int $bookmarkID) => [
                 'folder_id' => $folder->id,
                 'bookmark_id' => $bookmarkID,
-                'is_public' => $bookmarkShouldBePublicFn($bookmarkID)
+                'is_public' => true
             ])->all()
-        ))->create([
-            'user_id' => $user->id
-        ]);
+        ));
 
-        $this->getTestResponse([
-            'folder_id' => $folder->id
-        ])
+        $privateFolderBookmarkIDs->tap(fn (Collection $collection) => FolderBookmark::insert(
+            $collection->map(fn (int $bookmarkID) => [
+                'folder_id' => $folder->id,
+                'bookmark_id' => $bookmarkID,
+                'is_public' => false
+            ])->all()
+        ));
+
+        $this->getTestResponse(['folder_id' => $folder->id])
             ->assertOk()
             ->assertJsonCount(5, 'data')
-            ->assertJson(function (AssertableJson $json) use ($bookmarkIDs, $folder, $bookmarkShouldBePublicFn) {
+            ->assertJson(function (AssertableJson $json) use ($publicFolderBookmarkIDs, $folder) {
                 $json->etc()
-                    ->where('links.first', route('folderBookmarks', ['per_page' => 15, 'folder_id' => $folder->id, 'page' => 1]))
+                    ->where('links.first', route('viewPublicfolderBookmarks', ['per_page' => 15, 'folder_id' => $folder->id, 'page' => 1]))
                     ->fromArray($json->toArray()['data'])
-                    ->each(function (AssertableJson $json) use ($bookmarkIDs, $bookmarkShouldBePublicFn) {
+                    ->each(function (AssertableJson $json) use ($publicFolderBookmarkIDs) {
                         $json->etc()
                             ->where('type', 'folderBookmark')
-                            ->where('attributes.id', function (int $bookmarkID) use ($json, $bookmarkIDs, $bookmarkShouldBePublicFn) {
-                                $json->where('attributes.is_public', $bookmarkShouldBePublicFn($bookmarkID));
+                            ->where('attributes.id', function (int $bookmarkID) use ($json, $publicFolderBookmarkIDs) {
+                                $json->where('attributes.is_public', true);
 
-                                return $bookmarkIDs->containsStrict($bookmarkID);
+                                return $publicFolderBookmarkIDs->containsStrict($bookmarkID);
                             });
 
                         (new AssertableJsonString($json->toArray()))
@@ -157,56 +157,49 @@ class FetchFolderBookmarksTest extends TestCase
 
     public function testWillCheckBookmarksHealth(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $bookmarkIDs = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
+        $user = UserFactory::new()->create();
 
-        $folder = FolderFactory::new()->afterCreating(fn (Folder $folder) => FolderBookmark::insert(
-            $bookmarkIDs->map(fn (int $bookmarkID) => [
+        $folderBookmarkIDs = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
+        $folder = FolderFactory::new()->public()->create(['user_id' => $user->id]);
+
+        $folderBookmarkIDs->tap(fn (Collection $collection) => FolderBookmark::insert(
+            $collection->map(fn (int $bookmarkID) => [
                 'folder_id' => $folder->id,
                 'bookmark_id' => $bookmarkID,
-                'is_public' => false
+                'is_public' => true
             ])->all()
-        ))->create([
-            'user_id' => $user->id
-        ]);
+        ));
 
         $this->getTestResponse(['folder_id' => $folder->id])->assertOk();
 
-        $this->assertBookmarksHealthWillBeChecked($bookmarkIDs->all());
-    }
-
-    public function testFolderMustBelongToUser(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $folder = FolderFactory::new()->create();
-
-        $this->getTestResponse([
-            'folder_id' => $folder->id
-        ])->assertForbidden();
+        $this->assertBookmarksHealthWillBeChecked($folderBookmarkIDs->all());
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotExists(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folder = FolderFactory::new()->create([]);
 
-        $this->getTestResponse([
-            'folder_id' => $folder->id + 1
-        ])->assertNotFound();
+        $this->getTestResponse(['folder_id' => $folder->id + 1])->assertNotFound();
+    }
+
+    public function testWillReturnNotFoundWhenFolderIsPrivate(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        $folder = FolderFactory::new()->create([]);
+
+        $this->getTestResponse(['folder_id' => $folder->id])->assertNotFound();
     }
 
     public function testWillReturnEmptyJsonWhenFolderHasNoItems(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folder = FolderFactory::new()->public()->create([]);
 
         $this->getTestResponse(['folder_id' => $folder->id])->assertJsonCount(0, 'data')->assertOk();
     }

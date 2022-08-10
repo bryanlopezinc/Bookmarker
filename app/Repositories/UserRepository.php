@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\DataTransferObjects\Builders\UserBuilder;
 use App\DataTransferObjects\User;
+use App\Models\SecondaryEmail;
 use App\Models\User as UserModel;
 use App\QueryColumns\UserAttributes;
 use App\ValueObjects\Email;
@@ -42,5 +43,31 @@ final class UserRepository
         }
 
         return UserBuilder::fromModel($user)->build();
+    }
+
+    /**
+     * @return array<Email>
+     */
+    public function getUserSecondaryEmails(UserID $userID): array
+    {
+        return SecondaryEmail::query()
+            ->where('user_id', $userID->toInt())
+            ->get(['email'])
+            ->map(fn (SecondaryEmail $secondaryEmail) => new Email($secondaryEmail->email))
+            ->all();
+    }
+
+    public function secondaryEmailExists(Email $secondaryEmail): bool
+    {
+        return SecondaryEmail::where('email', $secondaryEmail->value)->exists();
+    }
+
+    public function addSecondaryEmail(Email $secondaryEmail, UserID $userID): void
+    {
+        SecondaryEmail::create([
+            'email' => $secondaryEmail->value,
+            'user_id' => $userID->toInt(),
+            'verified_at' => now()
+        ]);
     }
 }

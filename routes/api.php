@@ -18,6 +18,8 @@ Route::middleware('auth:api')->group(function () {
     Route::get('users/bookmarks/sources', Controllers\FetchUserBookmarksSourcesController::class)->name('fetchUserSites');
     Route::get('users/tags', Controllers\FetchUserTagsController::class)->name('userTags');
     Route::get('users/tags/search', Controllers\SearchUserTagsController::class)->name('searchUserTags');
+    Route::post('emails/add', Controllers\Auth\AddEmailToAccountController::class)->name('addEmailToAccount');
+    Route::post('emails/verify/secondary', Auth\VerifySecondaryEmailController::class)->name('verifySecondaryEmail');
 
     Route::get('users/bookmarks', Controllers\FetchUserBookmarksController::class)
         ->middleware([ConvertStringToArray::keys('tags')])

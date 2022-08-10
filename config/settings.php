@@ -75,4 +75,7 @@ return [
 
     //max size (in Kb) for the safari import file.
     'MAX_SAFARI_FILE_SIZE' => 5000,
+
+    //the amount of secondary emails user can add to account.
+    'MAX_SECONDARY_EMAIL' => 3,
 ];

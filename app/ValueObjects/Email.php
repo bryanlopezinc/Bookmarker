@@ -14,4 +14,9 @@ final class Email
             throw new \DomainException('Invalid email ' . $value);
         }
     }
+
+    public function equals(Email $email): bool
+    {
+        return $email->value === $this->value;
+    }
 }

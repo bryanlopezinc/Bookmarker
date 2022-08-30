@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Http\Middleware;
 
 use Tests\TestCase;
-use App\Http\Middleware\ConvertConcatenatedValuesToArrayMiddleware;
+use App\Http\Middleware\ExplodeString;
 
-class ConvertConcatenatedValuesToArrayMiddlewareTest extends TestCase
+class ExplodeStringTest extends TestCase
 {
     public function testWillConvertAttributes(): void
     {
@@ -15,7 +15,7 @@ class ConvertConcatenatedValuesToArrayMiddlewareTest extends TestCase
             'foo' => 'bar,baz,far'
         ]);
 
-        (new ConvertConcatenatedValuesToArrayMiddleware)->handle($request, function () {
+        (new ExplodeString)->handle($request, function () {
         }, 'foo');
 
         $this->assertEquals(['bar', 'baz', 'far'], request('foo'));
@@ -29,7 +29,7 @@ class ConvertConcatenatedValuesToArrayMiddlewareTest extends TestCase
             'foo' => ['bar,baz,far']
         ]);
 
-        (new ConvertConcatenatedValuesToArrayMiddleware)->handle($request, function () {
+        (new ExplodeString)->handle($request, function () {
         }, 'foo');
 
         $this->assertEquals(['bar', 'baz', 'far'], request('foo'));

@@ -8,7 +8,7 @@ namespace App\Http\Middleware;
  * Convert request attributes that are comma seperated to array.
  * Any attribute with format foo,bar,baz will be converted to array.
  */
-final class ConvertConcatenatedValuesToArrayMiddleware
+final class ExplodeString
 {
     /**
      * Handle an incoming request.

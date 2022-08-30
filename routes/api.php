@@ -3,7 +3,7 @@
 use App\Http\Controllers;
 use App\Http\Controllers\Auth;
 use App\Http\Controllers\Folder;
-use App\Http\Middleware\ConvertConcatenatedValuesToArrayMiddleware as ConvertStringToArray;
+use App\Http\Middleware\ExplodeString as ConvertStringToArray;
 use App\Http\Middleware\HandleDbTransactionsMiddleware as DBTransaction;
 use App\Http\Middleware\ConfirmPasswordBeforeMakingFolderPublicMiddleware as ConfirmPassword;
 use Illuminate\Support\Facades\Route;

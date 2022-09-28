@@ -60,6 +60,7 @@ class AddBookmarksToFolderTest extends TestCase
         Passport::actingAs(UserFactory::new()->create());
 
         $this->getTestResponse([
+            'folder' =>12,
             'bookmarks' => '1,2,3,4,5',
             'make_hidden' => '1,2,3,4,5,6'
         ])->assertJsonValidationErrors([

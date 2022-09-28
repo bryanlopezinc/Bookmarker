@@ -6,7 +6,7 @@ namespace App\Http\Requests;
 
 use App\Rules\ResourceIdRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 final class AddBookmarksToFolderRequest extends FormRequest
 {
@@ -17,15 +17,30 @@ final class AddBookmarksToFolderRequest extends FormRequest
             'bookmarks.*' => [new ResourceIdRule, 'distinct:strict'],
             'folder' => ['required', new ResourceIdRule],
             'make_hidden' => ['nullable', 'array'],
-            'make_hidden.*' => [new ResourceIdRule, 'distinct:strict', Rule::forEach(function () {
-                return [
-                    function ($attribute, $value, $fail) {
-                        if (!in_array($value, $this->input('bookmarks'), true)) {
-                            $fail("'BookmarkId $value does not exist in bookmarks.'");
-                        }
-                    }
-                ];
-            })]
+            'make_hidden.*' => [new ResourceIdRule, 'distinct:strict',]
         ];
+    }
+
+    /**
+     * Configure the validator instance.
+     *
+     * @param  \Illuminate\Validation\Validator  $validator
+     * @return void
+     */
+    public function withValidator($validator)
+    {
+        $validator->after(function (Validator $validator) {
+            if (filled($validator->failed())) {
+                return;
+            }
+
+            $bookmarkIDs = $this->input('bookmarks');
+
+            foreach ($this->input('make_hidden', []) as $key => $id) {
+                if (!in_array($id, $bookmarkIDs, true)) {
+                    $validator->errors()->add('make_hidden.' . $key, "'BookmarkId $id does not exist in bookmarks.'");
+                }
+            }
+        });
     }
 }

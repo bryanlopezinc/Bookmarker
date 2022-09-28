@@ -80,7 +80,7 @@ class RequestVerificationCodeTest extends TestCase
             'password' => 'password',
         ])->assertOk();
 
-        Mail::assertSent(function (VerificationCodeMail $mail) use ($user, $verificationCode) {
+        Mail::assertQueued(function (VerificationCodeMail $mail) use ($user, $verificationCode) {
             $this->assertSame($user->email, $mail->to[0]['address']);
             $this->assertSame($verificationCode, $mail->getVerificationCode()->code());
             return true;

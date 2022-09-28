@@ -10,13 +10,14 @@ use App\QueryColumns\UserAttributes;
 use App\Repositories\UserRepository;
 use App\Cache\VerificationCodesRepository;
 use App\Http\Requests\RequestVerificationCodeRequest as Request;
-use App\Jobs\SendVerificationCodeJob;
 use App\Contracts\VerificationCodeGeneratorInterface;
+use App\Mail\VerificationCodeMail;
 use App\ValueObjects\{Email, Username};
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 
 final class RequestVerificationCodeService
@@ -41,7 +42,7 @@ final class RequestVerificationCodeService
                 now()->addMinutes(setting('VERIFICATION_CODE_EXPIRE'))
             );
 
-            SendVerificationCodeJob::dispatch($user->email, $verificationCode);
+            Mail::to($user->email->value)->queue(new VerificationCodeMail($verificationCode));
         });
 
         if (!$verificationCodeSent) {

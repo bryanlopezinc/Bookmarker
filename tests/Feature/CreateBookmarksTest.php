@@ -253,11 +253,4 @@ class CreateBookmarksTest extends TestCase
 
         $this->getTestResponse(['url' => $this->faker->url])->assertCreated();
     }
-
-    public function testUnVerifiedUserCannotCreateBookmark(): void
-    {
-        Passport::actingAs(UserFactory::new()->unverified()->create());
-
-        $this->getTestResponse(['url' => $this->faker->url])->assertForbidden();
-    }
 }

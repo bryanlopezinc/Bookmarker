@@ -18,7 +18,7 @@ use Illuminate\Database\Query\JoinClause;
  * @property string $lastname
  * @property string $email
  * @property string $password
- * @property \Carbon\Carbon $email_verified_at
+ * @property \Carbon\Carbon|null $email_verified_at
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  * @method static Builder WithQueryOptions(UserAttributes $columns)

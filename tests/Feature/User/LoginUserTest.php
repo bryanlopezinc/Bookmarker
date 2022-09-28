@@ -48,6 +48,7 @@ class LoginUserTest extends TestCase
             "message" => "The user credentials were incorrect."
         ];
 
+        //wrong password
         $this->getTestResponse([
             'username'  => $this->user->username,
             'password'  => 'wrongPassword',
@@ -57,6 +58,7 @@ class LoginUserTest extends TestCase
             'two_fa_code' => '12345',
         ])->assertStatus(400)->assertExactJson($data);
 
+        //username does not exists
         $this->getTestResponse([
             'username'  =>  UserFactory::randomUsername(),
             'password'  => 'password',
@@ -66,6 +68,7 @@ class LoginUserTest extends TestCase
             'two_fa_code' => '12345',
         ])->assertStatus(400)->assertExactJson($data);
 
+        //missing credentials
         $this->getTestResponse([
             'username'  => $this->user->username,
             'password'  => 'password',
@@ -362,5 +365,23 @@ class LoginUserTest extends TestCase
         });
 
         Http::assertNothingSent();
+    }
+
+    public function testUserMustVerifyEmailBeforeLogin(): void
+    {
+        $user = UserFactory::new()->unverified()->create();
+
+        $this->getTestResponse([
+            'username'  => $user->username,
+            'password'  => 'password',
+            'client_id' => $this->client->id,
+            'client_secret' => $this->client->secret,
+            'grant_type' => 'password',
+            'two_fa_code' => '12345',
+        ])->assertStatus(400)->assertExactJson([
+            "error" => "userEmailNotVerified",
+            "error_description" => "The user email has not been verified.",
+            "message" => "The user email has not been verified.",
+        ]);
     }
 }

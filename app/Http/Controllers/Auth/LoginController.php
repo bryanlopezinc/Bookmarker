@@ -13,7 +13,6 @@ use App\IpGeoLocation\IpAddress;
 use App\Repositories\UserRepository;
 use App\ValueObjects\Email;
 use App\ValueObjects\Username;
-use Illuminate\Http\Response;
 use Laravel\Passport\Http\Controllers\AccessTokenController;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -31,7 +30,7 @@ final class LoginController extends AccessTokenController
             $request->has('with_ip') ? new IpAddress($request->input('with_ip',)) : null
         ));
 
-        return new AccesssTokenResource($user, $token, Response::HTTP_OK);
+        return new AccesssTokenResource($user, $token);
     }
 
     private function getUser(LoginUserRequest $request, UserRepository $repository): User

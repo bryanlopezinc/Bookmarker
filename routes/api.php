@@ -8,7 +8,6 @@ use App\Http\Middleware\HandleDbTransactionsMiddleware as DBTransaction;
 use App\Http\Middleware\ConfirmPasswordBeforeMakingFolderPublicMiddleware as ConfirmPassword;
 use Illuminate\Support\Facades\Route;
 use Laravel\Passport\Http\Middleware\CheckClientCredentials;
-use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 
 Route::middleware('auth:api')->group(function () {
 
@@ -27,12 +26,12 @@ Route::middleware('auth:api')->group(function () {
         ->name('fetchUserBookmarks');
 
     Route::post('bookmarks/import', Controllers\ImportBookmarkController::class)
-        ->middleware([ConvertStringToArray::keys('tags'), EnsureEmailIsVerified::class])
+        ->middleware([ConvertStringToArray::keys('tags')])
         ->name('importBookmark');
 
     Route::middleware(DBTransaction::class)->group(function () {
         Route::post('bookmarks', Controllers\CreateBookmarkController::class)
-            ->middleware([ConvertStringToArray::keys('tags'), EnsureEmailIsVerified::class])
+            ->middleware([ConvertStringToArray::keys('tags')])
             ->name('createBookmark');
 
         Route::delete('bookmarks', Controllers\DeleteBookmarkController::class)
@@ -85,17 +84,10 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('folders/tags/remove', Controllers\Folder\DeleteFolderTagsController::class)
             ->middleware([ConvertStringToArray::keys('tags')])
             ->name('deleteFolderTags');
-
-        Route::get('email/verify/{id}/{hash}', Auth\VerifyEmailController::class)
-            ->middleware('signed')
-            ->name('verification.verify');
-
-        Route::post('email/verify/resend', Auth\ResendVerificationLinkController::class)
-            ->middleware('throttle:6,1')
-            ->name('verification.resend');
     });
 }); // End auth middleware
 
+//sendGrid callback url
 Route::post('email/save_url', Controllers\SendGrid\Controller::class)->name('saveBookmarkFromEmail');
 
 Route::post('token/refresh', [Laravel\Passport\Http\Controllers\AccessTokenController::class, 'issueToken'])
@@ -103,21 +95,29 @@ Route::post('token/refresh', [Laravel\Passport\Http\Controllers\AccessTokenContr
     ->middleware('throttle');
 
 Route::post('client/oauth/token', Auth\IssueClientTokenController::class)->name('issueClientToken');
-Route::post('users', Auth\CreateUserController::class)->middleware([DBTransaction::class])->name('createUser');
 Route::post('login', Auth\LoginController::class)->name('loginUser');
 
-Route::get('folders/public/bookmarks', Folder\FetchPublicFolderBookmarksController::class)
-    ->middleware([CheckClientCredentials::class])
-    ->name('viewPublicfolderBookmarks');
+Route::middleware([CheckClientCredentials::class])->group(function () {
+    Route::post('users', Auth\CreateUserController::class)->middleware([DBTransaction::class])->name('createUser');
+    Route::get('folders/public/bookmarks', Folder\FetchPublicFolderBookmarksController::class)->name('viewPublicfolderBookmarks');
 
-Route::post('users/password/reset-token', Auth\RequestPasswordResetController::class)
-    ->middleware([DBTransaction::class, CheckClientCredentials::class])
-    ->name('requestPasswordResetToken');
+    Route::post('users/password/reset-token', Auth\RequestPasswordResetController::class)
+        ->middleware([DBTransaction::class])
+        ->name('requestPasswordResetToken');
 
-Route::post('users/password/reset', Auth\ResetPasswordController::class)
-    ->middleware([DBTransaction::class, CheckClientCredentials::class])
-    ->name('resetPassword');
+    Route::post('users/password/reset', Auth\ResetPasswordController::class)
+        ->middleware([DBTransaction::class])
+        ->name('resetPassword');
 
-Route::post('users/request-verification-code', App\Http\Controllers\Auth\RequestVerificationCodeController::class)
-    ->middleware([DBTransaction::class, CheckClientCredentials::class])
-    ->name('requestVerificationCode');
+    Route::post('users/request-verification-code', App\Http\Controllers\Auth\RequestVerificationCodeController::class)
+        ->middleware([DBTransaction::class])
+        ->name('requestVerificationCode');
+
+    Route::get('email/verify/{id}/{hash}', Auth\VerifyEmailController::class)
+        ->middleware('signed')
+        ->name('verification.verify');
+
+    Route::post('email/verify/resend', Auth\ResendVerificationLinkController::class)
+        ->middleware('throttle:6,1')
+        ->name('verification.resend');
+});

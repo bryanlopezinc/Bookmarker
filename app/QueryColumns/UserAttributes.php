@@ -13,7 +13,7 @@ final class UserAttributes extends Attributes
 
     /**
      * @param string $attributes A comma seperated list of attributes which can only be
-     * any of id,username,email,bookmarks_count,password
+     * any of id,username,email,bookmarks_count,password,hasVerifiedEmail
      */
     public static function only(string $attributes): self
     {
@@ -22,7 +22,8 @@ final class UserAttributes extends Attributes
             'username' => 'username',
             'email' => 'email',
             'bookmarksCount' => 'bookmarks_count',
-            'password' => 'password'
+            'password' => 'password',
+            'hasVerifiedEmail' => 'email_verified_at'
         ]));
 
         return new static($values);

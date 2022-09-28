@@ -207,7 +207,7 @@ class VerifySecondaryEmailTest extends TestCase
         Mail::fake();
         $callback();
 
-        Mail::assertSent(function (VerificationCodeMail $mail) use (&$verificationCode) {
+        Mail::assertQueued(function (VerificationCodeMail $mail) use (&$verificationCode) {
             $verificationCode = $mail->getVerificationCode()->code();
             return true;
         });

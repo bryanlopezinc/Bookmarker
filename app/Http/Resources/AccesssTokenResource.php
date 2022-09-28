@@ -9,11 +9,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 final class AccesssTokenResource extends JsonResource
 {
-    public function __construct(
-        private readonly User $user,
-        private readonly string $tokenResponse,
-        private readonly int $statusCode
-    ) {
+    public function __construct(private readonly User $user, private readonly string $tokenResponse)
+    {
         parent::__construct($user);
     }
 
@@ -27,13 +24,5 @@ final class AccesssTokenResource extends JsonResource
         $userResource['token'] = json_decode($this->tokenResponse, true);
 
         return $userResource;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function withResponse($request, $response)
-    {
-        $response->setStatusCode($this->statusCode);
     }
 }

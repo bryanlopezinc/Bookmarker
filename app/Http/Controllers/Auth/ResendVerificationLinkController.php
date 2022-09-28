@@ -4,18 +4,33 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
-use App\DataTransferObjects\Builders\UserBuilder;
 use App\Events\ResendEmailVerificationLinkRequested;
+use App\QueryColumns\UserAttributes;
+use App\Repositories\UserRepository;
+use App\ValueObjects\Email;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 final class ResendVerificationLinkController
 {
-    public function __invoke(Request $request): JsonResponse
+    public function __invoke(Request $request, UserRepository $repository): JsonResponse
     {
-        event(new ResendEmailVerificationLinkRequested(
-            UserBuilder::fromModel($request->user('api'))->build(),
-        ));
+        $request->validate(['email' => ['required', 'email']]);
+
+        $user = $repository->findByEmail(new Email($request->input('email')), UserAttributes::only('id,email,hasVerifiedEmail'));
+
+        if ($user === false) {
+            return response()->json(status: Response::HTTP_NOT_FOUND);
+        }
+
+        if ($user->hasVerifiedEmail) {
+            return response()->json([
+                'message' => 'Email already verified'
+            ]);
+        }
+
+        event(new ResendEmailVerificationLinkRequested($user));
 
         return response()->json();
     }

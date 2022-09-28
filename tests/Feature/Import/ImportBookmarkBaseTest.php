@@ -23,15 +23,4 @@ class ImportBookmarkBaseTest extends TestCase
     {
         $this->importBookmarkResponse()->assertUnauthorized();
     }
-
-    final public function testUserEmailMustBeVerified(): void
-    {
-        Passport::actingAs(UserFactory::new()->unverified()->create());
-
-        $this->importBookmarkResponse()
-            ->assertForbidden()
-            ->assertJson([
-                'message' => 'Your email address is not verified.'
-            ]);
-    }
 }

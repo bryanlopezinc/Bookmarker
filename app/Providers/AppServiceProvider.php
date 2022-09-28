@@ -10,7 +10,8 @@ use App\Jobs\CheckBookmarksHealth;
 use App\Observers\BookmarkObserver;
 use App\Cache\VerificationCodesRepository;
 use App\Contracts\VerificationCodeGeneratorInterface;
-use App\Repositories\VerifyVerificationCode;
+use App\Repositories\OAuth\EnsureEmailHasBeenVerified;
+use App\Repositories\OAuth\VerifyVerificationCode;
 use App\Utils\UrlHasher;
 use App\Utils\VerificationCodeGenerator;
 use Illuminate\Contracts\Hashing\Hasher;
@@ -26,9 +27,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->app->bind(UserRepository::class, function ($app) {
+        $this->app->bind(UserRepository::class, function () {
             return new VerifyVerificationCode(
-                new UserRepository(app(Hasher::class)),
+                new EnsureEmailHasBeenVerified(
+                    new UserRepository(app(Hasher::class))
+                ),
                 app(VerificationCodesRepository::class)
             );
         });

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Repositories;
+namespace App\Repositories\OAuth;
 
 use App\Cache\VerificationCodesRepository;
 use App\ValueObjects\UserID;

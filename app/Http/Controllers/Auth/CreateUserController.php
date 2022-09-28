@@ -6,23 +6,16 @@ namespace App\Http\Controllers\Auth;
 
 use App\Events\RegisteredEvent;
 use App\Http\Requests\CreateUserRequest;
-use App\Http\Resources\AccesssTokenResource;
 use App\Services\CreateUserService;
-use App\ValueObjects\Url;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
-use Laravel\Passport\Http\Controllers\AccessTokenController;
-use Psr\Http\Message\ServerRequestInterface;
 
-final class CreateUserController extends AccessTokenController
+final class CreateUserController
 {
-    public function __invoke(CreateUserRequest $request, CreateUserService $service, ServerRequestInterface $serverRequest): AccesssTokenResource
+    public function __invoke(CreateUserRequest $request, CreateUserService $service): JsonResponse
     {
-        $user = $service->FromRequest($request);
+        event(new RegisteredEvent($service->FromRequest($request)));
 
-        $accessToken = $this->issueToken($serverRequest)->content();
-
-        event(new RegisteredEvent($user));
-
-        return new AccesssTokenResource($user, $accessToken, Response::HTTP_CREATED);
+        return response()->json(status: Response::HTTP_CREATED);
     }
 }

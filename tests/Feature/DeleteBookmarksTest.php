@@ -13,12 +13,12 @@ use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
-use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
+use Tests\Traits\WillCheckBookmarksHealth;
 use Tests\Traits\CreatesBookmark;
 
 class DeleteBookmarksTest extends TestCase
 {
-    use CreatesBookmark, AssertsBookmarksWillBeHealthchecked;
+    use CreatesBookmark, WillCheckBookmarksHealth;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {

@@ -12,11 +12,11 @@ use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
-use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
+use Tests\Traits\WillCheckBookmarksHealth;
 
 class FetchFolderBookmarksTest extends TestCase
 {
-    use AssertsBookmarksWillBeHealthchecked;
+    use WillCheckBookmarksHealth;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {

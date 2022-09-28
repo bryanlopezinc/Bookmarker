@@ -13,14 +13,14 @@ use Illuminate\Http\Response;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
-use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
+use Tests\Traits\WillCheckBookmarksHealth;
 
 /**
  * @group 119
  */
 class AddBookmarksToFolderTest extends TestCase
 {
-    use WithFaker, AssertsBookmarksWillBeHealthchecked;
+    use WithFaker, WillCheckBookmarksHealth;
 
     protected function addBookmarksToFolderResponse(array $parameters = []): TestResponse
     {

@@ -11,11 +11,11 @@ use Illuminate\Http\Response;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
-use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
+use Tests\Traits\WillCheckBookmarksHealth;
 
 class CreateFavouriteTest extends TestCase
 {
-    use AssertsBookmarksWillBeHealthchecked;
+    use WillCheckBookmarksHealth;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {

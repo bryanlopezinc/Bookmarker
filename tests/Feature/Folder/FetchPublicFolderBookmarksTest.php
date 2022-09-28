@@ -13,11 +13,11 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
-use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
+use Tests\Traits\WillCheckBookmarksHealth;
 
 class FetchPublicFolderBookmarksTest extends TestCase
 {
-    use AssertsBookmarksWillBeHealthchecked;
+    use WillCheckBookmarksHealth;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {

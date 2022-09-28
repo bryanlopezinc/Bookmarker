@@ -15,12 +15,12 @@ use Illuminate\Support\Collection;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
-use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
+use Tests\Traits\WillCheckBookmarksHealth;
 use Tests\Traits\CreatesBookmark;
 
 class DeleteFolderTest extends TestCase
 {
-    use WithFaker, CreatesBookmark,AssertsBookmarksWillBeHealthchecked;
+    use WithFaker, CreatesBookmark, WillCheckBookmarksHealth;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {

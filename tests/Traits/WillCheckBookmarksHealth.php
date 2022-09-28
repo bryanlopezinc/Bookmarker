@@ -6,7 +6,7 @@ namespace Tests\Traits;
 
 use Tests\TestBookmarksHealthRepository;
 
-trait AssertsBookmarksWillBeHealthchecked
+trait WillCheckBookmarksHealth
 {
     /**
      * @param array<int> bookmarks

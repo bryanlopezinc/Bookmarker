@@ -9,11 +9,11 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 use Tests\Traits\AssertsBookmarkJson;
-use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
+use Tests\Traits\WillCheckBookmarksHealth;
 
 class FetchUserFavouritesTest extends TestCase
 {
-    use AssertsBookmarkJson, AssertsBookmarksWillBeHealthchecked;
+    use AssertsBookmarkJson, WillCheckBookmarksHealth;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {

@@ -15,11 +15,14 @@ use Laravel\Passport\Passport;
 use Tests\TestCase;
 use Tests\Traits\AssertsBookmarksWillBeHealthchecked;
 
+/**
+ * @group 119
+ */
 class AddBookmarksToFolderTest extends TestCase
 {
     use WithFaker, AssertsBookmarksWillBeHealthchecked;
 
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function addBookmarksToFolderResponse(array $parameters = []): TestResponse
     {
         return $this->postJson(route('addBookmarksToFolder'), $parameters);
     }
@@ -31,35 +34,34 @@ class AddBookmarksToFolderTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->addBookmarksToFolderResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationWhenRequiredAttrbutesAreMissing(): void
+    public function testRequiredAttributesMustBePresent(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse()
+        $this->addBookmarksToFolderResponse()
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['bookmarks', 'folder']);
     }
 
-    public function testWillThrowValidationWhenAttrbutesAreInvalid(): void
+    public function testBookmarkIDsMustBeValid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['bookmarks' => '1,2bar'])
+        $this->addBookmarksToFolderResponse(['bookmarks' => '1,2bar'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
-                "folder" => ["The folder field is required."],
                 "bookmarks.1" => ["The bookmarks.1 attribute is invalid"]
             ]);
     }
 
-    public function testMakeHiddenValuesMustExistsInBookmarksValues(): void
+    public function test_MakeHidden_InputValues_MustExists_In_BookmarksInput_Values(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->addBookmarksToFolderResponse([
             'folder' =>12,
             'bookmarks' => '1,2,3,4,5',
             'make_hidden' => '1,2,3,4,5,6'
@@ -70,18 +72,23 @@ class AddBookmarksToFolderTest extends TestCase
         ]);
     }
 
-    public function testAttributesMustBeUnique(): void
+    public function testBookmarkIDsMustBeUnique(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->addBookmarksToFolderResponse([
             'bookmarks' => '1,1,3,4,5',
         ])->assertJsonValidationErrors([
             "bookmarks.0" => ["The bookmarks.0 field has a duplicate value."],
             "bookmarks.1" => ["The bookmarks.1 field has a duplicate value."]
         ]);
+    }
 
-        $this->getTestResponse([
+    public function test_MakeHidden_InputValues_MustBeUnique(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->addBookmarksToFolderResponse([
             'bookmarks' => '1,2,3,4,5',
             'make_hidden' => '1,1,2,3,4,5'
         ])->assertJsonValidationErrors([
@@ -94,7 +101,7 @@ class AddBookmarksToFolderTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['bookmarks' => implode(',', range(1, 51))])
+        $this->addBookmarksToFolderResponse(['bookmarks' => implode(',', range(1, 51))])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'bookmarks' => 'The bookmarks must not have more than 50 items.'
@@ -115,7 +122,7 @@ class AddBookmarksToFolderTest extends TestCase
             'updated_at' => $createdAt,
         ])->id;
 
-        $this->getTestResponse([
+        $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmarkIDs->implode(','),
             'folder' => $folderID,
         ])->assertCreated();
@@ -148,13 +155,13 @@ class AddBookmarksToFolderTest extends TestCase
         for ($i = 0; $i < 4; $i++) {
             $bookmarkIDs = BookmarkFactory::new()->count(50)->create($attributes)->pluck('id');
 
-            $this->getTestResponse([
+            $this->addBookmarksToFolderResponse([
                 'bookmarks' => $bookmarkIDs->implode(','),
                 'folder' => $folderID,
             ])->assertCreated();
         }
 
-        $this->getTestResponse([
+        $this->addBookmarksToFolderResponse([
             'bookmarks' => (string) BookmarkFactory::new()->create($attributes)->id,
             'folder' => $folderID,
         ])
@@ -171,13 +178,13 @@ class AddBookmarksToFolderTest extends TestCase
         for ($i = 0; $i < 4; $i++) {
             $bookmarkIDs = BookmarkFactory::new()->count(45)->create($attributes)->pluck('id');
 
-            $this->getTestResponse([
+            $this->addBookmarksToFolderResponse([
                 'bookmarks' => $bookmarkIDs->implode(','),
                 'folder' => $folderID,
             ])->assertCreated();
         }
 
-        $this->getTestResponse([
+        $this->addBookmarksToFolderResponse([
             'bookmarks' => BookmarkFactory::new()->count(21)->create($attributes)->pluck('id')->implode(','),
             'folder' => $folderID,
         ])
@@ -193,7 +200,7 @@ class AddBookmarksToFolderTest extends TestCase
 
         $folderID = FolderFactory::new()->create(['user_id' => $user->id])->id;
 
-        $this->getTestResponse([
+        $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmarkIDs->implode(','),
             'folder' => $folderID,
         ])->assertCreated();
@@ -209,7 +216,7 @@ class AddBookmarksToFolderTest extends TestCase
         $bookmarkIDsToMakePublic = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
         $folderID = FolderFactory::new()->create(['user_id' => $user->id,])->id;
 
-        $this->getTestResponse([
+        $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmarkIDsToMakePrivate->merge($bookmarkIDsToMakePublic)->shuffle()->implode(','),
             'folder' => $folderID,
             'make_hidden' => $bookmarkIDsToMakePrivate->implode(',')
@@ -244,12 +251,12 @@ class AddBookmarksToFolderTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse([
+        $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmarks->pluck('id')->implode(','),
             'folder' => $folder->id
         ])->assertCreated();
 
-        $this->getTestResponse([
+        $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmarks->pluck('id')->implode(','),
             'folder' => $folder->id
         ])->assertStatus(Response::HTTP_CONFLICT);
@@ -267,7 +274,7 @@ class AddBookmarksToFolderTest extends TestCase
             'user_id' => UserFactory::new()->create()->id //Another user's folder
         ]);
 
-        $this->getTestResponse([
+        $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmarks->pluck('id')->implode(','),
             'folder' => $folder->id
         ])->assertForbidden();
@@ -285,7 +292,7 @@ class AddBookmarksToFolderTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse([
+        $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmarks->pluck('id')->implode(','),
             'folder' => $folder->id
         ])->assertForbidden();
@@ -303,7 +310,7 @@ class AddBookmarksToFolderTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse([
+        $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmarks->pluck('id')->map(fn (int $bookmarkID) => $bookmarkID + 1)->implode(','),
             'folder' => $folder->id
         ])
@@ -325,7 +332,7 @@ class AddBookmarksToFolderTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse([
+        $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmarks->pluck('id')->implode(','),
             'folder' => $folder->id + 1
         ])->assertNotFound()

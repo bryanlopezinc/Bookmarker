@@ -8,32 +8,15 @@ use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
-use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
-use Tests\TestCase;
 
-class ImportBookmarksFromSafariExportFileTest extends TestCase
+class ImportBookmarksFromSafariExportFileTest extends ImportBookmarkBaseTest
 {
-    private function getTestResponse(array $parameters = []): TestResponse
-    {
-        return $this->postJson(route('importBookmark'), $parameters);
-    }
-
-    public function testIsAccessibleViaPath(): void
-    {
-        $this->assertRouteIsAccessibeViaPath('v1/bookmarks/import', 'importBookmark');
-    }
-
-    public function testUnAuthorizedUserCannotAccessRoute(): void
-    {
-        $this->getTestResponse()->assertUnauthorized();
-    }
-
     public function testRequiredAttributesMustBePresent(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse()
+        $this->importBookmarkResponse()
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'source' => ['The source field is required.']
@@ -44,7 +27,7 @@ class ImportBookmarksFromSafariExportFileTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['source' => 'foo'])
+        $this->importBookmarkResponse(['source' => 'foo'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'source' => ['The selected source is invalid.']
@@ -55,7 +38,7 @@ class ImportBookmarksFromSafariExportFileTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->importBookmarkResponse([
             'source' => 'safariExportFile',
             'safari_html' => UploadedFile::fake()->create('file.html', 5001),
         ])->assertUnprocessable()
@@ -70,7 +53,7 @@ class ImportBookmarksFromSafariExportFileTest extends TestCase
 
         $tags = TagFactory::new()->count(16)->make()->pluck('name')->implode(',');
 
-        $this->getTestResponse([
+        $this->importBookmarkResponse([
             'source' => 'safariExportFile',
             'tags' => $tags
         ])->assertJsonValidationErrors([
@@ -82,7 +65,7 @@ class ImportBookmarksFromSafariExportFileTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->importBookmarkResponse([
             'source' => 'safariExportFile',
             'tags' => 'howTo,howTo,stackOverflow'
         ])->assertJsonValidationErrors([
@@ -97,7 +80,7 @@ class ImportBookmarksFromSafariExportFileTest extends TestCase
 
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->importBookmarkResponse([
             'source' => 'safariExportFile',
             'safari_html' => UploadedFile::fake()->createWithContent('file.html', file_get_contents(base_path('tests/stubs/imports/SafariExportFile.html'))),
         ])->assertStatus(Response::HTTP_PROCESSING);

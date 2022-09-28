@@ -8,32 +8,15 @@ use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
-use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
-use Tests\TestCase;
 
-class ImportBookmarksFromPocketExportFileTest extends TestCase
+class ImportBookmarksFromPocketExportFileTest extends ImportBookmarkBaseTest
 {
-    private function getTestResponse(array $parameters = []): TestResponse
-    {
-        return $this->postJson(route('importBookmark'), $parameters);
-    }
-
-    public function testIsAccessibleViaPath(): void
-    {
-        $this->assertRouteIsAccessibeViaPath('v1/bookmarks/import', 'importBookmark');
-    }
-
-    public function testUnAuthorizedUserCannotAccessRoute(): void
-    {
-        $this->getTestResponse()->assertUnauthorized();
-    }
-
     public function testRequiredAttributesMustBePresent(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse()
+        $this->importBookmarkResponse()
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'source' => ['The source field is required.']
@@ -44,7 +27,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['source' => 'foo'])
+        $this->importBookmarkResponse(['source' => 'foo'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'source' => ['The selected source is invalid.']
@@ -55,7 +38,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->importBookmarkResponse([
             'source' => 'pocketExportFile',
             'pocket_export_file' => UploadedFile::fake()->create('file.html', 5001),
         ])->assertUnprocessable()
@@ -72,7 +55,7 @@ class ImportBookmarksFromPocketExportFileTest extends TestCase
 
         $content = file_get_contents(base_path('tests/stubs/imports/pocketExportFile.html'));
 
-        $this->getTestResponse([
+        $this->importBookmarkResponse([
             'source' => 'pocketExportFile',
             'pocket_export_file' => UploadedFile::fake()->createWithContent('file.html', $content),
         ])->assertStatus(Response::HTTP_PROCESSING);

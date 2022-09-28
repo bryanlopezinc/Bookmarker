@@ -27,7 +27,7 @@ Route::middleware('auth:api')->group(function () {
         ->name('fetchUserBookmarks');
 
     Route::post('bookmarks/import', Controllers\ImportBookmarkController::class)
-        ->middleware([ConvertStringToArray::keys('tags')])
+        ->middleware([ConvertStringToArray::keys('tags'), EnsureEmailIsVerified::class])
         ->name('importBookmark');
 
     Route::middleware(DBTransaction::class)->group(function () {

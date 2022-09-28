@@ -12,6 +12,7 @@ use App\QueryColumns\UserAttributes;
 use App\ValueObjects\Email;
 use App\ValueObjects\UserID;
 use App\ValueObjects\Username;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 final class UserRepository
 {
@@ -28,6 +29,21 @@ final class UserRepository
     public function findByEmail(Email $email, UserAttributes $columns = new UserAttributes()): User|false
     {
         return $this->find('users.email', $email->value, $columns);
+    }
+
+    public function findByEmailOrSecondaryEmail(Email $email, UserAttributes $columns = new UserAttributes()): User|false
+    {
+        try {
+            return UserBuilder::fromModel(
+                UserModel::WithQueryOptions($columns)
+                    ->leftJoin('users_emails', 'users.id', '=', 'users_emails.user_id')
+                    ->where('users.email', $email->value)
+                    ->orWhere('users_emails.email', $email->value)
+                    ->sole()
+            )->build();
+        } catch (ModelNotFoundException) {
+            return false;
+        }
     }
 
     private function find(string $byColumn, string|int $value, UserAttributes $columns): User|false

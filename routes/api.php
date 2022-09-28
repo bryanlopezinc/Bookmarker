@@ -8,6 +8,7 @@ use App\Http\Middleware\HandleDbTransactionsMiddleware as DBTransaction;
 use App\Http\Middleware\ConfirmPasswordBeforeMakingFolderPublicMiddleware as ConfirmPassword;
 use Illuminate\Support\Facades\Route;
 use Laravel\Passport\Http\Middleware\CheckClientCredentials;
+use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 
 Route::middleware('auth:api')->group(function () {
 
@@ -31,7 +32,7 @@ Route::middleware('auth:api')->group(function () {
 
     Route::middleware(DBTransaction::class)->group(function () {
         Route::post('bookmarks', Controllers\CreateBookmarkController::class)
-            ->middleware([ConvertStringToArray::keys('tags'), 'verified'])
+            ->middleware([ConvertStringToArray::keys('tags'), EnsureEmailIsVerified::class])
             ->name('createBookmark');
 
         Route::delete('bookmarks', Controllers\DeleteBookmarkController::class)

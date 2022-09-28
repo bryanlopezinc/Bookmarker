@@ -67,7 +67,6 @@ class AddEmailTest extends TestCase
         });
     }
 
-
     public function testCannotHaveMoreThan_3_SecondaryEmails(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());

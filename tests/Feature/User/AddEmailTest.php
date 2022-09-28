@@ -53,7 +53,7 @@ class AddEmailTest extends TestCase
 
         $this->addEmailToAccount(['email' => $this->faker->unique()->email])->assertOk();
 
-        Mail::assertSent(VerificationCodeMail::class);
+        Mail::assertQueued(VerificationCodeMail::class);
     }
 
     public function testCanAddAnotherEmailAfter_5_minutes_WithoutVerifyingFirstEmail(): void

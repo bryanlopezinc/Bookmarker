@@ -32,7 +32,7 @@ final class AddEmailToAccountService
 
         $this->pendingVerifications->put($userID, $secondaryEmail, $verificationCode, now()->addMinutes(5));
 
-        Mail::to($secondaryEmail->value)->send(new VerificationCodeMail($verificationCode));
+        Mail::to($secondaryEmail->value)->queue(new VerificationCodeMail($verificationCode));
     }
 
     private function validateAction(UserID $userID, Email $email): void

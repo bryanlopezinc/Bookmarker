@@ -26,7 +26,7 @@ final class CreateBookmarkFromMailMessageService
         $user = $this->userRepository->findByEmailOrSecondaryEmail($email = new Email($message->from()), UserAttributes::only('id'));
 
         if ($user === false) {
-            Mail::to($email->value)->send(new EmailNotRegisteredMail);
+            Mail::to($email->value)->queue(new EmailNotRegisteredMail);
             return;
         }
 

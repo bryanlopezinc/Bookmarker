@@ -95,7 +95,7 @@ class SaveBookFromMailTest extends TestCase
 
         $this->getTestResponse($data)->assertOk();
 
-        Mail::assertSent(EmailNotRegisteredMail::class);
+        Mail::assertQueued(EmailNotRegisteredMail::class);
     }
 
     public function testWillNotSaveBookmarkWhenBookmarkIsInvalid(): void

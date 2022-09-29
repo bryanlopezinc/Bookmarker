@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\User;
 
+use App\Models\SecondaryEmail;
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
 use App\ValueObjects\Url;
@@ -66,7 +67,7 @@ class CreateUserTest extends TestCase
             ->assertJsonCount(1, 'errors');
     }
 
-    public function testWillReturnValidationErrorsWhenUsernameAttrbuteIsInvalid(): void
+    public function testUsernameMustBeValid(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
@@ -87,11 +88,28 @@ class CreateUserTest extends TestCase
             ->assertJsonValidationErrors(['username' => 'The username contains invalid characters']);
     }
 
-    public function testWillReturnValidationErrorsWhenEmailAttrbuteIsInvalid(): void
+    public function testEmailMustBeValid(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         $this->createUserResponse(['email' => UserFactory::new()->create()->email])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['email' => 'The email has already been taken.']);
+    }
+
+    public function testEmailMustNotBe_Existing_SecondaryEmail(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        $user = UserFactory::new()->create();
+
+        SecondaryEmail::query()->create([
+            'email' => $userSecondaryEmail = UserFactory::new()->make()->email,
+            'user_id' => $user->id,
+            'verified_at' => now()
+        ]);
+
+        $this->createUserResponse(['email' => $userSecondaryEmail])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['email' => 'The email has already been taken.']);
     }

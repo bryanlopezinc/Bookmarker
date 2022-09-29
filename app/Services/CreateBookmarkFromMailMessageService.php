@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Exceptions\MalformedURLException;
 use App\Mail\EmailNotRegisteredMail;
+use App\Mail\EmailNotVerifiedMail;
 use App\Utils\MailParser;
 use App\QueryColumns\UserAttributes;
 use App\Repositories\UserRepository;
@@ -23,10 +24,18 @@ final class CreateBookmarkFromMailMessageService
     {
         $message = new MailParser($mimeMessage);
 
-        $user = $this->userRepository->findByEmailOrSecondaryEmail($email = new Email($message->from()), UserAttributes::only('id'));
+        $user = $this->userRepository->findByEmailOrSecondaryEmail(
+            $email = new Email($message->from()),
+            UserAttributes::only('id,hasVerifiedEmail')
+        );
 
         if ($user === false) {
             Mail::to($email->value)->queue(new EmailNotRegisteredMail);
+            return;
+        }
+
+        if (!$user->hasVerifiedEmail) {
+            Mail::to($email->value)->queue(new EmailNotVerifiedMail);
             return;
         }
 

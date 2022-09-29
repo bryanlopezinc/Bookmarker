@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Jobs\UpdateBookmarkWithHttpResponse;
 use App\Mail\EmailNotRegisteredMail;
+use App\Mail\EmailNotVerifiedMail;
 use App\Models\Bookmark;
 use App\Models\SecondaryEmail;
 use Tests\TestCase;
@@ -111,6 +112,26 @@ class SaveBookFromMailTest extends TestCase
 
         $this->getTestResponse($data)->assertOk();
 
+        $this->assertDatabaseMissing(Bookmark::class, ['user_id' => $user->id]);
+    }
+
+    public function testMustVerifyPrimaryEmail(): void
+    {
+        Mail::fake();
+
+        $user = UserFactory::new()->unverified()->create();
+
+        $data = json_decode(associative: true, json: file_get_contents(base_path('tests/stubs/SendGrid/mail.json')));
+        $data['rkv'] = env('SENDGRID_INBOUND_KEY');
+
+        $data['email'] = Str::of(file_get_contents(base_path('tests/stubs/SendGrid/email.log')))
+            ->replace(':sender', $user->email)
+            ->replace('{url}', $this->faker->url)
+            ->toString();
+
+        $this->getTestResponse($data)->assertOk();
+
+        Mail::assertQueued(EmailNotVerifiedMail::class);
         $this->assertDatabaseMissing(Bookmark::class, ['user_id' => $user->id]);
     }
 }

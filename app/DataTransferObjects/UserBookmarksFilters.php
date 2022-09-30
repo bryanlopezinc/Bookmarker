@@ -22,6 +22,18 @@ final class UserBookmarksFilters extends DataTransferObject
     public readonly UserBookmarksSortCriteria $sortCriteria;
     public readonly bool $wantsBooksmarksWithDeadLinks;
 
+    /**
+     * @param array<string, mixed> $attributes
+     */
+    public function __construct(protected array $attributes)
+    {
+        foreach ($this->attributes as $key => $value) {
+            $this->{$key} = $value;
+        }
+
+        parent::__construct();
+    }
+    
     public static function fromRequest(FetchUserBookmarksRequest $request): self
     {
         $data = [

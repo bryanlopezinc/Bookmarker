@@ -41,6 +41,18 @@ final class Bookmark extends DataTransferObject implements BelongsToUserInterfac
     public readonly Carbon $resolvedAt;
     public readonly bool  $IsResolved;
 
+    /**
+     * @param array<string, mixed> $attributes
+     */
+    public function __construct(protected array $attributes)
+    {
+        foreach ($this->attributes as $key => $value) {
+            $this->{$key} = $value;
+        }
+
+        parent::__construct();
+    }
+
     public function getOwnerID(): UserID
     {
         return $this->ownerId;

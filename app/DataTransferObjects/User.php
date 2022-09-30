@@ -22,4 +22,16 @@ final class User extends DataTransferObject
     public readonly PositiveNumber $favouritesCount;
     public readonly PositiveNumber $foldersCount;
     public readonly bool $hasVerifiedEmail;
+
+    /**
+     * @param array<string, mixed> $attributes
+     */
+    public function __construct(protected array $attributes)
+    {
+        foreach ($this->attributes as $key => $value) {
+            $this->{$key} = $value;
+        }
+
+        parent::__construct();
+    }
 }

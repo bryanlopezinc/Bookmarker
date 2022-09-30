@@ -27,7 +27,7 @@ final class EnsureValidTagsCount implements AfterDTOSetUpHookInterface
     {
         $maxTagsLength = setting($this->config);
 
-        if (!$resource->offsetExists($this->attribute)) {
+        if (!$resource->has($this->attribute)) {
             return;
         }
 

@@ -27,6 +27,18 @@ final class Folder extends DataTransferObject implements BelongsToUserInterface
     public readonly bool $isPublic;
     public readonly TagsCollection $tags;
 
+    /**
+     * @param array<string, mixed> $attributes
+     */
+    public function __construct(protected array $attributes)
+    {
+        foreach ($this->attributes as $key => $value) {
+            $this->{$key} = $value;
+        }
+
+        parent::__construct();
+    }
+    
     public function getOwnerID(): UserID
     {
         return $this->ownerID;

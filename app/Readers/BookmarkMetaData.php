@@ -17,6 +17,18 @@ final class BookmarkMetaData extends DataTransferObject
     public readonly Url $reosolvedUrl;
 
     /**
+     * @param array<string, mixed> $attributes
+     */
+    public function __construct(protected array $attributes)
+    {
+        foreach ($this->attributes as $key => $value) {
+            $this->{$key} = $value;
+        }
+
+        parent::__construct();
+    }
+    
+    /**
      * @param array<string,mixed> $data
      *
      * ```php

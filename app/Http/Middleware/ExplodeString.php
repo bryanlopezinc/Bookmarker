@@ -35,8 +35,8 @@ final class ExplodeString
         return $next($request);
     }
 
-    public static function keys(): string
+    public static function keys(string ...$keys): string
     {
-        return 'convertNestedValues:' . implode(',', func_get_args());
+        return 'convertNestedValues:' . implode(',', $keys);
     }
 }

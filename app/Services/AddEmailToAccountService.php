@@ -8,7 +8,6 @@ use App\Cache\SecondaryEmailVerificationCodeRepository as PendingVerifications;
 use App\Contracts\TwoFACodeGeneratorInterface as TwoFACodeGenerator;
 use App\Exceptions\HttpException;
 use App\Mail\TwoFACodeMail;
-use App\QueryColumns\UserAttributes;
 use App\Repositories\UserRepository;
 use App\ValueObjects\Email;
 use App\ValueObjects\UserID;
@@ -47,10 +46,6 @@ final class AddEmailToAccountService
         }
 
         $this->ensureHasNoPendingVerification($userID, $email);
-
-        $this->ensureIsNotPrimaryEmail($email, $userID);
-
-        $this->ensureUnique($userSecondaryEmails, $email);
     }
 
     /**
@@ -65,49 +60,6 @@ final class AddEmailToAccountService
                 'message' => 'Verify email',
                 'error_code' => 3118
             ], Response::HTTP_BAD_REQUEST);
-        }
-    }
-
-    private function ensureIsNotPrimaryEmail(Email $secondaryEmail, UserID $userID): void
-    {
-        $user = $this->userRepository->findByEmail($secondaryEmail, UserAttributes::only('id,email'));
-
-        if ($user === false) {
-            return;
-        }
-
-        if ($user->id->equals($userID)) {
-            throw HttpException::conflict([
-                'message' => 'Cannot add primary email',
-                'error_code' => 3082
-            ]);
-        }
-
-        throw HttpException::forbidden([
-            'message' => 'Email already exists',
-            'error_code' => 333
-        ]);
-    }
-
-    /**
-     * @param array<Email> $userSecondaryEmails
-     */
-    private function ensureUnique(array $userSecondaryEmails, Email $secondaryEmail): void
-    {
-        foreach ($userSecondaryEmails as $userSecondaryEmail) {
-            if ($userSecondaryEmail->equals($secondaryEmail)) {
-                throw HttpException::conflict([
-                    'message' => 'Email already added',
-                    'error_code' => 3448
-                ]);
-            }
-        }
-
-        if ($this->userRepository->secondaryEmailExists($secondaryEmail)) {
-            throw HttpException::forbidden([
-                'message' => 'Email already exists',
-                'error_code' => 333
-            ]);
         }
     }
 }

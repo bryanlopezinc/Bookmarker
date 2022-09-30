@@ -112,10 +112,9 @@ class AddEmailTest extends TestCase
         ]);
 
         $this->addEmailToAccount(['email' => $email])
-            ->assertStatus(Response::HTTP_CONFLICT)
-            ->assertExactJson([
-                'message' => 'Email already added',
-                'error_code' => 3448
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'email' => 'The email has already been taken.'
             ]);
     }
 
@@ -124,10 +123,9 @@ class AddEmailTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         $this->addEmailToAccount(['email' => $user->email])
-            ->assertStatus(Response::HTTP_CONFLICT)
-            ->assertExactJson([
-                'message' => 'Cannot add primary email',
-                'error_code' => 3082
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'email' => 'The email has already been taken.'
             ]);
     }
 
@@ -138,10 +136,9 @@ class AddEmailTest extends TestCase
         Passport::actingAs($hector);
 
         $this->addEmailToAccount(['email' => $johnny->email])
-            ->assertForbidden()
-            ->assertExactJson([
-                'message' => 'Email already exists',
-                'error_code' => 333
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'email' => 'The email has already been taken.'
             ]);
     }
 
@@ -158,10 +155,9 @@ class AddEmailTest extends TestCase
         Passport::actingAs($tony);
 
         $this->addEmailToAccount(['email' => $marksSecondaryEmail])
-            ->assertForbidden()
-            ->assertExactJson([
-                'message' => 'Email already exists',
-                'error_code' => 333
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'email' => 'The email has already been taken.'
             ]);
     }
 }

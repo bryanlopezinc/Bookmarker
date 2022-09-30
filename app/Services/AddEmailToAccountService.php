@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Cache\SecondaryEmailsVerificationCodesRepository as PendingVerifications;
-use App\Contracts\VerificationCodeGeneratorInterface as VerificationCodeGenerator;
+use App\Cache\SecondaryEmailVerificationCodeRepository as PendingVerifications;
+use App\Contracts\TwoFACodeGeneratorInterface as TwoFACodeGenerator;
 use App\Exceptions\HttpException;
-use App\Mail\VerificationCodeMail;
+use App\Mail\TwoFACodeMail;
 use App\QueryColumns\UserAttributes;
 use App\Repositories\UserRepository;
 use App\ValueObjects\Email;
@@ -19,7 +19,7 @@ final class AddEmailToAccountService
 {
     public function __construct(
         private UserRepository $userRepository,
-        private VerificationCodeGenerator $verificationCodeGenerator,
+        private TwoFACodeGenerator $twoFACodeGenerator,
         private PendingVerifications $pendingVerifications
     ) {
     }
@@ -28,11 +28,11 @@ final class AddEmailToAccountService
     {
         $this->validateAction($userID, $secondaryEmail);
 
-        $verificationCode = $this->verificationCodeGenerator->generate();
+        $verificationCode = $this->twoFACodeGenerator->generate();
 
         $this->pendingVerifications->put($userID, $secondaryEmail, $verificationCode, now()->addMinutes(5));
 
-        Mail::to($secondaryEmail->value)->queue(new VerificationCodeMail($verificationCode));
+        Mail::to($secondaryEmail->value)->queue(new TwoFACodeMail($verificationCode));
     }
 
     private function validateAction(UserID $userID, Email $email): void

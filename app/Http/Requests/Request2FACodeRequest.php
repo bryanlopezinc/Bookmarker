@@ -7,7 +7,7 @@ namespace App\Http\Requests;
 use App\Rules\UsernameOrEmailRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-final class RequestVerificationCodeRequest extends FormRequest
+final class Request2FACodeRequest extends FormRequest
 {
     public function rules(): array
     {

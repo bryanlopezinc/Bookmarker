@@ -6,6 +6,6 @@ namespace App\Exceptions;
 
 use RuntimeException;
 
-final class InvalidVerificationCodeException extends RuntimeException
+final class Invalid2FACodeException extends RuntimeException
 {
 }

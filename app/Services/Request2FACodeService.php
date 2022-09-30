@@ -8,10 +8,10 @@ use App\DataTransferObjects\User;
 use App\Exceptions\InvalidUsernameException;
 use App\QueryColumns\UserAttributes;
 use App\Repositories\UserRepository;
-use App\Cache\VerificationCodesRepository;
-use App\Http\Requests\RequestVerificationCodeRequest as Request;
-use App\Contracts\VerificationCodeGeneratorInterface;
-use App\Mail\VerificationCodeMail;
+use App\Cache\TwoFACodeRepository;
+use App\Http\Requests\Request2FACodeRequest as Request;
+use App\Contracts\TwoFACodeGeneratorInterface;
+use App\Mail\TwoFACodeMail;
 use App\ValueObjects\{Email, Username};
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -20,12 +20,12 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 
-final class RequestVerificationCodeService
+final class Request2FACodeService
 {
     public function __construct(
-        private readonly VerificationCodesRepository $tokens,
+        private readonly TwoFACodeRepository $twoFACodeRepository,
         private readonly UserRepository $userRepository,
-        private readonly VerificationCodeGeneratorInterface $codeGenerator
+        private readonly TwoFACodeGeneratorInterface $twoFACodeGenerator
     ) {
     }
 
@@ -33,19 +33,19 @@ final class RequestVerificationCodeService
     {
         $maxRequestsPerMinute = 1;
 
-        $this->ensureValidCrendentials($user = $this->getUser($request), $request);
+        $this->ensureValidCredentials($user = $this->getUser($request), $request);
 
-        $verificationCodeSent = RateLimiter::attempt($this->key($user), $maxRequestsPerMinute, function () use ($user) {
-            $this->tokens->put(
+        $twoFACodeSent = RateLimiter::attempt($this->key($user), $maxRequestsPerMinute, function () use ($user) {
+            $this->twoFACodeRepository->put(
                 $user->id,
-                $verificationCode = $this->codeGenerator->generate(),
+                $twoFACode = $this->twoFACodeGenerator->generate(),
                 now()->addMinutes(setting('VERIFICATION_CODE_EXPIRE'))
             );
 
-            Mail::to($user->email->value)->queue(new VerificationCodeMail($verificationCode));
+            Mail::to($user->email->value)->queue(new TwoFACodeMail($twoFACode));
         });
 
-        if (!$verificationCodeSent) {
+        if (!$twoFACodeSent) {
             throw new  ThrottleRequestsException('Too Many Requests');
         }
     }
@@ -66,7 +66,7 @@ final class RequestVerificationCodeService
         }
     }
 
-    private function ensureValidCrendentials(User|false $user, Request $request): void
+    private function ensureValidCredentials(User|false $user, Request $request): void
     {
         $exception = new HttpResponseException(response()->json([
             'message' => 'Invalid Credentials'

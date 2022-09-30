@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\ValueObjects;
 
-use App\Exceptions\InvalidVerificationCodeException;
+use App\Exceptions\Invalid2FACodeException;
 use App\ValueObjects\PositiveNumber;
 use Illuminate\Support\Facades\Crypt;
 
-final class VerificationCode
+final class TwoFACode
 {
     public const LENGTH = 5;
 
@@ -23,7 +23,7 @@ final class VerificationCode
         $length = strlen((string)$value);
 
         if ($length !== self::LENGTH) {
-            throw new InvalidVerificationCodeException(
+            throw new Invalid2FACodeException(
                 sprintf('Two factor code must be %s numbers but got %s', self::LENGTH, $length)
             );
         }
@@ -39,7 +39,7 @@ final class VerificationCode
         return new self((int) $code);
     }
 
-    public function equals(VerificationCode $code): bool
+    public function equals(TwoFACode $code): bool
     {
         return $code->value === $this->value;
     }

@@ -9,11 +9,11 @@ use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
-use Tests\Traits\ResquestsVerificationCode;
+use Tests\Traits\Resquests2FACode;
 
 final class LogoutTest extends TestCase
 {
-    use ResquestsVerificationCode;
+    use Resquests2FACode;
 
     protected static string $accessToken;
     protected static string $refreshToken;
@@ -52,7 +52,7 @@ final class LogoutTest extends TestCase
             'client_id' => $client->id,
             'client_secret' => $client->secret,
             'grant_type' => 'password',
-            'two_fa_code' => (string)$this->getVerificationCode($user->username, 'password'),
+            'two_fa_code' => (string)$this->get2FACode($user->username, 'password'),
         ])->assertOk();
 
         static::$accessToken =  $response->json('data.token.access_token');

@@ -6,10 +6,10 @@ namespace App\Cache;
 
 use App\ValueObjects\Email;
 use App\ValueObjects\UserID;
-use App\ValueObjects\VerificationCode;
+use App\ValueObjects\TwoFACode;
 use Illuminate\Contracts\Cache\Repository;
 
-final class SecondaryEmailsVerificationCodesRepository
+final class SecondaryEmailVerificationCodeRepository
 {
     public function __construct(private Repository $store)
     {
@@ -18,7 +18,7 @@ final class SecondaryEmailsVerificationCodesRepository
     public function put(
         UserID $userID,
         Email $email,
-        VerificationCode $code,
+        TwoFACode $code,
         \DateTimeInterface|\DateInterval|int  $ttl
     ): void {
         $record = [];

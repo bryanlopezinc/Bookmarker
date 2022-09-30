@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Rules;
 
-use App\Exceptions\InvalidVerificationCodeException;
-use App\ValueObjects\VerificationCode;
+use App\Exceptions\Invalid2FACodeException;
+use App\ValueObjects\TwoFACode;
 use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Contracts\Validation\ValidatorAwareRule;
 use Illuminate\Validation\Validator;
 
-final class VerificationCodeRule implements Rule, ValidatorAwareRule
+final class TwoFACodeRule implements Rule, ValidatorAwareRule
 {
     private Validator $validator;
 
@@ -28,16 +28,16 @@ final class VerificationCodeRule implements Rule, ValidatorAwareRule
     {
         try {
             if (!$this->validator->validateInteger($attribute, $value)) {
-                throw new InvalidVerificationCodeException;
+                throw new Invalid2FACodeException;
             }
 
             if (is_string($value)) {
-                throw new InvalidVerificationCodeException;
+                throw new Invalid2FACodeException;
             }
 
-            new VerificationCode($value);
+            new TwoFACode($value);
             return true;
-        } catch (InvalidVerificationCodeException) {
+        } catch (Invalid2FACodeException) {
             return false;
         }
     }

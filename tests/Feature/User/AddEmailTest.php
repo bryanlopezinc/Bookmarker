@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\User;
 
-use App\Mail\VerificationCodeMail;
+use App\Mail\TwoFACodeMail;
 use App\Models\SecondaryEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -53,7 +53,7 @@ class AddEmailTest extends TestCase
 
         $this->addEmailToAccount(['email' => $this->faker->unique()->email])->assertOk();
 
-        Mail::assertQueued(VerificationCodeMail::class);
+        Mail::assertQueued(TwoFACodeMail::class);
     }
 
     public function testCanAddAnotherEmailAfter_5_minutes_WithoutVerifyingFirstEmail(): void

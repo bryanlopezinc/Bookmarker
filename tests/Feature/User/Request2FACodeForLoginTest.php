@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\User;
 
-use App\ValueObjects\VerificationCode;
-use App\Contracts\VerificationCodeGeneratorInterface;
-use App\Mail\VerificationCodeMail;
+use App\ValueObjects\TwoFACode;
+use App\Contracts\TwoFACodeGeneratorInterface;
+use App\Mail\TwoFACodeMail;
 use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Mail;
@@ -13,7 +13,7 @@ use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
 use Laravel\Passport\Passport;
 
-class RequestVerificationCodeTest extends TestCase
+class Request2FACodeForLoginTest extends TestCase
 {
     private function getTestResponse(array $parameters = [], array $headers = []): TestResponse
     {
@@ -69,9 +69,9 @@ class RequestVerificationCodeTest extends TestCase
         Mail::fake();
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $mock = $this->getMockBuilder(VerificationCodeGeneratorInterface::class)->getMock();
-        $mock->expects($this->once())->method('generate')->willReturn(new VerificationCode($verificationCode = 12345));
-        $this->swap(VerificationCodeGeneratorInterface::class, $mock);
+        $mock = $this->getMockBuilder(TwoFACodeGeneratorInterface::class)->getMock();
+        $mock->expects($this->once())->method('generate')->willReturn(new TwoFACode($verificationCode = 12345));
+        $this->swap(TwoFACodeGeneratorInterface::class, $mock);
 
         $user = UserFactory::new()->create();
 
@@ -80,9 +80,9 @@ class RequestVerificationCodeTest extends TestCase
             'password' => 'password',
         ])->assertOk();
 
-        Mail::assertQueued(function (VerificationCodeMail $mail) use ($user, $verificationCode) {
+        Mail::assertQueued(function (TwoFACodeMail $mail) use ($user, $verificationCode) {
             $this->assertSame($user->email, $mail->to[0]['address']);
-            $this->assertSame($verificationCode, $mail->getVerificationCode()->code());
+            $this->assertSame($verificationCode, $mail->get2FACode()->code());
             return true;
         });
     }

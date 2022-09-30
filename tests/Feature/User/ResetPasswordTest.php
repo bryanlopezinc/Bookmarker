@@ -10,12 +10,12 @@ use Database\Factories\UserFactory;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
-use Tests\Traits\ResquestsVerificationCode;
+use Tests\Traits\Resquests2FACode;
 use Laravel\Passport\Database\Factories\ClientFactory;
 
 class ResetPasswordTest extends TestCase
 {
-    use ResquestsVerificationCode;
+    use Resquests2FACode;
 
     private const NEW_PASSWORD = 'abcdef123';
 
@@ -136,7 +136,7 @@ class ResetPasswordTest extends TestCase
             'client_id' => $client->id,
             'client_secret' => $client->secret,
             'grant_type' => 'password',
-            'two_fa_code' => (string) $this->getVerificationCode($user->username, self::NEW_PASSWORD),
+            'two_fa_code' => (string) $this->get2FACode($user->username, self::NEW_PASSWORD),
         ])->assertOk();
     }
 

@@ -13,11 +13,11 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
 use Laravel\Passport\Client;
-use Tests\Traits\ResquestsVerificationCode;
+use Tests\Traits\Resquests2FACode;
 
 class LoginUserTest extends TestCase
 {
-    use ResquestsVerificationCode;
+    use Resquests2FACode;
 
     private Client $client;
     private User $user;
@@ -125,7 +125,7 @@ class LoginUserTest extends TestCase
             }'),
         ]);
 
-        $code = (string)$this->getVerificationCode($this->user->username, 'password');
+        $code = (string)$this->get2FACode($this->user->username, 'password');
 
         $this->getTestResponse([
             'username'  => $this->user->username,
@@ -192,7 +192,7 @@ class LoginUserTest extends TestCase
             }'),
         ]);
 
-        $code = (string)$this->getVerificationCode($email, 'password');
+        $code = (string)$this->get2FACode($email, 'password');
 
         $this->getTestResponse([
             'username'  => $email,
@@ -217,7 +217,7 @@ class LoginUserTest extends TestCase
             }'),
         ]);
 
-        $code = (string)$this->getVerificationCode($email, 'password');
+        $code = (string)$this->get2FACode($email, 'password');
 
         $this->getTestResponse([
             'username'  => $email,
@@ -255,7 +255,7 @@ class LoginUserTest extends TestCase
             }'),
         ]);
 
-        $code = (string)$this->getVerificationCode($email, 'password');
+        $code = (string)$this->get2FACode($email, 'password');
 
         $this->travel(11)->minutes(function () use ($code, $email) {
             $this->getTestResponse([
@@ -275,7 +275,7 @@ class LoginUserTest extends TestCase
 
     public function testWillNotLoginUserWhenCodeIsInvalid(): void
     {
-        $code = $this->getVerificationCode($this->user->username, 'password');
+        $code = $this->get2FACode($this->user->username, 'password');
 
         //wrong code
         $this->getTestResponse([
@@ -318,7 +318,7 @@ class LoginUserTest extends TestCase
 
     public function testLocationWillBeUnknownWhenIpAttributeIsMissing(): void
     {
-        $code = (string)$this->getVerificationCode($this->user->username, 'password');
+        $code = (string)$this->get2FACode($this->user->username, 'password');
 
         Mail::fake();
         Http::fake();
@@ -344,7 +344,7 @@ class LoginUserTest extends TestCase
 
     public function testDeviceWillBeUnknownWhenUserAgentAttributeIsMissing(): void
     {
-        $code = (string)$this->getVerificationCode($this->user->username, 'password');
+        $code = (string)$this->get2FACode($this->user->username, 'password');
 
         Mail::fake();
 

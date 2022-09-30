@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\User;
 
-use App\Contracts\VerificationCodeGeneratorInterface;
-use App\Mail\VerificationCodeMail;
+use App\Contracts\TwoFACodeGeneratorInterface;
+use App\Mail\TwoFACodeMail;
 use App\Models\SecondaryEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -77,7 +77,7 @@ class VerifySecondaryEmailTest extends TestCase
 
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $verificationCode = $this->getVerificationCode(function () use ($email) {
+        $verificationCode = $this->get2FACode(function () use ($email) {
             $this->addEmailToAccount(['email' => $email])->assertOk();
         });
 
@@ -98,7 +98,7 @@ class VerifySecondaryEmailTest extends TestCase
 
         Passport::actingAs(UserFactory::new()->create());
 
-        $verificationCode = $this->getVerificationCode(function () use ($email) {
+        $verificationCode = $this->get2FACode(function () use ($email) {
             $this->addEmailToAccount(['email' => $email])->assertOk();
         });
 
@@ -115,8 +115,8 @@ class VerifySecondaryEmailTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        /** @var VerificationCodeGeneratorInterface */
-        $generator = app(VerificationCodeGeneratorInterface::class);
+        /** @var TwoFACodeGeneratorInterface */
+        $generator = app(TwoFACodeGeneratorInterface::class);
 
         $this->verifySecondaryEmail([
             'email' => $this->faker->unique()->email,
@@ -131,7 +131,7 @@ class VerifySecondaryEmailTest extends TestCase
 
         $email = $this->faker->unique()->email;
 
-        $verificationCode = $this->getVerificationCode(function () use ($email) {
+        $verificationCode = $this->get2FACode(function () use ($email) {
             $this->addEmailToAccount(['email' => $email])->assertOk();
         });
 
@@ -151,7 +151,7 @@ class VerifySecondaryEmailTest extends TestCase
         [$john, $alex] = UserFactory::new()->count(2)->create()->all();
 
         Passport::actingAs($john);
-        $verificationCodeSentOnBehalfOfJohn = $this->getVerificationCode(function () use ($email) {
+        $verificationCodeSentOnBehalfOfJohn = $this->get2FACode(function () use ($email) {
             $this->addEmailToAccount(['email' => $email])->assertOk();
         });
 
@@ -175,13 +175,13 @@ class VerifySecondaryEmailTest extends TestCase
 
         //brian adds email
         Passport::actingAs($brian);
-        $verificationCodeSentOnBehalfOfBrian = $this->getVerificationCode(function () use ($email) {
+        $verificationCodeSentOnBehalfOfBrian = $this->get2FACode(function () use ($email) {
             $this->addEmailToAccount(['email' => $email])->assertOk();
         });
 
         //stewie adds same email (stewie and brian both have access to same email).
         Passport::actingAs($stewie);
-        $verificationCodeSentOnBehalfOfStewie = $this->getVerificationCode(function () use ($email) {
+        $verificationCodeSentOnBehalfOfStewie = $this->get2FACode(function () use ($email) {
             $this->addEmailToAccount(['email' => $email])->assertOk();
         });
 
@@ -201,14 +201,14 @@ class VerifySecondaryEmailTest extends TestCase
             ->assertExactJson(['message' => 'Email already exists']);
     }
 
-    private function getVerificationCode(\Closure $callback): int
+    private function get2FACode(\Closure $callback): int
     {
         $verificationCode = 0;
         Mail::fake();
         $callback();
 
-        Mail::assertQueued(function (VerificationCodeMail $mail) use (&$verificationCode) {
-            $verificationCode = $mail->getVerificationCode()->code();
+        Mail::assertQueued(function (TwoFACodeMail $mail) use (&$verificationCode) {
+            $verificationCode = $mail->get2FACode()->code();
             return true;
         });
 
@@ -222,7 +222,7 @@ class VerifySecondaryEmailTest extends TestCase
         $emailAddedToAccount = $this->faker->unique()->email;
         $anotherEmail = $this->faker->unique()->email;
 
-        $verificationCode = $this->getVerificationCode(function () use ($emailAddedToAccount) {
+        $verificationCode = $this->get2FACode(function () use ($emailAddedToAccount) {
             $this->addEmailToAccount(['email' => $emailAddedToAccount])->assertOk();
         });
 
@@ -239,7 +239,7 @@ class VerifySecondaryEmailTest extends TestCase
 
         Passport::actingAs(UserFactory::new()->create());
 
-        $verificationCode = $this->getVerificationCode(function () use ($email) {
+        $verificationCode = $this->get2FACode(function () use ($email) {
             $this->addEmailToAccount(['email' => $email])->assertOk();
         });
 

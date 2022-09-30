@@ -109,7 +109,7 @@ Route::middleware([CheckClientCredentials::class])->group(function () {
         ->middleware([DBTransaction::class])
         ->name('resetPassword');
 
-    Route::post('users/request-verification-code', App\Http\Controllers\Auth\RequestVerificationCodeController::class)
+    Route::post('users/request-verification-code', App\Http\Controllers\Auth\Request2FACodeController::class)
         ->middleware([DBTransaction::class])
         ->name('requestVerificationCode');
 

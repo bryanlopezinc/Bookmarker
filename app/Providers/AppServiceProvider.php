@@ -8,12 +8,12 @@ use App\Contracts\UrlHasherInterface;
 use App\HashedUrl;
 use App\Jobs\CheckBookmarksHealth;
 use App\Observers\BookmarkObserver;
-use App\Cache\VerificationCodesRepository;
-use App\Contracts\VerificationCodeGeneratorInterface;
+use App\Cache\TwoFACodeRepository;
+use App\Contracts\TwoFACodeGeneratorInterface;
 use App\Repositories\OAuth\EnsureEmailHasBeenVerified;
-use App\Repositories\OAuth\VerifyVerificationCode;
+use App\Repositories\OAuth\Verify2FACode;
 use App\Utils\UrlHasher;
-use App\Utils\VerificationCodeGenerator;
+use App\Utils\TwoFACodeGenerator;
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Bridge\UserRepository;
@@ -28,11 +28,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->app->bind(UserRepository::class, function () {
-            return new VerifyVerificationCode(
+            return new Verify2FACode(
                 new EnsureEmailHasBeenVerified(
                     new UserRepository(app(Hasher::class))
                 ),
-                app(VerificationCodesRepository::class)
+                app(TwoFACodeRepository::class)
             );
         });
 
@@ -44,7 +44,7 @@ class AppServiceProvider extends ServiceProvider
             CheckBookmarksHealth::dispatch(new BookmarksCollection($observer->getRetrievedBookmarks()));
         });
 
-        $this->app->bind(VerificationCodeGeneratorInterface::class, VerificationCodeGenerator::class);
+        $this->app->bind(TwoFACodeGeneratorInterface::class, TwoFACodeGenerator::class);
 
         $this->bindUrlHasher();
     }

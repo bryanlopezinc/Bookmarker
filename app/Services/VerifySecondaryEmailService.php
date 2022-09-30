@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Repositories\UserRepository;
-use App\Cache\SecondaryEmailsVerificationCodesRepository as PendingVerifications;
+use App\Cache\SecondaryEmailVerificationCodeRepository as PendingVerifications;
 use App\Exceptions\HttpException;
 use App\ValueObjects\Email;
 use App\ValueObjects\UserID;
-use App\ValueObjects\VerificationCode;
+use App\ValueObjects\TwoFACode;
 use Illuminate\Http\Response;
 
 final class VerifySecondaryEmailService
@@ -18,7 +18,7 @@ final class VerifySecondaryEmailService
     {
     }
 
-    public function verify(UserID $userID, Email $secondaryEmail, VerificationCode $verificationCode): void
+    public function verify(UserID $userID, Email $secondaryEmail, TwoFACode $twoFACode): void
     {
         if (!$this->pendingVerifications->has($userID)) {
             throw new HttpException(['message' => 'Verification code expired'], Response::HTTP_BAD_REQUEST);
@@ -26,9 +26,9 @@ final class VerifySecondaryEmailService
 
         $verificationData = $this->pendingVerifications->get($userID);
         $unVerifiedEmailAddedByUser = $verificationData->email;
-        $verificationCodeGeneratedOnBehalfOfUser = $verificationData->verificationCode;
+        $twoFACodeGeneratedOnBehalfOfUser = $verificationData->twoFACode;
 
-        if (!$verificationCodeGeneratedOnBehalfOfUser->equals($verificationCode) || !$unVerifiedEmailAddedByUser->equals($secondaryEmail)) {
+        if (!$twoFACodeGeneratedOnBehalfOfUser->equals($twoFACode) || !$unVerifiedEmailAddedByUser->equals($secondaryEmail)) {
             throw new HttpException(['message' => 'Invalid verification code'], Response::HTTP_BAD_REQUEST);
         }
 

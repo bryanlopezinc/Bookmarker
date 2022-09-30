@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace App\Repositories\OAuth;
 
-use App\Cache\VerificationCodesRepository;
+use App\Cache\TwoFACodeRepository;
 use App\ValueObjects\UserID;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Repositories\UserRepositoryInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
-use App\ValueObjects\VerificationCode;
+use App\ValueObjects\TwoFACode;
 
-final class VerifyVerificationCode implements UserRepositoryInterface
+final class Verify2FACode implements UserRepositoryInterface
 {
     public function __construct(
         private readonly UserRepositoryInterface $userRepository,
-        private readonly VerificationCodesRepository $verificationCodes
+        private readonly TwoFACodeRepository $twoFACodeRepository
     ) {
     }
 
@@ -34,22 +34,22 @@ final class VerifyVerificationCode implements UserRepositoryInterface
 
         $userID = new UserID($user->getIdentifier());
 
-        if (!$this->verificationCodes->has($userID)) {
+        if (!$this->twoFACodeRepository->has($userID)) {
             $this->throwException();
         };
 
-        if (!$this->verificationCodeMatches(VerificationCode::fromString($request->input('two_fa_code')), $userID)) {
+        if (!$this->twoFACodeMatches(TwoFACode::fromString($request->input('two_fa_code')), $userID)) {
             $this->throwException();
         };
 
-        $this->verificationCodes->forget($userID);
+        $this->twoFACodeRepository->forget($userID);
 
         return $user;
     }
 
-    private function verificationCodeMatches(VerificationCode $code, UserID $userID): bool
+    private function twoFACodeMatches(TwoFACode $code, UserID $userID): bool
     {
-        return $this->verificationCodes->get($userID)->equals($code);
+        return $this->twoFACodeRepository->get($userID)->equals($code);
     }
 
     private function throwException(): void

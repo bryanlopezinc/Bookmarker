@@ -9,11 +9,11 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Client;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
-use Tests\Traits\ResquestsVerificationCode;
+use Tests\Traits\Resquests2FACode;
 
 class RefreshTokenTest extends TestCase
 {
-    use ResquestsVerificationCode;
+    use Resquests2FACode;
 
     protected function getTestResponse(array $parameters = [], array $headers = []): TestResponse
     {
@@ -63,7 +63,7 @@ class RefreshTokenTest extends TestCase
             'client_id' => $client->id,
             'client_secret' => $client->secret,
             'grant_type' => 'password',
-            'two_fa_code' => (string)$this->getVerificationCode($user->username, 'password'),
+            'two_fa_code' => (string)$this->get2FACode($user->username, 'password'),
             'with_ip' => '24.48.0.1',
             'with_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
         ])->assertOk();

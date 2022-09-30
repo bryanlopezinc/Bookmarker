@@ -9,9 +9,8 @@ use App\ValueObjects\Email;
 use App\ValueObjects\UserID;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
 
-final class DeleteEmailController extends Controller
+final class DeleteEmailController
 {
     public function __invoke(Request $request, RemoveEmailService $service): JsonResponse
     {

@@ -45,7 +45,7 @@ final class AddEmailToAccountService
             ]);
         }
 
-        $this->ensureHasNoPendingVerification($userID, $email);
+        $this->ensureHasNoPendingVerification($userID);
     }
 
     /**

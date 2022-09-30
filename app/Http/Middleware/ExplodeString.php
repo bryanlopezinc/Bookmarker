@@ -16,7 +16,7 @@ final class ExplodeString
      * @param  \Illuminate\Http\Request  $request
      * @return mixed
      */
-    public function handle($request, \Closure $next, ...$keys)
+    public function handle($request, \Closure $next, string ...$keys)
     {
         $converted = [];
 

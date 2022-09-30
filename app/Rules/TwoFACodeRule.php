@@ -17,6 +17,8 @@ final class TwoFACodeRule implements Rule, ValidatorAwareRule
     public function setValidator($validator)
     {
         $this->validator = $validator;
+
+        return $this;
     }
 
     /**

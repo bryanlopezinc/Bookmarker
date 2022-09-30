@@ -10,16 +10,14 @@ use App\ValueObjects\Url;
 
 final class UrlHasher implements UrlHasherInterface
 {
-    public function __construct(
-        private readonly string $algo,
-        private readonly array $options = []
-    ) {
+    public function __construct(private readonly string $algo)
+    {
     }
 
     public function hashUrl(Url $url): HashedUrl
     {
         return (new HashedUrl)->make(
-            hash($this->algo, $url->toString(), options: $this->options)
+            hash($this->algo, $url->toString())
         );
     }
 }

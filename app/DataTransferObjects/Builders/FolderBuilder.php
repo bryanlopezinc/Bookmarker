@@ -29,7 +29,7 @@ final class FolderBuilder extends Builder
             ->when($keyExists('description'), fn (FolderBuilder $b) => $b->setDescription($folder->description))
             ->when($keyExists('created_at'), fn (FolderBuilder $b) => $b->setCreatedAt($folder->created_at))
             ->when($keyExists('updated_at'), fn (FolderBuilder $b) => $b->setUpdatedAt($folder->updated_at))
-            ->when($keyExists('bookmarks_count'), fn (FolderBuilder $b) => $b->setBookmarksCount((int)$folder->bookmarks_count))
+            ->when($keyExists('bookmarks_count'), fn (FolderBuilder $b) => $b->setBookmarksCount((int)$folder->bookmarks_count)) // @phpstan-ignore-line
             ->when($keyExists('is_public'), fn (FolderBuilder $b) => $b->setisPublic($folder->is_public))
             ->when($keyExists('tags'), fn (FolderBuilder $b) => $b->setTags($folder->getRelation('tags')->all()));
     }

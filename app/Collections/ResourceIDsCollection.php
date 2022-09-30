@@ -20,7 +20,7 @@ final class ResourceIDsCollection extends BaseCollection
     public static function fromNativeTypes(iterable $ids): self
     {
         return new ResourceIDsCollection(
-            collect($ids)->map(fn (int $id) => new ResourceID($id))
+            collect($ids)->map(fn (int $id) => new ResourceID($id)) // @phpstan-ignore-line
         );
     }
 

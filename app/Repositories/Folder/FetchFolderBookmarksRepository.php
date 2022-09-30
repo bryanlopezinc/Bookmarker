@@ -54,7 +54,7 @@ final class FetchFolderBookmarksRepository
 
         $favourites = isset($options['userID'])
             ? (new FavouriteRepository)->intersect($bookmarkIDs, $options['userID'])->asIntegers()
-            : collect();
+            : collect([]);
 
         $result->setCollection(
             (new FetchBookmarksRepository)

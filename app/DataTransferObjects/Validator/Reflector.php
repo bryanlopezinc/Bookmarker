@@ -17,7 +17,7 @@ class Reflector
      */
     public function getClassAttributesInstances(Object $object): array
     {
-        $attrbutes = collect();
+        $attrbutes = collect([]);
         $reflection = new ReflectionClass($object);
 
         while ($reflection !== false) {

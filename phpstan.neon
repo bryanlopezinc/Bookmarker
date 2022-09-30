@@ -7,4 +7,3 @@ parameters:
     checkGenericClassInNonGenericObjectType: false
     paths:
         -   app
-        -   tests

@@ -18,8 +18,8 @@ final class UpdateBookmarkRequest extends FormRequest
     {
         $rules = collect((new CreateBookmarkRequest())->rules())->except(['url'])->put('id', ['required', new ResourceIdRule]);
 
-        $rules->put('title', collect($rules['title'])->reject('nullable')->push('required_without_all:tags,description')->values()->all());
-        $rules->put('tags', collect($rules['tags'])->reject('nullable')->values()->all());
+        $rules->put('title', collect($rules['title'])->reject('nullable')->push('required_without_all:tags,description')->values()->all()); // @phpstan-ignore-line
+        $rules->put('tags', collect($rules['tags'])->reject('nullable')->values()->all());// @phpstan-ignore-line
 
         return $rules->all();
     }

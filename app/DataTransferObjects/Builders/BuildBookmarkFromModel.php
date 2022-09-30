@@ -28,8 +28,8 @@ final class BuildBookmarkFromModel
             ->when($keyExists('updated_at'), fn (BookmarkBuilder $b) => $b->updatedAt((string)$model->updated_at))
             ->when($keyExists('tags'), $this->tagsBuilderCallback($attributes))
             ->when($keyExists('site'), $this->siteBuilderCallback($model))
-            ->when($keyExists('is_healthy'), fn (BookmarkBuilder $b) => $b->isHealthy(is_null($model->is_healthy) ? true :  (bool)$model->is_healthy))
-            ->when($keyExists('is_user_favourite'), fn (BookmarkBuilder $b) => $b->isUserFavourite($model->is_user_favourite))
+            ->when($keyExists('is_healthy'), fn (BookmarkBuilder $b) => $b->isHealthy(is_null($model->is_healthy) ? true :  (bool)$model->is_healthy)) // @phpstan-ignore-line
+            ->when($keyExists('is_user_favourite'), fn (BookmarkBuilder $b) => $b->isUserFavourite($model->is_user_favourite)) // @phpstan-ignore-line
             ->when($keyExists('url_canonical_hash'), fn (BookmarkBuilder $b) => $b->canonicalUrlHash($model->url_canonical_hash))
             ->when($keyExists('resolved_url'), fn (BookmarkBuilder $b) => $b->canonicalUrl($model->resolved_url))
             ->when($keyExists('url_canonical'), fn (BookmarkBuilder $b) => $b->resolvedUrl($model->url_canonical))
@@ -43,10 +43,13 @@ final class BuildBookmarkFromModel
         };
     }
 
+    /**
+     * @param array<string,mixed> $attributes
+     */
     private function tagsBuilderCallback(array $attributes): callable
     {
         return function (BookmarkBuilder $b) use ($attributes) {
-            return $b->tags(collect($attributes['tags'])->pluck('name')->all());
+            return $b->tags(collect($attributes['tags'])->pluck('name')->all()); // @phpstan-ignore-line
         };
     }
 }

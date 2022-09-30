@@ -39,7 +39,7 @@ class FetchBookmarksRepository
 
         //Force bookmark to be health checked by model event observer.
         if (!$columns->isEmpty() && !$columns->has($attributesNeededToCheckBookmarkHealth = ['id', 'url'])) {
-            $columns = new BookmarkAttributes(collect($columns)->push(...$attributesNeededToCheckBookmarkHealth)->unique()->all());
+            $columns = new BookmarkAttributes(collect($columns)->push(...$attributesNeededToCheckBookmarkHealth)->unique()->all()); // @phpstan-ignore-line
         }
 
         return Model::WithQueryOptions($columns)

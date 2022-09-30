@@ -55,7 +55,7 @@ final class AddEmailToAccountService
      */
     private function ensureHasNoPendingVerification(UserID $userID, Email $email): void
     {
-        if ($this->pendingVerifications->has($userID, $email)) {
+        if ($this->pendingVerifications->has($userID)) {
             throw new HttpException([
                 'message' => 'Verify email',
                 'error_code' => 3118

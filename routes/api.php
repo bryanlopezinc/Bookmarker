@@ -30,6 +30,8 @@ Route::middleware('auth:api')->group(function () {
         ->name('importBookmark');
 
     Route::middleware(DBTransaction::class)->group(function () {
+        Route::delete('emails/remove', Controllers\Auth\DeleteEmailController::class)->name('removeEmailFromAccount');
+
         Route::post('bookmarks', Controllers\CreateBookmarkController::class)
             ->middleware([ConvertStringToArray::keys('tags')])
             ->name('createBookmark');

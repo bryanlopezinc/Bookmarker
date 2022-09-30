@@ -86,4 +86,9 @@ final class UserRepository
             'verified_at' => now()
         ]);
     }
+
+    public function deleteSecondaryEmail(Email $email): bool
+    {
+        return (bool) SecondaryEmail::query()->where('email', $email->value)->delete();
+    }
 }

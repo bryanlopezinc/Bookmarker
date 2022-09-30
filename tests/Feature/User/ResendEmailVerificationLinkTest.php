@@ -18,7 +18,6 @@ class ResendEmailVerificationLinkTest extends TestCase
     use WithFaker;
 
     private static string $verificationUrl;
-    private static User $user;
 
     protected function resendVerificationLinkResponse(array $parameters = []): TestResponse
     {
@@ -62,7 +61,6 @@ class ResendEmailVerificationLinkTest extends TestCase
         config(['settings.EMAIL_VERIFICATION_URL' => $this->faker->url . '?id=:id&hash=:hash&signature=:signature&expires=:expires']);
 
         $user = UserFactory::new()->unverified()->create();
-        static::$user = $user;
 
         Notification::fake();
 

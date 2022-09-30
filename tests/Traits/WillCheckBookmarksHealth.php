@@ -9,7 +9,7 @@ use Tests\TestBookmarksHealthRepository;
 trait WillCheckBookmarksHealth
 {
     /**
-     * @param array<int> bookmarks
+     * @param array<int> $bookmarks
      */
     protected function assertBookmarksHealthWillBeChecked(array $bookmarks): void
     {
@@ -19,7 +19,7 @@ trait WillCheckBookmarksHealth
     }
 
     /**
-     * @param array<int> bookmarkIDs
+     * @param array<int> $bookmarkIDs
      */
     protected function assertBookmarksHealthWillNotBeChecked(array $bookmarkIDs): void
     {

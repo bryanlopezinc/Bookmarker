@@ -91,7 +91,7 @@ class LoginUserTest extends TestCase
             'grant_type' => 'password',
             'two_fa_code' => '12345',
         ])
-            ->assertUnprocessable(400)
+            ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'username' => [
                     'The username must be a valid username or email'
@@ -106,7 +106,7 @@ class LoginUserTest extends TestCase
             'grant_type' => 'password',
             'two_fa_code' => '12345',
         ])
-            ->assertUnprocessable(400)
+            ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'username' => [
                     'The username must be a valid username or email'

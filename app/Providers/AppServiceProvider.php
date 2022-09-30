@@ -8,7 +8,7 @@ use App\Contracts\UrlHasherInterface;
 use App\HashedUrl;
 use App\Jobs\CheckBookmarksHealth;
 use App\Observers\BookmarkObserver;
-use App\Cache\TwoFACodeRepository;
+use App\Cache\User2FACodeRepository;
 use App\Contracts\TwoFACodeGeneratorInterface;
 use App\Repositories\OAuth\EnsureEmailHasBeenVerified;
 use App\Repositories\OAuth\Verify2FACode;
@@ -32,7 +32,7 @@ class AppServiceProvider extends ServiceProvider
                 new EnsureEmailHasBeenVerified(
                     new UserRepository(app(Hasher::class))
                 ),
-                app(TwoFACodeRepository::class)
+                app(User2FACodeRepository::class)
             );
         });
 

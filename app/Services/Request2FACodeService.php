@@ -8,7 +8,7 @@ use App\DataTransferObjects\User;
 use App\Exceptions\InvalidUsernameException;
 use App\QueryColumns\UserAttributes;
 use App\Repositories\UserRepository;
-use App\Cache\TwoFACodeRepository;
+use App\Cache\User2FACodeRepository;
 use App\Http\Requests\Request2FACodeRequest as Request;
 use App\Contracts\TwoFACodeGeneratorInterface;
 use App\Mail\TwoFACodeMail;
@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\RateLimiter;
 final class Request2FACodeService
 {
     public function __construct(
-        private readonly TwoFACodeRepository $twoFACodeRepository,
+        private readonly User2FACodeRepository $user2FACodeRepository,
         private readonly UserRepository $userRepository,
         private readonly TwoFACodeGeneratorInterface $twoFACodeGenerator
     ) {
@@ -36,7 +36,7 @@ final class Request2FACodeService
         $this->ensureValidCredentials($user = $this->getUser($request), $request);
 
         $twoFACodeSent = RateLimiter::attempt($this->key($user), $maxRequestsPerMinute, function () use ($user) {
-            $this->twoFACodeRepository->put(
+            $this->user2FACodeRepository->put(
                 $user->id,
                 $twoFACode = $this->twoFACodeGenerator->generate(),
                 now()->addMinutes(setting('VERIFICATION_CODE_EXPIRE'))

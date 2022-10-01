@@ -12,7 +12,7 @@ use Tests\TestCase;
 
 class FetchFolderTest extends TestCase
 {
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function fetchFolderResponse(array $parameters = []): TestResponse
     {
         return $this->getJson(route('fetchFolder', $parameters));
     }
@@ -24,14 +24,14 @@ class FetchFolderTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->fetchFolderResponse()->assertUnauthorized();
     }
 
     public function testRequiredAttributesMustBePresent(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse()->assertJsonValidationErrors(['id']);
+        $this->fetchFolderResponse()->assertJsonValidationErrors(['id']);
     }
 
     public function testSuccessResponse(): void
@@ -41,7 +41,7 @@ class FetchFolderTest extends TestCase
         /** @var Model */
         $folder = FolderFactory::new()->create(['user_id' => $user->id]);
 
-        $this->getTestResponse(['id' => $folder->id])
+        $this->fetchFolderResponse(['id' => $folder->id])
             ->assertOk()
             ->assertJsonCount(11, 'data.attributes')
             ->assertJson(function (AssertableJson $json) use ($folder) {
@@ -95,13 +95,13 @@ class FetchFolderTest extends TestCase
         /** @var Model */
         $folder = FolderFactory::new()->create(['user_id' => $user->id]);
 
-        $this->getTestResponse(['id' => $folder->id + 1])->assertNotFound();
+        $this->fetchFolderResponse(['id' => $folder->id + 1])->assertNotFound();
     }
 
     public function testCanViewOnlyOwnFolder(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['id' => FolderFactory::new()->create()->id])->assertForbidden();
+        $this->fetchFolderResponse(['id' => FolderFactory::new()->create()->id])->assertForbidden();
     }
 }

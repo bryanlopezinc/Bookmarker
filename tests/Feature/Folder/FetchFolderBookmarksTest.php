@@ -18,7 +18,7 @@ class FetchFolderBookmarksTest extends TestCase
 {
     use WillCheckBookmarksHealth;
 
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function folderBookmarksResponse(array $parameters = []): TestResponse
     {
         return $this->getJson(route('folderBookmarks', $parameters));
     }
@@ -30,39 +30,39 @@ class FetchFolderBookmarksTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->folderBookmarksResponse()->assertUnauthorized();
     }
 
     public function testRequiredAttributesMustBePresent(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse()->assertJsonValidationErrors(['folder_id']);
+        $this->folderBookmarksResponse()->assertJsonValidationErrors(['folder_id']);
     }
 
     public function testPaginationDataMustBeValid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['per_page' => 3])
+        $this->folderBookmarksResponse(['per_page' => 3])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'per_page' => ['The per page must be at least 15.']
             ]);
 
-        $this->getTestResponse(['per_page' => 51])
+        $this->folderBookmarksResponse(['per_page' => 51])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'per_page' => ['The per page must not be greater than 39.']
             ]);
 
-        $this->getTestResponse(['page' => 2001])
+        $this->folderBookmarksResponse(['page' => 2001])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'page' => ['The page must not be greater than 2000.']
             ]);
 
-        $this->getTestResponse(['page' => -1])
+        $this->folderBookmarksResponse(['page' => -1])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'page' => ['The page must be at least 1.']
@@ -94,7 +94,7 @@ class FetchFolderBookmarksTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse([
+        $this->folderBookmarksResponse([
             'folder_id' => $folder->id
         ])
             ->assertOk()
@@ -171,7 +171,7 @@ class FetchFolderBookmarksTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse(['folder_id' => $folder->id])->assertOk();
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
 
         $this->assertBookmarksHealthWillBeChecked($bookmarkIDs->all());
     }
@@ -182,7 +182,7 @@ class FetchFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->create();
 
-        $this->getTestResponse([
+        $this->folderBookmarksResponse([
             'folder_id' => $folder->id
         ])->assertForbidden();
     }
@@ -195,7 +195,7 @@ class FetchFolderBookmarksTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse([
+        $this->folderBookmarksResponse([
             'folder_id' => $folder->id + 1
         ])->assertNotFound();
     }
@@ -208,6 +208,6 @@ class FetchFolderBookmarksTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse(['folder_id' => $folder->id])->assertJsonCount(0, 'data')->assertOk();
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertJsonCount(0, 'data')->assertOk();
     }
 }

@@ -59,7 +59,7 @@ class AddBookmarksToFolderTest extends TestCase
         Passport::actingAs(UserFactory::new()->create());
 
         $this->addBookmarksToFolderResponse([
-            'folder' =>12,
+            'folder' => 12,
             'bookmarks' => '1,2,3,4,5',
             'make_hidden' => '1,2,3,4,5,6'
         ])->assertJsonValidationErrors([
@@ -267,13 +267,13 @@ class AddBookmarksToFolderTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $folder = FolderFactory::new()->create([
+        $otherUsersFolder = FolderFactory::new()->create([
             'user_id' => UserFactory::new()->create()->id //Another user's folder
         ]);
 
         $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmarks->pluck('id')->implode(','),
-            'folder' => $folder->id
+            'folder' => $otherUsersFolder->id
         ])->assertForbidden();
     }
 
@@ -281,7 +281,7 @@ class AddBookmarksToFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarks = BookmarkFactory::new()->count(10)->create([
+        $otherUsersBookmarks = BookmarkFactory::new()->count(10)->create([
             'user_id' => UserFactory::new()->create()->id //Another user's bookmarks
         ]);
 
@@ -290,7 +290,7 @@ class AddBookmarksToFolderTest extends TestCase
         ]);
 
         $this->addBookmarksToFolderResponse([
-            'bookmarks' => $bookmarks->pluck('id')->implode(','),
+            'bookmarks' => $otherUsersBookmarks->pluck('id')->implode(','),
             'folder' => $folder->id
         ])->assertForbidden();
     }
@@ -299,16 +299,19 @@ class AddBookmarksToFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarks = BookmarkFactory::new()->count(3)->create([
-            'user_id' => $user->id
-        ]);
+        $invalidBookmarkIDs = BookmarkFactory::new()
+            ->count(3)
+            ->create(['user_id' => $user->id])
+            ->pluck('id')
+            ->map(fn (int $bookmarkID) => $bookmarkID + 1)
+            ->implode(',');
 
         $folder = FolderFactory::new()->create([
             'user_id' => $user->id
         ]);
 
         $this->addBookmarksToFolderResponse([
-            'bookmarks' => $bookmarks->pluck('id')->map(fn (int $bookmarkID) => $bookmarkID + 1)->implode(','),
+            'bookmarks' => $invalidBookmarkIDs,
             'folder' => $folder->id
         ])
             ->assertNotFound()

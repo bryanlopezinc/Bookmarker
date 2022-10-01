@@ -31,11 +31,17 @@ class CreateFolderTest extends TestCase
         $this->getTestResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationWhenRequiredAttrbutesAreMissing(): void
+    public function testRequiredAttrbutesMustBePresent(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
         $this->getTestResponse()->assertJsonValidationErrors(['name']);
+    }
+
+    public function testFolderNameMustNotBeEmpty(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
         $this->getTestResponse([
             'name' => ' ',
         ])->assertJsonValidationErrors(['name']);
@@ -74,6 +80,8 @@ class CreateFolderTest extends TestCase
         $this->assertEquals($name, $folder->name);
         $this->assertEquals($description, $folder->description);
         $this->assertFalse($folder->is_public);
+        $this->assertTrue($folder->created_at->isSameMinute());
+        $this->assertTrue($folder->updated_at->isSameMinute());
 
         $this->assertDatabaseHas(UserFoldersCount::class, [
             'user_id' => $user->id,
@@ -84,11 +92,16 @@ class CreateFolderTest extends TestCase
 
     public function testCanCreateFolderWithoutDescription(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        Passport::actingAs($user = UserFactory::new()->create());
 
         $this->getTestResponse([
             'name' => $this->faker->word,
         ])->assertCreated();
+
+        /** @var Folder */
+        $folder = Folder::query()->where('user_id', $user->id)->sole();
+
+        $this->assertNull($folder->description);
     }
 
     public function testCreatePublicFolder(): void

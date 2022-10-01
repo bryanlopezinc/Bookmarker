@@ -22,7 +22,7 @@ class DeleteFolderTest extends TestCase
 {
     use WithFaker, CreatesBookmark, WillCheckBookmarksHealth;
 
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function deleteFolderResponse(array $parameters = []): TestResponse
     {
         return $this->deleteJson(route('deleteFolder'), $parameters);
     }
@@ -34,14 +34,14 @@ class DeleteFolderTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->deleteFolderResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationWhenRequiredAttrbutesAreMissing(): void
+    public function testRequiredAttrbutesMustBePresent(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse()->assertJsonValidationErrors(['folder']);
+        $this->deleteFolderResponse()->assertJsonValidationErrors(['folder']);
     }
 
     public function testDeleteFolder(): void
@@ -68,7 +68,7 @@ class DeleteFolderTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse(['folder' => $folderIDToDelete])->assertOk();
+        $this->deleteFolderResponse(['folder' => $folderIDToDelete])->assertOk();
 
         //assert no other folder was deleted
         $folderIDs->reject($folderIDToDelete)->each(function (int $folderID) {
@@ -119,7 +119,7 @@ class DeleteFolderTest extends TestCase
             ])->assertCreated());
 
         //delete folder and delete all bookmarks in folder
-        $this->getTestResponse([
+        $this->deleteFolderResponse([
             'folder' => $folderID,
             'delete_bookmarks' => true
         ])->assertOk();
@@ -155,13 +155,13 @@ class DeleteFolderTest extends TestCase
         $this->assertBookmarksHealthWillNotBeChecked($userBookmarks->pluck('id')->all());
     }
 
-    public function testCanOnlyDeleteOwnFolder(): void
+    public function testFolderMustBelongToUser(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
         $folderID = FolderFactory::new()->create()->id;
 
-        $this->getTestResponse(['folder' => $folderID])->assertForbidden();
+        $this->deleteFolderResponse(['folder' => $folderID])->assertForbidden();
     }
 
     public function testCannotDeleteInvalidFolder(): void
@@ -170,7 +170,7 @@ class DeleteFolderTest extends TestCase
 
         $folderID = FolderFactory::new()->create()->id;
 
-        $this->getTestResponse(['folder' => $folderID + 1])
+        $this->deleteFolderResponse(['folder' => $folderID + 1])
             ->assertNotFound()
             ->assertExactJson([
                 'message' => "The folder does not exists"

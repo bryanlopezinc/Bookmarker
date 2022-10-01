@@ -15,7 +15,7 @@ class DeleteFolderTagsTest extends TestCase
 {
     use WithFaker;
 
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function deleteFolderTagsResponse(array $parameters = []): TestResponse
     {
         return $this->deleteJson(route('deleteFolderTags'), $parameters);
     }
@@ -27,14 +27,14 @@ class DeleteFolderTagsTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->deleteFolderTagsResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationWhenRequiredAttrbutesAreMissing(): void
+    public function testRequiredAttrbutesMustBePresent(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse()->assertJsonValidationErrors(['id', 'tags']);
+        $this->deleteFolderTagsResponse()->assertJsonValidationErrors(['id', 'tags']);
     }
 
     public function testWillDeleteFolderTags(): void
@@ -50,7 +50,7 @@ class DeleteFolderTagsTest extends TestCase
             'taggable_type' => Taggable::FOLDER_TYPE
         ]);
 
-        $this->getTestResponse([
+        $this->deleteFolderTagsResponse([
             'id' => $model->id,
             'tags' => $tag->name
         ])->assertOk();
@@ -58,7 +58,7 @@ class DeleteFolderTagsTest extends TestCase
         $this->assertDatabaseMissing(Taggable::class, $tagAttributes);
     }
 
-    public function testWillReturnNotFoundResponseIfFolderDoesNotExists(): void
+    public function testFolderMustExist(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -66,7 +66,7 @@ class DeleteFolderTagsTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse(['id' => $model->id + 1, 'tags' => $this->faker->word])->assertNotFound();
+        $this->deleteFolderTagsResponse(['id' => $model->id + 1, 'tags' => $this->faker->word])->assertNotFound();
     }
 
     public function testWillReturnSuccessIfFolderDoesNotHaveTags(): void
@@ -75,19 +75,19 @@ class DeleteFolderTagsTest extends TestCase
 
         $model = FolderFactory::new()->create(['user_id' => $user->id]);
 
-        $this->getTestResponse([
+        $this->deleteFolderTagsResponse([
             'id' => $model->id,
             'tags' => $this->faker->word
         ])->assertOk();
     }
 
-    public function testWillReturnForbiddenWhenUserDoesNotOwnFolder(): void
+    public function testFolderMustBelongToUser(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
         $model = FolderFactory::new()->create();
 
-        $this->getTestResponse([
+        $this->deleteFolderTagsResponse([
             'id' => $model->id,
             'tags' => $this->faker->word
         ])->assertForbidden();

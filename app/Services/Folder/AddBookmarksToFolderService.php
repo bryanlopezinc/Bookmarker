@@ -29,7 +29,7 @@ final class AddBookmarksToFolderService
 
     public function add(IDs $bookmarkIDs, ResourceID $folderID, IDs $makeHidden): void
     {
-        $folder = $this->repository->find($folderID, Attributes::only('id,userId,storage'));
+        $folder = $this->repository->find($folderID, Attributes::only('id,user_id,bookmarks_count'));
 
         (new EnsureAuthorizedUserOwnsResource)($folder);
 
@@ -55,7 +55,7 @@ final class AddBookmarksToFolderService
 
     private function validateBookmarks(IDs $bookmarkIDs): void
     {
-        $bookmarks = $this->bookmarksRepository->findManyById($bookmarkIDs, BookmarkAttributes::only('userId,id'));
+        $bookmarks = $this->bookmarksRepository->findManyById($bookmarkIDs, BookmarkAttributes::only('user_id,id'));
 
         if ($bookmarks->count() !== $bookmarkIDs->count()) {
             throw HttpException::notFound(['message' => 'The bookmarks does not exists']);

@@ -18,7 +18,7 @@ final class ResendVerificationLinkController
     {
         $request->validate(['email' => ['required', 'email']]);
 
-        $user = $repository->findByEmail(new Email($request->input('email')), UserAttributes::only('id,email,hasVerifiedEmail'));
+        $user = $repository->findByEmail(new Email($request->input('email')), UserAttributes::only('id,email,email_verified_at'));
 
         if ($user === false) {
             return response()->json(status: Response::HTTP_NOT_FOUND);

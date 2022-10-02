@@ -26,7 +26,7 @@ final class FetchPublicFolderBookmarksService
      */
     public function fetch(ResourceID $folderID, PaginationData $pagination): Paginator
     {
-        $folder = $this->folderRepository->find($folderID, Attributes::only('privacy'));
+        $folder = $this->folderRepository->find($folderID, Attributes::only('is_public'));
 
         if (!$folder->isPublic) throw new FolderNotFoundHttpResponseException;
 

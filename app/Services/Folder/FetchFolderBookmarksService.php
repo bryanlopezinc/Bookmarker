@@ -27,7 +27,7 @@ final class FetchFolderBookmarksService
      */
     public function fetch(ResourceID $folderID, PaginationData $pagination, UserID $userID): Paginator
     {
-        $folder = $this->folderRepository->find($folderID, Attributes::only('id,userId'));
+        $folder = $this->folderRepository->find($folderID, Attributes::only('id,user_id'));
 
         (new EnsureAuthorizedUserOwnsResource)($folder);
 

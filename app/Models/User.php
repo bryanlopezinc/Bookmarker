@@ -41,9 +41,12 @@ final class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
     ];
 
-    public function findForPassport(string $id): ?self
+    public function findForPassport(string $emailOrUsername): ?self
     {
-        return $this->where('username', $id)->orWhere('email', $id)->first();
+        return $this->query()
+            ->where('username', $emailOrUsername)
+            ->orWhere('email', $emailOrUsername)
+            ->first();
     }
 
     public function getEmailName(): string

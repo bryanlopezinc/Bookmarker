@@ -25,7 +25,7 @@ final class RemoveBookmarksFromFolderService
 
     public function remove(ResourceIDsCollection $bookmarkIDs, ResourceID $folderID): void
     {
-        $folder = $this->repository->find($folderID, Attributes::only('id,userId'));
+        $folder = $this->repository->find($folderID, Attributes::only('id,user_id'));
 
         (new EnsureAuthorizedUserOwnsResource)($folder);
 

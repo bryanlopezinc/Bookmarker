@@ -26,7 +26,7 @@ final class CreateBookmarkFromMailMessageService
 
         $user = $this->userRepository->findByEmailOrSecondaryEmail(
             $email = new Email($message->from()),
-            UserAttributes::only('id,hasVerifiedEmail')
+            UserAttributes::only('id,email_verified_at')
         );
 
         if ($user === false) {

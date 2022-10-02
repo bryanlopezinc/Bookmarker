@@ -89,7 +89,7 @@ class UserRepositoryTest extends TestCase
         $user1->email;
         $user1->id;
 
-        $user2 = $repository->findByUsername(Username::fromString($model->username), UserAttributes::only('bookmarksCount,username'));
+        $user2 = $repository->findByUsername(Username::fromString($model->username), UserAttributes::only('bookmarks_count,username'));
         $this->assertCount(2, $user2->toArray());
         $user2->bookmarksCount;
         $user2->username;

@@ -36,25 +36,25 @@ class FolderRepositoryTest extends TestCase
             $this->assertEquals($expected, collect($folder->toArray())->keys()->sort()->values()->all());
         });
 
-        $this->assertWillReturnOnlyAttributes('id,userId,storage', function (Folder $folder) {
+        $this->assertWillReturnOnlyAttributes('id,user_id,bookmarks_count', function (Folder $folder) {
             $this->assertCount(3, $folder->toArray());
             $folder->folderID; // will throw initialization exception if not retrived
             $folder->ownerID;
             $folder->storage;
         });
 
-        $this->assertWillReturnOnlyAttributes('id,userId', function (Folder $folder) {
+        $this->assertWillReturnOnlyAttributes('id,user_id', function (Folder $folder) {
             $this->assertCount(2, $folder->toArray());
             $folder->folderID;
             $folder->ownerID;
         });
 
-        $this->assertWillReturnOnlyAttributes('privacy', function (Folder $folder) {
+        $this->assertWillReturnOnlyAttributes('is_public', function (Folder $folder) {
             $this->assertCount(1, $folder->toArray());
             $folder->isPublic;
         });
 
-        $this->assertWillReturnOnlyAttributes('id,userId,name,description,privacy', function (Folder $folder) {
+        $this->assertWillReturnOnlyAttributes('id,user_id,name,description,is_public', function (Folder $folder) {
             $this->assertCount(5, $folder->toArray());
             $folder->folderID;
             $folder->ownerID;
@@ -63,7 +63,7 @@ class FolderRepositoryTest extends TestCase
             $folder->isPublic;
         });
 
-        $this->assertWillReturnOnlyAttributes('id,userId,name,description,privacy,tags', function (Folder $folder) {
+        $this->assertWillReturnOnlyAttributes('id,user_id,name,description,is_public,tags', function (Folder $folder) {
             $this->assertCount(6, $folder->toArray());
             $folder->folderID;
             $folder->ownerID;

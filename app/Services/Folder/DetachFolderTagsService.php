@@ -24,7 +24,7 @@ final class DetachFolderTagsService
 
     public function delete(ResourceID $folderID, TagsCollection $tagsCollection): void
     {
-        $folder = $this->repository->find($folderID, FolderAttributes::only('userId,id,tags'));
+        $folder = $this->repository->find($folderID, FolderAttributes::only('user_id,id,tags'));
 
         (new EnsureAuthorizedUserOwnsResource)($folder);
 

@@ -11,21 +11,32 @@ final class UserAttributes extends Attributes
         return new self();
     }
 
+    protected function validAttributes(): array
+    {
+        return [
+            'id',
+            'username',
+            'email',
+            'bookmarks_count',
+            'folders_count',
+            'favourites_count',
+            'password',
+            'email_verified_at',
+            'folders_count',
+            'email_verified_at'
+        ];
+    }
+
     /**
      * @param string $attributes A comma seperated list of attributes which can only be
-     * any of id,username,email,bookmarks_count,password,hasVerifiedEmail
+     * any of id,username,email,bookmarks_count,password,email_verified_at,folders_count,favourites_count
      */
     public static function only(string $attributes): self
     {
-        $values = (static::new()->mapAttributes($attributes, [
-            'id' => 'id',
-            'username' => 'username',
-            'email' => 'email',
-            'bookmarksCount' => 'bookmarks_count',
-            'password' => 'password',
-            'hasVerifiedEmail' => 'email_verified_at'
-        ]));
+        if (empty($attributes)) {
+            return new static();
+        }
 
-        return new static($values);
+        return new static(explode(',', $attributes));
     }
 }

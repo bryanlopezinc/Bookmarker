@@ -37,12 +37,12 @@ class BookmarksRepositoryTest extends TestCase
             $this->assertEquals($expected, collect($bookmark->toArray())->keys()->sort()->values()->all());
         });
 
-        $this->assertWillReturnOnlyAttributes('userId', function (Bookmark $bookmark) {
+        $this->assertWillReturnOnlyAttributes('user_id', function (Bookmark $bookmark) {
             $this->assertCount(1, $bookmark->toArray());
             $bookmark->ownerId; // will throw initialization exception if not retrived
         });
 
-        $this->assertWillReturnOnlyAttributes('userId,id', function (Bookmark $bookmark) {
+        $this->assertWillReturnOnlyAttributes('user_id,id', function (Bookmark $bookmark) {
             $this->assertCount(2, $bookmark->toArray());
             $bookmark->ownerId;
             $bookmark->id;
@@ -53,7 +53,7 @@ class BookmarksRepositoryTest extends TestCase
             $bookmark->tags;
         });
 
-        $this->assertWillReturnOnlyAttributes('tags,userId', function (Bookmark $bookmark) {
+        $this->assertWillReturnOnlyAttributes('tags,user_id', function (Bookmark $bookmark) {
             $this->assertCount(2, $bookmark->toArray());
             $bookmark->ownerId;
             $bookmark->tags;

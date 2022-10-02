@@ -6,27 +6,29 @@ namespace App\QueryColumns;
 
 final class FolderAttributes extends Attributes
 {
-    public static function new(): self
+    protected function validAttributes(): array
     {
-        return new self();
+        return [
+            'id',
+            'user_id',
+            'bookmarks_count',
+            'is_public',
+            'name',
+            'description',
+            'tags'
+        ];
     }
 
     /**
      * @param string $attributes A comma seperated list of attributes which can only be
-     * any of id,userId,storage,privacy,name,description,tags
+     * any of id,user_id,bookmarks_count,is_public,name,description,tags
      */
     public static function only(string $attributes): self
     {
-        $values = (static::new()->mapAttributes($attributes, [
-            'id' => 'id',
-            'userId' => 'user_id',
-            'storage' => 'bookmarks_count',
-            'privacy' => 'is_public',
-            'name' => 'name',
-            'description' => 'description',
-            'tags' => 'tags'
-        ]));
+        if (empty($attributes)) {
+            return new static();
+        }
 
-        return new static($values);
+        return new static(explode(',', $attributes));
     }
 }

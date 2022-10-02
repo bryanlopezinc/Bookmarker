@@ -24,7 +24,7 @@ final class HideFolderBookmarksService
 
     public function hide(ResourceIDsCollection $bookmarkIDs, ResourceID $folderID): void
     {
-        $folder = $this->folderRepository->find($folderID, Attributes::only('id,userId'));
+        $folder = $this->folderRepository->find($folderID, Attributes::only('id,user_id'));
 
         (new EnsureAuthorizedUserOwnsResource)($folder);
 

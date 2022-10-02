@@ -32,8 +32,8 @@ final class FolderRepository implements FolderRepositoryInterface
         //The ENTIRE folder response should be cached and not the filtered
         //version to maintain consistent output.
         // If a filtered version of a folder (such as folder with only attributes id,userID) is cached in a request
-        // and a subsequent request with filters - id,userID,storage is made, This will return a folder without
-        // the storage attribute and will lead to errors.
+        // and a subsequent request with filters - id,userID,bookmarks_count is made, This will return a folder without
+        // the bookmarks_count attribute and will lead to errors.
         $folder = $this->repository->find($folderID);
 
         $this->cache->put($key, $folder, now()->addHour());

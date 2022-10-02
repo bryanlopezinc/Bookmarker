@@ -11,19 +11,28 @@ final class BookmarkAttributes extends Attributes
         return new self();
     }
 
+    protected function validAttributes(): array
+    {
+        return [
+            'id',
+            'site',
+            'user_id',
+            'tags',
+            'is_dead_link',
+            'url',
+        ];
+    }
+
     /**
      * @param string $attributes A comma seperated list of attributes which can only be
-     * any of id,site,userId,tags
+     * any of id,site,user_id,tags,is_dead_link,url
      */
     public static function only(string $attributes): self
     {
-        $values = (static::new()->mapAttributes($attributes, [
-            'id' => 'id',
-            'site' => 'site',
-            'userId' => 'user_id',
-            'tags' => 'tags'
-        ]));
+        if (empty($attributes)) {
+            return new static();
+        }
 
-        return new static($values);
+        return new static(explode(',', $attributes));
     }
 }

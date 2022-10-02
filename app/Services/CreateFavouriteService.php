@@ -24,7 +24,7 @@ final class CreateFavouriteService
     {
         $userId = UserID::fromAuthUser();
 
-        $bookmarks = $this->bookmarkRepository->findManyById($bookmarkIDs, BookmarkAttributes::only('userId,id'));
+        $bookmarks = $this->bookmarkRepository->findManyById($bookmarkIDs, BookmarkAttributes::only('user_id,id'));
 
         $allBookmarksExists = $bookmarkIDs->count() === $bookmarks->count();
 

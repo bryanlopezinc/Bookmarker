@@ -130,25 +130,25 @@ class FolderRepositoryTest extends TestCase
             $this->assertCount(7, $result->toArray());
         });
 
-        $assert('id,userId', function (Folder $result) {
+        $assert('id,user_id', function (Folder $result) {
             $this->assertCount(2, $result->toArray());
             $result->folderID; //will throw initialization exception if not set
             $result->ownerID;
         });
 
-        $assert('id,userId,storage', function (Folder $result) {
+        $assert('id,user_id,bookmarks_count', function (Folder $result) {
             $this->assertCount(3, $result->toArray());
             $result->folderID;
             $result->ownerID;
             $result->storage;
         });
 
-        $assert('privacy', function (Folder $result) {
+        $assert('is_public', function (Folder $result) {
             $this->assertCount(1, $result->toArray());
             $result->isPublic;
         });
 
-        $assert('id,userId,name,description,privacy', function (Folder $folder) {
+        $assert('id,user_id,name,description,is_public', function (Folder $folder) {
             $this->assertCount(5, $folder->toArray());
             $folder->folderID;
             $folder->ownerID;
@@ -157,7 +157,7 @@ class FolderRepositoryTest extends TestCase
             $folder->isPublic;
         });
 
-        $assert('id,userId,name,description,privacy,tags', function (Folder $folder) {
+        $assert('id,user_id,name,description,is_public,tags', function (Folder $folder) {
             $this->assertCount(6, $folder->toArray());
             $folder->folderID;
             $folder->ownerID;

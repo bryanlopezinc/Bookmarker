@@ -29,7 +29,7 @@ final class UpdateFolderService
     {
         $folder = $this->folderRepository->find(
             ResourceID::fromRequest($request, 'folder'),
-            Attributes::only('id,userId,name,description,privacy,tags')
+            Attributes::only('id,user_id,name,description,is_public,tags')
         );
 
         (new EnsureAuthorizedUserOwnsResource)($folder);

@@ -23,7 +23,7 @@ final class UpdateBookmarkService
     public function fromRequest(UpdateBookmarkRequest $request): void
     {
         $newAttributes = $this->buildUpdateData($request);
-        $bookmark = $this->bookmarksRepository->findById($newAttributes->bookmark->id, BookmarkAttributes::only('userId,tags'));
+        $bookmark = $this->bookmarksRepository->findById($newAttributes->bookmark->id, BookmarkAttributes::only('user_id,tags'));
 
         $canAddMoreTagsToBookmark = $bookmark->tags->count() + $newAttributes->bookmark->tags->count() <= setting('MAX_BOOKMARKS_TAGS');
 

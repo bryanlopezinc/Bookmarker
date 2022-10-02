@@ -9,41 +9,33 @@ use Illuminate\Support\Collection;
 
 abstract class Attributes implements Arrayable
 {
-    protected Collection $columns;
+    protected Collection $attributes;
 
-    public function __construct(array $columns = [])
+    /**
+     * @param array<string> $columns
+     */
+    public function __construct(array $attributes = [])
     {
-        $this->columns = collect($columns);
-    }
-
-    final protected function mapAttributes(string $attributes, array $attributeValueMap): array
-    {
-        $values = [];
-
-        if (blank($attributes)) {
-            return $values;
-        }
-
-        foreach (explode(',', $attributes)  as $attribute) {
-            if (!array_key_exists($attribute, $attributeValueMap)) {
-                throw new \DomainException('unexpected attribute ' . $attribute);
-            }
-
-            $values[] = $attributeValueMap[$attribute];
-        }
-
-        return $values;
+        $this->attributes = collect($attributes)->each(fn (string $value) => $this->ensureIsValid($value));
     }
 
     /**
-     * Check if ALL the given columns exists.
+     * The valid fields that can be requested
      *
-     * @param array<string>|string $columns
+     * @return array<string>
      */
-    final public function has(string|array $columns): bool
+    abstract protected function validAttributes(): array;
+
+    /**
+     * Check if ALL the given attributes exists.
+     *
+     * @param array<string>|string $attributes
+     */
+    final public function has(string|array $attributes): bool
     {
-        foreach ((array) $columns as $column) {
-            if (!$this->columns->containsStrict($column)) {
+        foreach ((array) $attributes as $attribute) {
+            $this->ensureIsValid($attribute);
+            if (!$this->attributes->containsStrict($attribute)) {
                 return false;
             }
         }
@@ -51,16 +43,27 @@ abstract class Attributes implements Arrayable
         return true;
     }
 
-    final public function except(string|array $fields): array
+    private function ensureIsValid(string $name): void
     {
-        $fields = (array) $fields;
+        if (!in_array($name, $this->validAttributes(), true)) {
+            throw new \Exception("attribute [$name] has not been registered as a valid attribute");
+        }
+    }
 
-        return $this->columns->reject(fn (string $field) => in_array($field, $fields, true))->all();
+    final public function except(string|array $attributes): array
+    {
+        $attributes = (array) $attributes;
+
+        return $this->attributes->reject(function (string $attribute) use ($attributes) {
+            $this->ensureIsValid($attribute);
+
+            return in_array($attribute, $attributes, true);
+        })->all();
     }
 
     final public function isEmpty(): bool
     {
-        return $this->columns->isEmpty();
+        return $this->attributes->isEmpty();
     }
 
     /**
@@ -68,6 +71,6 @@ abstract class Attributes implements Arrayable
      */
     final public function toArray(): array
     {
-        return $this->columns->all();
+        return $this->attributes->all();
     }
 }

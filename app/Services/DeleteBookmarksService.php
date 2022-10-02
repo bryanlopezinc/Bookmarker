@@ -20,7 +20,7 @@ final class DeleteBookmarksService
 
     public function delete(ResourceIDsCollection $bookmarkIds): void
     {
-        $bookmarks = $this->bookmarksRepository->findManyById($bookmarkIds, BookmarkAttributes::only('userId,id'));
+        $bookmarks = $this->bookmarksRepository->findManyById($bookmarkIds, BookmarkAttributes::only('user_id,id'));
 
         if ($bookmarks->isEmpty()) {
             return;

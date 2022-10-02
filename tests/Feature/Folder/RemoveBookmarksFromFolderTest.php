@@ -17,7 +17,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
 {
     use WithFaker;
 
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function removeFolderBookmarksResponse(array $parameters = []): TestResponse
     {
         return $this->deleteJson(route('removeBookmarksFromFolder'), $parameters);
     }
@@ -29,14 +29,14 @@ class RemoveBookmarksFromFolderTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->removeFolderBookmarksResponse()->assertUnauthorized();
     }
 
     public function testWillThrowValidationWhenRequiredAttrbutesAreMissing(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse()
+        $this->removeFolderBookmarksResponse()
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['bookmarks', 'folder']);
     }
@@ -45,7 +45,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['bookmarks' => '1,2bar'])
+        $this->removeFolderBookmarksResponse(['bookmarks' => '1,2bar'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 "folder" => ["The folder field is required."],
@@ -57,7 +57,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->removeFolderBookmarksResponse([
             'bookmarks' => '1,1,3,4,5',
         ])->assertJsonValidationErrors([
             "bookmarks.0" => ["The bookmarks.0 field has a duplicate value."],
@@ -69,7 +69,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['bookmarks' => implode(',', range(1, 51))])
+        $this->removeFolderBookmarksResponse(['bookmarks' => implode(',', range(1, 51))])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'bookmarks' => 'The bookmarks must not have more than 50 items.'
@@ -99,7 +99,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
         $bookmarksToRemove = $bookmarkIDs->take(9);
 
         //Remove first 9 bookmarks from folder.
-        $this->getTestResponse([
+        $this->removeFolderBookmarksResponse([
             'bookmarks' => $bookmarksToRemove->implode(','),
             'folder' => $folderID
         ])->assertSuccessful();
@@ -141,7 +141,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
         ])->id;
 
         //Assert will return not found when all bookmarks don't exist in folder
-        $this->getTestResponse([
+        $this->removeFolderBookmarksResponse([
             'bookmarks' => $bookmarkIDs->implode(','),
             'folder' => $folderID
         ])->assertNotFound()
@@ -156,7 +156,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
         ])->assertCreated();
 
         //Assert will return not found when some (but not all) bookmarks exist in folder
-        $this->getTestResponse([
+        $this->removeFolderBookmarksResponse([
             'bookmarks' => $bookmarkIDs->implode(','),
             'folder' => $folderID
         ])->assertNotFound()
@@ -177,7 +177,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
             'user_id' => UserFactory::new()->create()->id //Another user's folder
         ]);
 
-        $this->getTestResponse([
+        $this->removeFolderBookmarksResponse([
             'bookmarks' => $bookmarks->pluck('id')->implode(','),
             'folder' => $folder->id
         ])->assertForbidden();
@@ -195,12 +195,80 @@ class RemoveBookmarksFromFolderTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse([
+        $this->removeFolderBookmarksResponse([
             'bookmarks' => $bookmarks->pluck('id')->implode(','),
             'folder' => $folder->id + 1
         ])->assertNotFound()
             ->assertExactJson([
                 'message' => "The folder does not exists"
+            ]);
+    }
+
+    public function testUserCannotRemoveBookmarksFromFolderMoreThanOnce(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $bookmarkIDs = BookmarkFactory::new()->count(10)->create([
+            'user_id' => $user->id,
+            'created_at' => $createdAt = now()->yesterday(),
+            'updated_at' => $createdAt,
+        ])->pluck('id');
+
+        $folderID = FolderFactory::new()->create(['user_id' => $user->id])->id;
+
+        //add bookmarks to folder.
+        $this->postJson(route('addBookmarksToFolder'), [
+            'bookmarks' => $bookmarkIDs->implode(','),
+            'folder' => $folderID
+        ])->assertCreated();
+
+        $this->removeFolderBookmarksResponse([
+            'bookmarks' => $bookmarkIDs->implode(','),
+            'folder' => $folderID
+        ])->assertSuccessful();
+
+        $this->removeFolderBookmarksResponse([
+            'bookmarks' => $bookmarkIDs->implode(','),
+            'folder' => $folderID
+        ])->assertNotFound();
+    }
+
+    public function testWillNotReturnStaleData(): void
+    {
+        cache()->setDefaultDriver('redis');
+
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $bookmarkIDs = BookmarkFactory::new()->count(10)->create([
+            'user_id' => $user->id,
+            'created_at' => $createdAt = now()->yesterday(),
+            'updated_at' => $createdAt,
+        ])->pluck('id');
+
+        $folderID = FolderFactory::new()->create(['user_id' => $user->id])->id;
+
+        //add bookmarks to folder.
+        $this->postJson(route('addBookmarksToFolder'), [
+            'bookmarks' => $bookmarkIDs->implode(','),
+            'folder' => $folderID
+        ])->assertCreated();
+
+        //should cache folder.
+        $this->getJson(route('fetchFolder', ['id' => $folderID]))
+            ->assertOk()
+            ->assertJsonFragment([
+                'items_count' => 10
+            ]);
+
+        $this->removeFolderBookmarksResponse([
+            'bookmarks' => $bookmarkIDs->take(9)->implode(','),
+            'folder' => $folderID
+        ])->assertSuccessful();
+
+        $this->getJson(route('fetchFolder', ['id' => $folderID]))
+            ->assertOk()
+            ->assertJsonFragment([
+                'items_count' => 1
             ]);
     }
 }

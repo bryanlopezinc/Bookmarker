@@ -17,7 +17,7 @@ class UpdateFolderTest extends TestCase
 {
     use WithFaker;
 
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function updateFolderResponse(array $parameters = []): TestResponse
     {
         return $this->patchJson(route('updateFolder'), $parameters);
     }
@@ -29,17 +29,17 @@ class UpdateFolderTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->updateFolderResponse()->assertUnauthorized();
     }
 
     public function testWillThrowValidationWhenRequiredAttrbutesAreMissing(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse()->assertJsonValidationErrors(['name', 'folder']);
-        $this->getTestResponse(['folder' => 33])->assertJsonValidationErrors(['name']);
+        $this->updateFolderResponse()->assertJsonValidationErrors(['name', 'folder']);
+        $this->updateFolderResponse(['folder' => 33])->assertJsonValidationErrors(['name']);
 
-        $this->getTestResponse([
+        $this->updateFolderResponse([
             'folder' => 33,
             'name' => '',
             'description' => 'foo'
@@ -54,7 +54,7 @@ class UpdateFolderTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['name' => str_repeat('f', 51)])->assertJsonValidationErrors([
+        $this->updateFolderResponse(['name' => str_repeat('f', 51)])->assertJsonValidationErrors([
             'name' => 'The name must not be greater than 50 characters.'
         ]);
     }
@@ -63,7 +63,7 @@ class UpdateFolderTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['description' => str_repeat('f', 151)])->assertJsonValidationErrors([
+        $this->updateFolderResponse(['description' => str_repeat('f', 151)])->assertJsonValidationErrors([
             'description' => 'The description must not be greater than 150 characters.'
         ]);
     }
@@ -75,7 +75,7 @@ class UpdateFolderTest extends TestCase
         /** @var Folder */
         $model = FolderFactory::new()->create(['user_id' => $user->id]);
 
-        $this->getTestResponse([
+        $this->updateFolderResponse([
             'name' => $name = $this->faker->word,
             'description' => $description = $this->faker->sentence,
             'folder' => $model->id
@@ -96,14 +96,14 @@ class UpdateFolderTest extends TestCase
 
         $folderIDs = FolderFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
 
-        $this->getTestResponse([
+        $this->updateFolderResponse([
             'is_public' => true,
             'folder' => $folderIDs->first(),
             'name' => $this->faker->word,
         ])->assertStatus(423)
             ->assertExactJson(['message' => 'Password confirmation required.']);
 
-        $this->getTestResponse([
+        $this->updateFolderResponse([
             'is_public' => true,
             'folder' => $folderIDs->first(),
             'name' => $this->faker->word,
@@ -113,7 +113,7 @@ class UpdateFolderTest extends TestCase
         //Assert subsequent request won't Require password
         $this->travel(52)->minutes(function () use ($folderIDs) {
             $folderIDs->skip(1)->each(function (int $folderID) {
-                $this->getTestResponse([
+                $this->updateFolderResponse([
                     'is_public' => true,
                     'folder' => $folderID,
                     'name' => $this->faker->word,
@@ -128,7 +128,7 @@ class UpdateFolderTest extends TestCase
         ]);
 
         $this->travel(61)->minute(function () {
-            $this->getTestResponse([
+            $this->updateFolderResponse([
                 'is_public' => true,
                 'folder' => 11,
                 'name' => $this->faker->word,
@@ -144,7 +144,7 @@ class UpdateFolderTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse([
+        $this->updateFolderResponse([
             'is_public' => true,
             'folder' => $folder->id,
             'name' => $this->faker->word,
@@ -160,7 +160,7 @@ class UpdateFolderTest extends TestCase
         /** @var Folder */
         $model = FolderFactory::new()->create(['user_id' => $user->id]);
 
-        $this->getTestResponse([
+        $this->updateFolderResponse([
             'description' => '',
             'folder' => $model->id
         ])->assertOk();
@@ -181,7 +181,7 @@ class UpdateFolderTest extends TestCase
         /** @var Folder */
         $model = FolderFactory::new()->create(['user_id' => $user->id]);
 
-        $this->getTestResponse([
+        $this->updateFolderResponse([
             'is_public' => true,
             'folder' => $model->id,
             'password' => 'password'
@@ -203,7 +203,7 @@ class UpdateFolderTest extends TestCase
         /** @var Folder */
         $model = FolderFactory::new()->create(['user_id' => $user->id]);
 
-        $this->getTestResponse([
+        $this->updateFolderResponse([
             'description' => $description = $this->faker->sentence,
             'folder' => $model->id
         ])->assertOk();
@@ -224,7 +224,7 @@ class UpdateFolderTest extends TestCase
         /** @var Folder */
         $model = FolderFactory::new()->create(['user_id' => $user->id]);
 
-        $this->getTestResponse([
+        $this->updateFolderResponse([
             'name' => $name = $this->faker->word,
             'folder' => $model->id
         ])->assertOk();
@@ -244,7 +244,7 @@ class UpdateFolderTest extends TestCase
 
         $folder = FolderFactory::new()->create();
 
-        $this->getTestResponse([
+        $this->updateFolderResponse([
             'name' => $this->faker->word,
             'folder' => $folder->id
         ])->assertForbidden();
@@ -256,7 +256,7 @@ class UpdateFolderTest extends TestCase
 
         $folder = FolderFactory::new()->create(['user_id' => $user->id]);
 
-        $this->getTestResponse([
+        $this->updateFolderResponse([
             'name' => $this->faker->word,
             'folder' => $folder->id + 1
         ])->assertNotFound()
@@ -271,7 +271,7 @@ class UpdateFolderTest extends TestCase
         $model = FolderFactory::new()->create(['user_id' => $user->id]);
         $tags = TagFactory::new()->count(5)->create(['created_by' => $user->id]);
 
-        $this->getTestResponse([
+        $this->updateFolderResponse([
             'tags' => $tags->pluck('name')->implode(','),
             'folder' => $model->id
         ])->assertOk();
@@ -300,12 +300,12 @@ class UpdateFolderTest extends TestCase
         $folder = FolderFactory::new()->create(['user_id' => $user->id]);
         $tags = TagFactory::new()->count(6)->make()->pluck('name');
 
-        $this->getTestResponse([
+        $this->updateFolderResponse([
             'tags' => $tags->implode(','),
             'folder' => $folder->id
         ])->assertOk();
 
-        $this->getTestResponse([
+        $this->updateFolderResponse([
             'tags' => (string) $tags->random(),
             'folder' => $folder->id
         ])->assertStatus(409);
@@ -317,12 +317,12 @@ class UpdateFolderTest extends TestCase
 
         $folder = FolderFactory::new()->create(['user_id' => $user->id]);
 
-        $this->getTestResponse([
+        $this->updateFolderResponse([
             'tags' => TagFactory::new()->count(15)->make()->pluck('name')->implode(','),
             'folder' => $folder->id
         ])->assertOk();
 
-        $this->getTestResponse([
+        $this->updateFolderResponse([
             'tags' => TagFactory::new()->count(2)->make()->pluck('name')->implode(','),
             'folder' => $folder->id
         ])->assertStatus(400);
@@ -332,7 +332,7 @@ class UpdateFolderTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->updateFolderResponse([
             'folder' => 300,
             'tags' => 'howTo,howTo,stackOverflow'
         ])->assertJsonValidationErrors([
@@ -349,11 +349,40 @@ class UpdateFolderTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->updateFolderResponse([
             'folder' => 300,
             'tags' => TagFactory::new()->count(16)->make()->pluck('name')->implode(',')
         ])->assertJsonValidationErrors([
             "tags" => ['The tags must not be greater than 15 characters.']
         ]);
+    }
+
+    public function testWillNotReturnStaleData(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        /** @var Folder */
+        $model = FolderFactory::new()->create(['user_id' => $user->id]);
+
+        //should cache folder.
+        $this->getJson(route('fetchFolder', ['id' => $model->id]))
+            ->assertOk()
+            ->assertJsonFragment([
+                'name' => $model->name,
+                'description' => $model->description
+            ]);
+
+        $this->updateFolderResponse([
+            'name' => $name = $this->faker->word,
+            'description' => $description = $this->faker->sentence,
+            'folder' => $model->id
+        ])->assertOk();
+
+        $this->getJson(route('fetchFolder', ['id' => $model->id]))
+            ->assertOk()
+            ->assertJsonFragment([
+                'name' => $name,
+                'description' => $description
+            ]);
     }
 }

@@ -340,4 +340,34 @@ class AddBookmarksToFolderTest extends TestCase
                 'message' => "The folder does not exists"
             ]);
     }
+
+    public function testWillNotReturnStaleData(): void
+    {
+        cache()->setDefaultDriver('redis');
+
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $folderID = FolderFactory::new()->create([
+            'user_id' => $user->id,
+            'created_at' => now(),
+        ])->id;
+
+        //should cache folder.
+        $this->getJson(route('fetchFolder', ['id' => $folderID]))
+            ->assertOk()
+            ->assertJsonFragment([
+                'items_count' => 0
+            ]);
+
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => BookmarkFactory::new()->count(3)->create(['user_id' => $user->id])->pluck('id')->implode(','),
+            'folder' => $folderID,
+        ])->assertCreated();
+
+        $this->getJson(route('fetchFolder', ['id' => $folderID]))
+            ->assertOk()
+            ->assertJsonFragment([
+                'items_count' => 3
+            ]);
+    }
 }

@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
+use App\Contracts\FolderRepositoryInterface;
+use App\Events\FolderModifiedEvent;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\Repositories\Folder\DeleteFolderRepository;
-use App\Repositories\Folder\FolderRepository;
 use App\ValueObjects\ResourceID;
 use App\QueryColumns\FolderAttributes as Attributes;
 
@@ -14,7 +15,7 @@ final class DeleteFolderService
 {
     public function __construct(
         private DeleteFolderRepository $deleteFolderRepository,
-        private FolderRepository $folderRepository
+        private FolderRepositoryInterface $folderRepository
     ) {
     }
 
@@ -42,5 +43,7 @@ final class DeleteFolderService
         } else {
             $this->deleteFolderRepository->delete($folderID);
         }
+
+        event(new FolderModifiedEvent($folderID));
     }
 }

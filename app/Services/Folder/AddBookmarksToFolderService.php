@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
-use App\Collections\ResourceIDsCollection;
+use App\Collections\ResourceIDsCollection as IDs;
+use App\Contracts\FolderRepositoryInterface;
 use App\DataTransferObjects\Folder;
+use App\Events\FolderModifiedEvent;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkAttributes;
 use App\Repositories\FetchBookmarksRepository;
 use App\Repositories\Folder\FetchFolderBookmarksRepository;
 use App\ValueObjects\ResourceID;
-use App\Repositories\Folder\FolderRepository;
 use App\Exceptions\HttpException as HttpException;
 use App\QueryColumns\FolderAttributes as Attributes;
 use App\Repositories\Folder\FolderBookmarkRepository;
@@ -19,29 +20,29 @@ use App\Repositories\Folder\FolderBookmarkRepository;
 final class AddBookmarksToFolderService
 {
     public function __construct(
-        private FolderRepository $repository,
+        private FolderRepositoryInterface $repository,
         private FetchBookmarksRepository $bookmarksRepository,
         private FetchFolderBookmarksRepository $folderBookmarks,
         private FolderBookmarkRepository $createFolderBookmark
     ) {
     }
 
-    public function add(ResourceIDsCollection $bookmarkIDs, ResourceID $folderID, ResourceIDsCollection $makeHidden): void
+    public function add(IDs $bookmarkIDs, ResourceID $folderID, IDs $makeHidden): void
     {
         $folder = $this->repository->find($folderID, Attributes::only('id,userId,storage'));
 
         (new EnsureAuthorizedUserOwnsResource)($folder);
 
         $this->ensureFolderCanContainBookmarks($bookmarkIDs, $folder);
-
         $this->validateBookmarks($bookmarkIDs);
-
         $this->checkFolderForPossibleDuplicates($folderID, $bookmarkIDs);
 
         $this->createFolderBookmark->add($folderID, $bookmarkIDs, $makeHidden);
+
+        event(new FolderModifiedEvent($folderID));
     }
 
-    private function ensureFolderCanContainBookmarks(ResourceIDsCollection $bookmarks, Folder $folder): void
+    private function ensureFolderCanContainBookmarks(IDs $bookmarks, Folder $folder): void
     {
         $exceptionMessage = $folder->storage->isFull()
             ? 'folder cannot contain more bookmarks'
@@ -52,7 +53,7 @@ final class AddBookmarksToFolderService
         }
     }
 
-    private function validateBookmarks(ResourceIDsCollection $bookmarkIDs): void
+    private function validateBookmarks(IDs $bookmarkIDs): void
     {
         $bookmarks = $this->bookmarksRepository->findManyById($bookmarkIDs, BookmarkAttributes::only('userId,id'));
 
@@ -63,7 +64,7 @@ final class AddBookmarksToFolderService
         $bookmarks->each(new EnsureAuthorizedUserOwnsResource);
     }
 
-    private function checkFolderForPossibleDuplicates(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): void
+    private function checkFolderForPossibleDuplicates(ResourceID $folderID, IDs $bookmarkIDs): void
     {
         if ($this->folderBookmarks->contains($bookmarkIDs, $folderID)) {
             throw HttpException::conflict(['message' => 'Bookmarks already exists']);

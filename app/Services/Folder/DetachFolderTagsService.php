@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace App\Services\Folder;
 
 use App\Collections\TagsCollection;
+use App\Contracts\FolderRepositoryInterface;
+use App\Events\FolderModifiedEvent;
 use App\Events\TagsDetachedEvent;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\FolderAttributes;
 use App\ValueObjects\ResourceID;
-use App\Repositories\Folder\FolderRepository;
 use App\Repositories\TagRepository;
 use App\ValueObjects\UserID;
 
 final class DetachFolderTagsService
 {
     public function __construct(
-        private FolderRepository $repository,
+        private FolderRepositoryInterface $repository,
         private TagRepository $tagsRepository
     ) {
     }
@@ -32,6 +33,8 @@ final class DetachFolderTagsService
         }
 
         $this->tagsRepository->detach($tagsCollection, $folderID);
+
+        event(new FolderModifiedEvent($folderID));
 
         event(new TagsDetachedEvent($folder->tags, UserID::fromAuthUser()));
     }

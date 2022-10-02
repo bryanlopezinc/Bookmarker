@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
+use App\Contracts\FolderRepositoryInterface;
 use App\PaginationData;
 use App\ValueObjects\ResourceID;
 use Illuminate\Pagination\Paginator;
-use App\Repositories\Folder\FolderRepository;
 use App\Repositories\Folder\FetchFolderBookmarksRepository;
 use App\Exceptions\FolderNotFoundHttpResponseException;
 use App\QueryColumns\FolderAttributes as Attributes;
@@ -17,7 +17,7 @@ final class FetchPublicFolderBookmarksService
 {
     public function __construct(
         private FetchFolderBookmarksRepository $folderBookmarksRepository,
-        private FolderRepository $folderRepository
+        private FolderRepositoryInterface $folderRepository
     ) {
     }
 

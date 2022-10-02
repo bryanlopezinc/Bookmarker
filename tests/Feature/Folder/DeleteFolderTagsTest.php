@@ -92,4 +92,40 @@ class DeleteFolderTagsTest extends TestCase
             'tags' => $this->faker->word
         ])->assertForbidden();
     }
+
+    public function testWillNotReturnStaleData(): void
+    {
+        cache()->setDefaultDriver('redis');
+
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $folderID = FolderFactory::new()->create(['user_id' => $user->id])->id;
+        $tag = TagFactory::new()->create(['created_by' => $user->id]);
+
+        Taggable::create([
+            'taggable_id' => $folderID,
+            'tag_id' => $tag->id,
+            'taggable_type' => Taggable::FOLDER_TYPE
+        ]);
+
+        //should cache folder.
+        $this->getJson(route('fetchFolder', ['id' => $folderID]))
+            ->assertOk()
+            ->assertJsonFragment([
+                'has_tags' => true,
+                'tags_count' => 1
+            ]);
+
+        $this->deleteFolderTagsResponse([
+            'id' => $folderID,
+            'tags' => $tag->name
+        ])->assertOk();
+
+        $this->getJson(route('fetchFolder', ['id' => $folderID]))
+            ->assertOk()
+            ->assertJsonFragment([
+                'has_tags' => false,
+                'tags_count' => 0
+            ]);
+    }
 }

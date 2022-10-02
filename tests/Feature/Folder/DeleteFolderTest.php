@@ -176,4 +176,23 @@ class DeleteFolderTest extends TestCase
                 'message' => "The folder does not exists"
             ]);;
     }
+
+    public function testWillNotReturnStaleData(): void
+    {
+        cache()->setDefaultDriver('redis');
+
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $folderID = FolderFactory::new()->create([
+            'user_id' => $user->id,
+            'created_at' => now(),
+        ])->id;
+
+        //should cache folder.
+        $this->getJson(route('fetchFolder', ['id' => $folderID]))->assertOk();
+
+        $this->deleteFolderResponse(['folder' => $folderID])->assertOk();
+        $this->getJson(route('fetchFolder', ['id' => $folderID]))->assertNotFound();
+        $this->deleteFolderResponse(['folder' => $folderID + 1])->assertNotFound();
+    }
 }

@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Services\Folder;
 
 use App\Collections\TagsCollection;
+use App\Contracts\FolderRepositoryInterface;
 use App\DataTransferObjects\Builders\FolderBuilder;
 use App\DataTransferObjects\Folder;
+use App\Events\FolderModifiedEvent;
 use App\Exceptions\HttpException;
 use App\Http\Requests\CreateFolderRequest;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\Repositories\Folder\FolderRepository;
 use App\ValueObjects\ResourceID;
 use App\QueryColumns\FolderAttributes as Attributes;
 use App\Repositories\Folder\UpdateFolderRepository;
@@ -19,7 +20,7 @@ use Illuminate\Http\Response;
 final class UpdateFolderService
 {
     public function __construct(
-        private FolderRepository $folderRepository,
+        private FolderRepositoryInterface $folderRepository,
         private UpdateFolderRepository $updateFolderRepository
     ) {
     }
@@ -38,6 +39,8 @@ final class UpdateFolderService
         $this->ensureCanAddTagsToFolder($folder, $newAttributes->tags);
 
         $this->updateFolderRepository->update($folder->folderID, $newAttributes);
+
+        event(new FolderModifiedEvent($folder->folderID));
     }
 
     private function buildFolder(CreateFolderRequest $request, Folder $folder): Folder

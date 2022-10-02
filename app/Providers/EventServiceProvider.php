@@ -20,6 +20,7 @@ class EventServiceProvider extends ServiceProvider
         \App\Events\RegisteredEvent::class => [SendEmailVerificationNotification::class],
         \App\Events\ResendEmailVerificationLinkRequested::class => [SendEmailVerificationNotification::class],
         \App\Events\TagsDetachedEvent::class => [DeleteUnusedTags::class],
+        \App\Events\FolderModifiedEvent::class => [\App\Listeners\HandleFolderModifiedEvent::class]
     ];
 
     /**

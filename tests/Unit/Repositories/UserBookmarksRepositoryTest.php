@@ -50,7 +50,7 @@ class UserBookmarksRepositoryTest extends TestCase
         ]);
 
         $result = $this->repository->fetch(new UserID($userId), Data::fromArray([
-            'siteId' => new ResourceID($sourceID)
+            'source_id' => new ResourceID($sourceID)
         ]));
 
         $this->assertCount(5, $result);

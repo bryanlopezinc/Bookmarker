@@ -18,7 +18,7 @@ class FetchUserBookmarksTest extends TestCase
 {
     use CreatesBookmark, AssertsBookmarkJson, WillCheckBookmarksHealth;
 
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function userBookmarksResponse(array $parameters = []): TestResponse
     {
         return $this->getJson(route('fetchUserBookmarks', $parameters));
     }
@@ -30,39 +30,39 @@ class FetchUserBookmarksTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->userBookmarksResponse()->assertUnauthorized();
     }
 
     public function testPaginationDataMustBeValid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['per_page', 'page'])
+        $this->userBookmarksResponse(['per_page', 'page'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'per_page' => ['The per page field must have a value.'],
                 'page' => ['The page field must have a value.'],
             ]);
 
-        $this->getTestResponse(['per_page' => 3])
+        $this->userBookmarksResponse(['per_page' => 3])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'per_page' => ['The per page must be at least 15.']
             ]);
 
-        $this->getTestResponse(['per_page' => 40])
+        $this->userBookmarksResponse(['per_page' => 40])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'per_page' => ['The per page must not be greater than 39.']
             ]);
 
-        $this->getTestResponse(['page' => 2001])
+        $this->userBookmarksResponse(['page' => 2001])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'page' => ['The page must not be greater than 2000.']
             ]);
 
-        $this->getTestResponse(['page' => -1])
+        $this->userBookmarksResponse(['page' => -1])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'page' => ['The page must be at least 1.']
@@ -73,7 +73,7 @@ class FetchUserBookmarksTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->userBookmarksResponse([
             'tags' => collect()->times(16, fn () => $this->faker->word)->implode(',')
         ])
             ->assertUnprocessable()
@@ -92,7 +92,7 @@ class FetchUserBookmarksTest extends TestCase
             'description' => 'And <h1>spoof!</h1>'
         ]);
 
-        $this->getTestResponse([])
+        $this->userBookmarksResponse([])
             ->assertOk()
             ->assertJsonCount(10, 'data')
             ->assertJson(function (AssertableJson $json) use ($userBookmarks) {
@@ -126,7 +126,7 @@ class FetchUserBookmarksTest extends TestCase
                 ]
             ]);
 
-        $this->getTestResponse(['per_page' => 20])
+        $this->userBookmarksResponse(['per_page' => 20])
             ->assertSuccessful()
             ->assertJson(function (AssertableJson $json) {
                 $json->where('links.first', route('fetchUserBookmarks', ['per_page' => 20, 'page' => 1]))->etc();
@@ -142,7 +142,7 @@ class FetchUserBookmarksTest extends TestCase
 
         $bookmarkIDs = Bookmark::query()->where('user_id', $user->id)->latest('id')->get('id')->pluck('id')->all();
 
-        $response = $this->withoutExceptionHandling()->getTestResponse([])->assertOk();
+        $response = $this->withoutExceptionHandling()->userBookmarksResponse([])->assertOk();
 
         $this->assertEquals($bookmarkIDs, collect($response->json('data'))->pluck('attributes.id')->all());
     }
@@ -153,7 +153,7 @@ class FetchUserBookmarksTest extends TestCase
 
         $bookmarks = BookmarkFactory::new()->count(10)->create(['user_id' => $user->id]);
 
-        $this->getTestResponse([])->assertOk();
+        $this->userBookmarksResponse([])->assertOk();
 
         $this->assertBookmarksHealthWillBeChecked($bookmarks->pluck('id')->all());
     }
@@ -168,13 +168,13 @@ class FetchUserBookmarksTest extends TestCase
 
         $firstBookmark = Bookmark::query()->where('user_id', $user->id)->first();
 
-        $response =  $this->getTestResponse(['site_id' => $firstBookmark->source_id])
+        $response =  $this->userBookmarksResponse(['source_id' => $firstBookmark->source_id])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJson(function (AssertableJson $assert) use ($firstBookmark) {
                 $link = route('fetchUserBookmarks', [
                     'per_page' => 15,
-                    'site_id' => $firstBookmark->source_id,
+                    'source_id' => $firstBookmark->source_id,
                     'page' => 1,
                 ]);
 
@@ -199,7 +199,7 @@ class FetchUserBookmarksTest extends TestCase
             ]
         ]);
 
-        $response = $this->getTestResponse(['tags' => $tag])
+        $response = $this->userBookmarksResponse(['tags' => $tag])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJson(function (AssertableJson $assert) use ($tag) {
@@ -230,7 +230,7 @@ class FetchUserBookmarksTest extends TestCase
         $this->saveBookmark(['tags' => [$tags[1]]]);
         $this->saveBookmark(['tags' => [$tags[2]]]);
 
-        $response = $this->getTestResponse([
+        $response = $this->userBookmarksResponse([
             'tags' => implode(',', $tags),
             'sort' => 'oldest',
         ])
@@ -265,7 +265,7 @@ class FetchUserBookmarksTest extends TestCase
         $this->saveBookmark();
         $this->saveBookmark();
 
-        $this->getTestResponse(['untagged' => true])
+        $this->userBookmarksResponse(['untagged' => true])
             ->assertOk()
             ->assertJsonCount(2, 'data')
             ->assertJson(function (AssertableJson $assert) {
@@ -289,7 +289,7 @@ class FetchUserBookmarksTest extends TestCase
         $bookmarkIDs = Bookmark::query()->where('user_id', $user->id)->oldest('id')->get('id')->pluck('id')->all();
 
         $response = $this->withoutExceptionHandling()
-            ->getTestResponse(['sort' => 'oldest'])
+            ->userBookmarksResponse(['sort' => 'oldest'])
             ->assertOk()
             ->assertJsonCount(2, 'data')
             ->assertJson(function (AssertableJson $assert) {
@@ -315,7 +315,7 @@ class FetchUserBookmarksTest extends TestCase
         $bookmarkIDs = Bookmark::query()->where('user_id', $user->id)->latest('id')->get('id')->pluck('id')->all();
 
         $response = $this->withoutExceptionHandling()
-            ->getTestResponse(['sort' => 'newest'])
+            ->userBookmarksResponse(['sort' => 'newest'])
             ->assertOk()
             ->assertJsonCount(2, 'data')
             ->assertJson(function (AssertableJson $assert) {
@@ -340,7 +340,7 @@ class FetchUserBookmarksTest extends TestCase
             $this->saveBookmark();
         }
 
-        $this->getTestResponse(['per_page' => 17])
+        $this->userBookmarksResponse(['per_page' => 17])
             ->assertOk()
             ->assertJsonCount(17, 'data');
     }
@@ -357,7 +357,7 @@ class FetchUserBookmarksTest extends TestCase
 
         $this->postJson(route('createFavourite'), ['bookmarks' => (string) $userfavourite->id])->assertCreated();
 
-        $this->getTestResponse([])
+        $this->userBookmarksResponse([])
             ->assertOk()
             ->assertJson(function (AssertableJson $json) use ($userfavourite) {
                 $json->etc()
@@ -393,7 +393,7 @@ class FetchUserBookmarksTest extends TestCase
             'bookmark_id' => $bookmarkWithDeadLink->id,
         ]);
 
-        $this->getTestResponse(['dead_links' => true])
+        $this->userBookmarksResponse(['dead_links' => true])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJson(function (AssertableJson $assert) use ($bookmarkWithDeadLink) {
@@ -409,7 +409,7 @@ class FetchUserBookmarksTest extends TestCase
 
         $this->saveBookmark(['tags' => $tags->all()]);
 
-        $this->getTestResponse([])
+        $this->userBookmarksResponse([])
             ->assertOk()
             ->assertJsonCount(5, 'data.0.attributes.tags')
             ->assertJson(function (AssertableJson $json) use ($tags) {

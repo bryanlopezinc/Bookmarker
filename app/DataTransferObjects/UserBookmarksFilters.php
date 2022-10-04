@@ -38,14 +38,14 @@ final class UserBookmarksFilters extends DataTransferObject
     {
         $data = [
             'wantsBookmarksWithSpecificTags'  => $request->has('tags'),
-            'wantsOnlyBookmarksFromParticularSource' => $request->has('site_id'),
+            'wantsOnlyBookmarksFromParticularSource' => $request->has('source_id'),
             'wantsUntaggedBookmarks' => $request->boolean('untagged'),
             'pagination' => PaginationData::fromRequest($request),
             'hasSortCriteria' => $request->has('sort'),
             'wantsBooksmarksWithDeadLinks' => $request->boolean('dead_links')
         ];
 
-        $request->whenHas('site_id', function (int $siteId) use (&$data) {
+        $request->whenHas('source_id', function (int $siteId) use (&$data) {
             $data['sourceID'] = new ResourceID($siteId);
         });
 
@@ -69,7 +69,7 @@ final class UserBookmarksFilters extends DataTransferObject
      * ```php
      *  $request = [
      *    'tag' => array<string>,
-     *     'siteId' => App\ValueObjects\ResourceId::class,
+     *     'source_id' => App\ValueObjects\ResourceId::class,
      *     'page' => int,
      *     'per_page' => int,
      *     'untagged' => bool,
@@ -82,7 +82,7 @@ final class UserBookmarksFilters extends DataTransferObject
     {
         $data = [
             'wantsBookmarksWithSpecificTags' => $hasTag = array_key_exists('tags', $request),
-            'wantsOnlyBookmarksFromParticularSource' => $hasSiteId = array_key_exists('siteId', $request),
+            'wantsOnlyBookmarksFromParticularSource' => $hasSiteId = array_key_exists('source_id', $request),
             'wantsUntaggedBookmarks' => $request['untagged'] ?? false,
             'pagination' => new PaginationData($request['page'] ?? 1, $request['per_page'] ?? PaginationData::DEFAULT_PER_PAGE),
             'hasSortCriteria' => $hasSortCriteria = array_key_exists('sortBy', $request),
@@ -90,7 +90,7 @@ final class UserBookmarksFilters extends DataTransferObject
         ];
 
         if ($hasSiteId) {
-            $data['sourceID'] = $request['siteId'];
+            $data['sourceID'] = $request['source_id'];
         }
 
         if ($hasTag) {

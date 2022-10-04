@@ -8,7 +8,7 @@ use App\ValueObjects\Url;
 use App\ValueObjects\UserID;
 use App\Http\Requests\CreateBookmarkRequest;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
-use App\DataTransferObjects\Builders\SiteBuilder;
+use App\DataTransferObjects\Builders\SourceBuilder;
 use App\Jobs\UpdateBookmarkWithHttpResponse;
 use App\Contracts\CreateBookmarkRepositoryInterface as Repository;
 use App\Contracts\UrlHasherInterface;
@@ -79,7 +79,7 @@ final class CreateBookmarkService
             ->description($attributes->get('description'))
             ->descriptionWasSetByUser($attributes->get('descriptionSetByUser', false))
             ->bookmarkedById($userID->toInt())
-            ->site(SiteBuilder::new()->domainName($url->getHost())->name($url->toString())->build())
+            ->source(SourceBuilder::new()->domainName($url->getHost())->name($url->toString())->build())
             ->tags($attributes->get('tags', []))
             ->bookmarkedOn($attributes->get('createdOn'))
             ->canonicalUrl($url)

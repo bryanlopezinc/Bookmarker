@@ -9,7 +9,7 @@ use App\ValueObjects\NonEmptyString as SiteName;
 use App\ValueObjects\ResourceID;
 use Carbon\Carbon;
 
-final class WebSite extends DataTransferObject
+final class Source extends DataTransferObject
 {
     public readonly ResourceID $id;
     public readonly DomainName $domainName;

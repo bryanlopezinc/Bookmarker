@@ -15,7 +15,7 @@ use App\Contracts\UpdateBookmarkRepositoryInterface as Repository;
 use App\Contracts\UrlHasherInterface;
 use App\DataTransferObjects\Builders\BookmarkBuilder as Builder;
 use App\DataTransferObjects\UpdateBookmarkData as Data;
-use App\Models\WebSite;
+use App\Models\Source;
 use App\Readers\BookmarkMetaData;
 use App\Repositories\FetchBookmarksRepository;
 use App\ValueObjects\BookmarkDescription;
@@ -105,9 +105,9 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
             return;
         }
 
-        $site = WebSite::query()->where('id', $bookmark->fromWebSite->id->toInt())->first(['name', 'id', 'host']);
+        $site = Source::query()->where('id', $bookmark->source->id->toInt())->first(['name', 'id', 'host']);
 
-        if (!$bookmark->fromWebSite->nameHasBeenUpdated) {
+        if (!$bookmark->source->nameHasBeenUpdated) {
             $site->update([
                 'name' => $sitename,
                 'name_updated_at' => now()

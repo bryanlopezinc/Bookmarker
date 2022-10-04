@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\DataTransferObjects\Builders\SiteBuilder;
+use App\DataTransferObjects\Builders\SourceBuilder;
 use App\ValueObjects\UserID;
-use App\DataTransferObjects\WebSite;
-use App\Models\WebSite as Model;
+use App\DataTransferObjects\Source;
+use App\Models\Source as Model;
 use App\PaginationData;
 use Illuminate\Pagination\Paginator;
 
@@ -17,7 +17,7 @@ use Illuminate\Pagination\Paginator;
 final class FetchUserBookmarksSourcesRepository
 {
     /**
-     * @return Paginator<WebSite>
+     * @return Paginator<Source>
      */
     public function get(UserID $userId, PaginationData $pagination): Paginator
     {
@@ -29,7 +29,7 @@ final class FetchUserBookmarksSourcesRepository
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
 
         return $result->setCollection(
-            $result->getCollection()->map(fn (Model $model) => SiteBuilder::fromModel($model)->build())
+            $result->getCollection()->map(fn (Model $model) => SourceBuilder::fromModel($model)->build())
         );
     }
 }

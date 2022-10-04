@@ -24,7 +24,7 @@ trait AssertsBookmarkJson
                     'preview_image_url',
                     'description',
                     'has_description',
-                    'from_site',
+                    'source',
                     'tags',
                     'has_tags',
                     'tags_count',

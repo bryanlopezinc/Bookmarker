@@ -3,13 +3,13 @@
 namespace Tests\Unit\Repositories;
 
 use App\DataTransferObjects\Builders\BookmarkBuilder;
-use App\DataTransferObjects\Builders\SiteBuilder;
+use App\DataTransferObjects\Builders\SourceBuilder;
 use App\Models\Bookmark;
 use App\Models\Tag;
 use App\Models\Taggable;
 use App\Repositories\CreateBookmarkRepository;
 use Database\Factories\BookmarkFactory;
-use Database\Factories\SiteFactory;
+use Database\Factories\SourceFactory;
 use Database\Factories\TagFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -31,7 +31,7 @@ class CreateBookmarkRepositoryTest extends TestCase
     {
         /** @var Bookmark $model */
         $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->make())
-            ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
+            ->source(SourceBuilder::fromModel(SourceFactory::new()->create())->build())
             ->bookmarkedById($model['user_id'])
             ->tags([$tag = $this->faker->word])
             ->bookmarkedOn((string) now())
@@ -55,7 +55,7 @@ class CreateBookmarkRepositoryTest extends TestCase
     {
         /** @var Bookmark $model */
         $bookmark = BookmarkBuilder::fromModel($model = BookmarkFactory::new()->make())
-            ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
+            ->source(SourceBuilder::fromModel(SourceFactory::new()->create())->build())
             ->bookmarkedById($model['user_id'])
             ->tags([$tag = TagFactory::new()->make()->name, $this->faker->word])
             ->bookmarkedOn((string) now())

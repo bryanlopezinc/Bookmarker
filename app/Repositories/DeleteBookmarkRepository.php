@@ -26,12 +26,12 @@ final class DeleteBookmarkRepository
     /**
      * Delete all bookmarks from a particular site
      */
-    public function fromSite(ResourceID $siteId, UserID $userId): bool
+    public function fromSource(ResourceID $sourceID, UserID $userId): bool
     {
         //Prevent bookmark from being health checked when retrieved.
-        return Model::withoutEvents(function () use ($siteId, $userId) {
+        return Model::withoutEvents(function () use ($sourceID, $userId) {
             return Model::query()->where([
-                'site_id' => $siteId->toInt(),
+                'site_id' => $sourceID->toInt(),
                 'user_id' => $userId->toInt()
             ])->chunkById(100, function (Collection $chunk) {
                 $chunk->toQuery()->delete();

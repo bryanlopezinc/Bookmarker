@@ -15,7 +15,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('users/me', Auth\FetchUserProfileController::class)->name('authUserProfile');
     Route::delete('users', Auth\DeleteUserAccountController::class)->name('deleteUserAccount');
     Route::get('users/favourites', Controllers\FetchUserFavouritesController::class)->name('fetchUserFavourites');
-    Route::get('users/bookmarks/sources', Controllers\FetchUserBookmarksSourcesController::class)->name('fetchUserSites');
+    Route::get('users/bookmarks/sources', Controllers\FetchUserBookmarksSourcesController::class)->name('fetchUserBookmarksSources');
     Route::get('users/tags', Controllers\FetchUserTagsController::class)->name('userTags');
     Route::get('users/tags/search', Controllers\SearchUserTagsController::class)->name('searchUserTags');
     Route::post('emails/add', Controllers\Auth\AddEmailToAccountController::class)->name('addEmailToAccount');
@@ -44,7 +44,7 @@ Route::middleware('auth:api')->group(function () {
             ->middleware([ConvertStringToArray::keys('bookmarks')])
             ->name('createFavourite');
 
-        Route::delete('bookmarks/site', Controllers\DeleteBookmarksFromSiteController::class)->name('deleteBookmarksFromSite');
+        Route::delete('bookmarks/source', Controllers\DeleteBookmarksFromSourceController::class)->name('deleteBookmarksFromSource');
 
         Route::delete('favourites', Controllers\DeleteFavouriteController::class)
             ->middleware([ConvertStringToArray::keys('bookmarks')])

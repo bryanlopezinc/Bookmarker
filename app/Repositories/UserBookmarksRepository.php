@@ -33,8 +33,8 @@ final class UserBookmarksRepository
             return $this->paginate($query->latest('bookmarks.id'), $userID, $filters->pagination);
         }
 
-        if ($filters->wantsOnlyBookmarksFromParticularSite) {
-            $query->where('site_id', $filters->siteId->toInt());
+        if ($filters->wantsOnlyBookmarksFromParticularSource) {
+            $query->where('site_id', $filters->sourceID->toInt());
         }
 
         if ($filters->wantsBookmarksWithSpecificTags) {

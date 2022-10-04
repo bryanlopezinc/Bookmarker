@@ -440,7 +440,7 @@ class ImporterTest extends TestCase
                     $this->assertEquals(1627725769, $bookmark->timeCreated->timestamp);
                     $this->assertTrue($bookmark->description->isEmpty());
                     $this->assertFalse($bookmark->descriptionWasSetByUser);
-                    $this->assertEquals('cai.tools.sap', $bookmark->fromWebSite->domainName->value);
+                    $this->assertEquals('cai.tools.sap', $bookmark->source->domainName->value);
                     $this->assertFalse($bookmark->hasCustomTitle);
                     $this->assertFalse($bookmark->hasThumbnailUrl);
                     $this->assertTrue($bookmark->ownerId->equals($userID));

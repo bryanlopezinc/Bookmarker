@@ -24,7 +24,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
  * @property string $url
  * @property string|null $preview_image_url
  * @property int $user_id foreign key to \App\Models\User
- * @property int $site_id foreign key to \App\Models\WebSite
+ * @property int $site_id foreign key to \App\Models\Source
  * @property string $url_canonical
  * @property string $url_canonical_hash
  * @property string $resolved_url
@@ -71,7 +71,7 @@ final class Bookmark extends Model implements TaggableInterface
 
     public function site(): BelongsTo
     {
-        return $this->belongsTo(WebSite::class, 'site_id', 'id');
+        return $this->belongsTo(Source::class, 'site_id', 'id');
     }
 
     public function taggableID(): ResourceID

@@ -9,7 +9,7 @@ use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\Models\Bookmark as Model;
 use App\Models\UserBookmarksCount;
-use App\Models\WebSite;
+use App\Models\Source;
 use App\ValueObjects\UserID;
 
 final class CreateBookmarkRepository implements CreateBookmarkRepositoryInterface
@@ -20,9 +20,9 @@ final class CreateBookmarkRepository implements CreateBookmarkRepositoryInterfac
 
     public function create(Bookmark $bookmark): Bookmark
     {
-        $site = WebSite::query()->firstOrCreate(['host' => $bookmark->fromWebSite->domainName->value], [
-            'host' => $bookmark->fromWebSite->domainName->value,
-            'name' => $bookmark->fromWebSite->domainName->value,
+        $site = Source::query()->firstOrCreate(['host' => $bookmark->source->domainName->value], [
+            'host' => $bookmark->source->domainName->value,
+            'name' => $bookmark->source->domainName->value,
             'name_updated_at' => null
         ]);
 

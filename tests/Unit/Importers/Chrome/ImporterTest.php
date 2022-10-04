@@ -270,7 +270,7 @@ class ImporterTest extends TestCase
                     $this->assertEquals(1505762363, $bookmark->timeCreated->timestamp);
                     $this->assertTrue($bookmark->description->isEmpty());
                     $this->assertFalse($bookmark->descriptionWasSetByUser);
-                    $this->assertEquals('askapache.com', $bookmark->fromWebSite->domainName->value);
+                    $this->assertEquals('askapache.com', $bookmark->source->domainName->value);
                     $this->assertFalse($bookmark->hasCustomTitle);
                     $this->assertFalse($bookmark->hasThumbnailUrl);
                     $this->assertTrue($bookmark->ownerId->equals($userID));

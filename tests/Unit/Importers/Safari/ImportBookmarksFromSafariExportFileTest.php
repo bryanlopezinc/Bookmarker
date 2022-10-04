@@ -177,7 +177,7 @@ class ImportBookmarksFromSafariExportFileTest extends TestCase
                     $this->assertTrue($bookmark->timeCreated->isSameMinute());
                     $this->assertTrue($bookmark->description->isEmpty());
                     $this->assertFalse($bookmark->descriptionWasSetByUser);
-                    $this->assertEquals('apple.com', $bookmark->fromWebSite->domainName->value);
+                    $this->assertEquals('apple.com', $bookmark->source->domainName->value);
                     $this->assertFalse($bookmark->hasCustomTitle);
                     $this->assertFalse($bookmark->hasThumbnailUrl);
                     $this->assertTrue($bookmark->ownerId->equals($userID));

@@ -14,7 +14,7 @@ use App\ValueObjects\UserID;
 /**
  * Delete all bookmarks that were added from a particular site.
  */
-final class DeleteBookmarksFromSiteController
+final class DeleteBookmarksFromSourceController
 {
     public function __invoke(Request $request, DeleteBookmarkRepository $repository): JsonResponse
     {
@@ -22,7 +22,7 @@ final class DeleteBookmarksFromSiteController
             'site_id' => ['required', new ResourceIdRule]
         ]);
 
-        $repository->fromSite(ResourceID::fromRequest($request, 'site_id'), UserID::fromAuthUser());
+        $repository->fromSource(ResourceID::fromRequest($request, 'site_id'), UserID::fromAuthUser());
 
         return response()->json();
     }

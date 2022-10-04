@@ -11,7 +11,7 @@ use App\Repositories\UserBookmarksRepository;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Database\Factories\BookmarkFactory;
-use Database\Factories\SiteFactory;
+use Database\Factories\SourceFactory;
 use Database\Factories\UserFactory;
 use Tests\TestCase;
 
@@ -38,7 +38,7 @@ class UserBookmarksRepositoryTest extends TestCase
         }
     }
 
-    public function testWillReturnUserBookmarksFromAParticularSite(): void
+    public function testWillReturnUserBookmarksFromAParticularSource(): void
     {
         BookmarkFactory::new()->count(5)->create([
             'user_id' => $userId = UserFactory::new()->create()->id,
@@ -46,17 +46,17 @@ class UserBookmarksRepositoryTest extends TestCase
 
         BookmarkFactory::new()->count(5)->create([
             'user_id' => $userId,
-            'site_id' => $siteId = SiteFactory::new()->create()->id
+            'site_id' => $sourceID = SourceFactory::new()->create()->id
         ]);
 
         $result = $this->repository->fetch(new UserID($userId), Data::fromArray([
-            'siteId' => new ResourceID($siteId)
+            'siteId' => new ResourceID($sourceID)
         ]));
 
         $this->assertCount(5, $result);
 
         foreach ($result as $bookmark) {
-            $this->assertEquals($bookmark->webPagesiteId->toInt(), $siteId);
+            $this->assertEquals($bookmark->sourceID->toInt(), $sourceID);
         }
     }
 

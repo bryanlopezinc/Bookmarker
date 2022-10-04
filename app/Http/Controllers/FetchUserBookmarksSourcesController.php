@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Resources\PaginatedResourceCollection;
-use App\Http\Resources\WebSiteResource;
+use App\Http\Resources\SourceResource;
 use App\PaginationData;
 use App\Repositories\FetchUserBookmarksSourcesRepository as Repository;
 use App\ValueObjects\UserID;
@@ -25,7 +25,7 @@ final class FetchUserBookmarksSourcesController
 
         return new PaginatedResourceCollection(
             $repository->get(UserID::fromAuthUser(), PaginationData::fromRequest($request)),
-            WebSiteResource::class
+            SourceResource::class
         );
     }
 }

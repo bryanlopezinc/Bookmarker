@@ -7,7 +7,7 @@ namespace App\DataTransferObjects\Builders;
 use App\Collections\TagsCollection;
 use App\Contracts\HashedUrlInterface;
 use App\DataTransferObjects\Bookmark;
-use App\DataTransferObjects\WebSite;
+use App\DataTransferObjects\Source;
 use App\Models\Bookmark as Model;
 use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\BookmarkDescription;
@@ -73,7 +73,7 @@ final class BookmarkBuilder extends Builder
         if ($url instanceof Url) {
             $this->attributes['hasThumbnailUrl'] = true;
             $this->attributes['thumbnailUrl'] = $url;
-            
+
             return $this;
         }
 
@@ -112,9 +112,9 @@ final class BookmarkBuilder extends Builder
         return $this;
     }
 
-    public function siteId(int $siteId): self
+    public function sourceID(int $sourceID): self
     {
-        $this->attributes['webPagesiteId'] = new ResourceID($siteId);
+        $this->attributes['sourceID'] = new ResourceID($sourceID);
 
         return $this;
     }
@@ -126,9 +126,9 @@ final class BookmarkBuilder extends Builder
         return $this;
     }
 
-    public function site(WebSite $site): self
+    public function source(Source $source): self
     {
-        $this->attributes['fromWebSite'] = $site;
+        $this->attributes['source'] = $source;
 
         return $this;
     }

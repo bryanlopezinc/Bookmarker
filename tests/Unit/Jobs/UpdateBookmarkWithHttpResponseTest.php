@@ -10,14 +10,14 @@ use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\UpdateBookmarkData;
 use App\Jobs\UpdateBookmarkWithHttpResponse;
 use App\Models\Bookmark;
-use App\Models\WebSite;
+use App\Models\Source;
 use App\Readers\BookmarkMetaData;
 use App\Readers\HttpClientInterface;
 use App\Repositories\FetchBookmarksRepository;
 use App\ValueObjects\Url;
 use Closure;
 use Database\Factories\BookmarkFactory;
-use Database\Factories\SiteFactory;
+use Database\Factories\SourceFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Mockery\MockInterface;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -310,7 +310,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
 
     public function testWillUpdateSiteName(): void
     {
-        $site = SiteFactory::new()->create();
+        $site = SourceFactory::new()->create();
 
         $bookmark = BookmarkFactory::new()->create([
             'site_id' => $site->id
@@ -334,7 +334,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
 
         $this->handleUpdateBookmarkJob($bookmark);
 
-        $this->assertDatabaseHas(WebSite::class, [
+        $this->assertDatabaseHas(Source::class, [
             'id'   => $site->id,
             'name' => 'PlayStation'
         ]);
@@ -342,7 +342,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
 
     public function testWillNotUpdateNameIfSiteNameDataIsFalse(): void
     {
-        $site = SiteFactory::new()->create();
+        $site = SourceFactory::new()->create();
 
         $bookmark = BookmarkFactory::new()->create([
             'site_id' =>  $site->id
@@ -366,7 +366,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
 
         $this->handleUpdateBookmarkJob($bookmark);
 
-        $this->assertDatabaseHas(WebSite::class, [
+        $this->assertDatabaseHas(Source::class, [
             'id'   => $site->id,
             'name' => $site->name
         ]);
@@ -374,7 +374,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
 
     public function testWillNotUpdateNameIfNameHasBeenUpdated(): void
     {
-        $site = SiteFactory::new()->create([
+        $site = SourceFactory::new()->create([
             'name_updated_at' => now(),
             'name' => 'foosite'
         ]);
@@ -401,7 +401,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
 
         $this->handleUpdateBookmarkJob($bookmark);
 
-        $this->assertDatabaseHas(WebSite::class, [
+        $this->assertDatabaseHas(Source::class, [
             'id'   => $site->id,
             'name' => 'foosite'
         ]);

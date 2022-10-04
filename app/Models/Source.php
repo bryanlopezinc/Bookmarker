@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property \Carbon\Carbon $name_updated_at
  * @property \Carbon\Carbon $created_at
  */
-final class WebSite extends Model
+final class Source extends Model
 {
     public const UPDATED_AT = null;
 

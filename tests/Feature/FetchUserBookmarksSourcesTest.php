@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use Database\Factories\BookmarkFactory;
-use Database\Factories\SiteFactory;
+use Database\Factories\SourceFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
@@ -13,12 +13,12 @@ class FetchUserBookmarksSourcesTest extends TestCase
 {
     protected function getTestResponse(array $parameters = []): TestResponse
     {
-        return $this->getJson(route('fetchUserSites', $parameters));
+        return $this->getJson(route('fetchUserBookmarksSources', $parameters));
     }
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users/bookmarks/sources', 'fetchUserSites');
+        $this->assertRouteIsAccessibeViaPath('v1/users/bookmarks/sources', 'fetchUserBookmarksSources');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -59,7 +59,7 @@ class FetchUserBookmarksSourcesTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $site = SiteFactory::new()->create();
+        $site = SourceFactory::new()->create();
 
         BookmarkFactory::new()->count(5)->create([
             'user_id' => $user->id,

@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects\Builders;
 
-use App\DataTransferObjects\WebSite;
-use App\Models\WebSite as Model;
+use App\DataTransferObjects\Source;
+use App\Models\Source as Model;
 use App\ValueObjects\DomainName;
 use App\ValueObjects\NonEmptyString;
 use App\ValueObjects\ResourceID;
-use App\ValueObjects\TimeStamp;
 use Carbon\Carbon;
 
-final class SiteBuilder extends Builder
+final class SourceBuilder extends Builder
 {
     public static function new(): self
     {
@@ -26,10 +25,10 @@ final class SiteBuilder extends Builder
         $keyExists = fn (string $key) => array_key_exists($key, $attributes);
 
         return (new self)
-            ->when($keyExists('id'), fn (SiteBuilder $sb) => $sb->id($model['id']))
-            ->when($keyExists('host'), fn (SiteBuilder $sb) => $sb->domainName($model['host']))
-            ->when($keyExists('name'), fn (SiteBuilder $sb) => $sb->name($model['name']))
-            ->when($keyExists('name_updated_at'), fn (SiteBuilder $sb) => $sb->nameUpdatedAt((string)$model['name_updated_at']));
+            ->when($keyExists('id'), fn (SourceBuilder $sb) => $sb->id($model['id']))
+            ->when($keyExists('host'), fn (SourceBuilder $sb) => $sb->domainName($model['host']))
+            ->when($keyExists('name'), fn (SourceBuilder $sb) => $sb->name($model['name']))
+            ->when($keyExists('name_updated_at'), fn (SourceBuilder $sb) => $sb->nameUpdatedAt((string)$model['name_updated_at']));
     }
 
     public function id(int $id): self
@@ -67,8 +66,8 @@ final class SiteBuilder extends Builder
         return $this;
     }
 
-    public function build(): WebSite
+    public function build(): Source
     {
-        return new WebSite($this->attributes);
+        return new Source($this->attributes);
     }
 }

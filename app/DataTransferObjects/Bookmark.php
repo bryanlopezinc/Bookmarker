@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects;
 
-use App\Attributes\EnsureHasDatetimeformat;
 use App\Attributes\EnsureValidTagsCount;
 use App\ValueObjects\Url;
 use App\ValueObjects\UserID;
@@ -27,11 +26,11 @@ final class Bookmark extends DataTransferObject implements BelongsToUserInterfac
     public readonly bool $hasThumbnailUrl;
     public readonly BookmarkDescription $description;
     public readonly bool $descriptionWasSetByUser;
-    public readonly ResourceID $webPagesiteId;
+    public readonly ResourceID $sourceID;
     public readonly UserID $ownerId;
     public readonly Carbon $timeCreated;
     public readonly Carbon $timeUpdated;
-    public readonly WebSite $fromWebSite;
+    public readonly Source $source;
     public readonly TagsCollection $tags;
     public bool $isHealthy;
     public bool $isUserFavourite;

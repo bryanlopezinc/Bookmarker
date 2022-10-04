@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Models\WebSite;
+use App\Models\Source;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-final class SiteFactory extends Factory
+final class SourceFactory extends Factory
 {
-    protected $model = WebSite::class;
+    protected $model = Source::class;
 
     /**
      * Define the model's default state.

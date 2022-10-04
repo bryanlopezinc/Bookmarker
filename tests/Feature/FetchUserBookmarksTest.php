@@ -158,7 +158,7 @@ class FetchUserBookmarksTest extends TestCase
         $this->assertBookmarksHealthWillBeChecked($bookmarks->pluck('id')->all());
     }
 
-    public function testWillFetchUserBookmarksFromASpecifiedSite(): void
+    public function testWillFetchUserBookmarksFromASpecifiedSource(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -182,7 +182,7 @@ class FetchUserBookmarksTest extends TestCase
             });
 
         foreach ($response->json('data') as $resource) {
-            $this->assertSame($firstBookmark->site_id, data_get($resource, 'attributes.from_site.attributes.id'));
+            $this->assertSame($firstBookmark->site_id, data_get($resource, 'attributes.source.attributes.id'));
         }
     }
 

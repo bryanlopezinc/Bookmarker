@@ -14,18 +14,18 @@ use Tests\TestCase;
 use Tests\Traits\WillCheckBookmarksHealth;
 use Tests\Traits\CreatesBookmark;
 
-class DeleteBookmarksFromSiteTest extends TestCase
+class DeleteBookmarksFromSourceTest extends TestCase
 {
     use CreatesBookmark, WillCheckBookmarksHealth;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
-        return $this->deleteJson(route('deleteBookmarksFromSite'), $parameters);
+        return $this->deleteJson(route('deleteBookmarksFromSource'), $parameters);
     }
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/bookmarks/site', 'deleteBookmarksFromSite');
+        $this->assertRouteIsAccessibeViaPath('v1/bookmarks/source', 'deleteBookmarksFromSource');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void

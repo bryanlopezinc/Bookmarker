@@ -5,7 +5,7 @@ namespace Tests\Unit\Repositories;
 use App\PaginationData;
 use Tests\TestCase;
 use App\ValueObjects\UserID;
-use Database\Factories\SiteFactory;
+use Database\Factories\SourceFactory;
 use Database\Factories\UserFactory;
 use Database\Factories\BookmarkFactory;
 use App\Repositories\FetchUserBookmarksSourcesRepository as Repository;
@@ -16,7 +16,7 @@ class FetchUserBookmarksSourcesRepositoryTest extends TestCase
     {
         BookmarkFactory::new()->count(5)->create([
             'user_id' => $userId = UserFactory::new()->create()->id,
-            'site_id' => SiteFactory::new()->create()->id
+            'site_id' => SourceFactory::new()->create()->id
         ]);
 
         BookmarkFactory::new()->count(4)->create(['user_id' => $userId]);

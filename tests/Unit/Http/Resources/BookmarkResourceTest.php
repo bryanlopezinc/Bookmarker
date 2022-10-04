@@ -6,11 +6,11 @@ namespace Tests\Unit\Http\Resources;
 
 use App\Collections\TagsCollection;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
-use App\DataTransferObjects\Builders\SiteBuilder;
+use App\DataTransferObjects\Builders\SourceBuilder;
 use Tests\TestCase;
 use App\Http\Resources\BookmarkResource;
 use Database\Factories\BookmarkFactory;
-use Database\Factories\SiteFactory;
+use Database\Factories\SourceFactory;
 use Database\Factories\TagFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\Fluent\AssertableJson;
@@ -25,7 +25,7 @@ class BookmarkResourceTest extends TestCase
     {
         $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->create([]))
             ->tags(TagFactory::new()->count(3)->make()->all())
-            ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
+            ->source(SourceBuilder::fromModel(SourceFactory::new()->create())->build())
             ->isHealthy(false)
             ->isUserFavourite(false)
             ->build();
@@ -54,7 +54,7 @@ class BookmarkResourceTest extends TestCase
     {
         $bookmark = BookmarkBuilder::fromModel(BookmarkFactory::new()->create())
             ->tags(TagsCollection::make([]))
-            ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
+            ->source(SourceBuilder::fromModel(SourceFactory::new()->create())->build())
             ->isHealthy(false)
             ->isUserFavourite(false)
             ->build();
@@ -74,7 +74,7 @@ class BookmarkResourceTest extends TestCase
             'description' => null,
         ]))
             ->tags(TagFactory::new()->count(3)->make()->all())
-            ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
+            ->source(SourceBuilder::fromModel(SourceFactory::new()->create())->build())
             ->isHealthy(false)
             ->isUserFavourite(false)
             ->build();
@@ -95,7 +95,7 @@ class BookmarkResourceTest extends TestCase
             'preview_image_url' => null,
         ]))
             ->tags(TagFactory::new()->count(3)->make()->all())
-            ->site(SiteBuilder::fromModel(SiteFactory::new()->create())->build())
+            ->source(SourceBuilder::fromModel(SourceFactory::new()->create())->build())
             ->isHealthy(false)
             ->isUserFavourite(false)
             ->build();

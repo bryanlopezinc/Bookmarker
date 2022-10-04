@@ -76,7 +76,7 @@ class UpdateBookmarkTest extends TestCase
         $this->assertTrue($bookmark->description_set_by_user);
         $this->assertEquals($model->preview_image_url, $bookmark->preview_image_url);
         $this->assertEquals($model->url, $bookmark->url);
-        $this->assertEquals($model->site_id, $bookmark->site_id);
+        $this->assertEquals($model->source_id, $bookmark->source_id);
         $this->assertEquals($model->created_at->timestamp, $bookmark->created_at->timestamp);
 
         $this->assertDatabaseHas(Taggable::class, [
@@ -107,7 +107,7 @@ class UpdateBookmarkTest extends TestCase
         $this->assertFalse($bookmark->description_set_by_user);
         $this->assertEquals($model->preview_image_url, $bookmark->preview_image_url);
         $this->assertEquals($model->url, $bookmark->url);
-        $this->assertEquals($model->site_id, $bookmark->site_id);
+        $this->assertEquals($model->source_id, $bookmark->source_id);
         $this->assertEquals($model->created_at->timestamp, $bookmark->created_at->timestamp);
 
         $this->assertDatabaseHas(Taggable::class, [
@@ -141,7 +141,7 @@ class UpdateBookmarkTest extends TestCase
         $this->assertFalse($bookmark->description_set_by_user);
         $this->assertEquals($model->preview_image_url, $bookmark->preview_image_url);
         $this->assertEquals($model->url, $bookmark->url);
-        $this->assertEquals($model->site_id, $bookmark->site_id);
+        $this->assertEquals($model->source_id, $bookmark->source_id);
         $this->assertEquals($model->created_at->timestamp, $bookmark->created_at->timestamp);
     }
 
@@ -166,7 +166,7 @@ class UpdateBookmarkTest extends TestCase
         $this->assertTrue($bookmark->description_set_by_user);
         $this->assertEquals($model->preview_image_url, $bookmark->preview_image_url);
         $this->assertEquals($model->url, $bookmark->url);
-        $this->assertEquals($model->site_id, $bookmark->site_id);
+        $this->assertEquals($model->source_id, $bookmark->source_id);
         $this->assertEquals($model->created_at->timestamp, $bookmark->created_at->timestamp);
     }
 

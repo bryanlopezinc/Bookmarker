@@ -46,7 +46,7 @@ class UserBookmarksRepositoryTest extends TestCase
 
         BookmarkFactory::new()->count(5)->create([
             'user_id' => $userId,
-            'site_id' => $sourceID = SourceFactory::new()->create()->id
+            'source_id' => $sourceID = SourceFactory::new()->create()->id
         ]);
 
         $result = $this->repository->fetch(new UserID($userId), Data::fromArray([

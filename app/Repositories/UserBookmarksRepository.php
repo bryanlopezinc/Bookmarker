@@ -34,7 +34,7 @@ final class UserBookmarksRepository
         }
 
         if ($filters->wantsOnlyBookmarksFromParticularSource) {
-            $query->where('site_id', $filters->sourceID->toInt());
+            $query->where('source_id', $filters->sourceID->toInt());
         }
 
         if ($filters->wantsBookmarksWithSpecificTags) {

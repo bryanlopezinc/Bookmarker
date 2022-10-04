@@ -51,7 +51,7 @@ class DeleteBookmarksFromSourceTest extends TestCase
 
         [$firstBookmark, $secondBookmark] = [$userBookmarks->first(), $userBookmarks->last()];
 
-        $this->getTestResponse(['site_id' => $firstBookmark->site_id])->assertOk();
+        $this->getTestResponse(['site_id' => $firstBookmark->source_id])->assertOk();
 
         $this->assertModelMissing($firstBookmark);
         $this->assertModelExists($secondBookmark);
@@ -69,7 +69,7 @@ class DeleteBookmarksFromSourceTest extends TestCase
 
         $userBookmarks = BookmarkFactory::new()->count(2)->create(['user_id' => $user->id]);
 
-        $this->getTestResponse(['site_id' => $userBookmarks->first()->site_id])->assertOk();
+        $this->getTestResponse(['site_id' => $userBookmarks->first()->source_id])->assertOk();
 
         $this->assertBookmarksHealthWillNotBeChecked([$userBookmarks->first()->id]);
     }
@@ -89,7 +89,7 @@ class DeleteBookmarksFromSourceTest extends TestCase
         $this->postJson(route('createFavourite'), ['bookmarks' => (string) $firstBookmark->id])->assertCreated();
         $this->postJson(route('createFavourite'), ['bookmarks' => (string) $secondBookmark->id])->assertCreated();
 
-        $this->getTestResponse(['site_id' => $firstBookmark->site_id])->assertOk();
+        $this->getTestResponse(['site_id' => $firstBookmark->source_id])->assertOk();
 
         $this->assertDatabaseMissing(Favourite::class, [
             'user_id' => $user->id,

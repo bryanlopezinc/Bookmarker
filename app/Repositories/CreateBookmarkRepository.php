@@ -20,7 +20,7 @@ final class CreateBookmarkRepository implements CreateBookmarkRepositoryInterfac
 
     public function create(Bookmark $bookmark): Bookmark
     {
-        $site = Source::query()->firstOrCreate(['host' => $bookmark->source->domainName->value], [
+        $source = Source::query()->firstOrCreate(['host' => $bookmark->source->domainName->value], [
             'host' => $bookmark->source->domainName->value,
             'name' => $bookmark->source->domainName->value,
             'name_updated_at' => null
@@ -31,7 +31,7 @@ final class CreateBookmarkRepository implements CreateBookmarkRepositoryInterfac
             'url'  => $bookmark->url->toString(),
             'description' => $bookmark->description->value,
             'description_set_by_user' => $bookmark->descriptionWasSetByUser,
-            'site_id' => $site->id,
+            'source_id' => $source->id,
             'user_id' => $bookmark->ownerId->toInt(),
             'has_custom_title'  => $bookmark->hasCustomTitle,
             'preview_image_url' => $bookmark->hasThumbnailUrl ? $bookmark->thumbnailUrl->toString() : null,
@@ -39,7 +39,7 @@ final class CreateBookmarkRepository implements CreateBookmarkRepositoryInterfac
             'url_canonical' => $bookmark->canonicalUrl->toString(),
             'url_canonical_hash' => (string) $bookmark->canonicalUrlHash,
             'resolved_url' => $bookmark->resolvedUrl->toString()
-        ])->setRelation('site', $site);
+        ])->setRelation('source', $source);
 
         $this->tagsRepository->attach($bookmark->tags, $model);
 

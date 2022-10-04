@@ -22,9 +22,9 @@ final class FetchUserBookmarksSourcesRepository
     public function get(UserID $userId, PaginationData $pagination): Paginator
     {
         /** @var Paginator */
-        $result = Model::select('sites.id', 'host', 'name')
-            ->join('bookmarks', 'sites.id', '=', 'bookmarks.site_id')
-            ->groupBy('sites.id')
+        $result = Model::select('bookmarks_sources.id', 'host', 'name')
+            ->join('bookmarks', 'bookmarks_sources.id', '=', 'bookmarks.source_id')
+            ->groupBy('bookmarks_sources.id')
             ->where('user_id', $userId->toInt())
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
 

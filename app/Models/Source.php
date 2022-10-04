@@ -20,7 +20,7 @@ final class Source extends Model
     /**
      * {@inheritdoc}
      */
-    protected $table = 'sites';
+    protected $table = 'bookmarks_sources';
 
     /**
      * {@inheritdoc}

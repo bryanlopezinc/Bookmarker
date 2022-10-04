@@ -15,7 +15,7 @@ final class BookmarkAttributes extends Attributes
     {
         return [
             'id',
-            'site',
+            'source',
             'user_id',
             'tags',
             'is_dead_link',
@@ -25,7 +25,7 @@ final class BookmarkAttributes extends Attributes
 
     /**
      * @param string $attributes A comma seperated list of attributes which can only be
-     * any of id,site,user_id,tags,is_dead_link,url
+     * any of id,source,user_id,tags,is_dead_link,url
      */
     public static function only(string $attributes): self
     {

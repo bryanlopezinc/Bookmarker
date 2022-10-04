@@ -313,7 +313,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         $site = SourceFactory::new()->create();
 
         $bookmark = BookmarkFactory::new()->create([
-            'site_id' => $site->id
+            'source_id' => $site->id
         ])->setRelation('site', $site);
 
         $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
@@ -345,7 +345,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         $site = SourceFactory::new()->create();
 
         $bookmark = BookmarkFactory::new()->create([
-            'site_id' =>  $site->id
+            'source_id' =>  $site->id
         ])->setRelation('site', $site);
 
         $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
@@ -380,7 +380,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         ]);
 
         $bookmark = BookmarkFactory::new()->create([
-            'site_id' => $site->id
+            'source_id' => $site->id
         ])->setRelation('site', $site);
 
         $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {

@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('sites', function (Blueprint $table) {
+        Schema::create('bookmarks_sources', function (Blueprint $table) {
             $table->id();
             $table->string('host')->unique();
             $table->string('name');
@@ -29,6 +29,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('sites');
+        Schema::dropIfExists('bookmarks_sources');
     }
 };

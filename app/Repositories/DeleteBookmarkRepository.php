@@ -31,7 +31,7 @@ final class DeleteBookmarkRepository
         //Prevent bookmark from being health checked when retrieved.
         return Model::withoutEvents(function () use ($sourceID, $userId) {
             return Model::query()->where([
-                'site_id' => $sourceID->toInt(),
+                'source_id' => $sourceID->toInt(),
                 'user_id' => $userId->toInt()
             ])->chunkById(100, function (Collection $chunk) {
                 $chunk->toQuery()->delete();

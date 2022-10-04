@@ -24,7 +24,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
  * @property string $url
  * @property string|null $preview_image_url
  * @property int $user_id foreign key to \App\Models\User
- * @property int $site_id foreign key to \App\Models\Source
+ * @property int $source_id foreign key to \App\Models\Source
  * @property string $url_canonical
  * @property string $url_canonical_hash
  * @property string $resolved_url
@@ -69,9 +69,9 @@ final class Bookmark extends Model implements TaggableInterface
             ->where('taggable_type', Taggable::BOOKMARK_TYPE);
     }
 
-    public function site(): BelongsTo
+    public function source(): BelongsTo
     {
-        return $this->belongsTo(Source::class, 'site_id', 'id');
+        return $this->belongsTo(Source::class, 'source_id', 'id');
     }
 
     public function taggableID(): ResourceID
@@ -103,7 +103,7 @@ final class Bookmark extends Model implements TaggableInterface
         }
 
         if (!$columns->isEmpty()) {
-            $builder->addSelect($this->qualifyColumns($columns->except(['tags', 'site'])));
+            $builder->addSelect($this->qualifyColumns($columns->except(['tags', 'source'])));
         }
 
         $this->parseTagsRelationQuery($builder, $columns);
@@ -136,13 +136,13 @@ final class Bookmark extends Model implements TaggableInterface
      */
     protected function parseSiteRelationQuery(&$builder, BookmarkAttributes $options)
     {
-        $wantsSiteRelation = $options->has('site') ?: $options->isEmpty();
+        $wantsSiteRelation = $options->has('source') ?: $options->isEmpty();
 
         if (!$wantsSiteRelation) {
             return $builder;
         }
 
-        return $builder->with('site');
+        return $builder->with('source');
     }
 
     /**

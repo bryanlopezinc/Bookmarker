@@ -168,13 +168,13 @@ class FetchUserBookmarksTest extends TestCase
 
         $firstBookmark = Bookmark::query()->where('user_id', $user->id)->first();
 
-        $response =  $this->getTestResponse(['site_id' => $firstBookmark->site_id])
+        $response =  $this->getTestResponse(['site_id' => $firstBookmark->source_id])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJson(function (AssertableJson $assert) use ($firstBookmark) {
                 $link = route('fetchUserBookmarks', [
                     'per_page' => 15,
-                    'site_id' => $firstBookmark->site_id,
+                    'site_id' => $firstBookmark->source_id,
                     'page' => 1,
                 ]);
 
@@ -182,7 +182,7 @@ class FetchUserBookmarksTest extends TestCase
             });
 
         foreach ($response->json('data') as $resource) {
-            $this->assertSame($firstBookmark->site_id, data_get($resource, 'attributes.source.attributes.id'));
+            $this->assertSame($firstBookmark->source_id, data_get($resource, 'attributes.source.attributes.id'));
         }
     }
 

@@ -107,7 +107,7 @@ final class Bookmark extends Model implements TaggableInterface
         }
 
         $this->parseTagsRelationQuery($builder, $columns);
-        $this->parseSiteRelationQuery($builder, $columns);
+        $this->parseSourceRelationQuery($builder, $columns);
         $this->parseHealthCheckquery($builder, $columns);
 
         return $builder;
@@ -134,7 +134,7 @@ final class Bookmark extends Model implements TaggableInterface
      *
      * @return Builder
      */
-    protected function parseSiteRelationQuery(&$builder, BookmarkAttributes $options)
+    protected function parseSourceRelationQuery(&$builder, BookmarkAttributes $options)
     {
         $wantsSiteRelation = $options->has('source') ?: $options->isEmpty();
 

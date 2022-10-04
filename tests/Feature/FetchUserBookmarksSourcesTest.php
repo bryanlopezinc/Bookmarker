@@ -59,11 +59,11 @@ class FetchUserBookmarksSourcesTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $site = SourceFactory::new()->create();
+        $source = SourceFactory::new()->create();
 
         BookmarkFactory::new()->count(5)->create([
             'user_id' => $user->id,
-            'source_id' => $site->id
+            'source_id' => $source->id
         ]);
 
         BookmarkFactory::new()->count(5)->create([

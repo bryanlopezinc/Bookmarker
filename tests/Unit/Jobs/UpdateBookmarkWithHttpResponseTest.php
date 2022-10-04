@@ -310,11 +310,11 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
 
     public function testWillUpdateSiteName(): void
     {
-        $site = SourceFactory::new()->create();
+        $source = SourceFactory::new()->create();
 
         $bookmark = BookmarkFactory::new()->create([
-            'source_id' => $site->id
-        ])->setRelation('site', $site);
+            'source_id' => $source->id
+        ])->setRelation('source', $source);
 
         $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
             $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
@@ -335,18 +335,18 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         $this->handleUpdateBookmarkJob($bookmark);
 
         $this->assertDatabaseHas(Source::class, [
-            'id'   => $site->id,
+            'id'   => $source->id,
             'name' => 'PlayStation'
         ]);
     }
 
     public function testWillNotUpdateNameIfSiteNameDataIsFalse(): void
     {
-        $site = SourceFactory::new()->create();
+        $source = SourceFactory::new()->create();
 
         $bookmark = BookmarkFactory::new()->create([
-            'source_id' =>  $site->id
-        ])->setRelation('site', $site);
+            'source_id' =>  $source->id
+        ])->setRelation('source', $source);
 
         $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
             $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
@@ -367,21 +367,21 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         $this->handleUpdateBookmarkJob($bookmark);
 
         $this->assertDatabaseHas(Source::class, [
-            'id'   => $site->id,
-            'name' => $site->name
+            'id'   => $source->id,
+            'name' => $source->name
         ]);
     }
 
     public function testWillNotUpdateNameIfNameHasBeenUpdated(): void
     {
-        $site = SourceFactory::new()->create([
+        $source = SourceFactory::new()->create([
             'name_updated_at' => now(),
             'name' => 'foosite'
         ]);
 
         $bookmark = BookmarkFactory::new()->create([
-            'source_id' => $site->id
-        ])->setRelation('site', $site);
+            'source_id' => $source->id
+        ])->setRelation('source', $source);
 
         $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
             $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
@@ -402,7 +402,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         $this->handleUpdateBookmarkJob($bookmark);
 
         $this->assertDatabaseHas(Source::class, [
-            'id'   => $site->id,
+            'id'   => $source->id,
             'name' => 'foosite'
         ]);
     }

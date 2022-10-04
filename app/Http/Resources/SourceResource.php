@@ -17,7 +17,7 @@ final class SourceResource extends JsonResource
     public function toArray($request): array
     {
         return [
-            'type' => 'site',
+            'type' => 'source',
             'attributes' => [
                 'id'   => $this->source->id->toInt(),
                 'name' => $this->source->name->value,

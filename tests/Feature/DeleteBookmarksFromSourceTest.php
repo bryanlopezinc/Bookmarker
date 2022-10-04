@@ -18,7 +18,7 @@ class DeleteBookmarksFromSourceTest extends TestCase
 {
     use CreatesBookmark, WillCheckBookmarksHealth;
 
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function deleteBookmarksResponse(array $parameters = []): TestResponse
     {
         return $this->deleteJson(route('deleteBookmarksFromSource'), $parameters);
     }
@@ -30,14 +30,14 @@ class DeleteBookmarksFromSourceTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->deleteBookmarksResponse()->assertUnauthorized();
     }
 
     public function testWillThrowValidationWhenRequiredAttrbutesAreMissing(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse()->assertJsonValidationErrorFor('site_id');
+        $this->deleteBookmarksResponse()->assertJsonValidationErrorFor('source_id');
     }
 
     public function testWillDeleteBookmarks(): void
@@ -51,7 +51,7 @@ class DeleteBookmarksFromSourceTest extends TestCase
 
         [$firstBookmark, $secondBookmark] = [$userBookmarks->first(), $userBookmarks->last()];
 
-        $this->getTestResponse(['site_id' => $firstBookmark->source_id])->assertOk();
+        $this->deleteBookmarksResponse(['source_id' => $firstBookmark->source_id])->assertOk();
 
         $this->assertModelMissing($firstBookmark);
         $this->assertModelExists($secondBookmark);
@@ -69,7 +69,7 @@ class DeleteBookmarksFromSourceTest extends TestCase
 
         $userBookmarks = BookmarkFactory::new()->count(2)->create(['user_id' => $user->id]);
 
-        $this->getTestResponse(['site_id' => $userBookmarks->first()->source_id])->assertOk();
+        $this->deleteBookmarksResponse(['source_id' => $userBookmarks->first()->source_id])->assertOk();
 
         $this->assertBookmarksHealthWillNotBeChecked([$userBookmarks->first()->id]);
     }
@@ -89,7 +89,7 @@ class DeleteBookmarksFromSourceTest extends TestCase
         $this->postJson(route('createFavourite'), ['bookmarks' => (string) $firstBookmark->id])->assertCreated();
         $this->postJson(route('createFavourite'), ['bookmarks' => (string) $secondBookmark->id])->assertCreated();
 
-        $this->getTestResponse(['site_id' => $firstBookmark->source_id])->assertOk();
+        $this->deleteBookmarksResponse(['source_id' => $firstBookmark->source_id])->assertOk();
 
         $this->assertDatabaseMissing(Favourite::class, [
             'user_id' => $user->id,

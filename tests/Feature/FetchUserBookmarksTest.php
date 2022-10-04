@@ -82,6 +82,24 @@ class FetchUserBookmarksTest extends TestCase
             ]);
     }
 
+    public function test_source_id_input_must_be_valid(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->userBookmarksResponse(['source_id' => 'foo'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrorFor('source_id');
+    }
+
+    public function test_tags_input_must_be_valid(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->userBookmarksResponse(['tags' => str_repeat('H', 23)])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrorFor('tags.0');
+    }
+
     public function testWillFetchUserBookmarks(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());

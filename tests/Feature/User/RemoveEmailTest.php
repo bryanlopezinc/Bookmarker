@@ -3,6 +3,7 @@
 namespace Tests\Feature\User;
 
 use App\Models\SecondaryEmail;
+use App\Models\User;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
@@ -98,12 +99,12 @@ class RemoveEmailTest extends TestCase
             ]);
     }
 
-    public function testEmailMustBelongToUser(): void
+    public function testSecondaryEmailMustBelongToUser(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
         SecondaryEmail::query()->create([
-            'user_id' => UserFactory::new()->create()->id,
+            'user_id' => $otherUserID = UserFactory::new()->create()->id,
             'email' => $email = $this->faker->unique()->email,
             'verified_at' => now()
         ]);
@@ -114,5 +115,34 @@ class RemoveEmailTest extends TestCase
             ->assertExactJson([
                 'message' => 'Email does not exist'
             ]);
+
+        $this->assertDatabaseHas(SecondaryEmail::class, [
+            'email' => $email,
+            'user_id' => $otherUserID
+        ]);
+    }
+
+    public function testCannotRemovePrimaryEmail(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->removeEmailResponse(['email' => $user->email])
+            ->assertStatus(Response::HTTP_BAD_REQUEST)
+            ->assertExactJson([
+                'message' => 'Cannot remove primary email'
+            ]);
+
+        $this->assertDatabaseHas(User::class, ['id' => $user->id]);
+    }
+
+    public function testCannotRemoveAnotherUsersPrimaryEmail(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->removeEmailResponse([
+            'email' => $email = UserFactory::new()->create()->email
+        ])->assertNotFound();
+
+        $this->assertDatabaseHas(User::class, ['email' => $email]);
     }
 }

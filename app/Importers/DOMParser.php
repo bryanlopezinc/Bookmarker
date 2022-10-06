@@ -15,7 +15,13 @@ abstract class DOMParser implements Iterator
     protected function setCollection(string $html, string $XPathExpression): void
     {
         $generator = function () use ($html, $XPathExpression) {
-            foreach ($this->getDOMXPath($html)->query($XPathExpression)->getIterator() as $dOMElement) {
+            $DOMNodeList = $this->getDOMXPath($html)->query($XPathExpression);
+
+            if ($DOMNodeList === false) {
+                return yield from [];
+            }
+
+            foreach ($DOMNodeList as $dOMElement) {
                 yield $dOMElement;
             }
         };

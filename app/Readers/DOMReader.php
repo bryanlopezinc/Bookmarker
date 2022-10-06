@@ -26,13 +26,17 @@ final class DOMReader
 
     public function getPageDescription(): string|false
     {
-        $description = $this->evalute(
+        $DOMNodeList =  $this->evalute(
             '//meta[@property="og:description"]/@content',
             '//meta[@name="description"]/@content',
             '//meta[@name="twitter:description"]/@content'
-        )->item(0)?->nodeValue;
+        );
 
-        return $this->filterValue($description);
+        if ($DOMNodeList === false) {
+            return false;
+        }
+
+        return $this->filterValue($DOMNodeList->item(0)?->nodeValue);
     }
 
     /**
@@ -46,8 +50,10 @@ final class DOMReader
         foreach (func_get_args() as $expression) {
             $DOMNodeList = $this->dOMXPath->query($expression);
 
-            if ($DOMNodeList->count() > 0) {
-                break;
+            if ($DOMNodeList !== false) {
+                if ($DOMNodeList->count() > 0) {
+                    break;
+                }
             }
         }
 
@@ -56,13 +62,17 @@ final class DOMReader
 
     public function getPreviewImageUrl(): Url|false
     {
-        $value = $this->evalute(
+        $DOMNodeList = $this->evalute(
             '//meta[@property="og:image"]/@content',
             '//meta[@name="twitter:image"]/@content'
-        )->item(0)?->nodeValue;
+        );
+
+        if ($DOMNodeList === false) {
+            return false;
+        }
 
         try {
-            return new Url((string)$value);
+            return new Url((string)$DOMNodeList->item(0)?->nodeValue);
         } catch (MalformedURLException) {
             return false;
         }
@@ -70,32 +80,46 @@ final class DOMReader
 
     public function getPageTitle(): string|false
     {
-        $title = $this->evalute(
+        $DOMNodeList = $this->evalute(
             '//meta[@property="og:title"]/@content',
             '/html/head/title',
             '//meta[@name="twitter:title"]/@content'
-        )->item(0)?->nodeValue;
+        );
 
-        return $this->filterValue($title);
+        if ($DOMNodeList === false) {
+            return false;
+        }
+
+        return $this->filterValue($DOMNodeList->item(0)?->nodeValue);
     }
 
     public function getSiteName(): string|false
     {
-        $name = $this->evalute(
+        $DOMNodeList = $this->evalute(
             '//meta[@name="application-name"]/@content',
             '//meta[@property="og:site_name"]/@content',
             '//meta[@name="twitter:site"]/@content'
-        )->item(0)?->nodeValue;
+        );
 
-        return $this->filterValue($name);
+        if ($DOMNodeList === false) {
+            return false;
+        }
+
+        return $this->filterValue($DOMNodeList->item(0)?->nodeValue);
     }
 
     public function getCanonicalUrl(): Url|false
     {
-        $value = $this->evalute(
+        $DOMNodeList = $this->evalute(
             '//link[@rel="canonical"]/@href',
             '//meta[@property="og:url"]/@content',
-        )->item(0)?->nodeValue;
+        );
+
+        if ($DOMNodeList === false) {
+            return false;
+        }
+
+        $value = $DOMNodeList->item(0)?->nodeValue;
 
         return (new ResolveCanonicalUrlValue((string) $value, $this->resolvedUrl))();
     }

@@ -2,8 +2,19 @@ includes:
 - ./vendor/nunomaduro/larastan/extension.neon
 
 parameters:
-    level:  6
+    level:  7
     checkMissingIterableValueType: false
     checkGenericClassInNonGenericObjectType: false
     paths:
         -   app
+
+    ignoreErrors:
+        -
+            message: '#Class .* has an uninitialized readonly property \$.*\. Assign it in the constructor\.#'
+            paths:
+                -   'app/DataTransferObjects/*'
+                -  'app/Readers/*'
+
+        -
+            message: '#Match expression does not handle remaining value: mixed#'
+            path: 'app/*'

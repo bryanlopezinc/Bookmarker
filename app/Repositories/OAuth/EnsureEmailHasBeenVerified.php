@@ -26,6 +26,7 @@ final class EnsureEmailHasBeenVerified implements UserRepositoryInterface
             return $userEntity;
         };
 
+        /** @var User */
         $user = User::query()->find($userEntity->getIdentifier(), ['email_verified_at']);
 
         if ($user->email_verified_at === null) {

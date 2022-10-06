@@ -35,7 +35,11 @@ final class FolderStorage
             return false;
         }
 
-        return $this->total + count($items) <= self::MAX_ITEMS;
+        if (is_array($items)) {
+            $items = new \ArrayIterator($items);
+        }
+
+        return $this->total + iterator_count($items) <= self::MAX_ITEMS;
     }
 
     public function percentageUsed(): int

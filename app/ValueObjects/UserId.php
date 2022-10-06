@@ -8,7 +8,7 @@ final class UserID extends ResourceID
 {
     public static function fromAuthUser(): self
     {
-        return new self(auth('api')->id());
+        return new self(auth('api')->id()); // @phpstan-ignore-line
     }
 
     public function equals(UserID $userId): bool

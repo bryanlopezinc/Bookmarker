@@ -9,10 +9,8 @@ declare(strict_types=1);
  */
 function setting(string $key): mixed
 {
-    $default = fn () => throw new Exception(
+    return config('settings.' . $key, fn () => throw new Exception(
         sprintf('key [%s] is not defined in %s', $key, config_path('settings.php')),
         30_000
-    );
-
-    return config('settings.' . $key, $default);
+    ));
 }

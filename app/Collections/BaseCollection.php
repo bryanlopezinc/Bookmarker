@@ -48,7 +48,7 @@ abstract class BaseCollection implements Arrayable, Countable, IteratorAggregate
 
     protected function setItems(iterable|Arrayable $items): void
     {
-        $this->collection = collect($items);
+        $this->collection = collect($items); // @phpstan-ignore-line
     }
 
     /**

@@ -12,7 +12,7 @@ final class DeviceDetector implements DeviceDetectorInterface
     {
         $device = new  Agent(userAgent: $userAgent);
 
-        $deviceName = $device->device() ? $device->device() : null;
+        $deviceName = $this->getDeviceName($device);
 
         return match ($device->deviceType()) {
             'phone'    => new Device(DeviceType::MOBILE, $deviceName),
@@ -20,5 +20,16 @@ final class DeviceDetector implements DeviceDetectorInterface
             'desktop' => new Device(DeviceType::PC, $deviceName),
             default     => new Device(DeviceType::UNKNOWN, $deviceName)
         };
+    }
+
+    private function getDeviceName(Agent $userAgent): ?string
+    {
+        $deviceName = $userAgent->device();
+
+        if ($deviceName === false) {
+            return null;
+        }
+
+        return (string) $deviceName;
     }
 }

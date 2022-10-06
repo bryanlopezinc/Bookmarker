@@ -17,7 +17,7 @@ final class UserResource extends JsonResource
     /**
      * {@inheritdoc}
      */
-    public function toArray($request)
+    public function toArray($request): array
     {
         return [
             'type' => 'user',

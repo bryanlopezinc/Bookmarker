@@ -12,7 +12,7 @@ abstract class Attributes implements Arrayable
     protected Collection $attributes;
 
     /**
-     * @param array<string> $columns
+     * @param array<string> $attributes
      */
     public function __construct(array $attributes = [])
     {

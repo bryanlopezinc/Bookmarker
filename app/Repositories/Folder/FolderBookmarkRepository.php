@@ -42,6 +42,8 @@ final class FolderBookmarkRepository
 
     private function updateFolderTimeStamp(ResourceID $folderID): void
     {
+        // Folder already exist.
+        // @phpstan-ignore-next-line
         Model::query()->whereKey($folderID->toInt())->first()->touch();
     }
 

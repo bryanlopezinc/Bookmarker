@@ -7,6 +7,7 @@ namespace App\Importers;
 use App\Importers\FilesystemInterface;
 use App\ValueObjects\UserID;
 use App\ValueObjects\Uuid;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Contracts\Filesystem\Filesystem as LaravelFilesystem;
 use Illuminate\Support\Facades\Storage;
 
@@ -41,6 +42,12 @@ final class Filesystem implements FilesystemInterface
 
     public function get(UserID $userID, Uuid $requestID): string
     {
-        return $this->filesystem->get($this->buildFileName($userID, $requestID));
+        $contents = $this->filesystem->get($this->buildFileName($userID, $requestID));
+
+        if ($contents === null) {
+            throw new FileNotFoundException();
+        }
+
+        return $contents;
     }
 }

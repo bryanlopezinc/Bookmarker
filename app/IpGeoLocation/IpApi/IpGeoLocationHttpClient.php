@@ -22,6 +22,8 @@ final class IpGeoLocationHttpClient implements IpGeoLocatorInterface
         $response = Http::retry(2, throw: false)->get('http://ip-api.com/json/' . $ipAddress->value, [
             'fields' => 'country,city'
         ])->onError(function (Response $response) {
+            // toException() always return an object when the onError callback is called.
+            // @phpstan-ignore-next-line
             $this->logger->error($response->toException()->getMessage());
         });
 

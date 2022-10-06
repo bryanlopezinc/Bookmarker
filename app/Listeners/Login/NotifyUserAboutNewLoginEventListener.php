@@ -37,6 +37,8 @@ final class NotifyUserAboutNewLoginEventListener implements ShouldQueue
             return new Device(DeviceType::UNKNOWN, null);
         }
 
+        // userAgent already null checked.
+        // @phpstan-ignore-next-line
         return $this->deviceDetector->fromUserAgent($event->userAgent);
     }
 
@@ -46,6 +48,8 @@ final class NotifyUserAboutNewLoginEventListener implements ShouldQueue
             return Location::unknown();
         }
 
+        // ipAddress already null checked.
+        // @phpstan-ignore-next-line
         return $this->ipGeoLocator->getLocationFromIp($event->ipAddress);
     }
 }

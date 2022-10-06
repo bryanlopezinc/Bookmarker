@@ -105,6 +105,7 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
             return;
         }
 
+        /** @var Source */
         $source = Source::query()->where('id', $bookmark->source->id->toInt())->first(['name', 'id', 'host']);
 
         if (!$bookmark->source->nameHasBeenUpdated) {

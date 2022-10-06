@@ -18,6 +18,8 @@ final class DeleteUserService
 
     public function delete(Request $request): void
     {
+        // auth guard ensures user is always return with auth()->user().
+        // @phpstan-ignore-next-line
         $passwordMatches = $this->hasher->check($request->input('password'), auth('api')->user()->getAuthPassword());
 
         if (!$passwordMatches) {

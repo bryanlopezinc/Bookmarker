@@ -29,6 +29,12 @@ final class FolderDescription
      */
     public function safe(): string
     {
+        if ($this->isEmpty()) {
+            return '';
+        }
+
+        //already null checked
+        // @phpstan-ignore-next-line
         return htmlspecialchars($this->value, ENT_QUOTES);
     }
 }

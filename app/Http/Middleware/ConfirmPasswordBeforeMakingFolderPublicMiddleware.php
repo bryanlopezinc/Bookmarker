@@ -38,6 +38,8 @@ final class ConfirmPasswordBeforeMakingFolderPublicMiddleware
             'password' => ['string', 'filled']
         ]);
 
+        //The auth middleware ensures a user always returned
+         // @phpstan-ignore-next-line
         if (!$this->hasher->check($request->input('password'), auth('api')->user()->getAuthPassword())) {
             return response()->json(['message' => 'Invalid password'], Response::HTTP_UNAUTHORIZED);
         }

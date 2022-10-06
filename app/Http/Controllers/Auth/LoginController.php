@@ -36,9 +36,12 @@ final class LoginController extends AccessTokenController
     private function getUser(LoginUserRequest $request, UserRepository $repository): User
     {
         try {
-            return $repository->findByUsername(Username::fromRequest($request));
+            $user = $repository->findByUsername(Username::fromRequest($request));
         } catch (InvalidUsernameException) {
-            return $repository->findByEmail(new Email($request->validated('username')));
+            $user = $repository->findByEmail(new Email($request->validated('username')));
         }
+
+        /** @var User */
+        return $user;
     }
 }

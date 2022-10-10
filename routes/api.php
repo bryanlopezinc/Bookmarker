@@ -21,6 +21,10 @@ Route::middleware('auth:api')->group(function () {
     Route::post('emails/add', Controllers\Auth\AddEmailToAccountController::class)->name('addEmailToAccount');
     Route::post('emails/verify/secondary', Auth\VerifySecondaryEmailController::class)->name('verifySecondaryEmail');
 
+    Route::post('folders/invite', Folder\SendFolderCollaborationInviteController::class)
+        ->middleware([ConvertStringToArray::keys('permissions')])
+        ->name('sendFolderCollaborationInvite');
+
     Route::get('users/bookmarks', Controllers\FetchUserBookmarksController::class)
         ->middleware([ConvertStringToArray::keys('tags')])
         ->name('fetchUserBookmarks');
@@ -31,6 +35,10 @@ Route::middleware('auth:api')->group(function () {
 
     Route::middleware(DBTransaction::class)->group(function () {
         Route::delete('emails/remove', Controllers\Auth\DeleteEmailController::class)->name('removeEmailFromAccount');
+
+        Route::post('folders/invite/accept', Folder\AcceptFolderCollaborationInvite::class)
+            ->middleware(['signed'])
+            ->name('acceptFolderCollaborationInvite');
 
         Route::post('bookmarks', Controllers\CreateBookmarkController::class)
             ->middleware([ConvertStringToArray::keys('tags')])

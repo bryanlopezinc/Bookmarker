@@ -64,6 +64,10 @@ return [
     //All extra query parameters will be reserved.
     'RESET_PASSWORD_URL' => env('RESET_PASSWORD_URL'),
 
+    //The accpet invite url that will be sent to the user.
+    //The url should contain placeholders for the 'invite_hash', 'signature', and 'expires' parameters.
+    'ACCEPT_INVITE_URL' => env('ACCEPT_INVITE_URL'),
+
     'FIRSTNAME_MAX_LENGTH' => 100,
     'LASTNAME_MAX_LENGTH' => 100,
 

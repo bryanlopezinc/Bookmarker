@@ -63,7 +63,7 @@ final class AcceptFolderCollaborationInviteService
 
     private function ensureInvitationHasNotBeenAccepted(UserID $inviteeID, Folder $folder): void
     {
-        $collaboratorExist = $this->folderPermissionsRepository->getFolderPermissions($inviteeID, $folder->folderID)->hasAnyPermission();
+        $collaboratorExist = $this->folderPermissionsRepository->getUserPermissionsForFolder($inviteeID, $folder->folderID)->hasAnyPermission();
 
         if ($collaboratorExist) {
             throw HttpException::conflict([

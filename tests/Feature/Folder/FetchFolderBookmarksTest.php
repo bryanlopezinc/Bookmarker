@@ -3,7 +3,9 @@
 namespace Tests\Feature\Folder;
 
 use App\Models\Folder;
+use App\Models\FolderAccess;
 use App\Models\FolderBookmark;
+use App\Models\FolderPermission;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -153,6 +155,28 @@ class FetchFolderBookmarksTest extends TestCase
                     "has_more_pages",
                 ]
             ]);
+    }
+
+    public function testUserWith_viewFolderBookmarks_permissionCanViewBookmarks(): void
+    {
+        [$user, $folderOwner] = UserFactory::new()->count(2)->create();
+
+        Passport::actingAs($user);
+
+        $folder = FolderFactory::new()->create([
+            'user_id' => $folderOwner->id
+        ]);
+
+        FolderAccess::query()->create([
+            'folder_id' => $folder->id,
+            'user_id' => $user->id,
+            'permission_id' => FolderPermission::query()->where('name', FolderPermission::VIEW_BOOKMARKS)->sole()->id,
+            'created_at' => now()
+        ]);
+
+        $this->folderBookmarksResponse([
+            'folder_id' => $folder->id
+        ])->assertOk();
     }
 
     public function testWillCheckBookmarksHealth(): void

@@ -16,7 +16,7 @@ final class FolderPermissionsRepository
     /**
      * Get the Permissions a user has to a folder.
      */
-    public function getFolderPermissions(UserID $userID, ResourceID $folderID): FolderPermissions
+    public function getUserPermissionsForFolder(UserID $userID, ResourceID $folderID): FolderPermissions
     {
         return FolderAccess::select('folders_permissions.name')
             ->join('folders_permissions', 'folders_access.permission_id', '=', 'folders_permissions.id')

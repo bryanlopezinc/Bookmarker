@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Folder;
 
 use App\Contracts\FolderRepositoryInterface;
+use App\DataTransferObjects\Folder;
 use App\DataTransferObjects\FolderBookmark;
 use App\PaginationData;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
@@ -13,12 +14,15 @@ use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Illuminate\Pagination\Paginator;
 use App\QueryColumns\FolderAttributes as Attributes;
+use App\Repositories\Folder\FolderPermissionsRepository;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 final class FetchFolderBookmarksService
 {
     public function __construct(
         private FetchFolderBookmarksRepository $folderBookmarksRepository,
-        private FolderRepositoryInterface $folderRepository
+        private FolderRepositoryInterface $folderRepository,
+        private FolderPermissionsRepository $permissions
     ) {
     }
 
@@ -29,8 +33,21 @@ final class FetchFolderBookmarksService
     {
         $folder = $this->folderRepository->find($folderID, Attributes::only('id,user_id'));
 
-        (new EnsureAuthorizedUserOwnsResource)($folder);
+        $this->ensureUserCanViewFolderBookmarks($userID, $folder);
 
         return $this->folderBookmarksRepository->bookmarks($folderID, $pagination, $userID);
+    }
+
+    private function ensureUserCanViewFolderBookmarks(UserID $userID, Folder $folder): void
+    {
+        try {
+            (new EnsureAuthorizedUserOwnsResource)($folder);
+        } catch (HttpException $e) {
+            $canViewBookmarks = $this->permissions->getUserPermissionsForFolder($userID, $folder->folderID)->canViewBookmarks();
+
+            if (!$canViewBookmarks) {
+                throw $e;
+            }
+        }
     }
 }

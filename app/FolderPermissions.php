@@ -82,4 +82,14 @@ final class FolderPermissions
     {
         return count($this->permissions) > 0;
     }
+
+    public function canViewBookmarks(): bool
+    {
+        return $this->hasPermissionTo(Model::VIEW_BOOKMARKS);
+    }
+
+    private function hasPermissionTo(string $action): bool
+    {
+        return in_array($action, $this->permissions, true);
+    }
 }

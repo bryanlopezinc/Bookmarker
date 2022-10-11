@@ -6,6 +6,7 @@ namespace App\Repositories\Folder;
 
 use App\Models\FolderAccess;
 use App\FolderPermissions;
+use App\Models\FolderPermission;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Illuminate\Support\Collection;
@@ -23,6 +24,25 @@ final class FolderPermissionsRepository
             ->where('user_id', $userID->toInt())
             ->get()
             ->pluck('name')
-            ->pipe(fn (Collection $permissionNames) => FolderPermissions::fromFolderPermissionsQuery($permissionNames->all()));
+            ->pipe(fn (Collection $permissionNames) => new FolderPermissions($permissionNames->all()));
+    }
+
+    public function create(UserID $userID, ResourceID $folderID, FolderPermissions $folderPermissions): void
+    {
+        $createdAt = now();
+
+        FolderPermission::select('id')
+            ->whereIn('name', $folderPermissions->permissions)
+            ->get()
+            ->pluck('id')
+            ->map(fn (int $permissionID) => [
+                'folder_id' => $folderID->toInt(),
+                'user_id' => $userID->toInt(),
+                'permission_id' => $permissionID,
+                'created_at' => $createdAt
+            ])
+            ->tap(function (Collection $records) {
+                FolderAccess::insert($records->all());
+            });
     }
 }

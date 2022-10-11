@@ -5,21 +5,21 @@ declare(strict_types=1);
 namespace App;
 
 use App\Http\Requests\SendFolderCollaborationInviteRequest as Request;
-use App\Models\FolderPermission;
+use App\Models\FolderPermission as Model;
 
 /**
  * Permission a user has to a folder resource.
  */
 final class FolderPermissions
 {
-    private const VIEW_BOOKMARKS = 'view_bookmarks';
-
     /**
      * @param array<string> $permissions
      */
-    public function __construct(private readonly array $permissions)
+    public function __construct(public readonly array $permissions)
     {
-        $valid = array_values((new \ReflectionClass($this))->getConstants());
+        $valid = [
+            Model::VIEW_BOOKMARKS
+        ];
 
         foreach ($permissions as $permission) {
             if (!in_array($permission, $valid, true)) {
@@ -28,20 +28,20 @@ final class FolderPermissions
         }
     }
 
-    /**
-     * @param array<string> $result
-     */
-    public static function fromFolderPermissionsQuery(array $result): self
-    {
-        return static::translate($result, [
-            FolderPermission::VIEW_BOOKMARKS => self::VIEW_BOOKMARKS
-        ]);
-    }
-
     public static function fromRequest(Request $request): self
     {
         return static::translate($request->input('permissions'), [
-            'viewBookmarks' => self::VIEW_BOOKMARKS
+            'viewBookmarks' => Model::VIEW_BOOKMARKS
+        ]);
+    }
+
+    /**
+     * Create a new instance from an unserialized payload.
+     */
+    public static function fromUnSerialized(array $unserialized): self
+    {
+        return static::translate($unserialized, [
+            'V_B' => Model::VIEW_BOOKMARKS
         ]);
     }
 
@@ -53,10 +53,6 @@ final class FolderPermissions
     {
         $permissions = [];
 
-        if (empty($data)) {
-            return new self($permissions);
-        }
-
         foreach ($data as $permission) {
             $permissions[] = $translation[$permission];
         }
@@ -64,12 +60,15 @@ final class FolderPermissions
         return new self($permissions);
     }
 
+    /**
+     * @return array<string>
+     */
     public function serialize(): array
     {
         $serializable = [];
 
         $translation = [
-            self::VIEW_BOOKMARKS => 'V_B'
+            Model::VIEW_BOOKMARKS => 'V_B'
         ];
 
         foreach ($this->permissions as $permission) {

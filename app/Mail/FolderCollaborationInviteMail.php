@@ -16,6 +16,13 @@ use App\ValueObjects\Url as UrlValueObject;
 
 final class FolderCollaborationInviteMail extends Mailable
 {
+    //The keys of the attributes that will be returned when the "invite_hash"
+    // input is decrypted bt the accept invite request handler.
+    public const INVITER_ID = 'inviterID';
+    public const INVITEE_ID = 'inviteeID';
+    public const FOLDER_ID = 'folderID';
+    public const PERMISSIONS = 'permission';
+
     public function __construct(
         private User $inviter,
         private Folder $folder,
@@ -35,13 +42,14 @@ final class FolderCollaborationInviteMail extends Mailable
             ]);
     }
 
-    private function inviteUrl(): string
+    public function inviteUrl(): string
     {
         $signedUrl = URL::temporarySignedRoute('acceptFolderCollaborationInvite', now()->addDay(), [
             'invite_hash' => Crypt::encrypt([
-                'from' => $this->inviter->id->toInt(),
-                'to' => $this->invitee->id->toInt(),
-                'permissions' => $this->permissions->serialize()
+                self::INVITER_ID => $this->inviter->id->toInt(),
+                self::INVITEE_ID => $this->invitee->id->toInt(),
+                self::FOLDER_ID => $this->folder->folderID->toInt(),
+                self::PERMISSIONS => $this->permissions->serialize()
             ])
         ]);
 

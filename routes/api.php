@@ -21,7 +21,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('emails/add', Controllers\Auth\AddEmailToAccountController::class)->name('addEmailToAccount');
     Route::post('emails/verify/secondary', Auth\VerifySecondaryEmailController::class)->name('verifySecondaryEmail');
 
-    Route::post('folders/invite', Folder\SendFolderCollaborationInviteController::class)
+    Route::get('folders/invite', Folder\SendFolderCollaborationInviteController::class)
         ->middleware([ConvertStringToArray::keys('permissions')])
         ->name('sendFolderCollaborationInvite');
 
@@ -35,10 +35,6 @@ Route::middleware('auth:api')->group(function () {
 
     Route::middleware(DBTransaction::class)->group(function () {
         Route::delete('emails/remove', Controllers\Auth\DeleteEmailController::class)->name('removeEmailFromAccount');
-
-        Route::post('folders/invite/accept', Folder\AcceptFolderCollaborationInvite::class)
-            ->middleware(['signed'])
-            ->name('acceptFolderCollaborationInvite');
 
         Route::post('bookmarks', Controllers\CreateBookmarkController::class)
             ->middleware([ConvertStringToArray::keys('tags')])
@@ -110,6 +106,10 @@ Route::post('login', Auth\LoginController::class)->name('loginUser');
 Route::middleware([CheckClientCredentials::class])->group(function () {
     Route::post('users', Auth\CreateUserController::class)->middleware([DBTransaction::class])->name('createUser');
     Route::get('folders/public/bookmarks', Folder\FetchPublicFolderBookmarksController::class)->name('viewPublicfolderBookmarks');
+
+    Route::get('folders/invite/accept', Folder\AcceptFolderCollaborationInviteController::class)
+        ->middleware([DBTransaction::class, 'signed'])
+        ->name('acceptFolderCollaborationInvite');
 
     Route::post('users/password/reset-token', Auth\RequestPasswordResetController::class)
         ->middleware([DBTransaction::class])

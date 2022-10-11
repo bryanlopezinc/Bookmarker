@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Collections\ResourceIDsCollection as UserIDs;
 use App\DataTransferObjects\Builders\UserBuilder;
 use App\DataTransferObjects\User;
 use App\Models\SecondaryEmail;
@@ -13,22 +14,49 @@ use App\ValueObjects\Email;
 use App\ValueObjects\UserID;
 use App\ValueObjects\Username;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Collection;
 
 final class UserRepository
 {
     public function findByUsername(Username $username, UserAttributes $columns = new UserAttributes()): User|false
     {
-        return $this->find('users.username', $username->value, $columns);
+        $result = $this->findMany('users.username', [$username->value], $columns);
+
+        if ($result->isEmpty()) {
+            return false;
+        }
+
+        return $result->sole();
     }
 
     public function findByID(UserID $userID, UserAttributes $columns = new UserAttributes()): User|false
     {
-        return $this->find('users.id', $userID->toInt(), $columns);
+        $result = $this->findMany('users.id', [$userID->toInt()], $columns);
+
+        if ($result->isEmpty()) {
+            return false;
+        }
+
+        return $result->sole();
+    }
+
+    /**
+     * @return Collection<User>
+     */
+    public function findManyByIDs(UserIDs $userIDs, UserAttributes $columns = new UserAttributes()): Collection
+    {
+        return $this->findMany('users.id', $userIDs->asIntegers()->all(), $columns);
     }
 
     public function findByEmail(Email $email, UserAttributes $columns = new UserAttributes()): User|false
     {
-        return $this->find('users.email', $email->value, $columns);
+        $result = $this->findMany('users.email', [$email->value], $columns);
+
+        if ($result->isEmpty()) {
+            return false;
+        }
+
+        return $result->sole();
     }
 
     public function findByEmailOrSecondaryEmail(Email $email, UserAttributes $columns = new UserAttributes()): User|false
@@ -46,19 +74,21 @@ final class UserRepository
         }
     }
 
-    private function find(string $byColumn, string|int $value, UserAttributes $columns): User|false
+    /**
+     * @return Collection<User>
+     */
+    private function findMany(string $byColumn, array $values, UserAttributes $columns): Collection
     {
-        $user =  UserModel::WithQueryOptions($columns)->where($byColumn, $value)->first();
+        return UserModel::WithQueryOptions($columns)
+            ->whereIn($byColumn, $values)
+            ->get()
+            ->map(function (UserModel $user) use ($columns) {
+                if (!$columns->has('id') && !$columns->isEmpty()) {
+                    $user->offsetUnset('id');
+                }
 
-        if (is_null($user)) {
-            return false;
-        }
-
-        if (!$columns->has('id') && !$columns->isEmpty()) {
-            $user->offsetUnset('id');
-        }
-
-        return UserBuilder::fromModel($user)->build();
+                return UserBuilder::fromModel($user)->build();
+            });
     }
 
     /**

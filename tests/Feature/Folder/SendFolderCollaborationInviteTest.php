@@ -21,7 +21,7 @@ class SendFolderCollaborationInviteTest extends TestCase
 
     protected function sendInviteResponse(array $parameters = []): TestResponse
     {
-        return $this->postJson(route('sendFolderCollaborationInvite'), $parameters);
+        return $this->getJson(route('sendFolderCollaborationInvite', $parameters));
     }
 
     public function testIsAccessibleViaPath(): void

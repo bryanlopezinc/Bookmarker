@@ -34,8 +34,8 @@ final class FolderPermissions
 
     public static function fromRequest(Request $request): self
     {
-        return static::translate($request->input('permissions'), [
-            'viewBookmarks' => Model::VIEW_BOOKMARKS
+        return static::translate($request->input('permissions', []), [
+            'addBookmarks' => Model::ADD_BOOKMARKS
         ]);
     }
 
@@ -45,7 +45,18 @@ final class FolderPermissions
     public static function fromUnSerialized(array $unserialized): self
     {
         return static::translate($unserialized, [
-            'V_B' => Model::VIEW_BOOKMARKS
+            'A_B' => Model::ADD_BOOKMARKS
+        ]);
+    }
+
+    /**
+     * @param array<string> $permissions Accpted values = ['read', 'write']
+     */
+    public static function fromArray(array $permissions): self
+    {
+        return static::translate($permissions, [
+            'read' => Model::VIEW_BOOKMARKS,
+            'write' => Model::ADD_BOOKMARKS
         ]);
     }
 
@@ -72,7 +83,7 @@ final class FolderPermissions
         $serializable = [];
 
         $translation = [
-            Model::VIEW_BOOKMARKS => 'V_B'
+            Model::ADD_BOOKMARKS => 'A_B'
         ];
 
         foreach ($this->permissions as $permission) {
@@ -85,11 +96,6 @@ final class FolderPermissions
     public function hasAnyPermission(): bool
     {
         return count($this->permissions) > 0;
-    }
-
-    public function canViewBookmarks(): bool
-    {
-        return $this->hasPermissionTo(Model::VIEW_BOOKMARKS);
     }
 
     public function canAddBookmarksToFolder(): bool

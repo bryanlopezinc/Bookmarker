@@ -43,7 +43,7 @@ final class FetchFolderBookmarksService
         try {
             (new EnsureAuthorizedUserOwnsResource)($folder);
         } catch (HttpException $e) {
-            $canViewBookmarks = $this->permissions->getUserPermissionsForFolder($userID, $folder->folderID)->canViewBookmarks();
+            $canViewBookmarks = $this->permissions->getUserPermissionsForFolder($userID, $folder->folderID)->hasAnyPermission();
 
             if (!$canViewBookmarks) {
                 throw $e;

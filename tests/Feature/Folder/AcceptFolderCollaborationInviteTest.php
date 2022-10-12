@@ -70,7 +70,6 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $this->getJson(route('sendFolderCollaborationInvite', [
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,
-                'permissions' => 'viewBookmarks'
             ]))->assertOk();
         });
 
@@ -102,7 +101,6 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $this->getJson(route('sendFolderCollaborationInvite', [
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,
-                'permissions' => 'viewBookmarks'
             ]))->assertOk();
         });
 
@@ -134,17 +132,51 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $this->getJson(route('sendFolderCollaborationInvite', [
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,
-                'permissions' => 'viewBookmarks'
             ]))->assertOk();
         });
 
         $this->acceptInviteResponse($parameters)->assertCreated();
 
-        $this->assertDatabaseHas(FolderAccess::class, [
+        $permissions = FolderAccess::query()->where([
             'folder_id' => $folder->id,
             'user_id' => $invitee->id,
-            'permission_id' => FolderPermission::query()->where('name', FolderPermission::VIEW_BOOKMARKS)->sole()->id
-        ]);
+        ])->sole();
+
+        $this->assertEquals(
+            $permissions->permission_id,
+            FolderPermission::query()->where('name', FolderPermission::VIEW_BOOKMARKS)->sole()->id
+        );
+    }
+
+    public function testAcceptInviteWithAddBookmarksPermission(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$user, $invitee] = UserFactory::new()->count(2)->create();
+
+        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+
+        $parameters = $this->extractSignedUrlParameters(function () use ($invitee, $folder, $user) {
+            Passport::actingAs($user);
+
+            $this->getJson(route('sendFolderCollaborationInvite', [
+                'email' => $invitee->email,
+                'folder_id' => $folder->id,
+                'permissions' => 'addBookmarks'
+            ]))->assertOk();
+        });
+
+        $this->acceptInviteResponse($parameters)->assertCreated();
+
+        $permissions = FolderAccess::query()->where([
+            'folder_id' => $folder->id,
+            'user_id' => $invitee->id,
+        ])->sole();
+
+        $this->assertEquals(
+            $permissions->permission_id,
+            FolderPermission::query()->where('name', FolderPermission::ADD_BOOKMARKS)->sole()->id
+        );
     }
 
     public function testCannotAccept_Invite_MoreThanOnce(): void
@@ -163,7 +195,6 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $this->getJson(route('sendFolderCollaborationInvite', [
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,
-                'permissions' => 'viewBookmarks'
             ]))->assertOk();
         });
 
@@ -193,7 +224,6 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $this->getJson(route('sendFolderCollaborationInvite', [
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,
-                'permissions' => 'viewBookmarks'
             ]))->assertOk();
         });
 
@@ -227,7 +257,6 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $this->getJson(route('sendFolderCollaborationInvite', [
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,
-                'permissions' => 'viewBookmarks'
             ]))->assertOk();
         });
 
@@ -263,7 +292,6 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $this->getJson(route('sendFolderCollaborationInvite', [
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,
-                'permissions' => 'viewBookmarks'
             ]))->assertOk();
         });
 

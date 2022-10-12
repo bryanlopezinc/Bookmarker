@@ -167,6 +167,28 @@ class AddBookmarksToFolderTest extends TestCase
         ])->assertCreated();
     }
 
+    public function testUserWithOnly_viewBookmarksPermission_cannotAddBookmarksToFolder(): void
+    {
+        [$folderOwner, $user] = UserFactory::new()->count(2)->create();
+
+        Passport::actingAs($user);
+
+        $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        FolderAccess::query()->create([
+            'folder_id' => $folder->id,
+            'user_id' => $user->id,
+            'permission_id' => FolderPermission::query()->where('name', FolderPermission::VIEW_BOOKMARKS)->sole()->id,
+            'created_at' => now()
+        ]);
+
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => $bookmarks->pluck('id')->implode(','),
+            'folder' => $folder->id
+        ])->assertForbidden();
+    }
+
     public function testFolderCannotHaveMoreThan_200_Bookmarks(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());

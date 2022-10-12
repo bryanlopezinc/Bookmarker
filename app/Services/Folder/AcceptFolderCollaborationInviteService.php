@@ -42,10 +42,12 @@ final class AcceptFolderCollaborationInviteService
 
         $this->ensureInvitationHasNotBeenAccepted($inviteeID, $folder);
 
+        $permissions = FolderPermissions::fromUnSerialized($decryted[Payload::PERMISSIONS]);
+
         $this->folderPermissionsRepository->create(
             $inviteeID,
             $folder->folderID,
-            FolderPermissions::fromUnSerialized($decryted[Payload::PERMISSIONS])
+            $permissions->hasAnyPermission() ? $permissions : FolderPermissions::fromArray(['read'])
         );
     }
 

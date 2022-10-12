@@ -179,6 +179,26 @@ class FetchFolderBookmarksTest extends TestCase
         ])->assertOk();
     }
 
+    public function testUserWith_addBookmarks_permissionCanViewBookmarks(): void
+    {
+        [$user, $folderOwner] = UserFactory::new()->count(2)->create();
+
+        Passport::actingAs($user);
+
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        FolderAccess::query()->create([
+            'folder_id' => $folder->id,
+            'user_id' => $user->id,
+            'permission_id' => FolderPermission::query()->where('name', FolderPermission::ADD_BOOKMARKS)->sole()->id,
+            'created_at' => now()
+        ]);
+
+        $this->folderBookmarksResponse([
+            'folder_id' => $folder->id
+        ])->assertOk();
+    }
+
     public function testWillCheckBookmarksHealth(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());

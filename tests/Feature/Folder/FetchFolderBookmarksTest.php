@@ -156,24 +156,22 @@ class FetchFolderBookmarksTest extends TestCase
             ]);
     }
 
-    public function testUserWith_viewFolderBookmarks_permissionCanViewBookmarks(): void
+    public function testUserWithAnyPermissionCanViewBookmarks(): void
     {
-        [$user, $folderOwner] = UserFactory::new()->count(2)->create();
+        $this->assertUserWithPermissionCanPerformAction(function (FolderAccessFactory $factory) {
+            return $factory->addBookmarksPermission();
+        });
 
-        Passport::actingAs($user);
+        $this->assertUserWithPermissionCanPerformAction(function (FolderAccessFactory $factory) {
+            return $factory->viewBookmarksPermission();
+        });
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $folderOwner->id
-        ]);
-
-        FolderAccessFactory::new()->user($user->id)->folder($folder->id)->viewBookmarksPermission()->create();
-
-        $this->folderBookmarksResponse([
-            'folder_id' => $folder->id
-        ])->assertOk();
+        $this->assertUserWithPermissionCanPerformAction(function (FolderAccessFactory $factory) {
+            return $factory->removeBookmarksPermission();
+        });
     }
 
-    public function testUserWith_addBookmarks_permissionCanViewBookmarks(): void
+    private function assertUserWithPermissionCanPerformAction(\Closure $permision): void
     {
         [$user, $folderOwner] = UserFactory::new()->count(2)->create();
 
@@ -181,11 +179,12 @@ class FetchFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
 
-        FolderAccessFactory::new()->user($user->id)->folder($folder->id)->addBookmarksPermission()->create();
+        /** @var FolderAccessFactory */
+        $factory = $permision(FolderAccessFactory::new()->user($user->id)->folder($folder->id));
 
-        $this->folderBookmarksResponse([
-            'folder_id' => $folder->id
-        ])->assertOk();
+        $factory->create();
+
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
     }
 
     public function testWillCheckBookmarksHealth(): void

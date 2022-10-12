@@ -16,6 +16,8 @@ final class FolderPermission extends Model
     public const UPDATED_AT = null;
     public const VIEW_BOOKMARKS = 'viewBookmarks';
     public const ADD_BOOKMARKS = 'addBookmarks';
+    public const DELETE_BOOKMARKS = 'deleteBookmarks';
+
 
     /**
      * {@inheritdoc}

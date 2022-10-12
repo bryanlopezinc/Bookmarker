@@ -17,7 +17,8 @@ final class FolderPermissions
      */
     private const VALID = [
         Model::VIEW_BOOKMARKS,
-        Model::ADD_BOOKMARKS
+        Model::ADD_BOOKMARKS,
+        Model::DELETE_BOOKMARKS
     ];
 
     /**
@@ -101,6 +102,11 @@ final class FolderPermissions
     public function canAddBookmarksToFolder(): bool
     {
         return $this->hasPermissionTo(Model::ADD_BOOKMARKS);
+    }
+
+    public function canRemoveBookmarksFromFolder(): bool
+    {
+        return $this->hasPermissionTo(Model::DELETE_BOOKMARKS);
     }
 
     private function hasPermissionTo(string $action): bool

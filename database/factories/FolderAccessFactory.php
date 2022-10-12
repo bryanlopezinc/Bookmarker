@@ -69,4 +69,14 @@ final class FolderAccessFactory extends Factory
                 ->id
         ]);
     }
+
+    public function removeBookmarksPermission(): self
+    {
+        return $this->state([
+            'permission_id' => FolderPermission::query()
+                ->where('name', FolderPermission::DELETE_BOOKMARKS)
+                ->sole()
+                ->id
+        ]);
+    }
 }

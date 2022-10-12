@@ -10,7 +10,8 @@ use Illuminate\Support\Collection;
 class FolderPermissionsSeeder extends Seeder
 {
     private const PERMISSIONS = [
-        'viewBookmarks'
+        'viewBookmarks',
+        'addBookmarks'
     ];
 
     /**

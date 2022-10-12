@@ -13,16 +13,20 @@ use App\Models\FolderPermission as Model;
 final class FolderPermissions
 {
     /**
+     * @var array<string>
+     */
+    private const VALID = [
+        Model::VIEW_BOOKMARKS,
+        Model::ADD_BOOKMARKS
+    ];
+
+    /**
      * @param array<string> $permissions
      */
     public function __construct(public readonly array $permissions)
     {
-        $valid = [
-            Model::VIEW_BOOKMARKS
-        ];
-
         foreach ($permissions as $permission) {
-            if (!in_array($permission, $valid, true)) {
+            if (!in_array($permission, self::VALID, true)) {
                 throw new \Exception('Invalid permission type ' . $permission);
             }
         }
@@ -86,6 +90,11 @@ final class FolderPermissions
     public function canViewBookmarks(): bool
     {
         return $this->hasPermissionTo(Model::VIEW_BOOKMARKS);
+    }
+
+    public function canAddBookmarksToFolder(): bool
+    {
+        return $this->hasPermissionTo(Model::ADD_BOOKMARKS);
     }
 
     private function hasPermissionTo(string $action): bool

@@ -3,8 +3,10 @@
 namespace Tests\Feature\Folder;
 
 use App\Models\Folder;
+use App\Models\FolderAccess;
 use App\Models\FolderBookmark;
 use App\Models\FolderBookmarksCount;
+use App\Models\FolderPermission;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -43,7 +45,7 @@ class AddBookmarksToFolderTest extends TestCase
             ->assertJsonValidationErrors(['bookmarks', 'folder']);
     }
 
-    public function testBookmarkIDsMustBeValid(): void
+    public function testBookmark_ids_mustBeValid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -54,7 +56,7 @@ class AddBookmarksToFolderTest extends TestCase
             ]);
     }
 
-    public function test_MakeHidden_InputValues_MustExists_In_BookmarksInput_Values(): void
+    public function test_makeHidden_inputValues_mustExists_in_bookmarksInput_values(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -69,7 +71,7 @@ class AddBookmarksToFolderTest extends TestCase
         ]);
     }
 
-    public function testBookmarkIDsMustBeUnique(): void
+    public function testBookmark_ids_mustBeUnique(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -81,7 +83,7 @@ class AddBookmarksToFolderTest extends TestCase
         ]);
     }
 
-    public function test_MakeHidden_InputValues_MustBeUnique(): void
+    public function test_makeHidden_inputValues_mustBeUnique(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -141,6 +143,28 @@ class AddBookmarksToFolderTest extends TestCase
         $this->assertTrue(
             Folder::query()->whereKey($folderID)->first('updated_at')->updated_at->isToday()
         );
+    }
+
+    public function testUserWithPermissionCanAddBookmarksToFolder(): void
+    {
+        [$folderOwner, $user] = UserFactory::new()->count(2)->create();
+
+        Passport::actingAs($user);
+
+        $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        FolderAccess::query()->create([
+            'folder_id' => $folder->id,
+            'user_id' => $user->id,
+            'permission_id' => FolderPermission::query()->where('name', FolderPermission::ADD_BOOKMARKS)->sole()->id,
+            'created_at' => now()
+        ]);
+
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => $bookmarks->pluck('id')->implode(','),
+            'folder' => $folder->id
+        ])->assertCreated();
     }
 
     public function testFolderCannotHaveMoreThan_200_Bookmarks(): void

@@ -26,7 +26,7 @@ class AddBookmarksToFolderTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/bookmarks/folders', 'addBookmarksToFolder');
+        $this->assertRouteIsAccessibeViaPath('v1/folders/bookmarks', 'addBookmarksToFolder');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void

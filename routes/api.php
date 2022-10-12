@@ -75,7 +75,7 @@ Route::middleware('auth:api')->group(function () {
             ->middleware([ConfirmPassword::class, ConvertStringToArray::keys('tags')])
             ->name('updateFolder');
 
-        Route::post('bookmarks/folders', Folder\AddBookmarksToFolderController::class)
+        Route::post('folders/bookmarks', Folder\AddBookmarksToFolderController::class)
             ->middleware(ConvertStringToArray::keys('bookmarks', 'make_hidden'))
             ->name('addBookmarksToFolder');
 
@@ -83,7 +83,7 @@ Route::middleware('auth:api')->group(function () {
             ->middleware(ConvertStringToArray::keys('bookmarks'))
             ->name('hideFolderBookmarks');
 
-        Route::delete('bookmarks/folders', Folder\RemoveBookmarksFromFolderController::class)
+        Route::delete('folders/bookmarks', Folder\RemoveBookmarksFromFolderController::class)
             ->middleware(ConvertStringToArray::keys('bookmarks'))
             ->name('removeBookmarksFromFolder');
 

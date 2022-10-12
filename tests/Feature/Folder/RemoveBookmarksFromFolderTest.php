@@ -24,7 +24,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/bookmarks/folders', 'removeBookmarksFromFolder');
+        $this->assertRouteIsAccessibeViaPath('v1/folders/bookmarks', 'removeBookmarksFromFolder');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void

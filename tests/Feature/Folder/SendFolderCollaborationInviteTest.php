@@ -3,9 +3,8 @@
 namespace Tests\Feature\Folder;
 
 use App\Mail\FolderCollaborationInviteMail;
-use App\Models\FolderAccess;
-use App\Models\FolderPermission;
 use App\Models\SecondaryEmail;
+use Database\Factories\FolderAccessFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -126,19 +125,13 @@ class SendFolderCollaborationInviteTest extends TestCase
 
     public function testCannotSendInviteToExistingCollaborator(): void
     {
-        [$user, $invitee] = UserFactory::new()->count(2)->create();
+        [$user, $invitee] = UserFactory::times(2)->create();
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
 
         Passport::actingAs($user);
 
-        FolderAccess::query()->create([
-            'folder_id' => $folder->id,
-            'user_id' => $invitee->id,
-            'permission_id' => FolderPermission::first()->id
-        ]);
+        FolderAccessFactory::new()->user($invitee->id)->folder($folder->id)->create();
 
         $this->sendInviteResponse([
             'email' => $invitee->email,

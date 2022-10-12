@@ -3,11 +3,10 @@
 namespace Tests\Feature\Folder;
 
 use App\Models\Folder;
-use App\Models\FolderAccess;
 use App\Models\FolderBookmark;
 use App\Models\FolderBookmarksCount;
-use App\Models\FolderPermission;
 use Database\Factories\BookmarkFactory;
+use Database\Factories\FolderAccessFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -154,12 +153,7 @@ class AddBookmarksToFolderTest extends TestCase
         $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $user->id]);
         $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
 
-        FolderAccess::query()->create([
-            'folder_id' => $folder->id,
-            'user_id' => $user->id,
-            'permission_id' => FolderPermission::query()->where('name', FolderPermission::ADD_BOOKMARKS)->sole()->id,
-            'created_at' => now()
-        ]);
+        FolderAccessFactory::new()->user($user->id)->folder($folder->id)->addBookmarksPermission()->create();
 
         $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmarks->pluck('id')->implode(','),
@@ -176,12 +170,7 @@ class AddBookmarksToFolderTest extends TestCase
         $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $user->id]);
         $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
 
-        FolderAccess::query()->create([
-            'folder_id' => $folder->id,
-            'user_id' => $user->id,
-            'permission_id' => FolderPermission::query()->where('name', FolderPermission::VIEW_BOOKMARKS)->sole()->id,
-            'created_at' => now()
-        ]);
+        FolderAccessFactory::new()->user($user->id)->folder($folder->id)->viewBookmarksPermission()->create();
 
         $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmarks->pluck('id')->implode(','),

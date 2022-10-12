@@ -288,7 +288,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         Passport::actingAs($user);
 
-        $parameters = $this->extractSignedUrlParameters(function () use ($invitee, $folder, $user) {
+        $parameters = $this->extractSignedUrlParameters(function () use ($invitee, $folder) {
             $this->getJson(route('sendFolderCollaborationInvite', [
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,

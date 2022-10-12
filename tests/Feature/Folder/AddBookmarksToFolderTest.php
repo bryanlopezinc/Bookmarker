@@ -259,7 +259,7 @@ class AddBookmarksToFolderTest extends TestCase
         ])->assertStatus(Response::HTTP_CONFLICT);
     }
 
-    public function testUserCanOnlyAddBookmarksToOwnFolder(): void
+    public function testFolderMustBelongTOUser(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -277,7 +277,7 @@ class AddBookmarksToFolderTest extends TestCase
         ])->assertForbidden();
     }
 
-    public function testUserCanOnlyAddOwnBookmarksToOwnFolder(): void
+    public function testBookmarksMustBelongToUser(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -295,7 +295,7 @@ class AddBookmarksToFolderTest extends TestCase
         ])->assertForbidden();
     }
 
-    public function testUserCannotAddInvalidBookmarksToFolder(): void
+    public function testCannotAddInvalidBookmarksToFolder(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -320,7 +320,7 @@ class AddBookmarksToFolderTest extends TestCase
             ]);
     }
 
-    public function testUserCannotAddBookmarksToInvalidFolder(): void
+    public function testCannotAddBookmarksToInvalidFolder(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 

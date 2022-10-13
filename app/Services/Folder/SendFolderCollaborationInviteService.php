@@ -6,45 +6,42 @@ namespace App\Services\Folder;
 
 use App\Contracts\FolderRepositoryInterface;
 use App\DataTransferObjects\Builders\UserBuilder;
-use App\DataTransferObjects\Folder;
-use App\DataTransferObjects\User;
+use App\DataTransferObjects\{Folder, User};
 use App\Exceptions\HttpException;
 use App\Exceptions\UserNotFoundHttpException;
 use App\Http\Requests\SendFolderCollaborationInviteRequest as Request;
-use App\Mail\FolderCollaborationInviteMail;
+use App\Mail\FolderCollaborationInviteMail as Invite;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\Repositories\UserRepository;
 use App\FolderPermissions;
 use App\QueryColumns\FolderAttributes;
-use App\ValueObjects\Email;
-use App\ValueObjects\ResourceID;
+use App\ValueObjects\{ResourceID, Email};
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\{RateLimiter, Mail};
+use Symfony\Component\HttpKernel\Exception\HttpException as SymfonyHttpException;
 
 final class SendFolderCollaborationInviteService
 {
     public function __construct(
         private FolderRepositoryInterface $folderRepository,
         private UserRepository $userRepository,
-        private FolderPermissionsRepository $folderPermissionsRepository
+        private FolderPermissionsRepository $permissions
     ) {
     }
 
     public function fromRequest(Request $request): void
     {
         $inviter = UserBuilder::fromModel(auth('api')->user())->build(); // @phpstan-ignore-line
-
         $folder = $this->folderRepository->find(ResourceID::fromRequest($request, 'folder_id'), FolderAttributes::only('name,id,user_id'));
-        $invitee = $this->findInviteeByEmail($inviteeEmail = new Email($request->input('email')));
+        $invitee = $this->retrieveInviteeInfo($inviteeEmail = new Email($request->input('email')));
 
-        (new EnsureAuthorizedUserOwnsResource)($folder);
-
+        $this->ensureUserHasPermissionToPerformAction($folder, $inviter, $request);
         $this->ensureIsNotSendingInvitionSelf($inviteeEmail, $inviter);
+        $this->ensureUserIsNotSendingInvitationToFolderOwner($folder, $invitee);
         $this->ensureInviteeIsNotAlreadyACollaborator($invitee, $folder);
 
-        $invitationMailSent = RateLimiter::attempt($this->cacheKey($inviter, $inviteeEmail), 1, $this->sendInvitationCallback(
+        $invitationMailSent = RateLimiter::attempt($this->key($inviter, $inviteeEmail), 1, $this->sendInvitationCallback(
             $folder,
             $invitee,
             $inviter,
@@ -56,7 +53,38 @@ final class SendFolderCollaborationInviteService
         }
     }
 
-    private function findInviteeByEmail(Email $inviteeEmail): User
+    private function ensureUserHasPermissionToPerformAction(Folder $folder, User $inviter, Request $request): void
+    {
+        try {
+            (new EnsureAuthorizedUserOwnsResource)($folder);
+        } catch (SymfonyHttpException $e) {
+            $canInviteUser = $this->permissions->getUserPermissionsForFolder($inviter->id, $folder->folderID)->canInviteUser();
+
+            if (!$canInviteUser) {
+                throw $e;
+            }
+
+            if ($request->filled('permissions')) {
+                throw HttpException::forbidden([
+                    'message' => 'only folder owner can send invites with permissions'
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Ensure user with "inviteUserPermission" permission is not sending invite to folder owner
+     */
+    private function ensureUserIsNotSendingInvitationToFolderOwner(Folder $folder, User $invitee): void
+    {
+        if ($folder->ownerID->equals($invitee->id)) {
+            throw HttpException::forbidden([
+                'message' => 'Cannot send invitation to folder owner'
+            ]);
+        }
+    }
+
+    private function retrieveInviteeInfo(Email $inviteeEmail): User
     {
         $invitee = $this->userRepository->findByEmailOrSecondaryEmail(
             $inviteeEmail,
@@ -86,28 +114,19 @@ final class SendFolderCollaborationInviteService
         }
     }
 
-    private function cacheKey(User $inviter, Email $inviteeEmail): string
+    private function key(User $inviter, Email $inviteeEmail): string
     {
-        return implode(':', [
-            'f-col-invites',
-            $inviter->id->toInt(),
-            $inviteeEmail->value
-        ]);
+        return implode(':', ['f-col-invites', $inviter->id->toInt(), $inviteeEmail->value]);
     }
 
     private function sendInvitationCallback(Folder $folder, User $invitee, User $inviter, FolderPermissions $permissions): \Closure
     {
-        return fn () => Mail::to($invitee->email->value)->queue(new FolderCollaborationInviteMail(
-            $inviter,
-            $folder,
-            $invitee,
-            $permissions
-        ));
+        return fn () => Mail::to($invitee->email->value)->queue(new Invite($inviter, $folder, $invitee, $permissions));
     }
 
     private function ensureInviteeIsNotAlreadyACollaborator(User $invitee, Folder $folder): void
     {
-        $collaboratorExist = $this->folderPermissionsRepository->getUserPermissionsForFolder($invitee->id, $folder->folderID)->hasAnyPermission();
+        $collaboratorExist = $this->permissions->getUserPermissionsForFolder($invitee->id, $folder->folderID)->hasAnyPermission();
 
         if ($collaboratorExist) {
             throw HttpException::conflict([

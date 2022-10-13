@@ -18,7 +18,8 @@ final class FolderPermissions
     private const VALID = [
         Model::VIEW_BOOKMARKS,
         Model::ADD_BOOKMARKS,
-        Model::DELETE_BOOKMARKS
+        Model::DELETE_BOOKMARKS,
+        Model::INVITE
     ];
 
     /**
@@ -37,7 +38,8 @@ final class FolderPermissions
     {
         return static::translate($request->input('permissions', []), [
             'addBookmarks' => Model::ADD_BOOKMARKS,
-            'removeBookmarks' => Model::DELETE_BOOKMARKS
+            'removeBookmarks' => Model::DELETE_BOOKMARKS,
+            'inviteUser' => Model::INVITE
         ]);
     }
 
@@ -48,7 +50,8 @@ final class FolderPermissions
     {
         return static::translate($unserialized, [
             'A_B' => Model::ADD_BOOKMARKS,
-            'D_B' => Model::DELETE_BOOKMARKS
+            'D_B' => Model::DELETE_BOOKMARKS,
+            'I_U' => Model::INVITE
         ]);
     }
 
@@ -87,7 +90,8 @@ final class FolderPermissions
 
         $translation = [
             Model::ADD_BOOKMARKS => 'A_B',
-            Model::DELETE_BOOKMARKS => 'D_B'
+            Model::DELETE_BOOKMARKS => 'D_B',
+            Model::INVITE => 'I_U'
         ];
 
         foreach ($this->permissions as $permission) {
@@ -110,6 +114,11 @@ final class FolderPermissions
     public function canRemoveBookmarksFromFolder(): bool
     {
         return $this->hasPermissionTo(Model::DELETE_BOOKMARKS);
+    }
+
+    public function canInviteUser(): bool
+    {
+        return $this->hasPermissionTo(Model::INVITE);
     }
 
     private function hasPermissionTo(string $action): bool

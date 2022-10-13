@@ -141,6 +141,13 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             );
         });
 
+        $this->assertWillAcceptInvite(['inviteUser'], function (Collection $savedPermissions) {
+            $this->assertEquals(
+                $savedPermissions->sole()->permission_id,
+                Permission::query()->where('name', Permission::INVITE)->sole()->id
+            );
+        });
+
         $this->assertWillAcceptInvite(['removeBookmarks', 'addBookmarks'], function (Collection $savedPermissions) {
             $this->assertCount(2, $savedPermissions);
 

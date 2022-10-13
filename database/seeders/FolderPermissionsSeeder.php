@@ -12,7 +12,8 @@ class FolderPermissionsSeeder extends Seeder
     private const PERMISSIONS = [
         'viewBookmarks',
         'addBookmarks',
-        'deleteBookmarks'
+        'deleteBookmarks',
+        'inviteUser'
     ];
 
     /**

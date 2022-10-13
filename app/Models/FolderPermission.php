@@ -17,7 +17,7 @@ final class FolderPermission extends Model
     public const VIEW_BOOKMARKS = 'viewBookmarks';
     public const ADD_BOOKMARKS = 'addBookmarks';
     public const DELETE_BOOKMARKS = 'deleteBookmarks';
-
+    public const INVITE = 'inviteUser';
 
     /**
      * {@inheritdoc}

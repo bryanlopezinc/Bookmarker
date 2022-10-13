@@ -275,11 +275,109 @@ class SendFolderCollaborationInviteTest extends TestCase
             ]);
     }
 
+    public function testUserWithPermissionCanSendInvite(): void
+    {
+        [$user, $invitee, $folderOwner] = UserFactory::times(3)->create();
+
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        Passport::actingAs($user);
+
+        FolderAccessFactory::new()
+            ->user($user->id)
+            ->folder($folder->id)
+            ->inviteUser()
+            ->create();
+
+        $this->sendInviteResponse([
+            'email' => $invitee->email,
+            'folder_id' => $folder->id,
+        ])->assertOk();
+    }
+
+    public function testUserWithPermissionCannotSendInviteToFolderOwner(): void
+    {
+        [$user, $folderOwner] = UserFactory::times(2)->create();
+
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        Passport::actingAs($user);
+
+        FolderAccessFactory::new()
+            ->user($user->id)
+            ->folder($folder->id)
+            ->inviteUser()
+            ->create();
+
+        $this->sendInviteResponse([
+            'email' => $folderOwner->email,
+            'folder_id' => $folder->id,
+        ])->assertForbidden()
+            ->assertExactJson([
+                'message' => 'Cannot send invitation to folder owner'
+            ]);
+    }
+
+    public function testUserWithPermissionCannotSendInviteToFolderOwnerViaSecondaryEmail(): void
+    {
+        [$user, $folderOwner] = UserFactory::times(2)->create();
+
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        Passport::actingAs($user);
+
+        FolderAccessFactory::new()
+            ->user($user->id)
+            ->folder($folder->id)
+            ->inviteUser()
+            ->create();
+
+        SecondaryEmail::query()->create([
+            'email' => $secondaryEmail = $this->faker->unique()->email,
+            'user_id' => $folderOwner->id,
+            'verified_at' => now()
+        ]);
+
+        $this->sendInviteResponse([
+            'email' => $secondaryEmail,
+            'folder_id' => $folder->id,
+        ])->assertForbidden()
+            ->assertExactJson([
+                'message' => 'Cannot send invitation to folder owner'
+            ]);
+    }
+
+    public function testOnlyFolderOwnerCanSendInviteWithPermissions(): void
+    {
+        [$user, $invitee, $folderOwner] = UserFactory::times(3)->create();
+
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        Passport::actingAs($user);
+
+        FolderAccessFactory::new()
+            ->user($user->id)
+            ->folder($folder->id)
+            ->inviteUser()
+            ->create();
+
+        $this->sendInviteResponse([
+            'email' => $invitee->email,
+            'folder_id' => $folder->id,
+            'permissions' => 'addBookmarks'
+        ])->assertForbidden()
+            ->assertExactJson([
+                'message' => 'only folder owner can send invites with permissions'
+            ]);
+    }
+
     public function testCanSendInviteWithPermissions(): void
     {
         $this->assertCanSendInviteWithPermissions(['addBookmarks'], 2);
         $this->assertCanSendInviteWithPermissions(['removeBookmarks'], 3);
+        $this->assertCanSendInviteWithPermissions(['inviteUser'], 31);
         $this->assertCanSendInviteWithPermissions(['addBookmarks', 'removeBookmarks'], 4);
+        $this->assertCanSendInviteWithPermissions(['addBookmarks', 'removeBookmarks', 'inviteUser'], 14);
     }
 
     private function assertCanSendInviteWithPermissions(array $permissions, int $testID): void

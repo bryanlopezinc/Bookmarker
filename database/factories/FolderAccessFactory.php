@@ -60,6 +60,16 @@ final class FolderAccessFactory extends Factory
         ]);
     }
 
+    public function inviteUser(): self
+    {
+        return $this->state([
+            'permission_id' => FolderPermission::query()
+                ->where('name', FolderPermission::INVITE)
+                ->sole()
+                ->id
+        ]);
+    }
+
     public function addBookmarksPermission(): self
     {
         return $this->state([

@@ -170,6 +170,10 @@ class FetchFolderBookmarksTest extends TestCase
         $this->assertUserWithPermissionCanPerformAction(function (FolderAccessFactory $factory) {
             return $factory->removeBookmarksPermission();
         });
+
+        $this->assertUserWithPermissionCanPerformAction(function (FolderAccessFactory $factory) {
+            return $factory->inviteUser();
+        });
     }
 
     private function assertUserWithPermissionCanPerformAction(\Closure $permision): void

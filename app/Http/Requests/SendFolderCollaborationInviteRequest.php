@@ -20,7 +20,8 @@ final class SendFolderCollaborationInviteRequest extends FormRequest
             'folder_id' => ['required', new ResourceIdRule],
             'permissions' => ['sometimes', 'array', Rule::in([
                 'addBookmarks',
-                'removeBookmarks'
+                'removeBookmarks',
+                'inviteUser'
             ])],
             'permissions.*' => ['filled', 'distinct:strict'],
         ];

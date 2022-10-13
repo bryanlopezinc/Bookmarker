@@ -213,21 +213,6 @@ class SendFolderCollaborationInviteTest extends TestCase
         });
     }
 
-    public function testCanSendInviteWithPermissions(): void
-    {
-        [$user, $invitee] = UserFactory::new()->count(2)->create();
-
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
-
-        Passport::actingAs($user);
-
-        $this->sendInviteResponse([
-            'email' => $invitee->email,
-            'folder_id' => $folder->id,
-            'permissions' => 'addBookmarks'
-        ])->assertOk();
-    }
-
     public function testCanSendInviteToSecondaryEmail(): void
     {
         [$user, $invitee] = UserFactory::new()->count(2)->create();
@@ -288,5 +273,41 @@ class SendFolderCollaborationInviteTest extends TestCase
             ->assertExactJson([
                 'message' => 'Cannot send invite to self'
             ]);
+    }
+
+    public function testCanSendInviteWithPermissions(): void
+    {
+        $this->assertCanSendInviteWithPermissions(['addBookmarks'], 2);
+        $this->assertCanSendInviteWithPermissions(['removeBookmarks'], 3);
+        $this->assertCanSendInviteWithPermissions(['addBookmarks', 'removeBookmarks'], 4);
+    }
+
+    private function assertCanSendInviteWithPermissions(array $permissions, int $testID): void
+    {
+        [$user, $invitee] = UserFactory::new()->count(2)->create();
+
+        Passport::actingAs($user);
+
+        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+
+        $parameters = [
+            'email' => $invitee->email,
+            'folder_id' => $folder->id,
+        ];
+
+        if (!empty($permissions)) {
+            $parameters['permissions'] = implode(',', $permissions);
+        }
+
+        try {
+            $this->sendInviteResponse($parameters)->assertOk();
+        } catch (\Throwable $e) {
+            $this->appendMessageToException(
+                '******** EXPECTATION FAILED FOR REQUEST WITH ID : ' . $testID . ' ********',
+                $e
+            );
+
+            throw $e;
+        }
     }
 }

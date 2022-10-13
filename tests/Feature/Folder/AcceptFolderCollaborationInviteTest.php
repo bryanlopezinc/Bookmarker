@@ -6,12 +6,13 @@ namespace Tests\Feature\Folder;
 
 use App\Mail\FolderCollaborationInviteMail;
 use App\Models\FolderAccess;
-use App\Models\FolderPermission;
+use App\Models\FolderPermission as Permission;
 use App\ValueObjects\Url;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Testing\TestResponse;
@@ -116,39 +117,46 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         ]);
     }
 
-    public function testAcceptInvite(): void
+    public function testWillAcceptInviteWithPermissions(): void
     {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
-
-        [$user, $invitee] = UserFactory::new()->count(2)->create();
-
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
-
-        $parameters = $this->extractSignedUrlParameters(function () use ($invitee, $folder, $user) {
-            Passport::actingAs($user);
-
-            $this->getJson(route('sendFolderCollaborationInvite', [
-                'email' => $invitee->email,
-                'folder_id' => $folder->id,
-            ]))->assertOk();
+        //Will give only view-bookmarks permission if no permissions were specified
+        $this->assertWillAcceptInvite([], function (Collection $savedPermissions) {
+            $this->assertEquals(
+                $savedPermissions->sole()->permission_id,
+                Permission::query()->where('name', Permission::VIEW_BOOKMARKS)->sole()->id
+            );
         });
 
-        $this->acceptInviteResponse($parameters)->assertCreated();
+        $this->assertWillAcceptInvite(['addBookmarks'], function (Collection $savedPermissions) {
+            $this->assertEquals(
+                $savedPermissions->sole()->permission_id,
+                Permission::query()->where('name', Permission::ADD_BOOKMARKS)->sole()->id
+            );
+        });
 
-        $permissions = FolderAccess::query()->where([
-            'folder_id' => $folder->id,
-            'user_id' => $invitee->id,
-        ])->sole();
+        $this->assertWillAcceptInvite(['removeBookmarks'], function (Collection $savedPermissions) {
+            $this->assertEquals(
+                $savedPermissions->sole()->permission_id,
+                Permission::query()->where('name', Permission::DELETE_BOOKMARKS)->sole()->id
+            );
+        });
 
-        $this->assertEquals(
-            $permissions->permission_id,
-            FolderPermission::query()->where('name', FolderPermission::VIEW_BOOKMARKS)->sole()->id
-        );
+        $this->assertWillAcceptInvite(['removeBookmarks', 'addBookmarks'], function (Collection $savedPermissions) {
+            $this->assertCount(2, $savedPermissions);
+
+            Permission::query()
+                ->whereIn('name', [Permission::ADD_BOOKMARKS, Permission::DELETE_BOOKMARKS])
+                ->get(['id'])
+                ->pluck('id')
+                ->each(function (int $permissionID) use ($savedPermissions) {
+                    $this->assertContains($permissionID, $savedPermissions->pluck('permission_id'));
+                });
+
+            $this->assertCount(2, $savedPermissions);
+        });
     }
 
-    public function testAcceptInviteWithAddBookmarksPermission(): void
+    private function assertWillAcceptInvite(array $permissions, \Closure $assertion): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
@@ -156,27 +164,37 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $folder = FolderFactory::new()->create(['user_id' => $user->id]);
 
-        $parameters = $this->extractSignedUrlParameters(function () use ($invitee, $folder, $user) {
-            Passport::actingAs($user);
+        $parameters = [
+            'email' => $invitee->email,
+            'folder_id' => $folder->id,
+        ];
 
-            $this->getJson(route('sendFolderCollaborationInvite', [
-                'email' => $invitee->email,
-                'folder_id' => $folder->id,
-                'permissions' => 'addBookmarks'
-            ]))->assertOk();
+        if (!empty($permissions)) {
+            $parameters['permissions'] = implode(',', $permissions);
+        }
+
+        $parameters = $this->extractSignedUrlParameters(function () use ($user, $parameters) {
+            Passport::actingAs($user);
+            $this->getJson(route('sendFolderCollaborationInvite', $parameters))->assertOk();
         });
 
-        $this->acceptInviteResponse($parameters)->assertCreated();
+        try {
+            $this->acceptInviteResponse($parameters)->assertCreated();
 
-        $permissions = FolderAccess::query()->where([
-            'folder_id' => $folder->id,
-            'user_id' => $invitee->id,
-        ])->sole();
+            $savedPermissions =  FolderAccess::query()->where([
+                'folder_id' => $folder->id,
+                'user_id' => $invitee->id,
+            ])->get();
 
-        $this->assertEquals(
-            $permissions->permission_id,
-            FolderPermission::query()->where('name', FolderPermission::ADD_BOOKMARKS)->sole()->id
-        );
+            $assertion($savedPermissions);
+        } catch (\Throwable $e) {
+            $this->appendMessageToException(
+                '******** EXPECTATION FAILED FOR REQUEST WITH PERMISSIONS : ' . implode(',', $permissions) . ' ********',
+                $e
+            );
+
+            throw $e;
+        }
     }
 
     public function testCannotAccept_Invite_MoreThanOnce(): void

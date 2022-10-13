@@ -36,7 +36,8 @@ final class FolderPermissions
     public static function fromRequest(Request $request): self
     {
         return static::translate($request->input('permissions', []), [
-            'addBookmarks' => Model::ADD_BOOKMARKS
+            'addBookmarks' => Model::ADD_BOOKMARKS,
+            'removeBookmarks' => Model::DELETE_BOOKMARKS
         ]);
     }
 
@@ -46,7 +47,8 @@ final class FolderPermissions
     public static function fromUnSerialized(array $unserialized): self
     {
         return static::translate($unserialized, [
-            'A_B' => Model::ADD_BOOKMARKS
+            'A_B' => Model::ADD_BOOKMARKS,
+            'D_B' => Model::DELETE_BOOKMARKS
         ]);
     }
 
@@ -84,7 +86,8 @@ final class FolderPermissions
         $serializable = [];
 
         $translation = [
-            Model::ADD_BOOKMARKS => 'A_B'
+            Model::ADD_BOOKMARKS => 'A_B',
+            Model::DELETE_BOOKMARKS => 'D_B'
         ];
 
         foreach ($this->permissions as $permission) {

@@ -4,6 +4,7 @@ namespace Tests\Feature\Folder;
 
 use App\Models\Folder;
 use App\Models\FolderBookmark;
+use App\Models\FolderPermission;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderAccessFactory;
 use Database\Factories\FolderFactory;
@@ -182,7 +183,20 @@ class FetchFolderBookmarksTest extends TestCase
         /** @var FolderAccessFactory */
         $factory = $permision(FolderAccessFactory::new()->user($user->id)->folder($folder->id));
 
-        $factory->create();
+        $factory = $factory->create();
+
+        try {
+            $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
+        } catch (\Throwable $e) {
+            $message = sprintf(
+                '********* Failed asserting that user with permission [%s] can view folder bookmarks ******* ',
+                FolderPermission::query()->whereKey($factory->permission_id)->sole(['name'])->name
+            );
+
+            $this->appendMessageToException($message, $e);
+
+            throw $e;
+        }
 
         $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
     }

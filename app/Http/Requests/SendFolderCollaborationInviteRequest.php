@@ -19,7 +19,8 @@ final class SendFolderCollaborationInviteRequest extends FormRequest
             'email' => ['required', 'email'],
             'folder_id' => ['required', new ResourceIdRule],
             'permissions' => ['sometimes', 'array', Rule::in([
-                'addBookmarks'
+                'addBookmarks',
+                'removeBookmarks'
             ])],
             'permissions.*' => ['filled', 'distinct:strict'],
         ];

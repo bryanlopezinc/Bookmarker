@@ -120,46 +120,34 @@ class AcceptFolderCollaborationInviteTest extends TestCase
     public function testWillAcceptInviteWithPermissions(): void
     {
         //Will give only view-bookmarks permission if no permissions were specified
-        $this->assertWillAcceptInvite([], function (Collection $savedPermissions) {
-            $this->assertEquals(
-                $savedPermissions->sole()->permission_id,
-                Permission::query()->where('name', Permission::VIEW_BOOKMARKS)->sole()->id
-            );
+        $this->assertWillAcceptInvite([], function (Collection $savedPermissionTypes) {
+            $this->assertCount(1, $savedPermissionTypes);
+            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::VIEW_BOOKMARKS));
         });
 
-        $this->assertWillAcceptInvite(['addBookmarks'], function (Collection $savedPermissions) {
-            $this->assertEquals(
-                $savedPermissions->sole()->permission_id,
-                Permission::query()->where('name', Permission::ADD_BOOKMARKS)->sole()->id
-            );
+        $this->assertWillAcceptInvite(['addBookmarks'], function (Collection $savedPermissionTypes) {
+            $this->assertCount(2, $savedPermissionTypes);
+            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::ADD_BOOKMARKS));
+            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::VIEW_BOOKMARKS));
         });
 
-        $this->assertWillAcceptInvite(['removeBookmarks'], function (Collection $savedPermissions) {
-            $this->assertEquals(
-                $savedPermissions->sole()->permission_id,
-                Permission::query()->where('name', Permission::DELETE_BOOKMARKS)->sole()->id
-            );
+        $this->assertWillAcceptInvite(['removeBookmarks'], function (Collection $savedPermissionTypes) {
+            $this->assertCount(2, $savedPermissionTypes);
+            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::DELETE_BOOKMARKS));
+            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::VIEW_BOOKMARKS));
         });
 
-        $this->assertWillAcceptInvite(['inviteUser'], function (Collection $savedPermissions) {
-            $this->assertEquals(
-                $savedPermissions->sole()->permission_id,
-                Permission::query()->where('name', Permission::INVITE)->sole()->id
-            );
+        $this->assertWillAcceptInvite(['inviteUser'], function (Collection $savedPermissionTypes) {
+            $this->assertCount(2, $savedPermissionTypes);
+            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::INVITE));
+            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::VIEW_BOOKMARKS));
         });
 
-        $this->assertWillAcceptInvite(['removeBookmarks', 'addBookmarks'], function (Collection $savedPermissions) {
-            $this->assertCount(2, $savedPermissions);
-
-            Permission::query()
-                ->whereIn('name', [Permission::ADD_BOOKMARKS, Permission::DELETE_BOOKMARKS])
-                ->get(['id'])
-                ->pluck('id')
-                ->each(function (int $permissionID) use ($savedPermissions) {
-                    $this->assertContains($permissionID, $savedPermissions->pluck('permission_id'));
-                });
-
-            $this->assertCount(2, $savedPermissions);
+        $this->assertWillAcceptInvite(['removeBookmarks', 'addBookmarks'], function (Collection $savedPermissionTypes) {
+            $this->assertCount(3, $savedPermissionTypes);
+            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::DELETE_BOOKMARKS));
+            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::ADD_BOOKMARKS));
+            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::VIEW_BOOKMARKS));
         });
     }
 
@@ -188,12 +176,16 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         try {
             $this->acceptInviteResponse($parameters)->assertCreated();
 
-            $savedPermissions =  FolderAccess::query()->where([
+            $savedPermissions = FolderAccess::query()->where([
                 'folder_id' => $folder->id,
                 'user_id' => $invitee->id,
             ])->get();
 
-            $assertion($savedPermissions);
+            $savedPermissionsTypes = Permission::query()
+                ->findMany($savedPermissions->pluck('permission_id')->all(), ['name'])
+                ->pluck('name');
+
+            $assertion($savedPermissionsTypes);
         } catch (\Throwable $e) {
             $this->appendMessageToException(
                 '******** EXPECTATION FAILED FOR REQUEST WITH PERMISSIONS : ' . implode(',', $permissions) . ' ********',

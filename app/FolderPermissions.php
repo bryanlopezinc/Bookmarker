@@ -27,10 +27,16 @@ final class FolderPermissions
      */
     public function __construct(public readonly array $permissions)
     {
+        $isUnique = count(array_unique($permissions)) === count($permissions);
+
         foreach ($permissions as $permission) {
             if (!in_array($permission, self::VALID, true)) {
                 throw new \Exception('Invalid permission type ' . $permission);
             }
+        }
+
+        if (!$isUnique) {
+            throw new \Exception('Permissions contains duplicate values : ' . implode(',', $permissions));
         }
     }
 

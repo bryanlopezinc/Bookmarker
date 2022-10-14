@@ -9,7 +9,7 @@ use App\Contracts\FolderRepositoryInterface;
 use App\DataTransferObjects\Folder;
 use App\Exceptions\HttpException;
 use App\Exceptions\UserNotFoundHttpException;
-use App\FolderPermissions;
+use App\FolderPermissions as Permissions;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\Repositories\UserRepository;
 use App\QueryColumns\FolderAttributes;
@@ -42,12 +42,25 @@ final class AcceptFolderCollaborationInviteService
 
         $this->ensureInvitationHasNotBeenAccepted($inviteeID, $folder);
 
-        $permissions = FolderPermissions::fromUnSerialized($decryted[Payload::PERMISSIONS]);
-
         $this->folderPermissionsRepository->create(
             $inviteeID,
             $folder->folderID,
-            $permissions->hasAnyPermission() ? $permissions : FolderPermissions::fromArray(['read'])
+            $this->extractPermissions($decryted)
+        );
+    }
+
+    private function extractPermissions(array $decryted): Permissions
+    {
+        $permissionsCollaboratorWillHaveByDefault = Permissions::fromArray(['read']);
+
+        $permissionsSetByfolderOwner = Permissions::fromUnSerialized($decryted[Payload::PERMISSIONS]);
+
+        if (!$permissionsSetByfolderOwner->hasAnyPermission()) {
+            return $permissionsCollaboratorWillHaveByDefault;
+        }
+
+        return new Permissions(
+            array_merge($permissionsSetByfolderOwner->permissions, $permissionsCollaboratorWillHaveByDefault->permissions)
         );
     }
 

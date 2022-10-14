@@ -3,6 +3,7 @@
 namespace Tests\Unit\Repositories\Folder;
 
 use App\Collections\TagsCollection;
+use App\DataTransferObjects\Builders\FolderBuilder;
 use App\Models\Taggable;
 use App\Repositories\Folder\DeleteFolderRepository;
 use App\Repositories\TagRepository;
@@ -40,7 +41,7 @@ class DeleteFolderRepositoryTest extends TestCase
             'taggable_type' => Taggable::FOLDER_TYPE,
         ]);
 
-        $this->repository->delete(new ResourceID($folder->id));
+        $this->repository->delete(FolderBuilder::fromModel($folder)->build());
 
         $this->assertDatabaseHas(Taggable::class, [
             'taggable_id' => $bookmark->id,

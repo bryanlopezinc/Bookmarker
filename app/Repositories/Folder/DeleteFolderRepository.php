@@ -4,39 +4,39 @@ declare(strict_types=1);
 
 namespace App\Repositories\Folder;
 
+use App\DataTransferObjects\Folder;
 use App\Models\Bookmark;
 use App\Models\Folder as Model;
 use App\Models\FolderBookmark;
-use App\ValueObjects\ResourceID;
 use Illuminate\Database\Eloquent\Collection;
 
 final class DeleteFolderRepository
 {
-    public function delete(ResourceID $folderID): bool
+    public function delete(Folder $folder): bool
     {
-        return $this->deleteFolder($folderID);
+        return $this->deleteFolder($folder);
     }
 
     /**
      * Delete a folder and all of its contents
      */
-    public function deleteRecursive(ResourceID $folderID): bool
+    public function deleteRecursive(Folder $folder): bool
     {
-        return $this->deleteFolder($folderID, true);
+        return $this->deleteFolder($folder, true);
     }
 
-    private function deleteFolder(ResourceID $folderID, bool $shouldDeleteBookmarksInFolder = false): bool
+    private function deleteFolder(Folder $folder, bool $shouldDeleteBookmarksInFolder = false): bool
     {
         FolderBookmark::query()
-            ->where('folder_id', $folderID->toInt())
-            ->chunkById(100, function (Collection $chunk) use ($shouldDeleteBookmarksInFolder) {
+            ->where('folder_id', $folder->folderID->toInt())
+            ->chunkById(100, function (Collection $chunk) use ($shouldDeleteBookmarksInFolder, $folder) {
                 if ($shouldDeleteBookmarksInFolder) {
-                    Bookmark::query()->whereKey($chunk->pluck('bookmark_id')->all())->delete();
+                    Bookmark::where('user_id', $folder->ownerID->toInt())->whereIn('id', $chunk->pluck('bookmark_id'))->delete();
                 }
 
                 $chunk->toQuery()->delete();
             });
 
-        return (bool) Model::query()->whereKey($folderID->toInt())->delete();
+        return (bool) Model::query()->whereKey($folder->folderID->toInt())->delete();
     }
 }

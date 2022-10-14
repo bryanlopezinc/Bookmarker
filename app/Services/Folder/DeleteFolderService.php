@@ -39,9 +39,9 @@ final class DeleteFolderService
         (new EnsureAuthorizedUserOwnsResource)($folder);
 
         if ($recursive) {
-            $this->deleteFolderRepository->deleteRecursive($folderID);
+            $this->deleteFolderRepository->deleteRecursive($folder);
         } else {
-            $this->deleteFolderRepository->delete($folderID);
+            $this->deleteFolderRepository->delete($folder);
         }
 
         event(new FolderModifiedEvent($folderID));

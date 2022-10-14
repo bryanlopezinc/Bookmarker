@@ -8,6 +8,8 @@ use App\Models\FolderBookmark;
 use App\Models\FolderBookmarksCount;
 use App\Models\UserBookmarksCount;
 use App\Models\UserFoldersCount;
+use Database\Factories\BookmarkFactory;
+use Database\Factories\FolderAccessFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -194,5 +196,60 @@ class DeleteFolderTest extends TestCase
         $this->deleteFolderResponse(['folder' => $folderID])->assertOk();
         $this->getJson(route('fetchFolder', ['id' => $folderID]))->assertNotFound();
         $this->deleteFolderResponse(['folder' => $folderID + 1])->assertNotFound();
+    }
+
+    public function testWillNotAffectOtherUserBookmarksWhenFolderAndItsItemsAreDeleted(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        [$userBookmark, $userBookmarkAddedToFolder] = BookmarkFactory::new()->count(2)->create(['user_id' => $user->id]);
+        $folderID = FolderFactory::new()->create(['user_id' => $user->id])->id;
+
+        $this->postJson(route('addBookmarksToFolder'), [
+            'bookmarks' => (string) $userBookmarkAddedToFolder->id,
+            'folder' => $folderID
+        ])->assertCreated();
+
+        $this->deleteFolderResponse([
+            'folder' => $folderID,
+            'delete_bookmarks' => true
+        ])->assertOk();
+
+        $this->assertDatabaseMissing(Bookmark::class, ['id' => $userBookmarkAddedToFolder->id]);
+        $this->assertDatabaseHas(Bookmark::class, ['id' => $userBookmark->id]);
+    }
+
+    public function test_will_not_delete_bookmarks_added_by_collaborators_when_deleting_folder_and_its_bookmarks(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::times(2)->create();
+        $collaboratorBookmarks = BookmarkFactory::new()->count(2)->create(['user_id' => $collaborator->id]);
+
+        $folderID = FolderFactory::new()->create([
+            'user_id' => $folderOwner->id,
+            'created_at' => now(),
+        ])->id;
+
+        FolderAccessFactory::new()
+            ->folder($folderID)
+            ->user($collaborator->id)
+            ->addBookmarksPermission()
+            ->create();
+
+        Passport::actingAs($collaborator);
+        $this->postJson(route('addBookmarksToFolder'), [
+            'bookmarks' => $collaboratorBookmarks->pluck('id')->implode(','),
+            'folder' => $folderID
+        ])->assertCreated();
+
+        Passport::actingAs($folderOwner);
+        $this->deleteFolderResponse([
+            'folder' => $folderID,
+            'delete_bookmarks' => true
+        ])->assertOk();
+
+        $this->assertEquals(
+            Bookmark::query()->where('user_id', $collaborator->id)->pluck('id')->sort()->all(),
+            $collaboratorBookmarks->pluck('id')->sort()->all()
+        );
     }
 }

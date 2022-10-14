@@ -408,4 +408,27 @@ class SendFolderCollaborationInviteTest extends TestCase
             throw $e;
         }
     }
+
+    public function test_user_with_permission_cannot_send_invites_when_folder_owner_has_deleted_account(): void
+    {
+        [$collaborator, $invitee, $folderOwner] = UserFactory::times(3)->create();
+
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->inviteUser()
+            ->create();
+
+        Passport::actingAs($folderOwner);
+        $this->deleteJson(route('deleteUserAccount'), ['password' => 'password'])->assertOk();
+
+        Passport::actingAs($collaborator);
+        $this->sendInviteResponse([
+            'email' => $invitee->email,
+            'folder_id' => $folder->id,
+        ])->assertNotFound()
+            ->assertExactJson(['message' => "The folder does not exists"]);
+    }
 }

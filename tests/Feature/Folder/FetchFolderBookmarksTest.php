@@ -260,4 +260,26 @@ class FetchFolderBookmarksTest extends TestCase
 
         $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertJsonCount(0, 'data')->assertOk();
     }
+
+    public function test_user_with_permission_cannot_view_bookmarks_when_folder_owner_has_deleted_account(): void
+    {
+        [$collaborator, $folderOwner] = UserFactory::times(2)->create();
+
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->viewBookmarksPermission()
+            ->create();
+
+        Passport::actingAs($folderOwner);
+        $this->deleteJson(route('deleteUserAccount'), ['password' => 'password'])->assertOk();
+
+        Passport::actingAs($collaborator);
+        $this->folderBookmarksResponse([
+            'folder_id' => $folder->id,
+        ])->assertNotFound()
+            ->assertExactJson(['message' => "The folder does not exists"]);
+    }
 }

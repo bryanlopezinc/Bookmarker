@@ -405,4 +405,27 @@ class AddBookmarksToFolderTest extends TestCase
                 'items_count' => 3
             ]);
     }
+
+    public function test_user_with_permission_cannot_add_bookmarks_when_folder_owner_has_deleted_account(): void
+    {
+        [$collaborator, $folderOwner] = UserFactory::times(2)->create();
+
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->addBookmarksPermission()
+            ->create();
+
+        Passport::actingAs($folderOwner);
+        $this->deleteJson(route('deleteUserAccount'), ['password' => 'password'])->assertOk();
+
+        Passport::actingAs($collaborator);
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => BookmarkFactory::new()->count(3)->create(['user_id' => $collaborator->id])->pluck('id')->implode(','),
+            'folder' => $folder->id,
+        ])->assertNotFound()
+            ->assertExactJson(['message' => "The folder does not exists"]);
+    }
 }

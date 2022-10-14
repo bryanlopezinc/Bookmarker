@@ -348,4 +348,27 @@ class RemoveBookmarksFromFolderTest extends TestCase
                 'items_count' => 1
             ]);
     }
+
+    public function test_user_with_permission_cannot_remove_bookmarks_when_folder_owner_has_deleted_account(): void
+    {
+        [$collaborator, $folderOwner] = UserFactory::times(2)->create();
+
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->removeBookmarksPermission()
+            ->create();
+
+        Passport::actingAs($folderOwner);
+        $this->deleteJson(route('deleteUserAccount'), ['password' => 'password'])->assertOk();
+
+        Passport::actingAs($collaborator);
+        $this->removeFolderBookmarksResponse([
+            'bookmarks' => '1,2,3',
+            'folder' => $folder->id,
+        ])->assertNotFound()
+            ->assertExactJson(['message' => "The folder does not exists"]);
+    }
 }

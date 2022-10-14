@@ -45,7 +45,7 @@ final class SendFolderCollaborationInviteService
             $folder,
             $invitee,
             $inviter,
-            FolderPermissions::fromRequest($request)
+            FolderPermissions::fromRequest($request, 'permissions')
         ));
 
         if ($invitationMailSent === false) {

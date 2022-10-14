@@ -53,4 +53,13 @@ final class FolderPermissionsRepository
             ->where('user_id', $collaboratorID->toInt())
             ->delete();
     }
+
+    public function revoke(UserID $collaboratorID, ResourceID $folderID, FolderPermissions $permissions): void
+    {
+        FolderAccess::query()
+            ->where('folder_id', $folderID->toInt())
+            ->where('user_id', $collaboratorID->toInt())
+            ->whereIn('permission_id',  FolderPermission::select('id')->whereIn('name', $permissions->permissions))
+            ->delete();
+    }
 }

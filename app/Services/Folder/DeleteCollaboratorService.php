@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Folder;
 
 use App\Contracts\FolderRepositoryInterface;
-use App\DataTransferObjects\User;
 use App\Exceptions\HttpException;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\FolderAttributes;
-use App\QueryColumns\UserAttributes;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\Repositories\UserRepository;
 use App\ValueObjects\ResourceID;
@@ -27,42 +25,28 @@ final class DeleteCollaboratorService
     public function revokeUserAccess(ResourceID $folderID, UserID $collaboratorID): void
     {
         $folder = $this->folderRepository->find($folderID, FolderAttributes::only('id,user_id'));
-        $collaborator = $this->retrieveCollaboratorData($collaboratorID);
 
         (new EnsureAuthorizedUserOwnsResource)($folder);
 
-        $this->ensureIsNotRemovingSelf($collaborator);
+        $this->ensureIsNotRemovingSelf($collaboratorID);
 
-        $this->ensureUserIsACollaborator($collaborator, $folderID);
+        $this->ensureUserIsACollaborator($collaboratorID, $folderID);
 
-        $this->permissions->removeCollaborator($collaborator->id, $folderID);
+        $this->permissions->removeCollaborator($collaboratorID, $folderID);
     }
 
-    private function retrieveCollaboratorData(UserID $collaboratorID): User
+    private function ensureIsNotRemovingSelf(UserID $collaboratorID): void
     {
-        $collaborator = $this->userRepository->findByID($collaboratorID, UserAttributes::only('id'));
-
-        if ($collaborator === false) {
-            throw HttpException::notFound([
-                'message' => 'User not a collaborator'
-            ]);
-        }
-
-        return $collaborator;
-    }
-
-    private function ensureIsNotRemovingSelf(User $collaborator): void
-    {
-        if (UserID::fromAuthUser()->equals($collaborator->id)) {
+        if (UserID::fromAuthUser()->equals($collaboratorID)) {
             throw HttpException::forbidden([
                 'message' => 'Cannot remove self'
             ]);
         }
     }
 
-    private function ensureUserIsACollaborator(User $collaborator, ResourceID $folderID): void
+    private function ensureUserIsACollaborator(UserID $collaboratorID, ResourceID $folderID): void
     {
-        $isACollaborator = $this->permissions->getUserPermissionsForFolder($collaborator->id, $folderID)->hasAnyPermission();
+        $isACollaborator = $this->permissions->getUserPermissionsForFolder($collaboratorID, $folderID)->hasAnyPermission();
 
         if (!$isACollaborator) {
             throw HttpException::notFound([

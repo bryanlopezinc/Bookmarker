@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App;
 
-use App\Http\Requests\SendFolderCollaborationInviteRequest as Request;
 use App\Models\FolderPermission as Model;
+use Illuminate\Http\Request;
 
 /**
  * Permission a user has to a folder resource.
@@ -34,9 +34,9 @@ final class FolderPermissions
         }
     }
 
-    public static function fromRequest(Request $request): self
+    public static function fromRequest(Request $request, string $key): self
     {
-        return static::translate($request->input('permissions', []), [
+        return static::translate($request->input($key, []), [
             'addBookmarks' => Model::ADD_BOOKMARKS,
             'removeBookmarks' => Model::DELETE_BOOKMARKS,
             'inviteUser' => Model::INVITE
@@ -104,6 +104,17 @@ final class FolderPermissions
     public function hasAnyPermission(): bool
     {
         return count($this->permissions) > 0;
+    }
+
+    public function containsAll(FolderPermissions $permissions): bool
+    {
+        foreach ($permissions->permissions as $action) {
+            if (!$this->hasPermissionTo($action)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function canAddBookmarksToFolder(): bool

@@ -70,6 +70,7 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('folders', Folder\DeleteFolderController::class)->name('deleteFolder');
         Route::get('users/folders', Folder\FetchUserFoldersController::class)->name('userFolders');
         Route::get('folders/bookmarks', Folder\FetchFolderBookmarksController::class)->name('folderBookmarks');
+        Route::delete('folders/collaborators', Folder\DeleteCollaboratorController::class)->name('deleteFolderCollaborator');
 
         Route::patch('folders', Folder\UpdateFolderController::class)
             ->middleware([ConfirmPassword::class, ConvertStringToArray::keys('tags')])

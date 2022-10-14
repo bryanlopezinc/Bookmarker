@@ -45,4 +45,12 @@ final class FolderPermissionsRepository
                 FolderAccess::insert($records->all());
             });
     }
+
+    public function removeCollaborator(UserID $collaboratorID, ResourceID $folderID): void
+    {
+        FolderAccess::query()
+            ->where('folder_id', $folderID->toInt())
+            ->where('user_id', $collaboratorID->toInt())
+            ->delete();
+    }
 }

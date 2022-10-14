@@ -29,7 +29,7 @@ class VerifySecondaryEmailTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/emails/verify/secondary', 'verifySecondaryEmail');
+        $this->assertRouteIsAccessibeViaPath('v1/users/emails/verify/secondary', 'verifySecondaryEmail');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void

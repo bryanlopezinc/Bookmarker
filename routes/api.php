@@ -1,138 +1,85 @@
 <?php
 
-use App\Http\Controllers;
-use App\Http\Controllers\Auth;
-use App\Http\Controllers\Folder;
-use App\Http\Middleware\ExplodeString as ConvertStringToArray;
+use App\Http\Controllers as C;
+use App\Http\Controllers\Auth as A;
+use App\Http\Controllers\Folder as F;
+use App\Http\Middleware\ExplodeString as StringToArray;
 use App\Http\Middleware\HandleDbTransactionsMiddleware as DBTransaction;
 use App\Http\Middleware\ConfirmPasswordBeforeMakingFolderPublicMiddleware as ConfirmPassword;
 use Illuminate\Support\Facades\Route;
 use Laravel\Passport\Http\Middleware\CheckClientCredentials;
+use Laravel\Passport\Http\Controllers\AccessTokenController;
 
-Route::middleware('auth:api')->group(function () {
+Route::middleware(['auth:api', DBTransaction::class])->group(function () {
 
-    Route::post('logout', Auth\LogoutController::class)->name('logoutUser');
-    Route::get('users/me', Auth\FetchUserProfileController::class)->name('authUserProfile');
-    Route::delete('users', Auth\DeleteUserAccountController::class)->name('deleteUserAccount');
-    Route::get('users/favourites', Controllers\FetchUserFavouritesController::class)->name('fetchUserFavourites');
-    Route::get('users/bookmarks/sources', Controllers\FetchUserBookmarksSourcesController::class)->name('fetchUserBookmarksSources');
-    Route::get('users/tags', Controllers\FetchUserTagsController::class)->name('userTags');
-    Route::get('users/tags/search', Controllers\SearchUserTagsController::class)->name('searchUserTags');
-    Route::post('emails/add', Controllers\Auth\AddEmailToAccountController::class)->name('addEmailToAccount');
-    Route::post('emails/verify/secondary', Auth\VerifySecondaryEmailController::class)->name('verifySecondaryEmail');
+    Route::prefix('users')->group(function () {
+        Route::post('logout', A\LogoutController::class)->name('logoutUser');
+        Route::get('me', A\FetchUserProfileController::class)->name('authUserProfile');
+        Route::delete('/', A\DeleteUserAccountController::class)->name('deleteUserAccount');
 
-    Route::get('folders/invite', Folder\SendFolderCollaborationInviteController::class)
-        ->middleware([ConvertStringToArray::keys('permissions')])
-        ->name('sendFolderCollaborationInvite');
+        Route::get('folders', F\FetchUserFoldersController::class)->name('userFolders');
 
-    Route::get('users/bookmarks', Controllers\FetchUserBookmarksController::class)
-        ->middleware([ConvertStringToArray::keys('tags')])
-        ->name('fetchUserBookmarks');
+        Route::post('emails/add', A\AddEmailToAccountController::class)->name('addEmailToAccount');
+        Route::delete('emails/remove', A\DeleteEmailController::class)->name('removeEmailFromAccount');
+        Route::post('emails/verify/secondary', A\VerifySecondaryEmailController::class)->name('verifySecondaryEmail');
 
-    Route::post('bookmarks/import', Controllers\ImportBookmarkController::class)
-        ->middleware([ConvertStringToArray::keys('tags')])
-        ->name('importBookmark');
+        Route::get('favourites', C\FetchUserFavouritesController::class)->name('fetchUserFavourites');
+        Route::post('favourites', C\CreateFavouriteController::class)->middleware([StringToArray::keys('bookmarks')])->name('createFavourite');
+        Route::delete('favourites', C\DeleteFavouriteController::class)->middleware([StringToArray::keys('bookmarks')])->name('deleteFavourite');
 
-    Route::middleware(DBTransaction::class)->group(function () {
-        Route::delete('emails/remove', Controllers\Auth\DeleteEmailController::class)->name('removeEmailFromAccount');
+        Route::get('bookmarks', C\FetchUserBookmarksController::class)->middleware([StringToArray::keys('tags')])->name('fetchUserBookmarks');
+        Route::get('bookmarks/sources', C\FetchUserBookmarksSourcesController::class)->name('fetchUserBookmarksSources');
+        Route::delete('bookmarks/source', C\DeleteBookmarksFromSourceController::class)->name('deleteBookmarksFromSource');
 
-        Route::post('bookmarks', Controllers\CreateBookmarkController::class)
-            ->middleware([ConvertStringToArray::keys('tags')])
-            ->name('createBookmark');
+        Route::get('tags', C\FetchUserTagsController::class)->name('userTags');
+        Route::get('tags/search', C\SearchUserTagsController::class)->name('searchUserTags');
+    });
 
-        Route::delete('bookmarks', Controllers\DeleteBookmarkController::class)
-            ->middleware([ConvertStringToArray::keys('ids')])
-            ->name('deleteBookmark');
+    Route::prefix('bookmarks')->group(function () {
+        Route::post('/', C\CreateBookmarkController::class)->middleware([StringToArray::keys('tags')])->name('createBookmark');
+        Route::delete('/', C\DeleteBookmarkController::class)->middleware([StringToArray::keys('ids')])->name('deleteBookmark');
+        Route::patch('/', C\UpdateBookmarkController::class)->middleware([StringToArray::keys('tags')])->name('updateBookmark');
+        Route::post('import', C\ImportBookmarkController::class)->middleware([StringToArray::keys('tags')])->withoutMiddleware(DBTransaction::class)->name('importBookmark');
+        Route::delete('tags/remove', C\DeleteBookmarkTagsController::class)->middleware([StringToArray::keys('tags')])->name('deleteBookmarkTags');
+    });
 
-        Route::post('favourites', Controllers\CreateFavouriteController::class)
-            ->middleware([ConvertStringToArray::keys('bookmarks')])
-            ->name('createFavourite');
+    Route::prefix('folders')->group(function () {
+        Route::get('/', F\FetchFolderController::class)->name('fetchFolder');
+        Route::delete('/', F\DeleteFolderController::class)->name('deleteFolder');
+        Route::post('/', F\CreateFolderController::class)->middleware(StringToArray::keys('tags'))->name('createFolder');
+        Route::patch('/', F\UpdateFolderController::class)->middleware([ConfirmPassword::class, StringToArray::keys('tags')])->name('updateFolder');
 
-        Route::delete('bookmarks/source', Controllers\DeleteBookmarksFromSourceController::class)->name('deleteBookmarksFromSource');
+        Route::prefix('bookmarks')->group(function () {
+            Route::get('/', F\FetchFolderBookmarksController::class)->name('folderBookmarks');
+            Route::post('/', F\AddBookmarksToFolderController::class)->middleware(StringToArray::keys('bookmarks', 'make_hidden'))->name('addBookmarksToFolder');
+            Route::delete('/', F\RemoveBookmarksFromFolderController::class)->middleware(StringToArray::keys('bookmarks'))->name('removeBookmarksFromFolder');
+            Route::post('hide', F\HideFolderBookmarksController::class)->middleware(StringToArray::keys('bookmarks'))->name('hideFolderBookmarks');
+        });
 
-        Route::delete('favourites', Controllers\DeleteFavouriteController::class)
-            ->middleware([ConvertStringToArray::keys('bookmarks')])
-            ->name('deleteFavourite');
+        Route::delete('collaborators', F\DeleteCollaboratorController::class)->name('deleteFolderCollaborator');
+        Route::delete('collaborators/revoke_permissions', F\RevokeFolderCollaboratorPermissionsController::class)->middleware([StringToArray::keys('permissions')])->name('revokePermissions');
+        Route::get('invite', F\SendFolderCollaborationInviteController::class)->middleware([StringToArray::keys('permissions')])->name('sendFolderCollaborationInvite');
 
-        Route::delete('bookmarks/tags/remove', Controllers\DeleteBookmarkTagsController::class)
-            ->middleware([ConvertStringToArray::keys('tags')])
-            ->name('deleteBookmarkTags');
-
-        Route::patch('bookmarks', Controllers\UpdateBookmarkController::class)
-            ->middleware([ConvertStringToArray::keys('tags')])
-            ->name('updateBookmark');
-
-        Route::post('folders', Folder\CreateFolderController::class)
-            ->middleware(ConvertStringToArray::keys('tags'))
-            ->name('createFolder');
-
-        Route::get('folders', Folder\FetchFolderController::class)->name('fetchFolder');
-        Route::delete('folders', Folder\DeleteFolderController::class)->name('deleteFolder');
-        Route::get('users/folders', Folder\FetchUserFoldersController::class)->name('userFolders');
-        Route::get('folders/bookmarks', Folder\FetchFolderBookmarksController::class)->name('folderBookmarks');
-        Route::delete('folders/collaborators', Folder\DeleteCollaboratorController::class)->name('deleteFolderCollaborator');
-
-        Route::delete('folders/collaborators/revoke_permissions', Folder\RevokeFolderCollaboratorPermissionsController::class)
-            ->middleware([ConvertStringToArray::keys('permissions')])
-            ->name('revokePermissions');
-
-        Route::patch('folders', Folder\UpdateFolderController::class)
-            ->middleware([ConfirmPassword::class, ConvertStringToArray::keys('tags')])
-            ->name('updateFolder');
-
-        Route::post('folders/bookmarks', Folder\AddBookmarksToFolderController::class)
-            ->middleware(ConvertStringToArray::keys('bookmarks', 'make_hidden'))
-            ->name('addBookmarksToFolder');
-
-        Route::post('folders/bookmarks/hide', Folder\HideFolderBookmarksController::class)
-            ->middleware(ConvertStringToArray::keys('bookmarks'))
-            ->name('hideFolderBookmarks');
-
-        Route::delete('folders/bookmarks', Folder\RemoveBookmarksFromFolderController::class)
-            ->middleware(ConvertStringToArray::keys('bookmarks'))
-            ->name('removeBookmarksFromFolder');
-
-        Route::delete('folders/tags/remove', Controllers\Folder\DeleteFolderTagsController::class)
-            ->middleware([ConvertStringToArray::keys('tags')])
-            ->name('deleteFolderTags');
+        Route::delete('tags/remove', F\DeleteFolderTagsController::class)->middleware([StringToArray::keys('tags')])->name('deleteFolderTags');
     });
 }); // End auth middleware
 
 //sendGrid callback url
-Route::post('email/save_url', Controllers\SendGrid\Controller::class)->name('saveBookmarkFromEmail');
+Route::post('email/save_url', C\SendGrid\Controller::class)->name('saveBookmarkFromEmail');
 
-Route::post('token/refresh', [Laravel\Passport\Http\Controllers\AccessTokenController::class, 'issueToken'])
-    ->name('refreshToken')
-    ->middleware('throttle');
-
-Route::post('client/oauth/token', Auth\IssueClientTokenController::class)->name('issueClientToken');
-Route::post('login', Auth\LoginController::class)->name('loginUser');
+Route::post('client/oauth/token', A\IssueClientTokenController::class)->name('issueClientToken');
+Route::post('login', A\LoginController::class)->name('loginUser');
+Route::post('token/refresh', [AccessTokenController::class, 'issueToken'])->name('refreshToken')->middleware('throttle');
 
 Route::middleware([CheckClientCredentials::class])->group(function () {
-    Route::post('users', Auth\CreateUserController::class)->middleware([DBTransaction::class])->name('createUser');
-    Route::get('folders/public/bookmarks', Folder\FetchPublicFolderBookmarksController::class)->name('viewPublicfolderBookmarks');
+    Route::get('folders/public/bookmarks', F\FetchPublicFolderBookmarksController::class)->name('viewPublicfolderBookmarks');
+    Route::get('folders/invite/accept', F\AcceptFolderCollaborationInviteController::class)->middleware([DBTransaction::class, 'signed'])->name('acceptFolderCollaborationInvite');
 
-    Route::get('folders/invite/accept', Folder\AcceptFolderCollaborationInviteController::class)
-        ->middleware([DBTransaction::class, 'signed'])
-        ->name('acceptFolderCollaborationInvite');
+    Route::post('users', A\CreateUserController::class)->middleware([DBTransaction::class])->name('createUser');
+    Route::post('users/password/reset-token', A\RequestPasswordResetController::class)->middleware([DBTransaction::class])->name('requestPasswordResetToken');
+    Route::post('users/password/reset', A\ResetPasswordController::class)->middleware([DBTransaction::class])->name('resetPassword');
+    Route::post('users/request-verification-code', A\Request2FACodeController::class)->middleware([DBTransaction::class])->name('requestVerificationCode');
 
-    Route::post('users/password/reset-token', Auth\RequestPasswordResetController::class)
-        ->middleware([DBTransaction::class])
-        ->name('requestPasswordResetToken');
-
-    Route::post('users/password/reset', Auth\ResetPasswordController::class)
-        ->middleware([DBTransaction::class])
-        ->name('resetPassword');
-
-    Route::post('users/request-verification-code', App\Http\Controllers\Auth\Request2FACodeController::class)
-        ->middleware([DBTransaction::class])
-        ->name('requestVerificationCode');
-
-    Route::get('email/verify/{id}/{hash}', Auth\VerifyEmailController::class)
-        ->middleware('signed')
-        ->name('verification.verify');
-
-    Route::post('email/verify/resend', Auth\ResendVerificationLinkController::class)
-        ->middleware('throttle:6,1')
-        ->name('verification.resend');
+    Route::get('email/verify/{id}/{hash}', A\VerifyEmailController::class)->middleware('signed')->name('verification.verify');
+    Route::post('email/verify/resend', A\ResendVerificationLinkController::class)->middleware('throttle:6,1') ->name('verification.resend');
 });

@@ -25,7 +25,7 @@ final class LogoutTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/logout', 'logoutUser');
+        $this->assertRouteIsAccessibeViaPath('v1/users/logout', 'logoutUser');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void

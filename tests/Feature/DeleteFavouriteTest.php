@@ -19,7 +19,7 @@ class DeleteFavouriteTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/favourites', 'deleteFavourite');
+        $this->assertRouteIsAccessibeViaPath('v1/users/favourites', 'deleteFavourite');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void

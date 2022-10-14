@@ -22,7 +22,7 @@ class RemoveEmailTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/emails/remove', 'removeEmailFromAccount');
+        $this->assertRouteIsAccessibeViaPath('v1/users/emails/remove', 'removeEmailFromAccount');
     }
 
     public function testUnAuthorizedUserCannotAccessEndPoint(): void

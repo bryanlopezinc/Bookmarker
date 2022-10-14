@@ -24,7 +24,7 @@ class CreateFavouriteTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/favourites', 'createFavourite');
+        $this->assertRouteIsAccessibeViaPath('v1/users/favourites', 'createFavourite');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void

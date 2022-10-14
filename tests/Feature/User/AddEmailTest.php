@@ -23,7 +23,7 @@ class AddEmailTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/emails/add', 'addEmailToAccount');
+        $this->assertRouteIsAccessibeViaPath('v1/users/emails/add', 'addEmailToAccount');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void

@@ -25,7 +25,7 @@ class DeleteBookmarksFromSourceTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/bookmarks/source', 'deleteBookmarksFromSource');
+        $this->assertRouteIsAccessibeViaPath('v1/users/bookmarks/source', 'deleteBookmarksFromSource');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void

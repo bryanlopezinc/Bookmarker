@@ -51,7 +51,7 @@ class TagRepositoryTest extends TestCase
         $repository->attach($tags,  BookmarkFactory::new()->create());
 
         /** @var array<\App\ValueObjects\Tag> */
-        $result = $repository->getUsertags(new UserID($bookmark->user_id), new PaginationData)->items();
+        $result = $repository->getUserTags(new UserID($bookmark->user_id), new PaginationData)->items();
 
         $this->assertCount(1, $result);
         $this->assertEquals($tag, $result[0]->value);

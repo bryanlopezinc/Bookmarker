@@ -25,7 +25,7 @@ class SendFolderCollaborationInviteTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/folders/invite', 'sendFolderCollaborationInvite');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/invite', 'sendFolderCollaborationInvite');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -33,7 +33,7 @@ class SendFolderCollaborationInviteTest extends TestCase
         $this->sendInviteResponse()->assertUnauthorized();
     }
 
-    public function testRequiredAttrbutesMustBePresent(): void
+    public function testRequiredAttributesMustBePresent(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 

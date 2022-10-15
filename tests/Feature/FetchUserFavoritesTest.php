@@ -11,18 +11,18 @@ use Tests\TestCase;
 use Tests\Traits\AssertsBookmarkJson;
 use Tests\Traits\WillCheckBookmarksHealth;
 
-class FetchUserFavouritesTest extends TestCase
+class FetchUserFavoritesTest extends TestCase
 {
     use AssertsBookmarkJson, WillCheckBookmarksHealth;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
-        return $this->getJson(route('fetchUserFavourites', $parameters));
+        return $this->getJson(route('fetchUserFavorites', $parameters));
     }
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users/favourites', 'fetchUserFavourites');
+        $this->assertRouteIsAccessibleViaPath('v1/users/favorites', 'fetchUserFavorites');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -59,7 +59,7 @@ class FetchUserFavouritesTest extends TestCase
             ]);
     }
 
-    public function testWillFetchUserFavourites(): void
+    public function testWillFetchUserFavorites(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -71,7 +71,7 @@ class FetchUserFavouritesTest extends TestCase
             'description' => 'And <h1>spoof!</h1>'
         ]);
 
-        $this->postJson(route('createFavourite'), ['bookmarks' => (string) $bookmarks->pluck('id')->implode(',')])->assertCreated();
+        $this->postJson(route('createFavorite'), ['bookmarks' => (string) $bookmarks->pluck('id')->implode(',')])->assertCreated();
 
         $response = $this->getTestResponse()
             ->assertOk()
@@ -83,7 +83,7 @@ class FetchUserFavouritesTest extends TestCase
                         //Assert sanitized attributes was sent to client.
                         $json->where('attributes.title', '&lt;h1&gt;did you forget something?&lt;/h1&gt;');
                         $json->where('attributes.description', 'And &lt;h1&gt;spoof!&lt;/h1&gt;');
-                        $json->where('attributes.is_user_favourite', true)->etc();
+                        $json->where('attributes.is_user_favorite', true)->etc();
                     })
                     ->etc();
             })
@@ -109,7 +109,7 @@ class FetchUserFavouritesTest extends TestCase
 
         $bookmarks = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id]);
 
-        $this->postJson(route('createFavourite'), ['bookmarks' => (string) $bookmarks->pluck('id')->implode(',')])->assertCreated();
+        $this->postJson(route('createFavorite'), ['bookmarks' => (string) $bookmarks->pluck('id')->implode(',')])->assertCreated();
 
         $this->getTestResponse()->assertOk();
 

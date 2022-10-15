@@ -22,7 +22,7 @@ class Request2FACodeForLoginTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users/request-verification-code', 'requestVerificationCode');
+        $this->assertRouteIsAccessibleViaPath('v1/users/request-verification-code', 'requestVerificationCode');
     }
 
     public function testUnAuthorizedClientCannotAccessRoute(): void

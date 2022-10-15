@@ -10,7 +10,7 @@ use Laravel\Passport\Database\Factories\ClientFactory;
 use Laravel\Passport\Passport;
 use Laravel\Passport\TokenRepository;
 
-trait Resquests2FACode
+trait Requests2FACode
 {
     private function get2FACode(string $username, string $password): int
     {

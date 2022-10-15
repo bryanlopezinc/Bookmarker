@@ -3,10 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Bookmark;
-use App\Models\Favourite;
+use App\Models\Favorite;
 use App\Models\Taggable;
 use App\Models\UserBookmarksCount;
-use App\Models\UserFavouritesCount;
+use App\Models\UserFavoritesCount;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
@@ -27,7 +27,7 @@ class DeleteBookmarksTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/bookmarks', 'deleteBookmark');
+        $this->assertRouteIsAccessibleViaPath('v1/bookmarks', 'deleteBookmark');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -35,7 +35,7 @@ class DeleteBookmarksTest extends TestCase
         $this->getTestResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationWhenRequiredAttrbutesAreMissing(): void
+    public function testWillThrowValidationWhenRequiredAttributesAreMissing(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -102,7 +102,7 @@ class DeleteBookmarksTest extends TestCase
         $this->assertBookmarksHealthWillNotBeChecked([$bookmark->id]);
     }
 
-    public function testWillDeleteFavouritesWhenBookmarkIsDeleted(): void
+    public function testWillDeleteFavoritesWhenBookmarkIsDeleted(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -110,21 +110,21 @@ class DeleteBookmarksTest extends TestCase
 
         $bookmark = Bookmark::query()->where('user_id', $user->id)->first();
 
-        //Add created bookmark to favourites.
-        $this->postJson(route('createFavourite'), ['bookmarks' => (string) $bookmark->id])->assertCreated();
+        //Add created bookmark to favorites.
+        $this->postJson(route('createFavorite'), ['bookmarks' => (string) $bookmark->id])->assertCreated();
 
         $this->getTestResponse(['ids' => (string)$bookmark->id])->assertOk();
 
-        $this->assertDatabaseMissing(Favourite::class, [
+        $this->assertDatabaseMissing(Favorite::class, [
             'user_id' => $user->id,
             'bookmark_id' => $bookmark->id
         ]);
 
-        //Assert favourites count was decremented.
-        $this->assertDatabaseHas(UserFavouritesCount::class, [
+        //Assert favorites count was decremented.
+        $this->assertDatabaseHas(UserFavoritesCount::class, [
             'user_id' => $user->id,
             'count' => 0,
-            'type' => UserFavouritesCount::TYPE
+            'type' => UserFavoritesCount::TYPE
         ]);
     }
 

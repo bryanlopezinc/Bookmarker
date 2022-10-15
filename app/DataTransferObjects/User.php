@@ -14,12 +14,12 @@ final class User extends DataTransferObject
 {
     public readonly UserID $id;
     public readonly Username $username;
-    public readonly NonEmptyString $firstname;
-    public readonly NonEmptyString $lastname;
+    public readonly NonEmptyString $firstName;
+    public readonly NonEmptyString $lastName;
     public readonly Email $email;
     public readonly string $password;
     public readonly PositiveNumber $bookmarksCount;
-    public readonly PositiveNumber $favouritesCount;
+    public readonly PositiveNumber $favoritesCount;
     public readonly PositiveNumber $foldersCount;
     public readonly bool $hasVerifiedEmail;
 

@@ -5,7 +5,7 @@ namespace Tests\Unit\Repositories;
 use App\Collections\TagsCollection;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\UserBookmarksFilters as Data;
-use App\Models\Favourite;
+use App\Models\Favorite;
 use App\Repositories\TagRepository;
 use App\Repositories\UserBookmarksRepository;
 use App\ValueObjects\ResourceID;
@@ -34,7 +34,7 @@ class UserBookmarksRepositoryTest extends TestCase
 
         foreach ($this->repository->fetch(new UserID($userId), Data::fromArray([])) as $bookmark) {
             $this->assertTrue($userId === $bookmark->ownerId->toInt());
-            $this->assertFalse($bookmark->isUserFavourite);
+            $this->assertFalse($bookmark->isUserFavorite);
         }
     }
 
@@ -77,23 +77,23 @@ class UserBookmarksRepositoryTest extends TestCase
         $this->assertEquals($models[0]->id, $result[0]->id->toInt());
     }
 
-    public function testWillSetIsUserFavourite(): void
+    public function testWillSetIsUserFavorite(): void
     {
         $bookmarks = BookmarkFactory::new()->count(5)->create([
             'user_id' => $userId = UserFactory::new()->create()->id
         ]);
 
-        Favourite::query()->create([
-            'bookmark_id' => $favouriteID = $bookmarks->first()->id,
+        Favorite::query()->create([
+            'bookmark_id' => $favoriteID = $bookmarks->first()->id,
             'user_id' => $userId
         ]);
 
         /** @var Bookmark */
         $bookmark = $this->repository->fetch(new UserID($userId), Data::fromArray([]))
             ->getCollection()
-            ->filter(fn (Bookmark $bookmark) => $bookmark->id->toInt() === $favouriteID)
+            ->filter(fn (Bookmark $bookmark) => $bookmark->id->toInt() === $favoriteID)
             ->sole();
 
-        $this->assertTrue($bookmark->isUserFavourite);
+        $this->assertTrue($bookmark->isUserFavorite);
     }
 }

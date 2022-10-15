@@ -27,7 +27,7 @@ class FetchFolderBookmarksTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/folders/bookmarks', 'folderBookmarks');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/bookmarks', 'folderBookmarks');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -132,7 +132,7 @@ class FetchFolderBookmarksTest extends TestCase
                                     'has_tags',
                                     'tags_count',
                                     'is_healthy',
-                                    'is_user_favourite',
+                                    'is_user_favorite',
                                     'is_public',
                                     'created_on' => [
                                         'date_readable',
@@ -176,7 +176,7 @@ class FetchFolderBookmarksTest extends TestCase
         });
     }
 
-    private function assertUserWithPermissionCanPerformAction(\Closure $permision): void
+    private function assertUserWithPermissionCanPerformAction(\Closure $permission): void
     {
         [$user, $folderOwner] = UserFactory::new()->count(2)->create();
 
@@ -185,7 +185,7 @@ class FetchFolderBookmarksTest extends TestCase
         $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
 
         /** @var FolderAccessFactory */
-        $factory = $permision(FolderAccessFactory::new()->user($user->id)->folder($folder->id));
+        $factory = $permission(FolderAccessFactory::new()->user($user->id)->folder($folder->id));
 
         $factory = $factory->create();
 

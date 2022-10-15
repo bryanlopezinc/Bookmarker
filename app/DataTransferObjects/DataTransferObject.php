@@ -17,7 +17,7 @@ abstract class DataTransferObject implements Arrayable
 
     public function __construct()
     {
-        (new Validator\ExecuteAfterSetUpClassAtrributes($this))->execute();
+        (new Validator\ExecuteAfterSetUpClassAttributes($this))->execute();
     }
 
     /**

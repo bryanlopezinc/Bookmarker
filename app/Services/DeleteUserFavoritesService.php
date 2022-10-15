@@ -6,12 +6,12 @@ namespace App\Services;
 
 use App\Collections\ResourceIDsCollection;
 use App\Exceptions\HttpException;
-use App\Repositories\FavouriteRepository;
+use App\Repositories\FavoriteRepository;
 use App\ValueObjects\UserID;
 
-final class DeleteUserFavouritesService
+final class DeleteUserFavoritesService
 {
-    public function __construct(private FavouriteRepository $repository)
+    public function __construct(private FavoriteRepository $repository)
     {
     }
 
@@ -20,7 +20,7 @@ final class DeleteUserFavouritesService
         $userId = UserID::fromAuthUser();
 
         if (!$this->repository->containsAll($bookmarkIDs, $userId)) {
-            throw  HttpException::notFound(['message' => 'favourites does not exists']);
+            throw  HttpException::notFound(['message' => 'favorites does not exists']);
         }
 
         $this->repository->delete($bookmarkIDs, $userId);

@@ -32,7 +32,7 @@ return new class extends Migration
                 WHERE  urc.type = 3 AND urc.user_id = OLD.user_id;
             END;
 
-            -- Decrement favourites count before favourites is cascade deleted
+            -- Decrement favorites count before favorites is cascade deleted
             CREATE TRIGGER decrement_user_favourites_count
             BEFORE DELETE ON bookmarks FOR EACH ROW
                IF( EXISTS (SELECT * FROM favourites WHERE user_id = OLD.user_id AND bookmark_id = OLD.id) ) THEN

@@ -25,7 +25,7 @@ class FetchUserFoldersTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users/folders', 'userFolders');
+        $this->assertRouteIsAccessibleViaPath('v1/users/folders', 'userFolders');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -75,7 +75,7 @@ class FetchUserFoldersTest extends TestCase
 
         FolderFactory::new()->count(10)->create(); //folders does not belong to current user.
 
-        $userfolders = FolderFactory::new()->count(10)->create([
+        $userFolders = FolderFactory::new()->count(10)->create([
             'user_id' => $user->id,
             'name' => "<script>alert(Cross Site Scripting)</script>",
             'description' => "<script>alert(CSS)</script>",
@@ -84,14 +84,14 @@ class FetchUserFoldersTest extends TestCase
         $this->getTestResponse([])
             ->assertOk()
             ->assertJsonCount(10, 'data')
-            ->assertJson(function (AssertableJson $json) use ($userfolders) {
+            ->assertJson(function (AssertableJson $json) use ($userFolders) {
                 $json
                     ->etc()
                     ->where('links.first', route('userFolders', ['per_page' => 15, 'page' => 1]))
                     ->fromArray($json->toArray()['data'])
-                    ->each(function (AssertableJson $json) use ($userfolders) {
+                    ->each(function (AssertableJson $json) use ($userFolders) {
                         $json->etc();
-                        $json->where('attributes.id', fn (int $id) => $userfolders->pluck('id')->containsStrict($id));
+                        $json->where('attributes.id', fn (int $id) => $userFolders->pluck('id')->containsStrict($id));
                         $json->where('attributes.is_public', false);
                         $json->where('attributes.storage.capacity', 200);
                         $json->where('attributes.storage.is_full', false);
@@ -102,7 +102,7 @@ class FetchUserFoldersTest extends TestCase
                         $json->where('attributes.tags_count', 0);
                         $json->where('attributes.has_description', true);
 
-                        //Assert the name  and decription response sent to client are sanitized
+                        //Assert the name  and description response sent to client are sanitized
                         $json->where('attributes.name', '&lt;script&gt;alert(Cross Site Scripting)&lt;/script&gt;');
                         $json->where('attributes.description', '&lt;script&gt;alert(CSS)&lt;/script&gt;');
 

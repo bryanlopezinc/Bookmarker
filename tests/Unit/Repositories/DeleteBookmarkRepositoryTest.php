@@ -3,11 +3,11 @@
 namespace Tests\Unit\Repositories;
 
 use App\Collections\ResourceIDsCollection;
-use App\Models\Favourite;
+use App\Models\Favorite;
 use App\Models\FolderBookmark;
 use App\Models\FolderBookmarksCount;
 use App\Models\UserBookmarksCount;
-use App\Models\UserFavouritesCount;
+use App\Models\UserFavoritesCount;
 use App\Repositories\DeleteBookmarkRepository;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
@@ -119,7 +119,7 @@ class DeleteBookmarkRepositoryTest extends TestCase
         ]);
     }
 
-    public function testWillDecrementUserFavouritesCount(): void
+    public function testWillDecrementUserFavoritesCount(): void
     {
         $user = UserFactory::new()->create();
 
@@ -127,12 +127,12 @@ class DeleteBookmarkRepositoryTest extends TestCase
             'user_id' => $user->id
         ])->pluck('id');
 
-        Favourite::query()->create([
+        Favorite::query()->create([
             'bookmark_id' => $bookmarkIDs->random(),
             'user_id' => $user->id,
         ]);
 
-        UserFavouritesCount::create([
+        UserFavoritesCount::create([
             'user_id' => $user->id,
             'count'   => 1,
         ]);
@@ -141,14 +141,14 @@ class DeleteBookmarkRepositoryTest extends TestCase
             ResourceIDsCollection::fromNativeTypes($bookmarkIDs)
         );
 
-        $this->assertDatabaseHas(UserFavouritesCount::class, [
+        $this->assertDatabaseHas(UserFavoritesCount::class, [
             'user_id' => $user->id,
             'count'   => 0,
-            'type' => UserFavouritesCount::TYPE
+            'type' => UserFavoritesCount::TYPE
         ]);
     }
 
-    public function testWillNotDecrementUserFavouritesCounts(): void
+    public function testWillNotDecrementUserFavoritesCounts(): void
     {
         $user = UserFactory::new()->create();
 
@@ -156,26 +156,26 @@ class DeleteBookmarkRepositoryTest extends TestCase
             'user_id' => $user->id
         ])->pluck('id');
 
-        //favourite last bookmark
-        Favourite::query()->create([
+        //Favorite last bookmark
+        Favorite::query()->create([
             'bookmark_id' => $bookmarkIDs->last(),
             'user_id' => $user->id,
         ]);
 
-        UserFavouritesCount::create([
+        UserFavoritesCount::create([
             'user_id' => $user->id,
             'count'   => 1,
         ]);
 
-        //delete all except last one which was added to favourites
+        //delete all except last one which was added to favorites
         $this->repository->delete(
             ResourceIDsCollection::fromNativeTypes($bookmarkIDs->take(4))
         );
 
-        $this->assertDatabaseHas(UserFavouritesCount::class, [
+        $this->assertDatabaseHas(UserFavoritesCount::class, [
             'user_id' => $user->id,
             'count'   => 1,
-            'type' => UserFavouritesCount::TYPE
+            'type' => UserFavoritesCount::TYPE
         ]);
     }
 }

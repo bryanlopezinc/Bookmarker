@@ -8,14 +8,14 @@ use App\Collections\ResourceIDsCollection;
 use App\Exceptions\HttpException;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkAttributes;
-use App\Repositories\FavouriteRepository;
+use App\Repositories\FavoriteRepository;
 use App\Repositories\FetchBookmarksRepository;
 use App\ValueObjects\UserID;
 
-final class CreateFavouriteService
+final class CreateFavoriteService
 {
     public function __construct(
-        private FavouriteRepository $repository,
+        private FavoriteRepository $repository,
         private FetchBookmarksRepository $bookmarkRepository
     ) {
     }
@@ -35,7 +35,7 @@ final class CreateFavouriteService
         $bookmarks->each(new EnsureAuthorizedUserOwnsResource);
 
         if ($this->repository->contains($bookmarkIDs, $userId)) {
-            throw HttpException::conflict(['message' => 'Bookmarks already exists in favourites']);
+            throw HttpException::conflict(['message' => 'Bookmarks already exists in favorites']);
         }
 
         $this->repository->createMany($bookmarkIDs, $userId);

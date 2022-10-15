@@ -25,7 +25,7 @@ class FetchUserBookmarksTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users/bookmarks', 'fetchUserBookmarks');
+        $this->assertRouteIsAccessibleViaPath('v1/users/bookmarks', 'fetchUserBookmarks');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -69,7 +69,7 @@ class FetchUserBookmarksTest extends TestCase
             ]);
     }
 
-    public function testCannotsSearchMoreThan15Tags(): void
+    public function testCannotSearchMoreThan15Tags(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -125,7 +125,7 @@ class FetchUserBookmarksTest extends TestCase
                         $json->where('attributes.tags_count', 0);
                         $json->where('attributes.title', '&lt;h1&gt;did you forget something?&lt;/h1&gt;'); //Assert sanitized attributes was sent to client.
                         $json->where('attributes.description', 'And &lt;h1&gt;spoof!&lt;/h1&gt;');
-                        $json->where('attributes.is_user_favourite', false)->etc();
+                        $json->where('attributes.is_user_favorite', false)->etc();
                     });
             })
             ->assertJsonCount(2, 'links')
@@ -363,7 +363,7 @@ class FetchUserBookmarksTest extends TestCase
             ->assertJsonCount(17, 'data');
     }
 
-    public function test_is_user_favourite_attribute_will_be_true(): void
+    public function test_is_user_favorite_attribute_will_be_true(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -371,18 +371,18 @@ class FetchUserBookmarksTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $userfavourite = $bookmarks->random();
+        $userFavorite = $bookmarks->random();
 
-        $this->postJson(route('createFavourite'), ['bookmarks' => (string) $userfavourite->id])->assertCreated();
+        $this->postJson(route('createFavorite'), ['bookmarks' => (string) $userFavorite->id])->assertCreated();
 
         $this->userBookmarksResponse([])
             ->assertOk()
-            ->assertJson(function (AssertableJson $json) use ($userfavourite) {
+            ->assertJson(function (AssertableJson $json) use ($userFavorite) {
                 $json->etc()
                     ->fromArray($json->toArray()['data'])
-                    ->each(function (AssertableJson $json) use ($userfavourite) {
-                        $json->where('attributes.is_user_favourite', function (bool $value) use ($userfavourite, $json) {
-                            if ($json->toArray()['attributes']['id'] === $userfavourite->id) {
+                    ->each(function (AssertableJson $json) use ($userFavorite) {
+                        $json->where('attributes.is_user_favorite', function (bool $value) use ($userFavorite, $json) {
+                            if ($json->toArray()['attributes']['id'] === $userFavorite->id) {
                                 $this->assertTrue($value);
                             } else {
                                 $this->assertFalse($value);

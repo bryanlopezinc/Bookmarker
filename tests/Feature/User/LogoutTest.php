@@ -9,11 +9,11 @@ use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
-use Tests\Traits\Resquests2FACode;
+use Tests\Traits\Requests2FACode;
 
 final class LogoutTest extends TestCase
 {
-    use Resquests2FACode;
+    use Requests2FACode;
 
     protected static string $accessToken;
     protected static string $refreshToken;
@@ -25,7 +25,7 @@ final class LogoutTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users/logout', 'logoutUser');
+        $this->assertRouteIsAccessibleViaPath('v1/users/logout', 'logoutUser');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void

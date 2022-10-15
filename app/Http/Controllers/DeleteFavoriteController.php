@@ -6,13 +6,13 @@ namespace App\Http\Controllers;
 
 use App\Collections\ResourceIDsCollection;
 use App\Rules\ResourceIdRule;
-use App\Services\DeleteUserFavouritesService;
+use App\Services\DeleteUserFavoritesService as Service;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-final class DeleteFavouriteController
+final class DeleteFavoriteController
 {
-    public function __invoke(Request $request, DeleteUserFavouritesService $service): JsonResponse
+    public function __invoke(Request $request, Service $service): JsonResponse
     {
         $request->validate([
             'bookmarks' => ['required', 'array', join(':', ['max', setting('MAX_DELETE_FAVOURITES')])],

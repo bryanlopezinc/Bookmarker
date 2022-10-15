@@ -29,7 +29,7 @@ class CreateUserTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users', 'createUser');
+        $this->assertRouteIsAccessibleViaPath('v1/users', 'createUser');
     }
 
     public function testUnauthorizedClientCannotAccessRoute(): void
@@ -37,7 +37,7 @@ class CreateUserTest extends TestCase
         $this->createUserResponse()->assertUnauthorized();
     }
 
-    public function testWillReturnValidationErrorsWhenRequiredAttrbutesAreMissing(): void
+    public function testWillReturnValidationErrorsWhenRequiredAttributesAreMissing(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
@@ -175,7 +175,7 @@ class CreateUserTest extends TestCase
         $this->assertTrue(User::whereKey($components['id'])->sole()->email_verified_at->isToday());
     }
 
-    public function testFirstnameMustNotBeGreaterThan_100(): void
+    public function testFirstNameMustNotBeGreaterThan_100(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
@@ -184,7 +184,7 @@ class CreateUserTest extends TestCase
             ->assertJsonValidationErrors(['firstname' => 'The firstname must not be greater than 100 characters.']);
     }
 
-    public function testLastnameMustNotBeGreaterThan_100(): void
+    public function testLastNameMustNotBeGreaterThan_100(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 

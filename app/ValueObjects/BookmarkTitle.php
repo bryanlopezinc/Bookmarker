@@ -33,7 +33,7 @@ final class BookmarkTitle
             }
 
             return new self(
-                //subtract 3 from MAX_LENGTH to accomodate the 'end' (...) value
+                //subtract 3 from MAX_LENGTH to accommodate the 'end' (...) value
                 Str::limit($text, BookmarkTitle::MAX_LENGTH - 3)
             );
         }

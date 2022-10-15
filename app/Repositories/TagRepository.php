@@ -17,16 +17,16 @@ use Illuminate\Pagination\Paginator;
 
 final class TagRepository
 {
-    public function attach(TagsCollection $tags, TaggableInterface $tagable): void
+    public function attach(TagsCollection $tags, TaggableInterface $taggable): void
     {
         if ($tags->isEmpty()) {
             return;
         }
 
-        if (filled($tagIds = $this->insertGetIDs($tags, $tagable->taggedBy()))) {
+        if (filled($tagIds = $this->insertGetIDs($tags, $taggable->taggedBy()))) {
             Taggable::insert(array_map(fn (int $tagID) => [
-                'taggable_id' => $tagable->taggableID()->toInt(),
-                'taggable_type' => $tagable->taggableType()->type(),
+                'taggable_id' => $taggable->taggableID()->toInt(),
+                'taggable_type' => $taggable->taggableType()->type(),
                 'tag_id' => $tagID
             ], $tagIds));
         }
@@ -81,7 +81,7 @@ final class TagRepository
     /**
      * @return Paginator<Tag>
      */
-    public function getUsertags(UserID $userID, PaginationData $pagination): Paginator
+    public function getUserTags(UserID $userID, PaginationData $pagination): Paginator
     {
         /** @var Paginator */
         $result = Model::query()

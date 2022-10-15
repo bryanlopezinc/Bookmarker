@@ -22,7 +22,7 @@ class CreateFolderRepositoryTest extends TestCase
             ->setDescription($this->faker->sentence)
             ->setName($this->faker->word)
             ->setOwnerID($userID = UserFactory::new()->create()->id)
-            ->setisPublic(false)
+            ->setIsPublic(false)
             ->setTags(new TagsCollection([]))
             ->build();
 

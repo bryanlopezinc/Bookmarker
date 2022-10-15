@@ -26,7 +26,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/folders/collaborators/revoke_permissions', 'revokePermissions');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/collaborators/revoke_permissions', 'revokePermissions');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -255,7 +255,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
         $this->deleteJson(route('removeBookmarksFromFolder'), [
             'bookmarks' => '2,4,5',
             'folder' => $folderID,
-        ])->assertNotFound(); // Not found means collaborator has acess but bookmarks don't exist
+        ])->assertNotFound(); // Not found means collaborator has access but bookmarks don't exist
 
         //folder owner removes permission
         Passport::actingAs($folderOwner);
@@ -293,7 +293,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             'folder_id' => $folderID,
         ]))->assertOk();
 
-        //folder owner revoks access
+        //folder owner revokes access
         Passport::actingAs($folderOwner);
         $this->revokePermissionsResponse([
             'user_id' => $collaborator->id,

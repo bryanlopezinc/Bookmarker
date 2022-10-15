@@ -65,7 +65,7 @@ class DOMReaderTest extends TestCase
         return $html;
     }
 
-    public function test_will_read_description_meta_tag_If_og_desceription_tag_is_not_found(): void
+    public function test_will_read_description_meta_tag_If_og_description_tag_is_not_found(): void
     {
         $description = $this->faker->sentence;
 
@@ -86,7 +86,7 @@ class DOMReaderTest extends TestCase
         $this->assertFalse((new Reader($html, new Url($this->faker->url)))->getPageDescription());
     }
 
-    public function test_will_read_twiiter_tag_If_no_description_tags_are_present(): void
+    public function test_will_read_twitter_tag_If_no_description_tags_are_present(): void
     {
         $description = $this->faker->sentence;
 
@@ -133,7 +133,7 @@ class DOMReaderTest extends TestCase
         $this->assertFalse((new Reader($html, new Url($this->faker->url)))->getPreviewImageUrl());
     }
 
-    public function test_will_return_false_If_twiiter_Image_tag_is_invalid(): void
+    public function test_will_return_false_If_twitter_Image_tag_is_invalid(): void
     {
         $html = $this->html(<<<HTML
                 <meta name="twitter:image" content="<script> alert('hacked') </script>">
@@ -197,7 +197,7 @@ class DOMReaderTest extends TestCase
         $this->assertEquals($title, (new Reader($html, new Url($this->faker->url)))->getPageTitle());
     }
 
-    public function test_will_return_false_when_twiiter_title_tag_is_blank(): void
+    public function test_will_return_false_when_twitter_title_tag_is_blank(): void
     {
         $html = $this->html(<<<HTML
                 <meta name="twitter:title" content="  ">

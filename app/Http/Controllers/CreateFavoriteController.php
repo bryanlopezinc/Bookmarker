@@ -6,14 +6,14 @@ namespace App\Http\Controllers;
 
 use App\Collections\ResourceIDsCollection;
 use App\Rules\ResourceIdRule;
-use App\Services\CreateFavouriteService;
+use App\Services\CreateFavoriteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
-final class CreateFavouriteController
+final class CreateFavoriteController
 {
-    public function __invoke(Request $request, CreateFavouriteService $service): JsonResponse
+    public function __invoke(Request $request, CreateFavoriteService $service): JsonResponse
     {
         $maxBookmarks = setting('MAX_POST_FAVOURITES');
 

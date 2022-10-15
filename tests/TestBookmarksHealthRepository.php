@@ -15,12 +15,12 @@ final class TestBookmarksHealthRepository implements BookmarksHealthRepositoryIn
     public function __construct(private BookmarksHealthRepositoryInterface $baseRepository)
     {
         if (!app()->environment('testing')) {
-            throw new \RuntimeException(__CLASS__ . ' can only be used in test enviroments');
+            throw new \RuntimeException(__CLASS__ . ' can only be used in test environments');
         }
     }
 
     /**
-     * Get all the bookmark ids that will be checked by the healthchecker
+     * Get all the bookmark ids that will be checked by the health checker
      *
      * @return array<int>
      */

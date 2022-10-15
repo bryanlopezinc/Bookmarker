@@ -2,24 +2,24 @@
 
 namespace Tests\Feature;
 
-use App\Models\Favourite;
-use App\Models\UserFavouritesCount;
+use App\Models\Favorite;
+use App\Models\UserFavoritesCount;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 
-class DeleteFavouriteTest extends TestCase
+class DeleteFavoriteTest extends TestCase
 {
     protected function getTestResponse(array $parameters = []): TestResponse
     {
-        return $this->deleteJson(route('deleteFavourite'), $parameters);
+        return $this->deleteJson(route('deleteFavorite'), $parameters);
     }
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users/favourites', 'deleteFavourite');
+        $this->assertRouteIsAccessibleViaPath('v1/users/favorites', 'deleteFavorite');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -27,7 +27,7 @@ class DeleteFavouriteTest extends TestCase
         $this->getTestResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationWhenRequiredAttrbutesAreMissing(): void
+    public function testWillThrowValidationWhenRequiredAttributesAreMissing(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -46,7 +46,7 @@ class DeleteFavouriteTest extends TestCase
         ]);
     }
 
-    public function testWillDeleteFavourite(): void
+    public function testWillDeleteFavorite(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -54,53 +54,53 @@ class DeleteFavouriteTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->postJson(route('createFavourite'), ['bookmarks' => (string) $bookmark->id])->assertCreated();
+        $this->postJson(route('createFavorite'), ['bookmarks' => (string) $bookmark->id])->assertCreated();
 
         $this->getTestResponse(['bookmarks' => (string)$bookmark->id])->assertOk();
 
-        $this->assertDatabaseMissing(Favourite::class, [
+        $this->assertDatabaseMissing(Favorite::class, [
             'bookmark_id' => $bookmark->id,
             'user_id' => $user->id
         ]);
 
-        $this->assertDatabaseHas(UserFavouritesCount::class, [
+        $this->assertDatabaseHas(UserFavoritesCount::class, [
             'user_id' => $user->id,
             'count'   => 0,
-            'type' => UserFavouritesCount::TYPE
+            'type' => UserFavoritesCount::TYPE
         ]);
     }
 
-    public function testCanDeleteMultipleFavourites(): void
+    public function testCanDeleteMultipleFavorites(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
         $bookmarkIDs = BookmarkFactory::new()->count(10)->create([
             'user_id' => $user->id
         ])->pluck('id')
-            ->each(fn (int $bookmarkID) => $this->postJson(route('createFavourite'), ['bookmarks' => (string) $bookmarkID])->assertCreated());
+            ->each(fn (int $bookmarkID) => $this->postJson(route('createFavorite'), ['bookmarks' => (string) $bookmarkID])->assertCreated());
 
         $deleteBookmarks = $bookmarkIDs->take(5);
 
         $this->getTestResponse(['bookmarks' => $deleteBookmarks->implode(',')])->assertOk();
 
-        $deleteBookmarks->each(fn (int $bookmarkID) => $this->assertDatabaseMissing(Favourite::class, [
+        $deleteBookmarks->each(fn (int $bookmarkID) => $this->assertDatabaseMissing(Favorite::class, [
             'bookmark_id' => $bookmarkID,
             'user_id' => $user->id
         ]));
 
-        $bookmarkIDs->take(-5)->each(fn (int $bookmarkID) => $this->assertDatabaseHas(Favourite::class, [
+        $bookmarkIDs->take(-5)->each(fn (int $bookmarkID) => $this->assertDatabaseHas(Favorite::class, [
             'bookmark_id' => $bookmarkID,
             'user_id' => $user->id
         ]));
 
-        $this->assertDatabaseHas(UserFavouritesCount::class, [
+        $this->assertDatabaseHas(UserFavoritesCount::class, [
             'user_id' => $user->id,
             'count' => 5,
-            'type' => UserFavouritesCount::TYPE
+            'type' => UserFavoritesCount::TYPE
         ]);
     }
 
-    public function test_cannot_delete_more_than_50_favourites_simultaneously(): void
+    public function test_cannot_delete_more_than_50_favorites_simultaneously(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -112,7 +112,7 @@ class DeleteFavouriteTest extends TestCase
         ]);
     }
 
-    public function testReturnErrorWhenUserDoesNotHaveFavourites(): void
+    public function testReturnErrorWhenUserDoesNotHaveFavorites(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -120,7 +120,7 @@ class DeleteFavouriteTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->postJson(route('createFavourite'), ['bookmarks' => (string) $bookmark->id])->assertCreated();
+        $this->postJson(route('createFavorite'), ['bookmarks' => (string) $bookmark->id])->assertCreated();
 
         Passport::actingAs(UserFactory::new()->create());
 

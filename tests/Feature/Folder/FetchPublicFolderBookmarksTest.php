@@ -21,12 +21,12 @@ class FetchPublicFolderBookmarksTest extends TestCase
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
-        return $this->getJson(route('viewPublicfolderBookmarks', $parameters));
+        return $this->getJson(route('viewPublicFolderBookmarks', $parameters));
     }
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/folders/public/bookmarks', 'viewPublicfolderBookmarks');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/public/bookmarks', 'viewPublicFolderBookmarks');
     }
 
     public function testUnAuthorizedClientCannotAccessRoute(): void
@@ -101,7 +101,7 @@ class FetchPublicFolderBookmarksTest extends TestCase
             ->assertJsonCount(5, 'data')
             ->assertJson(function (AssertableJson $json) use ($publicFolderBookmarkIDs, $folder) {
                 $json->etc()
-                    ->where('links.first', route('viewPublicfolderBookmarks', ['per_page' => 15, 'folder_id' => $folder->id, 'page' => 1]))
+                    ->where('links.first', route('viewPublicFolderBookmarks', ['per_page' => 15, 'folder_id' => $folder->id, 'page' => 1]))
                     ->fromArray($json->toArray()['data'])
                     ->each(function (AssertableJson $json) use ($publicFolderBookmarkIDs) {
                         $json->etc()
@@ -130,7 +130,7 @@ class FetchPublicFolderBookmarksTest extends TestCase
                                     'has_tags',
                                     'tags_count',
                                     'is_healthy',
-                                    'is_user_favourite',
+                                    'is_user_favorite',
                                     'is_public',
                                     'created_on' => [
                                         'date_readable',

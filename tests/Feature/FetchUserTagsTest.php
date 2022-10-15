@@ -20,7 +20,7 @@ class FetchUserTagsTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users/tags', 'userTags');
+        $this->assertRouteIsAccessibleViaPath('v1/users/tags', 'userTags');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void

@@ -1,7 +1,7 @@
 <?php
 
 return [
-    //The amount of bookmarks that can be add to  favourites in one request.
+    //The amount of bookmarks that can be add to  favorites in one request.
     'MAX_POST_FAVOURITES' => 50,
 
     //The amount of favourites that can be deleted in one request.
@@ -64,7 +64,7 @@ return [
     //All extra query parameters will be reserved.
     'RESET_PASSWORD_URL' => env('RESET_PASSWORD_URL'),
 
-    //The accpet invite url that will be sent to the user.
+    //The accept invite url that will be sent to the user.
     //The url should contain placeholders for the 'invite_hash', 'signature', and 'expires' parameters.
     'ACCEPT_INVITE_URL' => env('ACCEPT_INVITE_URL'),
 

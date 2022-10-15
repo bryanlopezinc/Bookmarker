@@ -147,9 +147,9 @@ final class BookmarkBuilder extends Builder
         return $this;
     }
 
-    public function isUserFavourite(bool $value): self
+    public function isUserFavorite(bool $value): self
     {
-        $this->attributes['isUserFavourite'] = $value;
+        $this->attributes['isUserFavorite'] = $value;
 
         return $this;
     }

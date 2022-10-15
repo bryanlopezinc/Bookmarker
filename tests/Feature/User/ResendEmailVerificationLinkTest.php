@@ -26,7 +26,7 @@ class ResendEmailVerificationLinkTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/email/verify/resend', 'verification.resend');
+        $this->assertRouteIsAccessibleViaPath('v1/email/verify/resend', 'verification.resend');
     }
 
     public function testUnauthorizedClientCannotAccessRoute(): void

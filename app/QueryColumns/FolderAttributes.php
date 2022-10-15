@@ -20,7 +20,7 @@ final class FolderAttributes extends Attributes
     }
 
     /**
-     * @param string $attributes A comma seperated list of attributes which can only be
+     * @param string $attributes A comma separated list of attributes which can only be
      * any of id,user_id,bookmarks_count,is_public,name,description,tags
      */
     public static function only(string $attributes): self

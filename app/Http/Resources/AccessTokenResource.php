@@ -7,7 +7,7 @@ namespace App\Http\Resources;
 use App\DataTransferObjects\User;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-final class AccesssTokenResource extends JsonResource
+final class AccessTokenResource extends JsonResource
 {
     public function __construct(private readonly User $user, private readonly string $tokenResponse)
     {

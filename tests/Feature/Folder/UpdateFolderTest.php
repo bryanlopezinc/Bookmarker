@@ -24,7 +24,7 @@ class UpdateFolderTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/folders', 'updateFolder');
+        $this->assertRouteIsAccessibleViaPath('v1/folders', 'updateFolder');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -32,7 +32,7 @@ class UpdateFolderTest extends TestCase
         $this->updateFolderResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationWhenRequiredAttrbutesAreMissing(): void
+    public function testWillThrowValidationWhenRequiredAttributesAreMissing(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 

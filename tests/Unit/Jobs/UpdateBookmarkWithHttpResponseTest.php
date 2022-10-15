@@ -102,7 +102,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         $this->handleUpdateBookmarkJob($bookmark);
     }
 
-    public function test_will_update_resolved_at_attrbute_after_updates(): void
+    public function test_will_update_resolved_at_attribute_after_updates(): void
     {
         $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
 
@@ -118,7 +118,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
                     'siteName' => false,
                     'imageUrl' => false,
                     'canonicalUrl' => false,
-                    'reosolvedUrl' => new Url($this->faker->url)
+                    'resolvedUrl' => new Url($this->faker->url)
                 ]));
         });
 
@@ -164,7 +164,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
                     'siteName' => false,
                     'imageUrl' => $imageUrl,
                     'canonicalUrl' => $canonicalUrl,
-                    'reosolvedUrl' => $resolvedUrl
+                    'resolvedUrl' => $resolvedUrl
                 ]));
         });
 
@@ -203,7 +203,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         $this->handleUpdateBookmarkJob($bookmark);
     }
 
-    public function testWillNotUpdateDescriptionIfDescriptionWasSetByuser(): void
+    public function testWillNotUpdateDescriptionIfDescriptionWasSetByUser(): void
     {
         $bookmark = BookmarkFactory::new()->make([
             'id' => 5001,
@@ -222,7 +222,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
                     'title' => false,
                     'siteName' => false,
                     'canonicalUrl' => false,
-                    'reosolvedUrl' => new Url($this->faker->url)
+                    'resolvedUrl' => new Url($this->faker->url)
                 ]));
         });
 
@@ -256,7 +256,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
                     'title' => false,
                     'siteName' => false,
                     'canonicalUrl' => false,
-                    'reosolvedUrl' => new Url($this->faker->url)
+                    'resolvedUrl' => new Url($this->faker->url)
                 ]));
         });
 
@@ -290,7 +290,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
                     'title' => str_repeat('A', 200),
                     'siteName' => false,
                     'canonicalUrl' => false,
-                    'reosolvedUrl' => new Url($this->faker->url)
+                    'resolvedUrl' => new Url($this->faker->url)
                 ]));
         });
 
@@ -328,7 +328,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
                     'title' => false,
                     'siteName' => 'PlayStation',
                     'canonicalUrl' => false,
-                    'reosolvedUrl' => new Url($this->faker->url)
+                    'resolvedUrl' => new Url($this->faker->url)
                 ]));
         });
 
@@ -360,7 +360,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
                     'title' => false,
                     'siteName' => false,
                     'canonicalUrl' => false,
-                    'reosolvedUrl' => new Url($this->faker->url)
+                    'resolvedUrl' => new Url($this->faker->url)
                 ]));
         });
 
@@ -395,7 +395,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
                     'title' => false,
                     'siteName' => 'PlayStation',
                     'canonicalUrl' => false,
-                    'reosolvedUrl' => new Url($this->faker->url)
+                    'resolvedUrl' => new Url($this->faker->url)
                 ]));
         });
 

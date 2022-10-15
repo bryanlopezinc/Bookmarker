@@ -28,7 +28,7 @@ class BookmarksRepositoryTest extends TestCase
         $this->assertWillReturnOnlyAttributes('', function (Bookmark $bookmark) {
             $expected = collect((new \ReflectionClass($bookmark::class))->getProperties(ReflectionProperty::IS_PUBLIC))
                 ->map(fn (ReflectionProperty $property) => $property->name)
-                ->reject('isUserFavourite')
+                ->reject('isUserFavorite')
                 ->reject('resolvedAt') // nullable attribute. Will not be set because IsResolved is false by default
                 ->sort()
                 ->values()
@@ -39,7 +39,7 @@ class BookmarksRepositoryTest extends TestCase
 
         $this->assertWillReturnOnlyAttributes('user_id', function (Bookmark $bookmark) {
             $this->assertCount(1, $bookmark->toArray());
-            $bookmark->ownerId; // will throw initialization exception if not retrived
+            $bookmark->ownerId; // will throw initialization exception if not retrieved
         });
 
         $this->assertWillReturnOnlyAttributes('user_id,id', function (Bookmark $bookmark) {

@@ -48,7 +48,7 @@ final class UpdateFolderService
         return (new FolderBuilder())
             ->setName($request->validated('name', $folder->name->value))
             ->setDescription($request->validated('description', $folder->description->value))
-            ->setisPublic($request->boolean('is_public', $folder->isPublic))
+            ->setIsPublic($request->boolean('is_public', $folder->isPublic))
             ->setTags(TagsCollection::make($request->validated('tags', [])))
             ->build();
     }

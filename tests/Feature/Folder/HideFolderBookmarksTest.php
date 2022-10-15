@@ -21,7 +21,7 @@ class HideFolderBookmarksTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/folders/bookmarks/hide', 'hideFolderBookmarks');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/bookmarks/hide', 'hideFolderBookmarks');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void

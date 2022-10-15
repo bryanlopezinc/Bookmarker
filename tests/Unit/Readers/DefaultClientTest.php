@@ -35,7 +35,7 @@ class DefaultClientTest extends TestCase
         $this->assertFalse($response->hostSiteName);
         $this->assertFalse($response->thumbnailUrl);
         $this->assertFalse($response->title);
-        $this->assertEquals($response->reosolvedUrl->toString(), $url);
+        $this->assertEquals($response->resolvedUrl->toString(), $url);
     }
 
     public function testOperationTimeout(): void
@@ -93,6 +93,6 @@ class DefaultClientTest extends TestCase
         $this->assertFalse($response->hostSiteName);
         $this->assertFalse($response->thumbnailUrl);
         $this->assertFalse($response->title);
-        $this->assertEquals($response->reosolvedUrl->toString(), $url);
+        $this->assertEquals($response->resolvedUrl->toString(), $url);
     }
 }

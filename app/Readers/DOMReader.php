@@ -17,16 +17,16 @@ final class DOMReader
     {
         libxml_use_internal_errors(true);
 
-        $documnet = new \DOMDocument();
-        $documnet->loadHTML($source);
+        $document = new \DOMDocument();
+        $document->loadHTML($source);
 
-        $this->dOMXPath = new DOMXPath($documnet);
+        $this->dOMXPath = new DOMXPath($document);
         $this->resolvedUrl = $resolvedUrl;
     }
 
     public function getPageDescription(): string|false
     {
-        $DOMNodeList =  $this->evalute(
+        $DOMNodeList =  $this->evaluate(
             '//meta[@property="og:description"]/@content',
             '//meta[@name="description"]/@content',
             '//meta[@name="twitter:description"]/@content'
@@ -41,9 +41,9 @@ final class DOMReader
 
     /**
      * Evaluate the given Xpath Expressions (in order parsed) and return the DOMNodeList when any (or none) of the expression passes.
-     * The return is false if the expression is malformed or the contextnode is invalid.
+     * The return is false if the expression is malformed or the contextNode is invalid.
      */
-    private function evalute(string ...$expressions): \DOMNodeList|false
+    private function evaluate(string ...$expressions): \DOMNodeList|false
     {
         $DOMNodeList = false;
 
@@ -62,7 +62,7 @@ final class DOMReader
 
     public function getPreviewImageUrl(): Url|false
     {
-        $DOMNodeList = $this->evalute(
+        $DOMNodeList = $this->evaluate(
             '//meta[@property="og:image"]/@content',
             '//meta[@name="twitter:image"]/@content'
         );
@@ -80,7 +80,7 @@ final class DOMReader
 
     public function getPageTitle(): string|false
     {
-        $DOMNodeList = $this->evalute(
+        $DOMNodeList = $this->evaluate(
             '//meta[@property="og:title"]/@content',
             '/html/head/title',
             '//meta[@name="twitter:title"]/@content'
@@ -95,7 +95,7 @@ final class DOMReader
 
     public function getSiteName(): string|false
     {
-        $DOMNodeList = $this->evalute(
+        $DOMNodeList = $this->evaluate(
             '//meta[@name="application-name"]/@content',
             '//meta[@property="og:site_name"]/@content',
             '//meta[@name="twitter:site"]/@content'
@@ -110,7 +110,7 @@ final class DOMReader
 
     public function getCanonicalUrl(): Url|false
     {
-        $DOMNodeList = $this->evalute(
+        $DOMNodeList = $this->evaluate(
             '//link[@rel="canonical"]/@href',
             '//meta[@property="og:url"]/@content',
         );

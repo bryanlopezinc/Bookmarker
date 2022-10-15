@@ -22,7 +22,7 @@ class RemoveEmailTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users/emails/remove', 'removeEmailFromAccount');
+        $this->assertRouteIsAccessibleViaPath('v1/users/emails/remove', 'removeEmailFromAccount');
     }
 
     public function testUnAuthorizedUserCannotAccessEndPoint(): void
@@ -30,7 +30,7 @@ class RemoveEmailTest extends TestCase
         $this->removeEmailResponse()->assertUnauthorized();
     }
 
-    public function testEmailAttrbuteMustBePresent(): void
+    public function testEmailAttributeMustBePresent(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 

@@ -26,7 +26,7 @@ class CreateBookmarksTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/bookmarks', 'createBookmark');
+        $this->assertRouteIsAccessibleViaPath('v1/bookmarks', 'createBookmark');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -34,14 +34,14 @@ class CreateBookmarksTest extends TestCase
         $this->getTestResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationWhenRequiredAttrbutesAreMissing(): void
+    public function testWillThrowValidationWhenRequiredAttributesAreMissing(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
         $this->getTestResponse()->assertJsonValidationErrorFor('url');
     }
 
-    public function testWillThrowValidationWhenAttrbutesAreInvalid(): void
+    public function testWillThrowValidationWhenAttributesAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 

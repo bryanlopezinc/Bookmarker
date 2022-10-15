@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Collections\ResourceIDsCollection;
-use App\Models\Favourite;
+use App\Models\Favorite;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use App\Models\Bookmark as Model;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
-use App\Models\UserFavouritesCount;
+use App\Models\UserFavoritesCount;
 use App\PaginationData;
 use App\QueryColumns\BookmarkAttributes;
 use Illuminate\Pagination\Paginator;
 
-final class FavouriteRepository
+final class FavoriteRepository
 {
     public function create(ResourceID $bookmarkId, UserID $userId): bool
     {
@@ -25,27 +25,27 @@ final class FavouriteRepository
 
     public function createMany(ResourceIDsCollection $bookmarkIds, UserID $userId): bool
     {
-        Favourite::insert($bookmarkIds->asIntegers()->map(fn (int $bookmarkID) => [
+        Favorite::insert($bookmarkIds->asIntegers()->map(fn (int $bookmarkID) => [
             'user_id' => $userId->toInt(),
             'bookmark_id' => $bookmarkID
         ])->all());
 
-        $this->incrementFavouritesCount($userId, $bookmarkIds->count());
+        $this->incrementFavoritesCount($userId, $bookmarkIds->count());
 
         return true;
     }
 
-    private function incrementFavouritesCount(UserID $userId, int $amount = 1): void
+    private function incrementFavoritesCount(UserID $userId, int $amount = 1): void
     {
-        $favouritesCount = UserFavouritesCount::query()->firstOrCreate(['user_id' => $userId->toInt()], ['count' => $amount]);
+        $favoritesCount = UserFavoritesCount::query()->firstOrCreate(['user_id' => $userId->toInt()], ['count' => $amount]);
 
-        if (!$favouritesCount->wasRecentlyCreated) {
-            $favouritesCount->increment('count', $amount);
+        if (!$favoritesCount->wasRecentlyCreated) {
+            $favoritesCount->increment('count', $amount);
         }
     }
 
     /**
-     * Check  if ALL of the given bookmarks exists in user favourites
+     * Check  if ALL of the given bookmarks exists in user favorites
      */
     public function containsAll(ResourceIDsCollection $bookmarkIDs, UserID $userId): bool
     {
@@ -53,7 +53,7 @@ final class FavouriteRepository
     }
 
     /**
-     * Check  if ANY of the given bookmarks exists in user favourites
+     * Check  if ANY of the given bookmarks exists in user favorites
      */
     public function contains(ResourceIDsCollection $bookmarkIDs, UserID $userID): bool
     {
@@ -61,12 +61,12 @@ final class FavouriteRepository
     }
 
     /**
-     * Get only the bookmark IDs which exists in user favourites record from the given bookmarkIDs.
+     * Get only the bookmark IDs which exists in user favorites record from the given bookmarkIDs.
      */
     public function intersect(ResourceIDsCollection $bookmarkIDs, UserID $userID): ResourceIDsCollection
     {
         return ResourceIDsCollection::fromNativeTypes(
-            Favourite::where('user_id', $userID->toInt())
+            Favorite::where('user_id', $userID->toInt())
                 ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
                 ->get(['bookmark_id'])
                 ->pluck('bookmark_id')
@@ -75,22 +75,22 @@ final class FavouriteRepository
 
     public function delete(ResourceIDsCollection $bookmarkIDs, UserID $userId): bool
     {
-        $deleted = Favourite::where('user_id', $userId->toInt())
+        $deleted = Favorite::where('user_id', $userId->toInt())
             ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())
             ->delete();
 
-        $this->decrementFavouritesCount($userId, $deleted);
+        $this->decrementFavoritesCount($userId, $deleted);
 
         return (bool) $deleted;
     }
 
-    private function decrementFavouritesCount(UserID $userId, int $amount = 1): void
+    private function decrementFavoritesCount(UserID $userId, int $amount = 1): void
     {
         if ($amount < 1) {
             return;
         }
 
-        UserFavouritesCount::query()->where('user_id', $userId->toInt())->decrement('count', $amount);
+        UserFavoritesCount::query()->where('user_id', $userId->toInt())->decrement('count', $amount);
     }
 
     /**
@@ -99,13 +99,13 @@ final class FavouriteRepository
     public function get(UserID $userId, PaginationData $pagination): Paginator
     {
         /** @var Paginator */
-        $favourites = Model::WithQueryOptions(BookmarkAttributes::new())
+        $favorites = Model::WithQueryOptions(BookmarkAttributes::new())
             ->join('favourites', 'favourites.bookmark_id', '=', 'bookmarks.id')
             ->where('favourites.user_id', $userId->toInt())
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
 
-        return $favourites->setCollection(
-            $favourites->getCollection()->map(fn (Model $bookmark) => BookmarkBuilder::fromModel($bookmark)->isUserFavourite(true)->build())
+        return $favorites->setCollection(
+            $favorites->getCollection()->map(fn (Model $bookmark) => BookmarkBuilder::fromModel($bookmark)->isUserFavorite(true)->build())
         );
     }
 }

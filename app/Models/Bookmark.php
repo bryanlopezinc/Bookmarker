@@ -108,7 +108,7 @@ final class Bookmark extends Model implements TaggableInterface
 
         $this->parseTagsRelationQuery($builder, $columns);
         $this->parseSourceRelationQuery($builder, $columns);
-        $this->parseHealthCheckquery($builder, $columns);
+        $this->parseHealthCheckQuery($builder, $columns);
 
         return $builder;
     }
@@ -150,11 +150,11 @@ final class Bookmark extends Model implements TaggableInterface
      *
      * @return Builder
      */
-    protected function parseHealthCheckquery(&$builder, BookmarkAttributes $options)
+    protected function parseHealthCheckQuery(&$builder, BookmarkAttributes $options)
     {
-        $condtion = $options->has('is_dead_link') ?: $options->isEmpty();
+        $condition = $options->has('is_dead_link') ?: $options->isEmpty();
 
-        if (!$condtion) {
+        if (!$condition) {
             return $builder;
         }
 

@@ -17,12 +17,12 @@ final class CreateUserService
     }
 
     public function FromRequest(CreateUserRequest $request): User
-    { 
+    {
         $user = UserBuilder::new()
             ->email($request->validated('email'))
             ->password($this->hasher->make($request->validated('password')))
-            ->firstname($request->validated('firstname'))
-            ->lastname($request->validated('lastname'))
+            ->firstName($request->validated('firstname'))
+            ->lastName($request->validated('lastname'))
             ->username($request->validated('username'))
             ->build();
 

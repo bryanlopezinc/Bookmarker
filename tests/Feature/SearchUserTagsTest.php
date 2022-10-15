@@ -19,7 +19,7 @@ class SearchUserTagsTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users/tags/search', 'searchUserTags');
+        $this->assertRouteIsAccessibleViaPath('v1/users/tags/search', 'searchUserTags');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -27,7 +27,7 @@ class SearchUserTagsTest extends TestCase
         $this->getTestResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationExceptionWhenRequiredAttrbutesAreMissing(): void
+    public function testWillThrowValidationExceptionWhenRequiredAttributesAreMissing(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 

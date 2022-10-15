@@ -29,7 +29,7 @@ class VerifySecondaryEmailTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users/emails/verify/secondary', 'verifySecondaryEmail');
+        $this->assertRouteIsAccessibleViaPath('v1/users/emails/verify/secondary', 'verifySecondaryEmail');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -37,14 +37,14 @@ class VerifySecondaryEmailTest extends TestCase
         $this->verifySecondaryEmail()->assertUnauthorized();
     }
 
-    public function testAttrbutesMustBePresent(): void
+    public function testAttributesMustBePresent(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
         $this->verifySecondaryEmail()->assertJsonValidationErrors(['email', 'verification_code']);
     }
 
-    public function testAttrbutesMustBeValid(): void
+    public function testAttributesMustBeValid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 

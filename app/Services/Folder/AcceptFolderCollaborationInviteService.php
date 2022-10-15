@@ -30,37 +30,37 @@ final class AcceptFolderCollaborationInviteService
 
     public function accept(Request $request): void
     {
-        $decryted = Crypt::decrypt($request->input('invite_hash'));
+        $decrypted = Crypt::decrypt($request->input('invite_hash'));
 
         //Ensure Inviter and invitee still exist.
-        $this->ensureUsersStillExist($decryted);
+        $this->ensureUsersStillExist($decrypted);
 
         //Ensure folder still exist.
-        $folder = $this->folderRepository->find(new ResourceID($decryted[Payload::FOLDER_ID]), FolderAttributes::only('id'));
+        $folder = $this->folderRepository->find(new ResourceID($decrypted[Payload::FOLDER_ID]), FolderAttributes::only('id'));
 
-        $inviteeID = new UserID($decryted[Payload::INVITEE_ID]);
+        $inviteeID = new UserID($decrypted[Payload::INVITEE_ID]);
 
         $this->ensureInvitationHasNotBeenAccepted($inviteeID, $folder);
 
         $this->folderPermissionsRepository->create(
             $inviteeID,
             $folder->folderID,
-            $this->extractPermissions($decryted)
+            $this->extractPermissions($decrypted)
         );
     }
 
-    private function extractPermissions(array $decryted): Permissions
+    private function extractPermissions(array $decrypted): Permissions
     {
         $permissionsCollaboratorWillHaveByDefault = Permissions::fromArray(['read']);
 
-        $permissionsSetByfolderOwner = Permissions::fromUnSerialized($decryted[Payload::PERMISSIONS]);
+        $permissionsSetByFolderOwner = Permissions::fromUnSerialized($decrypted[Payload::PERMISSIONS]);
 
-        if (!$permissionsSetByfolderOwner->hasAnyPermission()) {
+        if (!$permissionsSetByFolderOwner->hasAnyPermission()) {
             return $permissionsCollaboratorWillHaveByDefault;
         }
 
         return new Permissions(
-            array_merge($permissionsSetByfolderOwner->permissions, $permissionsCollaboratorWillHaveByDefault->permissions)
+            array_merge($permissionsSetByFolderOwner->permissions, $permissionsCollaboratorWillHaveByDefault->permissions)
         );
     }
 

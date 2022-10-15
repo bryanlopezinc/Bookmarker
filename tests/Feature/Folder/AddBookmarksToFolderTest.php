@@ -27,7 +27,7 @@ class AddBookmarksToFolderTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/folders/bookmarks', 'addBookmarksToFolder');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/bookmarks', 'addBookmarksToFolder');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -95,7 +95,7 @@ class AddBookmarksToFolderTest extends TestCase
         ]);
     }
 
-    public function testCannotAddMoreThan_50_bookmarks_simultaneouly(): void
+    public function testCannotAddMoreThan_50_bookmarks_simultaneously(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 

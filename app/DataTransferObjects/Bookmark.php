@@ -33,7 +33,7 @@ final class Bookmark extends DataTransferObject implements BelongsToUserInterfac
     public readonly Source $source;
     public readonly TagsCollection $tags;
     public bool $isHealthy;
-    public bool $isUserFavourite;
+    public bool $isUserFavorite;
     public readonly Url $canonicalUrl;
     public readonly HashedUrlInterface $canonicalUrlHash;
     public readonly Url $resolvedUrl;

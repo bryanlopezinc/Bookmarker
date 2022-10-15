@@ -33,10 +33,10 @@ abstract class DOMParser implements Iterator
     {
         libxml_use_internal_errors(true);
 
-        $documnet = new \DOMDocument();
-        $documnet->loadHTML($html);
+        $document = new \DOMDocument();
+        $document->loadHTML($html);
 
-        return new DOMXPath($documnet);
+        return new DOMXPath($document);
     }
 
     public function rewind(): void

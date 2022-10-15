@@ -20,7 +20,7 @@ final class UserBookmarksFilters extends DataTransferObject
     public readonly PaginationData $pagination;
     public readonly bool $hasSortCriteria;
     public readonly UserBookmarksSortCriteria $sortCriteria;
-    public readonly bool $wantsBooksmarksWithDeadLinks;
+    public readonly bool $wantsBookmarksWithDeadLinks;
 
     /**
      * @param array<string, mixed> $attributes
@@ -42,7 +42,7 @@ final class UserBookmarksFilters extends DataTransferObject
             'wantsUntaggedBookmarks' => $request->boolean('untagged'),
             'pagination' => PaginationData::fromRequest($request),
             'hasSortCriteria' => $request->has('sort'),
-            'wantsBooksmarksWithDeadLinks' => $request->boolean('dead_links')
+            'wantsBookmarksWithDeadLinks' => $request->boolean('dead_links')
         ];
 
         $request->whenHas('source_id', function (int $siteId) use (&$data) {
@@ -86,7 +86,7 @@ final class UserBookmarksFilters extends DataTransferObject
             'wantsUntaggedBookmarks' => $request['untagged'] ?? false,
             'pagination' => new PaginationData($request['page'] ?? 1, $request['per_page'] ?? PaginationData::DEFAULT_PER_PAGE),
             'hasSortCriteria' => $hasSortCriteria = array_key_exists('sortBy', $request),
-            'wantsBooksmarksWithDeadLinks' => isset($request['dead_links']),
+            'wantsBookmarksWithDeadLinks' => isset($request['dead_links']),
         ];
 
         if ($hasSourceID) {
@@ -114,7 +114,7 @@ final class UserBookmarksFilters extends DataTransferObject
             $this->wantsBookmarksWithSpecificTags,
             $this->wantsUntaggedBookmarks,
             $this->hasSortCriteria,
-            $this->wantsBooksmarksWithDeadLinks
+            $this->wantsBookmarksWithDeadLinks
         ])) > 0;
     }
 }

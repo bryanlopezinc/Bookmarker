@@ -16,7 +16,7 @@ class IssueClientTokenTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/client/oauth/token', 'issueClientToken');
+        $this->assertRouteIsAccessibleViaPath('v1/client/oauth/token', 'issueClientToken');
     }
 
     public function testWillReturnValidationErrorsWhenRequiredAttributesAreMissing(): void

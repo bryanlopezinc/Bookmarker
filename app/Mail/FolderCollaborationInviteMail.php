@@ -35,8 +35,8 @@ final class FolderCollaborationInviteMail extends Mailable
     {
         return $this->subject('Folder Collaboration Invitation')
             ->view('emails.folderInvite', [
-                'inviterFirstname'  => $this->inviter->firstname->value,
-                'inviterSecondName' => $this->inviter->lastname->value,
+                'inviterFirstname'  => $this->inviter->firstName->value,
+                'inviterSecondName' => $this->inviter->lastName->value,
                 'folderName' => $this->folder->name->safe(),
                 'InviteLink' => $this->inviteUrl()
             ]);

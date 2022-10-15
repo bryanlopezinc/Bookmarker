@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Bookmark;
-use App\Models\Favourite;
+use App\Models\Favorite;
 use App\Models\UserBookmarksCount;
-use App\Models\UserFavouritesCount;
+use App\Models\UserFavoritesCount;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
@@ -25,7 +25,7 @@ class DeleteBookmarksFromSourceTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users/bookmarks/source', 'deleteBookmarksFromSource');
+        $this->assertRouteIsAccessibleViaPath('v1/users/bookmarks/source', 'deleteBookmarksFromSource');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -33,7 +33,7 @@ class DeleteBookmarksFromSourceTest extends TestCase
         $this->deleteBookmarksResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationWhenRequiredAttrbutesAreMissing(): void
+    public function testWillThrowValidationWhenRequiredAttributesAreMissing(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -74,7 +74,7 @@ class DeleteBookmarksFromSourceTest extends TestCase
         $this->assertBookmarksHealthWillNotBeChecked([$userBookmarks->first()->id]);
     }
 
-    public function testWillDeleteFavouritesWhenBookmarkIsDeleted(): void
+    public function testWillDeleteFavoritesWhenBookmarkIsDeleted(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -85,21 +85,21 @@ class DeleteBookmarksFromSourceTest extends TestCase
 
         [$firstBookmark, $secondBookmark] = [$userBookmarks->first(), $userBookmarks->last()];
 
-        //Add created bookmarks to favourites.
-        $this->postJson(route('createFavourite'), ['bookmarks' => (string) $firstBookmark->id])->assertCreated();
-        $this->postJson(route('createFavourite'), ['bookmarks' => (string) $secondBookmark->id])->assertCreated();
+        //Add created bookmarks to favorites.
+        $this->postJson(route('createFavorite'), ['bookmarks' => (string) $firstBookmark->id])->assertCreated();
+        $this->postJson(route('createFavorite'), ['bookmarks' => (string) $secondBookmark->id])->assertCreated();
 
         $this->deleteBookmarksResponse(['source_id' => $firstBookmark->source_id])->assertOk();
 
-        $this->assertDatabaseMissing(Favourite::class, [
+        $this->assertDatabaseMissing(Favorite::class, [
             'user_id' => $user->id,
             'bookmark_id' => $firstBookmark->id
         ]);
 
-        $this->assertDatabaseHas(UserFavouritesCount::class, [
+        $this->assertDatabaseHas(UserFavoritesCount::class, [
             'user_id' => $user->id,
             'count' => 1,
-            'type' => UserFavouritesCount::TYPE
+            'type' => UserFavoritesCount::TYPE
         ]);
     }
 }

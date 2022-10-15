@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Bookmark;
-use App\Models\Favourite;
-use App\Models\UserFavouritesCount;
+use App\Models\Favorite;
+use App\Models\UserFavoritesCount;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
@@ -13,18 +13,18 @@ use Laravel\Passport\Passport;
 use Tests\TestCase;
 use Tests\Traits\WillCheckBookmarksHealth;
 
-class CreateFavouriteTest extends TestCase
+class CreateFavoriteTest extends TestCase
 {
     use WillCheckBookmarksHealth;
 
     protected function getTestResponse(array $parameters = []): TestResponse
     {
-        return $this->postJson(route('createFavourite'), $parameters);
+        return $this->postJson(route('createFavorite'), $parameters);
     }
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users/favourites', 'createFavourite');
+        $this->assertRouteIsAccessibleViaPath('v1/users/favorites', 'createFavorite');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -32,7 +32,7 @@ class CreateFavouriteTest extends TestCase
         $this->getTestResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationWhenAttrbutesAreInvalid(): void
+    public function testWillThrowValidationWhenAttributesAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -40,7 +40,7 @@ class CreateFavouriteTest extends TestCase
         $this->getTestResponse(['bookmarks'])->assertJsonValidationErrorFor('bookmarks');
     }
 
-    public function testCannotAddMoreThan_50_BookmarksSimultaneouslyToFavourites(): void
+    public function testCannotAddMoreThan_50_BookmarksSimultaneouslyToFavorites(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -65,7 +65,7 @@ class CreateFavouriteTest extends TestCase
         ]);
     }
 
-    public function testWillAddBookmarkToFavourites(): void
+    public function testWillAddBookmarkToFavorites(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -75,19 +75,19 @@ class CreateFavouriteTest extends TestCase
 
         $this->getTestResponse(['bookmarks' => (string) $bookmark->id])->assertCreated();
 
-        $this->assertDatabaseHas(Favourite::class, [
+        $this->assertDatabaseHas(Favorite::class, [
             'bookmark_id' => $bookmark->id,
             'user_id' => $user->id
         ]);
 
-        $this->assertDatabaseHas(UserFavouritesCount::class, [
+        $this->assertDatabaseHas(UserFavoritesCount::class, [
             'user_id' => $user->id,
             'count' => 1,
-            'type' => UserFavouritesCount::TYPE
+            'type' => UserFavoritesCount::TYPE
         ]);
     }
 
-    public function testCanAddMultipleBookmarksToFavourites(): void
+    public function testCanAddMultipleBookmarksToFavorites(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -98,16 +98,16 @@ class CreateFavouriteTest extends TestCase
         $this->getTestResponse(['bookmarks' => $bookmarks->pluck('id')->implode(',')])->assertCreated();
 
         $bookmarks->each(function (Bookmark $bookmark) use ($user) {
-            $this->assertDatabaseHas(Favourite::class, [
+            $this->assertDatabaseHas(Favorite::class, [
                 'bookmark_id' => $bookmark->id,
                 'user_id' => $user->id
             ]);
         });
 
-        $this->assertDatabaseHas(UserFavouritesCount::class, [
+        $this->assertDatabaseHas(UserFavoritesCount::class, [
             'user_id' => $user->id,
             'count'   => $amount,
-            'type' => UserFavouritesCount::TYPE
+            'type' => UserFavoritesCount::TYPE
         ]);
     }
 
@@ -122,7 +122,7 @@ class CreateFavouriteTest extends TestCase
         $this->assertBookmarksHealthWillBeChecked($bookmarks->pluck('id')->all());
     }
 
-    public function testReturnErrorWhenBookmarkExistsInFavourites(): void
+    public function testReturnErrorWhenBookmarkExistsInFavorites(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -134,7 +134,7 @@ class CreateFavouriteTest extends TestCase
         $this->getTestResponse(['bookmarks' => (string) $bookmark->id])
             ->assertStatus(Response::HTTP_CONFLICT)
             ->assertExactJson([
-                'message' => "Bookmarks already exists in favourites"
+                'message' => "Bookmarks already exists in favorites"
             ]);
     }
 
@@ -147,7 +147,7 @@ class CreateFavouriteTest extends TestCase
         $this->getTestResponse(['bookmarks' => (string) $bookmark->id])->assertForbidden();
     }
 
-    public function testWillNotAddInvalidBookmarkToFavourite(): void
+    public function testWillNotAddInvalidBookmarkToFavorite(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -161,7 +161,7 @@ class CreateFavouriteTest extends TestCase
                 'message' => "Bookmarks does not exists"
             ]);
 
-        $this->assertDatabaseMissing(Favourite::class, [
+        $this->assertDatabaseMissing(Favorite::class, [
             'bookmark_id' => $bookmark->id,
             'user_id' => $user->id
         ]);

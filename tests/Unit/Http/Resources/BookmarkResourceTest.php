@@ -27,7 +27,7 @@ class BookmarkResourceTest extends TestCase
             ->tags(TagFactory::new()->count(3)->make()->all())
             ->source(SourceBuilder::fromModel(SourceFactory::new()->create())->build())
             ->isHealthy(false)
-            ->isUserFavourite(false)
+            ->isUserFavorite(false)
             ->build();
 
         $response = (new BookmarkResource($bookmark))->toResponse(request());
@@ -56,7 +56,7 @@ class BookmarkResourceTest extends TestCase
             ->tags(TagsCollection::make([]))
             ->source(SourceBuilder::fromModel(SourceFactory::new()->create())->build())
             ->isHealthy(false)
-            ->isUserFavourite(false)
+            ->isUserFavorite(false)
             ->build();
 
         $response = (new BookmarkResource($bookmark))->toResponse(request());
@@ -76,7 +76,7 @@ class BookmarkResourceTest extends TestCase
             ->tags(TagFactory::new()->count(3)->make()->all())
             ->source(SourceBuilder::fromModel(SourceFactory::new()->create())->build())
             ->isHealthy(false)
-            ->isUserFavourite(false)
+            ->isUserFavorite(false)
             ->build();
 
         $response = (new BookmarkResource($bookmark))->toResponse(request());
@@ -97,7 +97,7 @@ class BookmarkResourceTest extends TestCase
             ->tags(TagFactory::new()->count(3)->make()->all())
             ->source(SourceBuilder::fromModel(SourceFactory::new()->create())->build())
             ->isHealthy(false)
-            ->isUserFavourite(false)
+            ->isUserFavorite(false)
             ->build();
 
         $response = (new BookmarkResource($bookmark))->toResponse(request());

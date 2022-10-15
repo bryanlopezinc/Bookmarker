@@ -74,7 +74,7 @@ final class User extends Authenticatable implements MustVerifyEmail
         }
 
         $this->addBookmarksCountQuery($builder, $columns);
-        $this->addFavouritesCountQuery($builder, $columns);
+        $this->addFavoritesCountQuery($builder, $columns);
         $this->addFoldersCountQuery($builder, $columns);
 
         return $builder;
@@ -99,16 +99,16 @@ final class User extends Authenticatable implements MustVerifyEmail
     /**
      * @param Builder $builder
      */
-    private function addFavouritesCountQuery(&$builder, UserAttributes $options): void
+    private function addFavoritesCountQuery(&$builder, UserAttributes $options): void
     {
-        $wantsFavouritesCount = $options->has('favourites_count') ?: $options->isEmpty();
+        $wantsFavoritesCount = $options->has('favourites_count') ?: $options->isEmpty();
 
-        if (!$wantsFavouritesCount) {
+        if (!$wantsFavoritesCount) {
             return;
         }
 
         $builder->join('users_resources_counts as fc', function (JoinClause $join) {
-            $join->on('users.id', '=', 'fc.user_id')->where('fc.type', UserFavouritesCount::TYPE);
+            $join->on('users.id', '=', 'fc.user_id')->where('fc.type', UserFavoritesCount::TYPE);
         }, type: 'left outer')->addSelect('fc.count as favourites_count');
     }
 

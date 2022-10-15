@@ -11,7 +11,7 @@ use App\Models\User as Model;
 final class CreateUserRepository
 {
     /**
-     * @throws \RuntimeException throws exeception if user password is not hashed
+     * @throws \RuntimeException throws exception if user password is not hashed
      */
     public function create(User $user): User
     {
@@ -21,15 +21,15 @@ final class CreateUserRepository
 
         $user = Model::query()->create([
             'username' => $user->username->value,
-            'firstname' => $user->firstname->value,
-            'lastname' => $user->lastname->value,
+            'firstname' => $user->firstName->value,
+            'lastname' => $user->lastName->value,
             'email'    => $user->email->value,
             'password' => $user->password
         ]);
 
         return UserBuilder::fromModel($user)
             ->bookmarksCount(0)
-            ->favouritesCount(0)
+            ->favoritesCount(0)
             ->foldersCount(0)
             ->emailVerifiedAt(null)
             ->build();

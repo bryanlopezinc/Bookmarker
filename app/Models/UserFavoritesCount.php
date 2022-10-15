@@ -6,7 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 
-final class UserFavouritesCount extends UserResourceCount
+final class UserFavoritesCount extends UserResourceCount
 {
     public const TYPE = 4;
 
@@ -15,7 +15,7 @@ final class UserFavouritesCount extends UserResourceCount
      */
     protected static function booted()
     {
-        static::creating(function (UserFavouritesCount $model) {
+        static::creating(function (UserFavoritesCount $model) {
             $model->type = self::TYPE;
         });
 

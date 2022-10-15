@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Importers\Chrome;
 
-use App\Importers\DOMParser as AstractDOMParser;
+use App\Importers\DOMParser as AbstractDOMParser;
 use Traversable;
 
-final class DOMParser extends AstractDOMParser implements DOMParserInterface
+final class DOMParser extends AbstractDOMParser implements DOMParserInterface
 {
     public function parse(string $html): Traversable
     {

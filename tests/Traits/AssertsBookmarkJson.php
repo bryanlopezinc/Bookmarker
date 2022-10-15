@@ -29,7 +29,7 @@ trait AssertsBookmarkJson
                     'has_tags',
                     'tags_count',
                     'is_healthy',
-                    'is_user_favourite',
+                    'is_user_favorite',
                     'created_on' => [
                         'date_readable',
                         'date_time',

@@ -24,15 +24,15 @@ final class RevokeFolderCollaboratorPermissionsService
     public function revokePermissions(UserID $collaboratorID, ResourceID $folderID, Permissions $revokePermissions): void
     {
         $folder = $this->folderRepository->find($folderID, FolderAttributes::only('id,user_id'));
-        $collaboratorsCurrentPermisions = $this->permissions->getUserPermissionsForFolder($collaboratorID, $folderID);
+        $collaboratorsCurrentPermissions = $this->permissions->getUserPermissionsForFolder($collaboratorID, $folderID);
 
         (new EnsureAuthorizedUserOwnsResource)($folder);
 
         $this->ensureIsNotPerformingActionOnSelf($collaboratorID);
 
-        $this->ensureUserIsCurrentlyACollaborator($collaboratorsCurrentPermisions);
+        $this->ensureUserIsCurrentlyACollaborator($collaboratorsCurrentPermissions);
 
-        $this->ensureCollaboratorCurrentlyHasPermissions($collaboratorsCurrentPermisions, $revokePermissions);
+        $this->ensureCollaboratorCurrentlyHasPermissions($collaboratorsCurrentPermissions, $revokePermissions);
 
         $this->permissions->revoke($collaboratorID, $folderID, $revokePermissions);
     }
@@ -46,9 +46,9 @@ final class RevokeFolderCollaboratorPermissionsService
         }
     }
 
-    private function ensureUserIsCurrentlyACollaborator(Permissions $collaboratorsCurrentPermisions): void
+    private function ensureUserIsCurrentlyACollaborator(Permissions $collaboratorsCurrentPermissions): void
     {
-        if (!$collaboratorsCurrentPermisions->hasAnyPermission()) {
+        if (!$collaboratorsCurrentPermissions->hasAnyPermission()) {
             throw HttpException::notFound([
                 'message' => 'User not a collaborator'
             ]);
@@ -59,10 +59,10 @@ final class RevokeFolderCollaboratorPermissionsService
      * Ensure the collaborator currently has all the permissions the folder owner is trying to revoke.
      */
     private function ensureCollaboratorCurrentlyHasPermissions(
-        Permissions $collaboratorsCurrentPermisions,
+        Permissions $collaboratorsCurrentPermissions,
         Permissions $permissionsToRevoke
     ): void {
-        if (!$collaboratorsCurrentPermisions->containsAll($permissionsToRevoke)) {
+        if (!$collaboratorsCurrentPermissions->containsAll($permissionsToRevoke)) {
             throw HttpException::notFound([
                 'message' => 'User does not have such permissions'
             ]);

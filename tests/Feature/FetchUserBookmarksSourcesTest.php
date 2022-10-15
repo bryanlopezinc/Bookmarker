@@ -18,7 +18,7 @@ class FetchUserBookmarksSourcesTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users/bookmarks/sources', 'fetchUserBookmarksSources');
+        $this->assertRouteIsAccessibleViaPath('v1/users/bookmarks/sources', 'fetchUserBookmarksSources');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void

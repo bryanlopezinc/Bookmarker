@@ -23,7 +23,7 @@ class AddEmailTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users/emails/add', 'addEmailToAccount');
+        $this->assertRouteIsAccessibleViaPath('v1/users/emails/add', 'addEmailToAccount');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -31,14 +31,14 @@ class AddEmailTest extends TestCase
         $this->addEmailToAccount()->assertUnauthorized();
     }
 
-    public function testAttrbutesMustBePresent(): void
+    public function testAttributesMustBePresent(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
         $this->addEmailToAccount()->assertJsonValidationErrorFor('email');
     }
 
-    public function testAttrbutesMustBeValid(): void
+    public function testAttributesMustBeValid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 

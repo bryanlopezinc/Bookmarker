@@ -31,7 +31,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/folders/invite/accept', 'acceptFolderCollaborationInvite');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/invite/accept', 'acceptFolderCollaborationInvite');
     }
 
     public function testUnAuthorizedUserCanAccessRoute(): void

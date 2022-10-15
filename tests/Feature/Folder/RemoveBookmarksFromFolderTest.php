@@ -25,7 +25,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/folders/bookmarks', 'removeBookmarksFromFolder');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/bookmarks', 'removeBookmarksFromFolder');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -33,7 +33,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
         $this->removeFolderBookmarksResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationWhenRequiredAttrbutesAreMissing(): void
+    public function testWillThrowValidationWhenRequiredAttributesAreMissing(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -42,7 +42,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
             ->assertJsonValidationErrors(['bookmarks', 'folder']);
     }
 
-    public function testWillThrowValidationWhenAttrbutesAreInvalid(): void
+    public function testWillThrowValidationWhenAttributesAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 

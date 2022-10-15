@@ -5,18 +5,18 @@ namespace Tests\Feature\User;
 use App\Models\DeletedUser;
 use App\Models\User;
 use App\Models\UserBookmarksCount;
-use App\Models\UserFavouritesCount;
+use App\Models\UserFavoritesCount;
 use App\Models\UserFoldersCount;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
-use Tests\Traits\Resquests2FACode;
+use Tests\Traits\Requests2FACode;
 
 class DeleteUserAccountTest extends TestCase
 {
-    use Resquests2FACode;
+    use Requests2FACode;
 
     protected static string $accessToken;
     protected static string $refreshToken;
@@ -28,7 +28,7 @@ class DeleteUserAccountTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users', 'deleteUserAccount');
+        $this->assertRouteIsAccessibleViaPath('v1/users', 'deleteUserAccount');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -51,7 +51,7 @@ class DeleteUserAccountTest extends TestCase
                 'count'   => 5,
             ]);
 
-            UserFavouritesCount::create([
+            UserFavoritesCount::create([
                 'user_id' => $user->id,
                 'count'   => 5,
             ]);

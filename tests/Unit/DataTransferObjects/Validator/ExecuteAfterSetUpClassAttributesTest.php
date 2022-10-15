@@ -2,11 +2,11 @@
 
 namespace Tests\Unit\DataTransferObjects\Validator;
 
-use App\DataTransferObjects\Validator\ExecuteAfterSetUpClassAtrributes;
+use App\DataTransferObjects\Validator\ExecuteAfterSetUpClassAttributes;
 use App\DataTransferObjects\Validator\Reflector;
 use Tests\TestCase;
 
-class ExecuteAfterSetUpClassAtrributesTest extends TestCase
+class ExecuteAfterSetUpClassAttributesTest extends TestCase
 {
     public function testWillCacheClassAttributes(): void
     {
@@ -15,11 +15,11 @@ class ExecuteAfterSetUpClassAtrributesTest extends TestCase
 
         foreach ([1, 2] as $times) {
             for ($i = 0; $i < 10; $i++) {
-                (new ExecuteAfterSetUpClassAtrributes(new AnonymousClass, $reflector))->execute();
+                (new ExecuteAfterSetUpClassAttributes(new AnonymousClass, $reflector))->execute();
             }
         }
 
-        $this->assertEquals(ExecuteAfterSetUpClassAtrributes::getCache()[AnonymousClass::class], $this->getValidators());
+        $this->assertEquals(ExecuteAfterSetUpClassAttributes::getCache()[AnonymousClass::class], $this->getValidators());
         $this->assertEquals(20, TestValidator::$invocationCount);
         $this->assertEquals(20, TestValidator2::$invocationCount);
     }

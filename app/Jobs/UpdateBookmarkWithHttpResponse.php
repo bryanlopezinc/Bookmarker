@@ -57,7 +57,7 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
             return;
         }
 
-        $builder->resolvedUrl($data->reosolvedUrl);
+        $builder->resolvedUrl($data->resolvedUrl);
 
         if ($data->thumbnailUrl !== false) {
             $builder->thumbnailUrl($data->thumbnailUrl->toString());
@@ -68,7 +68,7 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
         }
 
         $this->setDescriptionAttribute($builder, $data, $bookmark);
-        $this->seTtitleAttributes($builder, $data, $bookmark);
+        $this->seTittleAttributes($builder, $data, $bookmark);
         $this->updateSiteName($data, $bookmark);
 
         $repository->update(new Data($builder->build()));
@@ -88,7 +88,7 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
         $builder->description(BookmarkDescription::limit($data->description)->value);
     }
 
-    private function seTtitleAttributes(Builder &$builder, BookmarkMetaData $data, Bookmark $bookmark): void
+    private function seTittleAttributes(Builder &$builder, BookmarkMetaData $data, Bookmark $bookmark): void
     {
         if ($bookmark->hasCustomTitle || $data->title === false) {
             return;
@@ -99,9 +99,9 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
 
     private function updateSiteName(BookmarkMetaData $data, Bookmark $bookmark): void
     {
-        $sitename = $data->hostSiteName;
+        $siteName = $data->hostSiteName;
 
-        if ($sitename === false || blank($sitename)) {
+        if ($siteName === false || blank($siteName)) {
             return;
         }
 
@@ -110,7 +110,7 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
 
         if (!$bookmark->source->nameHasBeenUpdated) {
             $source->update([
-                'name' => $sitename,
+                'name' => $siteName,
                 'name_updated_at' => now()
             ]);
         }

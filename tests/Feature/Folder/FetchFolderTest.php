@@ -19,7 +19,7 @@ class FetchFolderTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/folders', 'fetchFolder');
+        $this->assertRouteIsAccessibleViaPath('v1/folders', 'fetchFolder');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void

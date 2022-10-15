@@ -37,7 +37,7 @@ final class SendFolderCollaborationInviteService
         $invitee = $this->retrieveInviteeInfo($inviteeEmail = new Email($request->input('email')));
 
         $this->ensureUserHasPermissionToPerformAction($folder, $inviter, $request);
-        $this->ensureIsNotSendingInvitionSelf($inviteeEmail, $inviter);
+        $this->ensureIsNotSendingInvitationSelf($inviteeEmail, $inviter);
         $this->ensureUserIsNotSendingInvitationToFolderOwner($folder, $invitee);
         $this->ensureInviteeIsNotAlreadyACollaborator($invitee, $folder);
 
@@ -98,7 +98,7 @@ final class SendFolderCollaborationInviteService
         return $invitee;
     }
 
-    private function ensureIsNotSendingInvitionSelf(Email $inviteeEmail, User $inviter): void
+    private function ensureIsNotSendingInvitationSelf(Email $inviteeEmail, User $inviter): void
     {
         $inviterPrimaryAndSecondaryEmails = array_merge(
             [$inviter->email],

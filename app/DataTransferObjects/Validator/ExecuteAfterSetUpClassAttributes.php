@@ -6,7 +6,7 @@ namespace App\DataTransferObjects\Validator;
 
 use App\Contracts\AfterDTOSetUpHookInterface;
 
-final class ExecuteAfterSetUpClassAtrributes
+final class ExecuteAfterSetUpClassAttributes
 {
     /**
      * Instances of initialized attributes.

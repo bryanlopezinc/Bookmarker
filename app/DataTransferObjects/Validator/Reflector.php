@@ -11,23 +11,23 @@ use ReflectionAttribute;
 class Reflector
 {
     /**
-     * Get class attrbutes and all of its parent attributes
+     * Get class attributes and all of its parent attributes
      *
      * @return array<AfterDTOSetUpHookInterface>
      */
     public function getClassAttributesInstances(Object $object): array
     {
-        $attrbutes = collect([]);
+        $attributes = collect([]);
         $reflection = new ReflectionClass($object);
 
         while ($reflection !== false) {
 
-            $attrbutes->push(...$reflection->getAttributes(AfterDTOSetUpHookInterface::class, ReflectionAttribute::IS_INSTANCEOF));
+            $attributes->push(...$reflection->getAttributes(AfterDTOSetUpHookInterface::class, ReflectionAttribute::IS_INSTANCEOF));
 
             $reflection = $reflection->getParentClass();
         }
 
-        return $attrbutes
+        return $attributes
             ->reject(fn (?ReflectionAttribute $a): bool => is_null($a))
             ->map(fn (ReflectionAttribute $a): AfterDTOSetUpHookInterface => $a->newInstance())
             ->all();

@@ -29,11 +29,11 @@ final class UserBuilder extends Builder
         return (new self)
             ->when($keyExists('id'), fn (self $sb) => $sb->id($model['id']))
             ->when($keyExists('username'), fn (self $sb) => $sb->username($model['username']))
-            ->when($keyExists('firstname'), fn (self $sb) => $sb->firstname($model['firstname']))
-            ->when($keyExists('lastname'), fn (self $sb) => $sb->lastname($model['lastname']))
+            ->when($keyExists('firstname'), fn (self $sb) => $sb->firstName($model['firstname']))
+            ->when($keyExists('lastname'), fn (self $sb) => $sb->lastName($model['lastname']))
             ->when($keyExists('email'), fn (self $sb) => $sb->email($model['email']))
             ->when($keyExists('bookmarks_count'), fn (self $sb) => $sb->bookmarksCount((int)$model['bookmarks_count']))
-            ->when($keyExists('favourites_count'), fn (self $sb) => $sb->favouritesCount((int)$model['favourites_count']))
+            ->when($keyExists('favourites_count'), fn (self $sb) => $sb->favoritesCount((int)$model['favourites_count']))
             ->when($keyExists('folders_count'), fn (self $sb) => $sb->foldersCount((int)$model['folders_count']))
             ->when($keyExists('password'), fn (self $sb) => $sb->password($model['password']))
             ->when($keyExists('email_verified_at'), fn (self $sb) => $sb->emailVerifiedAt($model['email_verified_at']));
@@ -53,16 +53,16 @@ final class UserBuilder extends Builder
         return $this;
     }
 
-    public function firstname(string $firstname): self
+    public function firstName(string $firstName): self
     {
-        $this->attributes['firstname'] = new NonEmptyString($firstname);
+        $this->attributes['firstName'] = new NonEmptyString($firstName);
 
         return $this;
     }
 
-    public function lastname(string $lastname): self
+    public function lastName(string $lastName): self
     {
-        $this->attributes['lastname'] = new NonEmptyString($lastname);
+        $this->attributes['lastName'] = new NonEmptyString($lastName);
 
         return $this;
     }
@@ -88,9 +88,9 @@ final class UserBuilder extends Builder
         return $this;
     }
 
-    public function favouritesCount(int $count): self
+    public function favoritesCount(int $count): self
     {
-        $this->attributes['favouritesCount'] = new PositiveNumber($count);
+        $this->attributes['favoritesCount'] = new PositiveNumber($count);
 
         return $this;
     }

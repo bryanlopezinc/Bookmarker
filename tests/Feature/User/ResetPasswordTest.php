@@ -10,12 +10,12 @@ use Database\Factories\UserFactory;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
-use Tests\Traits\Resquests2FACode;
+use Tests\Traits\Requests2FACode;
 use Laravel\Passport\Database\Factories\ClientFactory;
 
 class ResetPasswordTest extends TestCase
 {
-    use Resquests2FACode;
+    use Requests2FACode;
 
     private const NEW_PASSWORD = 'abcdef123';
 
@@ -28,7 +28,7 @@ class ResetPasswordTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users/password/reset', 'resetPassword');
+        $this->assertRouteIsAccessibleViaPath('v1/users/password/reset', 'resetPassword');
     }
 
     public function testWillReturnValidationErrorsWhenClientCredentialsAreInvalid(): void

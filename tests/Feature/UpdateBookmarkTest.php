@@ -27,7 +27,7 @@ class UpdateBookmarkTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/bookmarks', 'updateBookmark');
+        $this->assertRouteIsAccessibleViaPath('v1/bookmarks', 'updateBookmark');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -35,7 +35,7 @@ class UpdateBookmarkTest extends TestCase
         $this->getTestResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationExceptionWhenRequiredAttrbutesAreMissing(): void
+    public function testWillThrowValidationExceptionWhenRequiredAttributesAreMissing(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 

@@ -9,7 +9,7 @@ abstract class TestCase extends BaseTestCase
 {
     use CreatesApplication;
 
-    final protected function assertRouteIsAccessibeViaPath(string $path, string $routeName): void
+    final protected function assertRouteIsAccessibleViaPath(string $path, string $routeName): void
     {
         //Throw RouteNotFoundException if route name is not defined.
         route($routeName);

@@ -26,10 +26,10 @@ class SaveBookFromMailTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/email/save_url', 'saveBookmarkFromEmail');
+        $this->assertRouteIsAccessibleViaPath('v1/email/save_url', 'saveBookmarkFromEmail');
     }
 
-    public function testWillThrowValidationExceptionWhenRequiredAttrbutesAreMissing(): void
+    public function testWillThrowValidationExceptionWhenRequiredAttributesAreMissing(): void
     {
         $this->getTestResponse()->assertJsonValidationErrors(['email', 'rkv']);
         $this->getTestResponse(['email' => 'foo'])->assertJsonValidationErrors(['rkv']);

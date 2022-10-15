@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Importers\Safari;
 
 use Traversable;
-use App\Importers\DOMParser as AstractDOMParser;
+use App\Importers\DOMParser as AbstractDOMParser;
 
-final class DOMParser extends AstractDOMParser implements DOMParserInterface
+final class DOMParser extends AbstractDOMParser implements DOMParserInterface
 {
     public function parse(string $html): Traversable
     {

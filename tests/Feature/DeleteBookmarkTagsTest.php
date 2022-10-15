@@ -22,7 +22,7 @@ class DeleteBookmarkTagsTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/bookmarks/tags/remove', 'deleteBookmarkTags');
+        $this->assertRouteIsAccessibleViaPath('v1/bookmarks/tags/remove', 'deleteBookmarkTags');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -30,7 +30,7 @@ class DeleteBookmarkTagsTest extends TestCase
         $this->getTestResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationWhenRequiredAttrbutesAreMissing(): void
+    public function testWillThrowValidationWhenRequiredAttributesAreMissing(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 

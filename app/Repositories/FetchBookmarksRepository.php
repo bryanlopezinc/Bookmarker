@@ -35,7 +35,7 @@ class FetchBookmarksRepository
     public function findManyById(ResourceIDsCollection $IDs, ?BookmarkAttributes $columns = null): Collection
     {
         $columns = $columns ?: new BookmarkAttributes();
-        $originalRequestedColums = $columns->toArray();
+        $originalRequestedColumns = $columns->toArray();
 
         //Force bookmark to be health checked by model event observer.
         if (!$columns->isEmpty() && !$columns->has($attributesNeededToCheckBookmarkHealth = ['id', 'url'])) {
@@ -45,12 +45,12 @@ class FetchBookmarksRepository
         return Model::WithQueryOptions($columns)
             ->whereIn('bookmarks.id', $IDs->asIntegers()->unique()->all())
             ->get()
-            ->map(function (Model $bookmark) use ($originalRequestedColums): Bookmark {
-                if (!empty($originalRequestedColums)) {
+            ->map(function (Model $bookmark) use ($originalRequestedColumns): Bookmark {
+                if (!empty($originalRequestedColumns)) {
                     collect($bookmark->toArray())
                         ->keys()
-                        ->diff($originalRequestedColums)
-                        ->each(fn (string $attrbute) => $bookmark->offsetUnset($attrbute));
+                        ->diff($originalRequestedColumns)
+                        ->each(fn (string $attribute) => $bookmark->offsetUnset($attribute));
                 }
 
                 return BookmarkBuilder::fromModel($bookmark)->build();

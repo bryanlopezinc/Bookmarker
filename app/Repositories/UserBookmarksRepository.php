@@ -18,7 +18,7 @@ use Illuminate\Support\Collection;
 
 final class UserBookmarksRepository
 {
-    public function __construct(private FavouriteRepository $userFavourites)
+    public function __construct(private FavoriteRepository $userFavorites)
     {
     }
 
@@ -51,7 +51,7 @@ final class UserBookmarksRepository
             $query->orderBy('bookmarks.id', $filters->sortCriteria->value);
         }
 
-        if ($filters->wantsBooksmarksWithDeadLinks) {
+        if ($filters->wantsBookmarksWithDeadLinks) {
             $query->where('bookmarks_health.is_healthy', false);
         }
 
@@ -66,22 +66,22 @@ final class UserBookmarksRepository
         /** @var Paginator */
         $result = $query->simplePaginate($pagination->perPage(), page: $pagination->page());
 
-        $collection = $this->setIsUserFavouriteAttributeOnBookmarks($result->getCollection(), $userID);
+        $collection = $this->setIsUserFavoriteAttributeOnBookmarks($result->getCollection(), $userID);
 
         return $result->setCollection(
             $collection->map(fn (Model $bookmark) => BookmarkBuilder::fromModel($bookmark)->build())
         );
     }
 
-    private function setIsUserFavouriteAttributeOnBookmarks(Collection $bookmarks, UserID $userID): Collection
+    private function setIsUserFavoriteAttributeOnBookmarks(Collection $bookmarks, UserID $userID): Collection
     {
-        $bookmarkIDsFavouritedByUser = $this->userFavourites->intersect(
+        $userFavorites = $this->userFavorites->intersect(
             ResourceIDsCollection::fromNativeTypes($bookmarks->pluck('id')),
             $userID
         )->asIntegers();
 
-        return $bookmarks->map(function (Model $bookmark) use ($bookmarkIDsFavouritedByUser) {
-            $bookmark->setAttribute('is_user_favourite', $bookmarkIDsFavouritedByUser->containsStrict($bookmark->id));
+        return $bookmarks->map(function (Model $bookmark) use ($userFavorites) {
+            $bookmark->setAttribute('is_user_favourite', $userFavorites->containsStrict($bookmark->id));
 
             return $bookmark;
         });

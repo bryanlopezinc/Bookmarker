@@ -13,11 +13,11 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
 use Laravel\Passport\Client;
-use Tests\Traits\Resquests2FACode;
+use Tests\Traits\Requests2FACode;
 
 class LoginUserTest extends TestCase
 {
-    use Resquests2FACode;
+    use Requests2FACode;
 
     private Client $client;
     private User $user;
@@ -37,7 +37,7 @@ class LoginUserTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/login', 'loginUser');
+        $this->assertRouteIsAccessibleViaPath('v1/login', 'loginUser');
     }
 
     public function testWillReturnValidationErrorsWhenCredentialsAreInvalid(): void
@@ -157,7 +157,7 @@ class LoginUserTest extends TestCase
                         'lastname',
                         'username',
                         'bookmarks_count',
-                        'favourites_count',
+                        'favorites_count',
                         'folders_count',
                         'has_verified_email'
                     ],
@@ -306,7 +306,7 @@ class LoginUserTest extends TestCase
         ]);
     }
 
-    public function testAttributesMustbeFilledWhenPresent(): void
+    public function testAttributesMustBeFilledWhenPresent(): void
     {
         $this->getTestResponse([
             'with_ip' => '',

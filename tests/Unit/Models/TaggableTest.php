@@ -9,7 +9,7 @@ use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Tests\TestCase;
 
-class TagableTest extends TestCase
+class TaggableTest extends TestCase
 {
     public function testBookmarkCannotHaveDuplicateTags(): void
     {

@@ -50,11 +50,11 @@ final class FolderPermissions
     }
 
     /**
-     * Create a new instance from an unserialized payload.
+     * Create a new instance from an unserialize payload.
      */
-    public static function fromUnSerialized(array $unserialized): self
+    public static function fromUnSerialized(array $unserialize): self
     {
-        return static::translate($unserialized, [
+        return static::translate($unserialize, [
             'A_B' => Model::ADD_BOOKMARKS,
             'D_B' => Model::DELETE_BOOKMARKS,
             'I_U' => Model::INVITE
@@ -62,7 +62,7 @@ final class FolderPermissions
     }
 
     /**
-     * @param array<string> $permissions Accpted values = ['read', 'write']
+     * @param array<string> $permissions Accepted values = ['read', 'write']
      */
     public static function fromArray(array $permissions): self
     {

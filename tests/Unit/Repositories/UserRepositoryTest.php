@@ -5,7 +5,7 @@ namespace Tests\Unit\Repositories;
 use App\DataTransferObjects\User;
 use App\Models\User as Model;
 use App\Models\UserBookmarksCount;
-use App\Models\{UserFavouritesCount, UserFoldersCount};
+use App\Models\{UserFavoritesCount, UserFoldersCount};
 use App\QueryColumns\UserAttributes;
 use App\Repositories\UserRepository;
 use App\ValueObjects\Username;
@@ -22,12 +22,12 @@ class UserRepositoryTest extends TestCase
         $this->assertSame(0, (new UserRepository)->findByUsername(Username::fromString($model->username))->bookmarksCount->value);
     }
 
-    public function testBookmarksCountWillBeZeroWhenUserHasNoFavourites(): void
+    public function testBookmarksCountWillBeZeroWhenUserHasNoFavorites(): void
     {
         /** @var Model */
         $model = UserFactory::new()->create();
 
-        $this->assertSame(0, (new UserRepository)->findByUsername(Username::fromString($model->username))->favouritesCount->value);
+        $this->assertSame(0, (new UserRepository)->findByUsername(Username::fromString($model->username))->favoritesCount->value);
     }
 
     public function testFoldersCountWillBeZeroWhenUserHasNoFolder(): void
@@ -51,17 +51,17 @@ class UserRepositoryTest extends TestCase
         $this->assertSame(100, (new UserRepository)->findByUsername(Username::fromString($model->username))->bookmarksCount->value);
     }
 
-    public function testWillReturnCorrectBookmarksCountWhenUserHasFavourites(): void
+    public function testWillReturnCorrectBookmarksCountWhenUserHasFavorites(): void
     {
         /** @var Model */
         $model = UserFactory::new()->create();
 
-        UserFavouritesCount::create([
+        UserFavoritesCount::create([
             'user_id' => $model->id,
             'count' => 45,
         ]);
 
-        $this->assertSame(45, (new UserRepository)->findByUsername(Username::fromString($model->username))->favouritesCount->value);
+        $this->assertSame(45, (new UserRepository)->findByUsername(Username::fromString($model->username))->favoritesCount->value);
     }
 
     public function testWillReturnCorrectFoldersCountWhenUserHasFolders(): void

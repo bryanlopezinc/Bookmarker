@@ -24,7 +24,7 @@ final class BookmarkAttributes extends Attributes
     }
 
     /**
-     * @param string $attributes A comma seperated list of attributes which can only be
+     * @param string $attributes A comma separated list of attributes which can only be
      * any of id,source,user_id,tags,is_dead_link,url
      */
     public static function only(string $attributes): self

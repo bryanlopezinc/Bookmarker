@@ -38,7 +38,7 @@ class FolderRepositoryTest extends TestCase
 
         $this->assertWillReturnOnlyAttributes('id,user_id,bookmarks_count', function (Folder $folder) {
             $this->assertCount(3, $folder->toArray());
-            $folder->folderID; // will throw initialization exception if not retrived
+            $folder->folderID; // will throw initialization exception if not retrieved
             $folder->ownerID;
             $folder->storage;
         });

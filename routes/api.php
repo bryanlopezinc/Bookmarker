@@ -23,9 +23,9 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
         Route::delete('emails/remove', A\DeleteEmailController::class)->name('removeEmailFromAccount');
         Route::post('emails/verify/secondary', A\VerifySecondaryEmailController::class)->name('verifySecondaryEmail');
 
-        Route::get('favourites', C\FetchUserFavouritesController::class)->name('fetchUserFavourites');
-        Route::post('favourites', C\CreateFavouriteController::class)->middleware([StringToArray::keys('bookmarks')])->name('createFavourite');
-        Route::delete('favourites', C\DeleteFavouriteController::class)->middleware([StringToArray::keys('bookmarks')])->name('deleteFavourite');
+        Route::get('favorites', C\FetchUserFavoritesController::class)->name('fetchUserFavorites');
+        Route::post('favorites', C\CreateFavoriteController::class)->middleware([StringToArray::keys('bookmarks')])->name('createFavorite');
+        Route::delete('favorites', C\DeleteFavoriteController::class)->middleware([StringToArray::keys('bookmarks')])->name('deleteFavorite');
 
         Route::get('bookmarks', C\FetchUserBookmarksController::class)->middleware([StringToArray::keys('tags')])->name('fetchUserBookmarks');
         Route::get('bookmarks/sources', C\FetchUserBookmarksSourcesController::class)->name('fetchUserBookmarksSources');
@@ -72,7 +72,7 @@ Route::post('login', A\LoginController::class)->name('loginUser');
 Route::post('token/refresh', [AccessTokenController::class, 'issueToken'])->name('refreshToken')->middleware('throttle');
 
 Route::middleware([CheckClientCredentials::class])->group(function () {
-    Route::get('folders/public/bookmarks', F\FetchPublicFolderBookmarksController::class)->name('viewPublicfolderBookmarks');
+    Route::get('folders/public/bookmarks', F\FetchPublicFolderBookmarksController::class)->name('viewPublicFolderBookmarks');
     Route::get('folders/invite/accept', F\AcceptFolderCollaborationInviteController::class)->middleware([DBTransaction::class, 'signed'])->name('acceptFolderCollaborationInvite');
 
     Route::post('users', A\CreateUserController::class)->middleware([DBTransaction::class])->name('createUser');

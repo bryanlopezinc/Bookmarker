@@ -8,7 +8,7 @@ use App\Jobs\PruneDeletedUsersData;
 use App\Models\Bookmark;
 use App\Models\BookmarkHealth;
 use App\Models\DeletedUser;
-use App\Models\Favourite;
+use App\Models\Favorite;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Models\FolderBookmarksCount;
@@ -59,7 +59,7 @@ class PruneDeletedUsersDataTest extends TestCase
                     'tag_id' => $tags->random()->id,
                 ]);
 
-                Favourite::query()->create([
+            Favorite::query()->create([
                     'bookmark_id' => $bookmark->id,
                     'user_id' => $bookmark->user_id
                 ]);
@@ -75,7 +75,7 @@ class PruneDeletedUsersDataTest extends TestCase
 
         $this->assertFalse(Folder::query()->where('user_id', $user->id)->exists());
         $this->assertFalse(Bookmark::query()->where('user_id', $user->id)->exists());
-        $this->assertFalse(Favourite::query()->where('user_id', $user->id)->exists());
+        $this->assertFalse(Favorite::query()->where('user_id', $user->id)->exists());
 
         $userFolders->each(function (Folder $folder) {
             $this->assertDatabaseMissing(FolderBookmarksCount::class, ['folder_id' => $folder->id]);

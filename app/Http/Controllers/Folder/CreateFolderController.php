@@ -21,7 +21,7 @@ final class CreateFolderController
             ->setDescription($request->validated('description'))
             ->setName($request->validated('name'))
             ->setOwnerID(UserID::fromAuthUser())
-            ->setisPublic($request->boolean('is_public'))
+            ->setIsPublic($request->boolean('is_public'))
             ->setTags(TagsCollection::make($request->validated('tags', [])))
             ->build();
 

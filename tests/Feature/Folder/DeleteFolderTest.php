@@ -31,7 +31,7 @@ class DeleteFolderTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/folders', 'createFolder');
+        $this->assertRouteIsAccessibleViaPath('v1/folders', 'createFolder');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
@@ -39,7 +39,7 @@ class DeleteFolderTest extends TestCase
         $this->deleteFolderResponse()->assertUnauthorized();
     }
 
-    public function testRequiredAttrbutesMustBePresent(): void
+    public function testRequiredAttributesMustBePresent(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 

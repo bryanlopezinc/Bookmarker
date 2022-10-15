@@ -51,7 +51,7 @@ final class FolderRepository implements FolderRepositoryInterface
             ->when($attributes->has('id'), fn (Builder $b) => $b->setID($folder->folderID->toInt()))
             ->when($attributes->has('user_id'), fn (Builder $b) => $b->setOwnerID($folder->ownerID))
             ->when($attributes->has('bookmarks_count'), fn (Builder $b) => $b->setBookmarksCount($folder->storage->total))
-            ->when($attributes->has('is_public'), fn (Builder $b) => $b->setisPublic($folder->isPublic))
+            ->when($attributes->has('is_public'), fn (Builder $b) => $b->setIsPublic($folder->isPublic))
             ->when($attributes->has('name'), fn (Builder $b) => $b->setName($folder->name->value))
             ->when($attributes->has('description'), fn (Builder $b) => $b->setDescription($folder->description->value))
             ->when($attributes->has('tags'), fn (Builder $b) => $b->setTags($folder->tags))

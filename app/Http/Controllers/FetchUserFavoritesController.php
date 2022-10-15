@@ -7,11 +7,11 @@ namespace App\Http\Controllers;
 use App\Http\Resources\BookmarkResource;
 use App\Http\Resources\PaginatedResourceCollection;
 use App\PaginationData;
-use App\Repositories\FavouriteRepository as Repository;
+use App\Repositories\FavoriteRepository as Repository;
 use App\ValueObjects\UserID;
 use Illuminate\Http\Request;
 
-final class FetchUserFavouritesController
+final class FetchUserFavoritesController
 {
     public function __invoke(Request $request, Repository $repository): PaginatedResourceCollection
     {

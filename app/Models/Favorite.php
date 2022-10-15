@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $user_id foreign key to \App\Models\User
  * @property \Carbon\Carbon $created_at
  */
-final class Favourite extends Model
+final class Favorite extends Model
 {
     const UPDATED_AT = null;
 

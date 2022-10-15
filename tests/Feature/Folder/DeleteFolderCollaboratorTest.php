@@ -24,7 +24,7 @@ class DeleteFolderCollaboratorTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/folders/collaborators', 'deleteFolderCollaborator');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/collaborators', 'deleteFolderCollaborator');
     }
 
     public function testUnAuthorizedUserCannotAccessRoute(): void

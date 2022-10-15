@@ -9,11 +9,11 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Client;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
-use Tests\Traits\Resquests2FACode;
+use Tests\Traits\Requests2FACode;
 
 class RefreshTokenTest extends TestCase
 {
-    use Resquests2FACode;
+    use Requests2FACode;
 
     protected function getTestResponse(array $parameters = [], array $headers = []): TestResponse
     {
@@ -22,7 +22,7 @@ class RefreshTokenTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/token/refresh', 'refreshToken');
+        $this->assertRouteIsAccessibleViaPath('v1/token/refresh', 'refreshToken');
     }
 
     public function testWillRefreshTokens(): void

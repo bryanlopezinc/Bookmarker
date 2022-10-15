@@ -39,7 +39,7 @@ final class DefaultClient implements HttpClientInterface
             'imageUrl' => $DOMReader->getPreviewImageUrl(),
             'siteName' => $DOMReader->getSiteName(),
             'canonicalUrl' => $DOMReader->getCanonicalUrl(),
-            'reosolvedUrl' => $resolvedUrl
+            'resolvedUrl' => $resolvedUrl
         ]);
     }
 
@@ -68,7 +68,7 @@ final class DefaultClient implements HttpClientInterface
             'imageUrl' => false,
             'siteName' => false,
             'canonicalUrl' => false,
-            'reosolvedUrl' => $bookmark->url
+            'resolvedUrl' => $bookmark->url
         ]);
     }
 }

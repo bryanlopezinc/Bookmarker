@@ -19,7 +19,7 @@ class RequestPasswordResetTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibeViaPath('v1/users/password/reset-token', 'requestPasswordResetToken');
+        $this->assertRouteIsAccessibleViaPath('v1/users/password/reset-token', 'requestPasswordResetToken');
     }
 
     public function testUnauthorizedClientCannotAccessRoute(): void

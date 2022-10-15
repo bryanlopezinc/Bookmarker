@@ -224,7 +224,6 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             ]);
     }
 
-
     public function testWillNotCreatePermissionWhenFolderHasBeenDeleted(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());

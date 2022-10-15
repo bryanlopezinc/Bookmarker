@@ -2,26 +2,28 @@
 
 namespace Tests\Feature\User;
 
-use App\Models\DeletedUser;
+use Tests\TestCase;
 use App\Models\User;
+use App\Models\DeletedUser;
+use Illuminate\Support\Str;
+use Laravel\Passport\Passport;
+use App\Models\UserFoldersCount;
+use Tests\Traits\Requests2FACode;
 use App\Models\UserBookmarksCount;
 use App\Models\UserFavoritesCount;
-use App\Models\UserFoldersCount;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
+use Illuminate\Foundation\Testing\WithFaker;
 use Laravel\Passport\Database\Factories\ClientFactory;
-use Laravel\Passport\Passport;
-use Tests\TestCase;
-use Tests\Traits\Requests2FACode;
 
 class DeleteUserAccountTest extends TestCase
 {
-    use Requests2FACode;
+    use Requests2FACode, WithFaker;
 
     protected static string $accessToken;
     protected static string $refreshToken;
 
-    protected function getTestResponse(array $parameters = [], array $headers = []): TestResponse
+    protected function deleteAccountResponse(array $parameters = [], array $headers = []): TestResponse
     {
         return $this->deleteJson(route('deleteUserAccount'), $parameters, $headers);
     }
@@ -33,14 +35,14 @@ class DeleteUserAccountTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->deleteAccountResponse()->assertUnauthorized();
     }
 
     public function testAttributesMustBeRequired(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse()->assertJsonValidationErrors(['password']);
+        $this->deleteAccountResponse()->assertJsonValidationErrors(['password']);
     }
 
     public function testDeleteUser(): void
@@ -66,7 +68,7 @@ class DeleteUserAccountTest extends TestCase
 
         $userToken = Passport::token()->query()->where('user_id', $user->id)->sole();
 
-        $this->getTestResponse(['password' => 'password'], [
+        $this->deleteAccountResponse(['password' => 'password'], [
             'Authorization' => 'Bearer ' . static::$accessToken
         ])->assertOk();
 
@@ -126,6 +128,27 @@ class DeleteUserAccountTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['password' => 'or 1=1'])->assertUnauthorized();
+        $this->deleteAccountResponse(['password' => 'or 1=1'])->assertUnauthorized();
+    }
+
+    public function testCanCreateNewAccountWithDeletedAccountEmail(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->deleteAccountResponse(['password' => 'password'])->assertOk();
+
+        Passport::actingAsClient($client = ClientFactory::new()->asPasswordClient()->create());
+
+        $this->postJson(route('createUser'), [
+            'firstname' => $this->faker->firstName,
+            'lastname'  => $this->faker->lastName,
+            'username'  => UserFactory::randomUsername(),
+            'email' => $user->email,
+            'password'  => $password = Str::random(7) . rand(0, 9),
+            'password_confirmation' => $password,
+            'client_id' => $client->id,
+            'client_secret' => $client->secret,
+            'grant_type' => 'password',
+        ])->assertCreated();
     }
 }

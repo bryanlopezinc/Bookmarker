@@ -56,6 +56,7 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
             Route::post('hide', F\HideFolderBookmarksController::class)->middleware(StringToArray::keys('bookmarks'))->name('hideFolderBookmarks');
         });
 
+        Route::get('collaborators', F\FetchFolderCollaboratorsController::class)->name('fetchFolderCollaborators');
         Route::delete('collaborators', F\DeleteCollaboratorController::class)->name('deleteFolderCollaborator');
         Route::delete('collaborators/revoke_permissions', F\RevokeFolderCollaboratorPermissionsController::class)->middleware([StringToArray::keys('permissions')])->name('revokePermissions');
         Route::get('invite', F\SendFolderCollaborationInviteController::class)->middleware([StringToArray::keys('permissions')])->name('sendFolderCollaborationInvite');

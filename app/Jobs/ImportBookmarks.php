@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\DataTransferObjects\ImportData;
+use App\Enums\ImportSource;
 use App\Importers\Chrome\Importer as ChromeImporter;
+use App\Importers\ImporterInterface;
 use App\Importers\Pocket\Importer as PocketImporter;
 use App\Importers\Safari\Importer as SafariImporter;
 use Illuminate\Bus\Queueable;
@@ -31,28 +33,16 @@ final class ImportBookmarks implements ShouldQueue
         DB::transaction(function () {
             $importData = $this->importData;
 
-            $this->when($importData->source()->isFromChrome(), function (ChromeImporter $importer) use ($importData) {
-                $importer->import($importData->userID(), $importData->requestID(), $importData->data());
-            });
-
-            $this->when($importData->source()->isFromPocket(), function (PocketImporter $importer) use ($importData) {
-                $importer->import($importData->userID(), $importData->requestID(), $importData->data());
-            });
-
-            $this->when($importData->source()->isFromSafari(), function (SafariImporter $importer) use ($importData) {
-                $importer->import($importData->userID(), $importData->requestID(), $importData->data());
-            });
+            $this->getImporter()->import($importData->userID(), $importData->requestID(), $importData->data());
         });
     }
 
-    private function when(bool $condition, \Closure $closure): void
+    public function getImporter(): ImporterInterface
     {
-        if (!$condition) {
-            return;
-        }
-
-        $closureParameters = array_map(fn (string $class) => app($class), $this->closureParameterTypes($closure));
-
-        $closure(...$closureParameters);
+        return match ($this->importData->source()) {
+            ImportSource::CHROME => app(ChromeImporter::class),
+            ImportSource::POCKET => app(PocketImporter::class),
+            ImportSource::SAFARI => app(SafariImporter::class),
+        };
     }
 }

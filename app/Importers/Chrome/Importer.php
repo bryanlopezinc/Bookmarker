@@ -7,13 +7,14 @@ namespace App\Importers\Chrome;
 use App\Exceptions\MalformedURLException;
 use App\Importers\FilesystemInterface;
 use App\Importers\Concerns\ResolvesImportTimestamp;
+use App\Importers\ImporterInterface;
 use App\Services\CreateBookmarkService;
 use App\ValueObjects\Url;
 use App\ValueObjects\UserID;
 use App\ValueObjects\Uuid;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 
-final class Importer
+final class Importer implements ImporterInterface
 {
     use ResolvesImportTimestamp;
 

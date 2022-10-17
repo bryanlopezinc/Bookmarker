@@ -273,4 +273,54 @@ class FetchUserCollaborationsTest extends TestCase
                 'canRemoveBookmarks' => false
             ]);
     }
+
+    public function testWhenFolderOwnerHasDeletedAccount(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->create();
+
+        Passport::actingAs($collaborator);
+        $this->userCollaborationsResponse()
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+
+        Passport::actingAs($folderOwner);
+        $this->deleteJson(route('deleteUserAccount'), ['password' => 'password'])->assertOk();
+
+        Passport::actingAs($collaborator);
+        $this->userCollaborationsResponse()
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
+    public function testWillNotIncludeDeletedUsersFolders(): void
+    {
+        [$mark, $jeff, $collaborator] = UserFactory::new()->count(3)->create();
+
+        $marksFolder = FolderFactory::new()->create(['user_id' => $mark->id]);
+        $jeffsFolder = FolderFactory::new()->create(['user_id' => $jeff->id]);
+        $permission =  FolderAccessFactory::new()->user($collaborator->id);
+
+        $permission->folder($marksFolder->id)->create();
+        $permission->folder($jeffsFolder->id)->create();
+
+        Passport::actingAs($collaborator);
+        $this->userCollaborationsResponse()
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
+
+        Passport::actingAs($mark);
+        $this->deleteJson(route('deleteUserAccount'), ['password' => 'password'])->assertOk();
+
+        Passport::actingAs($collaborator);
+        $this->userCollaborationsResponse()
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonFragment(['id' => $jeffsFolder->id]);
+    }
 }

@@ -13,6 +13,7 @@ use App\QueryColumns\FolderAttributes;
 use App\ValueObjects\UserID;
 use Illuminate\Pagination\Paginator;
 use App\FolderPermissions as Permissions;
+use App\Models\DeletedUser;
 use Illuminate\Support\Collection;
 
 final class FetchUserCollaborationsRepository
@@ -26,6 +27,7 @@ final class FetchUserCollaborationsRepository
         $collaborations = Folder::onlyAttributes(new FolderAttributes())
             ->join('folders_access', 'folders_access.folder_id', '=', 'folders.id')
             ->where('folders_access.user_id', $userID->toInt())
+            ->whereNotIn('folders.user_id', DeletedUser::select('deleted_users.user_id'))
             ->groupBy('folders_access.folder_id')
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
 
@@ -46,7 +48,7 @@ final class FetchUserCollaborationsRepository
         return FolderPermission::select('name', 'folder_id')
             ->join('folders_access', 'folders_access.permission_id', '=', 'folders_permissions.id')
             ->where('user_id', $collaborator->toInt())
-           ->whereIn('folder_id', $folderIDs)
+            ->whereIn('folder_id', $folderIDs)
             ->get()
             ->map(fn (FolderPermission $model) => $model->toArray());
     }

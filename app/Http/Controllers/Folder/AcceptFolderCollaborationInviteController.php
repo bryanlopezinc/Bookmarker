@@ -13,6 +13,8 @@ final class AcceptFolderCollaborationInviteController
 {
     public function __invoke(Request $request, Service $service): JsonResponse
     {
+        $request->validate(['invite_hash' => ['required', 'uuid']]);
+
         $service->accept($request);
 
         return response()->json(status: Response::HTTP_CREATED);

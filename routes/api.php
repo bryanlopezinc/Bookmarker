@@ -75,7 +75,7 @@ Route::post('token/refresh', [AccessTokenController::class, 'issueToken'])->name
 
 Route::middleware([CheckClientCredentials::class])->group(function () {
     Route::get('folders/public/bookmarks', F\FetchPublicFolderBookmarksController::class)->name('viewPublicFolderBookmarks');
-    Route::get('folders/invite/accept', F\AcceptFolderCollaborationInviteController::class)->middleware([DBTransaction::class, 'signed'])->name('acceptFolderCollaborationInvite');
+    Route::get('folders/invite/accept', F\AcceptFolderCollaborationInviteController::class)->middleware([DBTransaction::class])->name('acceptFolderCollaborationInvite');
 
     Route::post('users', A\CreateUserController::class)->middleware([DBTransaction::class])->name('createUser');
     Route::post('users/password/reset-token', A\RequestPasswordResetController::class)->middleware([DBTransaction::class])->name('requestPasswordResetToken');

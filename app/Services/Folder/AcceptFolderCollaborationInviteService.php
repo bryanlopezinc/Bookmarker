@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
+use App\Cache\InviteTokensStore;
 use App\Collections\ResourceIDsCollection as IDs;
 use App\Contracts\FolderRepositoryInterface;
 use App\DataTransferObjects\Folder;
@@ -16,44 +17,53 @@ use App\QueryColumns\FolderAttributes;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Crypt;
-use App\Mail\FolderCollaborationInviteMail as Payload;
+use App\Cache\InviteTokensStore as Payload;
+use App\ValueObjects\Uuid;
 
 final class AcceptFolderCollaborationInviteService
 {
     public function __construct(
         private FolderRepositoryInterface $folderRepository,
         private UserRepository $userRepository,
-        private FolderPermissionsRepository $folderPermissionsRepository
+        private FolderPermissionsRepository $folderPermissionsRepository,
+        private InviteTokensStore $inviteTokensStore
     ) {
     }
 
     public function accept(Request $request): void
     {
-        $decrypted = Crypt::decrypt($request->input('invite_hash'));
+        $invitationData = $this->inviteTokensStore->get(new Uuid($request->input('invite_hash')));
 
-        //Ensure Inviter and invitee still exist.
-        $this->ensureUsersStillExist($decrypted);
+        $this->ensureInvitationTokenIsValid($invitationData);
 
-        //Ensure folder still exist.
-        $folder = $this->folderRepository->find(new ResourceID($decrypted[Payload::FOLDER_ID]), FolderAttributes::only('id'));
+        $this->ensureUsersStillExist($invitationData);
 
-        $inviteeID = new UserID($decrypted[Payload::INVITEE_ID]);
+        $folder = $this->folderRepository->find(new ResourceID($invitationData[Payload::FOLDER_ID]), FolderAttributes::only('id'));
+        $inviteeID = new UserID($invitationData[Payload::INVITEE_ID]);
 
         $this->ensureInvitationHasNotBeenAccepted($inviteeID, $folder);
 
         $this->folderPermissionsRepository->create(
             $inviteeID,
             $folder->folderID,
-            $this->extractPermissions($decrypted)
+            $this->extractPermissions($invitationData)
         );
     }
 
-    private function extractPermissions(array $decrypted): Permissions
+    private function ensureInvitationTokenIsValid(array $data): void
+    {
+        if (empty($data)) {
+            throw HttpException::notFound([
+                'message' => 'Invitation not found or expired'
+            ]);
+        }
+    }
+
+    private function extractPermissions(array $invitationData): Permissions
     {
         $permissionsCollaboratorWillHaveByDefault = Permissions::fromArray(['read']);
 
-        $permissionsSetByFolderOwner = Permissions::fromUnSerialized($decrypted[Payload::PERMISSIONS]);
+        $permissionsSetByFolderOwner = Permissions::fromUnSerialized($invitationData[Payload::PERMISSIONS]);
 
         if (!$permissionsSetByFolderOwner->hasAnyPermission()) {
             return $permissionsCollaboratorWillHaveByDefault;

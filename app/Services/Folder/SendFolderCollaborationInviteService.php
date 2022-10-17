@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
+use App\Cache\InviteTokensStore;
 use App\Contracts\FolderRepositoryInterface;
 use App\DataTransferObjects\Builders\UserBuilder;
 use App\DataTransferObjects\{Folder, User};
@@ -16,7 +17,7 @@ use App\Repositories\Folder\FolderPermissionsRepository;
 use App\Repositories\UserRepository;
 use App\FolderPermissions;
 use App\QueryColumns\FolderAttributes;
-use App\ValueObjects\{ResourceID, Email};
+use App\ValueObjects\{ResourceID, Email, Uuid};
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Support\Facades\{RateLimiter, Mail};
 use Symfony\Component\HttpKernel\Exception\HttpException as SymfonyHttpException;
@@ -26,7 +27,8 @@ final class SendFolderCollaborationInviteService
     public function __construct(
         private FolderRepositoryInterface $folderRepository,
         private UserRepository $userRepository,
-        private FolderPermissionsRepository $permissions
+        private FolderPermissionsRepository $permissions,
+        private InviteTokensStore $inviteTokensStore
     ) {
     }
 
@@ -121,7 +123,17 @@ final class SendFolderCollaborationInviteService
 
     private function sendInvitationCallback(Folder $folder, User $invitee, User $inviter, FolderPermissions $permissions): \Closure
     {
-        return fn () => Mail::to($invitee->email->value)->queue(new Invite($inviter, $folder, $invitee, $permissions));
+        return function () use ($folder, $invitee, $inviter, $permissions) {
+            $this->inviteTokensStore->store(
+                $token = Uuid::generate(),
+                $inviter->id,
+                $invitee->id,
+                $folder->folderID,
+                $permissions
+            );
+
+            Mail::to($invitee->email->value)->queue(new Invite($inviter, $folder, $invitee, $permissions, $token));
+        };
     }
 
     private function ensureInviteeIsNotAlreadyACollaborator(User $invitee, Folder $folder): void

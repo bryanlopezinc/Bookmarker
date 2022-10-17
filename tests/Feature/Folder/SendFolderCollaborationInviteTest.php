@@ -2,17 +2,18 @@
 
 namespace Tests\Feature\Folder;
 
-use App\Mail\FolderCollaborationInviteMail;
-use App\Models\SecondaryEmail;
-use Database\Factories\FolderAccessFactory;
-use Database\Factories\FolderFactory;
-use Database\Factories\UserFactory;
-use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
+use Illuminate\Support\Str;
 use Illuminate\Http\Response;
+use App\Models\SecondaryEmail;
+use Laravel\Passport\Passport;
+use Database\Factories\UserFactory;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
-use Tests\TestCase;
+use Database\Factories\FolderFactory;
+use App\Mail\FolderCollaborationInviteMail;
+use Database\Factories\FolderAccessFactory;
+use Illuminate\Foundation\Testing\WithFaker;
 
 class SendFolderCollaborationInviteTest extends TestCase
 {
@@ -184,12 +185,15 @@ class SendFolderCollaborationInviteTest extends TestCase
 
     public function testCanSendInviteToPrimaryEmail(): void
     {
+        Str::createUuidsUsingSequence([$inviteToken = $this->faker->uuid]);
+
+        config([
+            'settings.ACCEPT_INVITE_URL' => 'https://laravel.com/docs/9.x/validation?invite_hash=:invite_hash'
+        ]);
+
         [$user, $invitee] = UserFactory::new()->count(2)->create();
         $mailer = Mail::getFacadeRoot();
-
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
 
         Passport::actingAs($user);
         Mail::fake();
@@ -199,7 +203,7 @@ class SendFolderCollaborationInviteTest extends TestCase
             'folder_id' => $folder->id,
         ])->assertOk();
 
-        Mail::assertQueued(function (FolderCollaborationInviteMail $mail) use ($invitee, $user, $mailer, $folder) {
+        Mail::assertQueued(function (FolderCollaborationInviteMail $mail) use ($invitee, $user, $mailer, $folder, $inviteToken) {
             $this->assertSame($invitee->email, $mail->to[0]['address']);
 
             /** @see https://github.com/laravel/framework/issues/24005#issuecomment-989629711 */
@@ -208,6 +212,7 @@ class SendFolderCollaborationInviteTest extends TestCase
             $mail->assertSeeInHtml($user->firstname);
             $mail->assertSeeInHtml($user->lastname);
             $mail->assertSeeInHtml($folder->name);
+            $mail->assertSeeInHtml('https://laravel.com/docs/9.x/validation?invite_hash=' . $inviteToken);
 
             return true;
         });

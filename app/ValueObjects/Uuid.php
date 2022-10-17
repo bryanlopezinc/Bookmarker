@@ -17,6 +17,6 @@ final class Uuid
 
     public static function generate(): self
     {
-        return new self(Str::uuid()->toString());
+        return new self((string)Str::uuid());
     }
 }

@@ -7,13 +7,13 @@ namespace Tests\Feature\Folder;
 use App\Mail\FolderCollaborationInviteMail;
 use App\Models\FolderAccess;
 use App\Models\FolderPermission as Permission;
+use App\Models\SecondaryEmail;
 use App\ValueObjects\Url;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
@@ -39,15 +39,15 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         //should be UnAuthorized if route is protected but returns
-        // a forbidden response because we provided an invalid url signature.
-        $this->acceptInviteResponse()->assertForbidden();
+        // a assertUnprocessable response because we provided an invalid data.
+        $this->acceptInviteResponse()->assertUnprocessable();
     }
 
     public function testAuthorizedUserCanAccessRoute(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->acceptInviteResponse()->assertForbidden();
+        $this->acceptInviteResponse()->assertUnprocessable();
     }
 
     public function testUnAuthorizedClientCannotAccessRoute(): void
@@ -55,35 +55,26 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         $this->acceptInviteResponse()->assertUnauthorized();
     }
 
-    public function testSignatureMustBeValid(): void
+    public function testRequiredAttributesMustBePresent(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        [$user, $invitee] = UserFactory::new()->count(2)->create();
+        $this->acceptInviteResponse([])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'invite_hash' => 'The invite hash field is required.'
+            ]);
+    }
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+    public function testAttributesMustBeValid(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $parameters = $this->extractSignedUrlParameters(function () use ($invitee, $folder, $user) {
-            Passport::actingAs($user);
-
-            $this->getJson(route('sendFolderCollaborationInvite', [
-                'email' => $invitee->email,
-                'folder_id' => $folder->id,
-            ]))->assertOk();
-        });
-
-        $parameters['invite_hash'] = Crypt::encrypt('some-data');
-
-        $this->acceptInviteResponse($parameters)
-            ->assertForbidden()
-            ->assertSee('Invalid signature.');
-
-        $this->assertDatabaseMissing(FolderAccess::class, [
-            'folder_id' => $folder->id,
-            'user_id' => $invitee->id,
-        ]);
+        $this->acceptInviteResponse(['invite_hash' => $this->faker->word])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'invite_hash' => 'The invite hash must be a valid UUID.'
+            ]);
     }
 
     public function testWillNotCreatePermissionWhenInvitationHasExpired(): void
@@ -96,7 +87,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $parameters = $this->extractSignedUrlParameters(function () use ($invitee, $folder, $user) {
+        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
             Passport::actingAs($user);
 
             $this->getJson(route('sendFolderCollaborationInvite', [
@@ -107,14 +98,27 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $this->travel(25)->hours(function () use ($parameters) {
             $this->acceptInviteResponse($parameters)
-                ->assertForbidden()
-                ->assertSee('Invalid signature.');
+                ->assertNotFound()
+                ->assertExactJson([
+                    'message' => 'Invitation not found or expired'
+                ]);
         });
 
         $this->assertDatabaseMissing(FolderAccess::class, [
             'folder_id' => $folder->id,
             'user_id' => $invitee->id,
         ]);
+    }
+
+    public function testWillNotCreatePermissionWhenInvitationWasNeverSent(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        $this->acceptInviteResponse(['invite_hash' => $this->faker->uuid])
+            ->assertNotFound()
+            ->assertExactJson([
+                'message' => 'Invitation not found or expired'
+            ]);
     }
 
     public function testWillAcceptInviteWithPermissions(): void
@@ -168,7 +172,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $parameters['permissions'] = implode(',', $permissions);
         }
 
-        $parameters = $this->extractSignedUrlParameters(function () use ($user, $parameters) {
+        $parameters = $this->extractInviteUrlParameters(function () use ($user, $parameters) {
             Passport::actingAs($user);
             $this->getJson(route('sendFolderCollaborationInvite', $parameters))->assertOk();
         });
@@ -206,7 +210,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $parameters = $this->extractSignedUrlParameters(function () use ($invitee, $folder, $user) {
+        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
             Passport::actingAs($user);
 
             $this->getJson(route('sendFolderCollaborationInvite', [
@@ -218,6 +222,78 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         $this->acceptInviteResponse($parameters)->assertCreated();
 
         $this->acceptInviteResponse($parameters)
+            ->assertStatus(Response::HTTP_CONFLICT)
+            ->assertExactJson([
+                'message' => 'Invitation already accepted'
+            ]);
+    }
+
+    public function testWhenMultipleInvitesWereSent(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$user, $invitee] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+
+        $firstInviteParameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
+            Passport::actingAs($user);
+
+            $this->getJson(route('sendFolderCollaborationInvite', [
+                'email' => $invitee->email,
+                'folder_id' => $folder->id,
+            ]))->assertOk();
+        });
+
+        $secondInviteParameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
+            Passport::actingAs($user);
+
+            $this->travel(2)->minutes(function () use ($invitee, $folder) {
+                $this->getJson(route('sendFolderCollaborationInvite', [
+                    'email' => $invitee->email,
+                    'folder_id' => $folder->id,
+                ]))->assertOk();
+            });
+        });
+
+        $this->acceptInviteResponse($firstInviteParameters)->assertCreated();
+        $this->acceptInviteResponse($secondInviteParameters)
+            ->assertStatus(Response::HTTP_CONFLICT)
+            ->assertExactJson([
+                'message' => 'Invitation already accepted'
+            ]);
+    }
+
+    public function testWhenMultipleInvitesWereSentToDifferentEmails(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$user, $invitee] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+
+        SecondaryEmail::query()->create([
+            'email' => $inviteeSecondaryEmail = $this->faker->unique()->email,
+            'user_id' => $invitee->id,
+            'verified_at' => now()
+        ]);
+
+        $firstInviteParameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
+            Passport::actingAs($user);
+            $this->getJson(route('sendFolderCollaborationInvite', [
+                'email' => $invitee->email,
+                'folder_id' => $folder->id,
+            ]))->assertOk();
+        });
+
+        $secondInviteParameters = $this->extractInviteUrlParameters(function () use ($inviteeSecondaryEmail, $folder, $user) {
+            Passport::actingAs($user);
+            $this->getJson(route('sendFolderCollaborationInvite', [
+                'email' => $inviteeSecondaryEmail,
+                'folder_id' => $folder->id,
+            ]))->assertOk();
+        });
+
+        $this->acceptInviteResponse($firstInviteParameters)->assertCreated();
+        $this->acceptInviteResponse($secondInviteParameters)
             ->assertStatus(Response::HTTP_CONFLICT)
             ->assertExactJson([
                 'message' => 'Invitation already accepted'
@@ -236,7 +312,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         Passport::actingAs($user);
 
-        $parameters = $this->extractSignedUrlParameters(function () use ($invitee, $folder) {
+        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
             $this->getJson(route('sendFolderCollaborationInvite', [
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,
@@ -267,7 +343,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $parameters = $this->extractSignedUrlParameters(function () use ($invitee, $folder, $user) {
+        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
             Passport::actingAs($user);
 
             $this->getJson(route('sendFolderCollaborationInvite', [
@@ -277,9 +353,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         });
 
         Passport::actingAs($invitee);
-
         $this->deleteJson(route('deleteUserAccount'), ['password' => 'password'])->assertOk();
-
         $this->acceptInviteResponse($parameters)
             ->assertNotFound()
             ->assertExactJson([
@@ -304,7 +378,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         Passport::actingAs($user);
 
-        $parameters = $this->extractSignedUrlParameters(function () use ($invitee, $folder) {
+        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
             $this->getJson(route('sendFolderCollaborationInvite', [
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,
@@ -312,7 +386,6 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         });
 
         $this->deleteJson(route('deleteUserAccount'), ['password' => 'password'])->assertOk();
-
         $this->acceptInviteResponse($parameters)
             ->assertNotFound()
             ->assertExactJson([
@@ -325,10 +398,10 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         ]);
     }
 
-    private function extractSignedUrlParameters(\Closure $action): array
+    private function extractInviteUrlParameters(\Closure $action): array
     {
         config([
-            'settings.ACCEPT_INVITE_URL' => $this->faker->url . '?invite_hash=:invite_hash&signature=:signature&expires=:expires'
+            'settings.ACCEPT_INVITE_URL' => $this->faker->url . '?invite_hash=:invite_hash'
         ]);
 
         $parameters = [];
@@ -337,8 +410,6 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         Mail::assertQueued(function (FolderCollaborationInviteMail $mail) use (&$parameters) {
             $parts = (new Url($mail->inviteUrl()))->parseQuery();
-            $parameters['expires'] = $parts['expires'];
-            $parameters['signature'] = $parts['signature'];
             $parameters['invite_hash'] = $parts['invite_hash'];
 
             return true;

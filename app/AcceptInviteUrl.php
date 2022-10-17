@@ -18,7 +18,7 @@ final class AcceptInviteUrl
             throw new \Exception('The accept invite url is invalid');
         }
 
-        foreach ([':invite_hash', ':signature', ':expires'] as $placeHolder) {
+        foreach ([':invite_hash'] as $placeHolder) {
             if (!str_contains($this->value, $placeHolder)) {
                 throw new \Exception("The verification url  must contain $placeHolder placeholder");
             }

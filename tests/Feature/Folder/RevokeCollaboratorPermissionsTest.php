@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder;
 
+use App\Cache\InviteTokensStore;
+use App\FolderPermissions;
 use App\Models\FolderAccess;
 use App\Models\FolderPermission;
+use App\ValueObjects\ResourceID;
+use App\ValueObjects\UserID;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderAccessFactory;
 use Database\Factories\FolderFactory;
@@ -13,8 +17,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
-use App\Mail\FolderCollaborationInviteMail as Payload;
-use Illuminate\Support\Facades\Crypt;
+use App\ValueObjects\Uuid;
 use Laravel\Passport\Database\Factories\ClientFactory;
 
 class RevokeCollaboratorPermissionsTest extends TestCase
@@ -395,19 +398,19 @@ class RevokeCollaboratorPermissionsTest extends TestCase
 
         $folderID = FolderFactory::new()->create(['user_id' => $folderOwner->id])->id;
 
-        $inviteHash = Crypt::encrypt([
-            Payload::INVITER_ID => $folderOwner->id,
-            Payload::INVITEE_ID => $collaborator->id,
-            Payload::FOLDER_ID => $folderID,
-            Payload::PERMISSIONS => ['A_B']
-        ]);
+        (new InviteTokensStore(app('cache')->store()))->store(
+            $token = Uuid::generate(),
+            new UserID($folderOwner->id),
+            new UserID($collaborator->id),
+            new ResourceID($folderID),
+            FolderPermissions::fromUnSerialized(['A_B'])
+        );
 
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ValidateSignature::class)
-            ->getJson(route('acceptFolderCollaborationInvite', [
-                'invite_hash' => $inviteHash
-            ]))->assertCreated();
+        $this->getJson(route('acceptFolderCollaborationInvite', [
+            'invite_hash' => $token->value
+        ]))->assertCreated();
 
         Passport::actingAs($folderOwner);
         $this->revokePermissionsResponse([

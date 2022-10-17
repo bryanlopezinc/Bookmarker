@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
+use App\Collections\BookmarksCollection;
 use App\Contracts\FolderRepositoryInterface;
 use App\DataTransferObjects\Folder;
 use App\DataTransferObjects\FolderBookmark;
+use App\Jobs\CheckBookmarksHealth;
 use App\PaginationData;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\Repositories\Folder\FetchFolderBookmarksRepository;
@@ -15,6 +17,7 @@ use App\ValueObjects\UserID;
 use Illuminate\Pagination\Paginator;
 use App\QueryColumns\FolderAttributes as Attributes;
 use App\Repositories\Folder\FolderPermissionsRepository;
+use Illuminate\Support\Collection;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 final class FetchFolderBookmarksService
@@ -35,7 +38,14 @@ final class FetchFolderBookmarksService
 
         $this->ensureUserCanViewFolderBookmarks($userID, $folder);
 
-        return $this->folderBookmarksRepository->bookmarks($folderID, $pagination, $userID);
+        $folderBookmarks = $this->folderBookmarksRepository->bookmarks($folderID, $pagination, $userID);
+
+        $folderBookmarks
+            ->getCollection()
+            ->map(fn (FolderBookmark $folderBookmark) => $folderBookmark->bookmark)
+            ->tap(fn (Collection $bookmarks) => dispatch(new CheckBookmarksHealth(new BookmarksCollection($bookmarks))));
+
+        return $folderBookmarks;
     }
 
     private function ensureUserCanViewFolderBookmarks(UserID $userID, Folder $folder): void

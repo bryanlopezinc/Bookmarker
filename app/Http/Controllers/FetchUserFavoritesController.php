@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Collections\BookmarksCollection;
 use App\Http\Resources\BookmarkResource;
 use App\Http\Resources\PaginatedResourceCollection;
+use App\Jobs\CheckBookmarksHealth;
 use App\PaginationData;
 use App\Repositories\FavoriteRepository as Repository;
 use App\ValueObjects\UserID;
@@ -17,9 +19,10 @@ final class FetchUserFavoritesController
     {
         $request->validate(PaginationData::new()->asValidationRules());
 
-        return new PaginatedResourceCollection(
-            $repository->get(UserID::fromAuthUser(), PaginationData::fromRequest($request)),
-            BookmarkResource::class
-        );
+        $userFavorites = $repository->get(UserID::fromAuthUser(), PaginationData::fromRequest($request));
+
+        dispatch(new CheckBookmarksHealth(new BookmarksCollection($userFavorites->getCollection())));
+
+        return new PaginatedResourceCollection($userFavorites, BookmarkResource::class);
     }
 }

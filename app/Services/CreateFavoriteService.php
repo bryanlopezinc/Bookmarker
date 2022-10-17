@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Collections\BookmarksCollection;
 use App\Collections\ResourceIDsCollection;
 use App\Exceptions\HttpException;
+use App\Jobs\CheckBookmarksHealth;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkAttributes;
 use App\Repositories\FavoriteRepository;
@@ -24,7 +26,7 @@ final class CreateFavoriteService
     {
         $userId = UserID::fromAuthUser();
 
-        $bookmarks = $this->bookmarkRepository->findManyById($bookmarkIDs, BookmarkAttributes::only('user_id,id'));
+        $bookmarks = $this->bookmarkRepository->findManyById($bookmarkIDs, BookmarkAttributes::only('user_id,id,url'));
 
         $allBookmarksExists = $bookmarkIDs->count() === $bookmarks->count();
 
@@ -39,5 +41,7 @@ final class CreateFavoriteService
         }
 
         $this->repository->createMany($bookmarkIDs, $userId);
+
+        dispatch(new CheckBookmarksHealth(new BookmarksCollection($bookmarks)));
     }
 }

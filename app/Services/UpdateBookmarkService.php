@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Collections\BookmarksCollection;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use Illuminate\Http\Response;
 use App\Http\Requests\UpdateBookmarkRequest;
@@ -11,6 +12,7 @@ use App\Repositories\FetchBookmarksRepository;
 use App\Repositories\UpdateBookmarkRepository as Repository;
 use App\DataTransferObjects\UpdateBookmarkData;
 use App\Exceptions\HttpException;
+use App\Jobs\CheckBookmarksHealth;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkAttributes;
 
@@ -23,7 +25,7 @@ final class UpdateBookmarkService
     public function fromRequest(UpdateBookmarkRequest $request): void
     {
         $newAttributes = $this->buildUpdateData($request);
-        $bookmark = $this->bookmarksRepository->findById($newAttributes->bookmark->id, BookmarkAttributes::only('user_id,tags'));
+        $bookmark = $this->bookmarksRepository->findById($newAttributes->bookmark->id, BookmarkAttributes::only('user_id,tags,url,id'));
 
         $canAddMoreTagsToBookmark = $bookmark->tags->count() + $newAttributes->bookmark->tags->count() <= setting('MAX_BOOKMARKS_TAGS');
 
@@ -38,6 +40,8 @@ final class UpdateBookmarkService
         }
 
         $this->repository->update($newAttributes);
+
+        dispatch(new CheckBookmarksHealth(new BookmarksCollection([$bookmark])));
     }
 
     private function buildUpdateData(UpdateBookmarkRequest $request): UpdateBookmarkData

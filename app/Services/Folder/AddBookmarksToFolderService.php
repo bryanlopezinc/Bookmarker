@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
+use App\Collections\BookmarksCollection;
 use App\Collections\ResourceIDsCollection as IDs;
 use App\Contracts\FolderRepositoryInterface;
+use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Folder;
 use App\Events\FolderModifiedEvent;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
@@ -14,10 +16,12 @@ use App\Repositories\FetchBookmarksRepository;
 use App\Repositories\Folder\FetchFolderBookmarksRepository;
 use App\ValueObjects\ResourceID;
 use App\Exceptions\HttpException as HttpException;
+use App\Jobs\CheckBookmarksHealth;
 use App\QueryColumns\FolderAttributes as Attributes;
 use App\Repositories\Folder\FolderBookmarkRepository;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\ValueObjects\UserID;
+use Illuminate\Support\Collection;
 use Symfony\Component\HttpKernel\Exception\HttpException as SymfonyHttpException;
 
 final class AddBookmarksToFolderService
@@ -34,15 +38,17 @@ final class AddBookmarksToFolderService
     public function add(IDs $bookmarkIDs, ResourceID $folderID, IDs $makeHidden): void
     {
         $folder = $this->repository->find($folderID, Attributes::only('id,user_id,bookmarks_count'));
+        $bookmarks = $this->bookmarksRepository->findManyById($bookmarkIDs, BookmarkAttributes::only('user_id,id,url'));
 
         $this->ensureUserHasPermissionToPerformAction($folder);
         $this->ensureFolderCanContainBookmarks($bookmarkIDs, $folder);
-        $this->ensureBookmarksExistAndBelongToUser($bookmarkIDs);
+        $this->ensureBookmarksExistAndBelongToUser($bookmarks, $bookmarkIDs);
         $this->ensureFolderDoesNotContainBookmarks($folderID, $bookmarkIDs);
 
         $this->createFolderBookmark->add($folderID, $bookmarkIDs, $makeHidden);
 
         event(new FolderModifiedEvent($folderID));
+        dispatch(new CheckBookmarksHealth(new BookmarksCollection($bookmarks)));
     }
 
     private function ensureUserHasPermissionToPerformAction(Folder $folder): void
@@ -71,11 +77,12 @@ final class AddBookmarksToFolderService
         }
     }
 
-    private function ensureBookmarksExistAndBelongToUser(IDs $bookmarkIDs): void
+    /**
+     * @param Collection<Bookmark> $bookmarks
+     */
+    private function ensureBookmarksExistAndBelongToUser(Collection $bookmarks, IDs $bookmarksToAddToFolder): void
     {
-        $bookmarks = $this->bookmarksRepository->findManyById($bookmarkIDs, BookmarkAttributes::only('user_id,id'));
-
-        if ($bookmarks->count() !== $bookmarkIDs->count()) {
+        if ($bookmarks->count() !== $bookmarksToAddToFolder->count()) {
             throw HttpException::notFound(['message' => 'The bookmarks does not exists']);
         }
 

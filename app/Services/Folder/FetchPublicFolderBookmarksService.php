@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
+use App\Collections\BookmarksCollection;
 use App\Contracts\FolderRepositoryInterface;
 use App\PaginationData;
 use App\ValueObjects\ResourceID;
@@ -12,6 +13,8 @@ use App\Repositories\Folder\FetchFolderBookmarksRepository;
 use App\Exceptions\FolderNotFoundHttpResponseException;
 use App\QueryColumns\FolderAttributes as Attributes;
 use App\DataTransferObjects\FolderBookmark;
+use App\Jobs\CheckBookmarksHealth;
+use Illuminate\Support\Collection;
 
 final class FetchPublicFolderBookmarksService
 {
@@ -30,6 +33,13 @@ final class FetchPublicFolderBookmarksService
 
         if (!$folder->isPublic) throw new FolderNotFoundHttpResponseException;
 
-        return $this->folderBookmarksRepository->onlyPublicBookmarks($folderID, $pagination);
+        $folderBookmarks = $this->folderBookmarksRepository->onlyPublicBookmarks($folderID, $pagination);
+
+        $folderBookmarks
+            ->getCollection()
+            ->map(fn (FolderBookmark $folderBookmark) => $folderBookmark->bookmark)
+            ->tap(fn (Collection $bookmarks) => dispatch(new CheckBookmarksHealth(new BookmarksCollection($bookmarks))));
+
+        return $folderBookmarks;
     }
 }

@@ -6,7 +6,6 @@ namespace App\Models;
 
 use App\Contracts\TaggableInterface;
 use App\Enums\TaggableType;
-use App\Observers\BookmarkObserver;
 use App\QueryColumns\BookmarkAttributes;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
@@ -54,14 +53,6 @@ final class Bookmark extends Model implements TaggableInterface
         'is_healthy' => 'bool',
         'resolved_at' => 'datetime'
     ];
-
-    /**
-     * {@inheritdoc}
-     */
-    protected static function booted()
-    {
-        self::observe([new BookmarkObserver]);
-    }
 
     public function tags(): HasManyThrough
     {

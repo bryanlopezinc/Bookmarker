@@ -2,12 +2,9 @@
 
 namespace App\Providers;
 
-use App\Collections\BookmarksCollection;
 use App\Contracts\HashedUrlInterface;
 use App\Contracts\UrlHasherInterface;
 use App\HashedUrl;
-use App\Jobs\CheckBookmarksHealth;
-use App\Observers\BookmarkObserver;
 use App\Cache\User2FACodeRepository;
 use App\Contracts\TwoFACodeGeneratorInterface;
 use App\Repositories\OAuth\EnsureEmailHasBeenVerified;
@@ -39,10 +36,6 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('local')) {
             $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
         }
-
-        $this->app->terminating(function (BookmarkObserver $observer) {
-            CheckBookmarksHealth::dispatch(new BookmarksCollection($observer->getRetrievedBookmarks()));
-        });
 
         $this->app->bind(TwoFACodeGeneratorInterface::class, TwoFACodeGenerator::class);
 

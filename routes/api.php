@@ -19,6 +19,7 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
 
         Route::get('folders', F\FetchUserFoldersController::class)->name('userFolders');
         Route::get('folders/collaborations', C\FetchUserCollaborationsController::class)->name('fetchUserCollaborations');
+        Route::delete('folders/collaborations/exit', F\LeaveFolderCollaborationController::class)->name('leaveFolderCollaboration');
 
         Route::post('emails/add', A\AddEmailToAccountController::class)->name('addEmailToAccount');
         Route::delete('emails/remove', A\DeleteEmailController::class)->name('removeEmailFromAccount');

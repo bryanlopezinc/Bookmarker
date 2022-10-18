@@ -13,7 +13,7 @@ use App\Repositories\UserRepository;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 
-final class DeleteCollaboratorService
+final class RemoveCollaboratorService
 {
     public function __construct(
         private UserRepository $userRepository,

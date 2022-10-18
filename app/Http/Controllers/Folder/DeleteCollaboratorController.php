@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Folder;
 
 use App\Rules\ResourceIdRule;
-use App\Services\Folder\DeleteCollaboratorService as Service;
+use App\Services\Folder\RemoveCollaboratorService as Service;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Illuminate\Http\JsonResponse;

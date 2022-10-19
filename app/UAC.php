@@ -103,14 +103,19 @@ final class UAC
         return $serializable;
     }
 
-    public function hasAnyPermission(): bool
+    public function isEmpty(): bool
     {
-        return count($this->permissions) > 0;
+        return empty($this->permissions);
+    }
+
+    public function isNotEmpty(): bool
+    {
+        return !$this->isEmpty();
     }
 
     public function containsAll(UAC $uac): bool
     {
-        if (!$uac->hasAnyPermission()) {
+        if ($uac->isEmpty()) {
             return false;
         }
 

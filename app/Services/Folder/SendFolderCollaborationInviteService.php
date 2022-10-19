@@ -138,9 +138,9 @@ final class SendFolderCollaborationInviteService
 
     private function ensureInviteeIsNotAlreadyACollaborator(User $invitee, Folder $folder): void
     {
-        $collaboratorExist = $this->permissions->getUserAccessControls($invitee->id, $folder->folderID)->hasAnyPermission();
+        $inviteeHasAnyAccessToFolder = $this->permissions->getUserAccessControls($invitee->id, $folder->folderID)->isNotEmpty();
 
-        if ($collaboratorExist) {
+        if ($inviteeHasAnyAccessToFolder) {
             throw HttpException::conflict([
                 'message' => 'User already a collaborator'
             ]);

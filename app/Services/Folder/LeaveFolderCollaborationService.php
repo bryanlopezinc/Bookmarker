@@ -33,9 +33,9 @@ final class LeaveFolderCollaborationService
 
     private function ensureCollaboratorHasAccessToFolder(UserID $collaboratorID, ResourceID $folderID): void
     {
-        $isACollaborator = $this->permissionsRepository->getUserAccessControls($collaboratorID, $folderID)->hasAnyPermission();
+        $isNotACollaborator = $this->permissionsRepository->getUserAccessControls($collaboratorID, $folderID)->isEmpty();
 
-        if (!$isACollaborator) {
+        if ($isNotACollaborator) {
             throw HttpException::notFound([
                 'message' => 'User not a collaborator'
             ]);

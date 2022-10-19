@@ -48,7 +48,7 @@ final class GrantPermissionsToCollaboratorService
 
     private function ensureUserIsCurrentlyACollaborator(UAC $collaboratorCurrentPermissions): void
     {
-        if (!$collaboratorCurrentPermissions->hasAnyPermission()) {
+        if ($collaboratorCurrentPermissions->isEmpty()) {
             throw HttpException::notFound([
                 'message' => 'User not a collaborator'
             ]);

@@ -48,7 +48,7 @@ final class RevokeFolderCollaboratorPermissionsService
 
     private function ensureUserIsCurrentlyACollaborator(UAC $collaboratorsCurrentPermissions): void
     {
-        if (!$collaboratorsCurrentPermissions->hasAnyPermission()) {
+        if ($collaboratorsCurrentPermissions->isEmpty()) {
             throw HttpException::notFound([
                 'message' => 'User not a collaborator'
             ]);

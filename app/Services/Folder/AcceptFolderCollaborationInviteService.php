@@ -25,7 +25,7 @@ final class AcceptFolderCollaborationInviteService
     public function __construct(
         private FolderRepositoryInterface $folderRepository,
         private UserRepository $userRepository,
-        private FolderPermissionsRepository $folderPermissionsRepository,
+        private FolderPermissionsRepository $permissions,
         private InviteTokensStore $inviteTokensStore
     ) {
     }
@@ -43,7 +43,7 @@ final class AcceptFolderCollaborationInviteService
 
         $this->ensureInvitationHasNotBeenAccepted($inviteeID, $folder);
 
-        $this->folderPermissionsRepository->create(
+        $this->permissions->create(
             $inviteeID,
             $folder->folderID,
             $this->extractPermissions($invitationData)
@@ -65,7 +65,7 @@ final class AcceptFolderCollaborationInviteService
 
         $permissionsSetByFolderOwner = UAC::fromUnSerialized($invitationData[Payload::PERMISSIONS]);
 
-        if (!$permissionsSetByFolderOwner->hasAnyPermission()) {
+        if ($permissionsSetByFolderOwner->isEmpty()) {
             return $permissionsCollaboratorWillHaveByDefault;
         }
 
@@ -88,9 +88,9 @@ final class AcceptFolderCollaborationInviteService
 
     private function ensureInvitationHasNotBeenAccepted(UserID $inviteeID, Folder $folder): void
     {
-        $collaboratorExist = $this->folderPermissionsRepository->getUserAccessControls($inviteeID, $folder->folderID)->hasAnyPermission();
+        $userHasAnyAccessToFolder = $this->permissions->getUserAccessControls($inviteeID, $folder->folderID)->isNotEmpty();
 
-        if ($collaboratorExist) {
+        if ($userHasAnyAccessToFolder) {
             throw HttpException::conflict([
                 'message' => 'Invitation already accepted'
             ]);

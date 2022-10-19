@@ -22,12 +22,6 @@ class UACTest extends TestCase
         new UAC([Model::VIEW_BOOKMARKS, Model::VIEW_BOOKMARKS]);
     }
 
-    public function testHasAnyPermission(): void
-    {
-        $this->assertFalse((new UAC([]))->hasAnyPermission());
-        $this->assertTrue((new UAC([Model::VIEW_BOOKMARKS]))->hasAnyPermission());
-    }
-
     public function testContainsAll(): void
     {
         $uac = new UAC([Model::VIEW_BOOKMARKS]);
@@ -78,5 +72,23 @@ class UACTest extends TestCase
 
         $this->assertFalse((new UAC([]))->canInviteUser());
         $this->assertTrue((new UAC([Model::DELETE_BOOKMARKS, Model::INVITE]))->canInviteUser());
+    }
+
+    public function testIsEmpty(): void
+    {
+        $uac = new UAC([]);
+        $this->assertTrue($uac->isEmpty());
+
+        $uac = new UAC([Model::ADD_BOOKMARKS]);
+        $this->assertFalse($uac->isEmpty());
+    }
+
+    public function testIsNotEmpty(): void
+    {
+        $uac = new UAC([]);
+        $this->assertFalse($uac->isNotEmpty());
+
+        $uac = new UAC([Model::ADD_BOOKMARKS]);
+        $this->assertTrue($uac->isNotEmpty());
     }
 }

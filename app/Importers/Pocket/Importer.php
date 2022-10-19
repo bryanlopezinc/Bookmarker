@@ -6,7 +6,7 @@ namespace App\Importers\Pocket;
 
 use App\Exceptions\InvalidTagException;
 use App\Exceptions\MalformedURLException;
-use App\Importers\Concerns\ResolvesImportTimestamp;
+use App\Importers\ResolveImportTimestamp;
 use App\Importers\FilesystemInterface;
 use App\Importers\ImporterInterface;
 use App\Services\CreateBookmarkService;
@@ -18,7 +18,7 @@ use Illuminate\Contracts\Filesystem\FileNotFoundException;
 
 final class Importer implements ImporterInterface
 {
-    use ResolvesImportTimestamp;
+    use ResolveImportTimestamp;
 
     public function __construct(
         private CreateBookmarkService $createBookmark,

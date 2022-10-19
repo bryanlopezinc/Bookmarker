@@ -6,7 +6,7 @@ namespace App\Importers\Chrome;
 
 use App\Exceptions\MalformedURLException;
 use App\Importers\FilesystemInterface;
-use App\Importers\Concerns\ResolvesImportTimestamp;
+use App\Importers\ResolveImportTimestamp;
 use App\Importers\ImporterInterface;
 use App\Services\CreateBookmarkService;
 use App\ValueObjects\Url;
@@ -16,7 +16,7 @@ use Illuminate\Contracts\Filesystem\FileNotFoundException;
 
 final class Importer implements ImporterInterface
 {
-    use ResolvesImportTimestamp;
+    use ResolveImportTimestamp;
 
     public function __construct(
         private CreateBookmarkService $createBookmark,

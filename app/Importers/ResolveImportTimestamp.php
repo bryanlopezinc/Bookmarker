@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Importers\Concerns;
+namespace App\Importers;
 
 use Carbon\Carbon;
 use Carbon\Exceptions\InvalidFormatException;
 
-trait ResolvesImportTimestamp
+trait ResolveImportTimestamp
 {
     private function resolveImportTimestamp(bool $useTimestamp, string $timestamp): string
     {

@@ -46,7 +46,7 @@ final class RemoveCollaboratorService
 
     private function ensureUserIsACollaborator(UserID $collaboratorID, ResourceID $folderID): void
     {
-        $isACollaborator = $this->permissions->getUserPermissionsForFolder($collaboratorID, $folderID)->hasAnyPermission();
+        $isACollaborator = $this->permissions->getUserAccessControls($collaboratorID, $folderID)->hasAnyPermission();
 
         if (!$isACollaborator) {
             throw HttpException::notFound([

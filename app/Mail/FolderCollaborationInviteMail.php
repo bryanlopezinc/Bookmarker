@@ -9,7 +9,6 @@ use Illuminate\Support\Str;
 use Illuminate\Mail\Mailable;
 use App\DataTransferObjects\User;
 use App\DataTransferObjects\Folder;
-use App\FolderPermissions;
 use App\ValueObjects\Uuid;
 
 final class FolderCollaborationInviteMail extends Mailable
@@ -18,7 +17,6 @@ final class FolderCollaborationInviteMail extends Mailable
         private User $inviter,
         private Folder $folder,
         private User $invitee,
-        private FolderPermissions $permissions,
         private Uuid $token
     ) {
     }

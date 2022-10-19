@@ -33,7 +33,7 @@ final class LeaveFolderCollaborationService
 
     private function ensureCollaboratorHasAccessToFolder(UserID $collaboratorID, ResourceID $folderID): void
     {
-        $isACollaborator = $this->permissionsRepository->getUserPermissionsForFolder($collaboratorID, $folderID)->hasAnyPermission();
+        $isACollaborator = $this->permissionsRepository->getUserAccessControls($collaboratorID, $folderID)->hasAnyPermission();
 
         if (!$isACollaborator) {
             throw HttpException::notFound([

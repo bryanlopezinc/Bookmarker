@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories\Folder;
 
 use App\Models\FolderAccess;
-use App\FolderPermissions;
+use App\UAC;
 use App\Models\FolderPermission;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
@@ -16,7 +16,7 @@ final class FolderPermissionsRepository
     /**
      * Get the Permissions a user has to a folder.
      */
-    public function getUserPermissionsForFolder(UserID $userID, ResourceID $folderID): FolderPermissions
+    public function getUserAccessControls(UserID $userID, ResourceID $folderID): UAC
     {
         return FolderAccess::select('folders_permissions.name')
             ->join('folders_permissions', 'folders_access.permission_id', '=', 'folders_permissions.id')
@@ -24,10 +24,10 @@ final class FolderPermissionsRepository
             ->where('user_id', $userID->toInt())
             ->get()
             ->pluck('name')
-            ->pipe(fn (Collection $permissionNames) => new FolderPermissions($permissionNames->all()));
+            ->pipe(fn (Collection $permissionNames) => new UAC($permissionNames->all()));
     }
 
-    public function create(UserID $userID, ResourceID $folderID, FolderPermissions $folderPermissions): void
+    public function create(UserID $userID, ResourceID $folderID, UAC $folderPermissions): void
     {
         $createdAt = now();
 
@@ -54,7 +54,7 @@ final class FolderPermissionsRepository
             ->delete();
     }
 
-    public function revoke(UserID $collaboratorID, ResourceID $folderID, FolderPermissions $permissions): void
+    public function revoke(UserID $collaboratorID, ResourceID $folderID, UAC $permissions): void
     {
         FolderAccess::query()
             ->where('folder_id', $folderID->toInt())

@@ -15,7 +15,7 @@ use App\Mail\FolderCollaborationInviteMail as Invite;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\Repositories\UserRepository;
-use App\FolderPermissions;
+use App\UAC;
 use App\QueryColumns\FolderAttributes;
 use App\ValueObjects\{ResourceID, Email, Uuid};
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
@@ -47,7 +47,7 @@ final class SendFolderCollaborationInviteService
             $folder,
             $invitee,
             $inviter,
-            FolderPermissions::fromRequest($request, 'permissions')
+            UAC::fromRequest($request, 'permissions')
         ));
 
         if ($invitationMailSent === false) {
@@ -60,7 +60,7 @@ final class SendFolderCollaborationInviteService
         try {
             (new EnsureAuthorizedUserOwnsResource)($folder);
         } catch (SymfonyHttpException $e) {
-            $canInviteUser = $this->permissions->getUserPermissionsForFolder($inviter->id, $folder->folderID)->canInviteUser();
+            $canInviteUser = $this->permissions->getUserAccessControls($inviter->id, $folder->folderID)->canInviteUser();
 
             if (!$canInviteUser) {
                 throw $e;
@@ -121,7 +121,7 @@ final class SendFolderCollaborationInviteService
         return implode(':', ['f-col-invites', $inviter->id->toInt(), $inviteeEmail->value]);
     }
 
-    private function sendInvitationCallback(Folder $folder, User $invitee, User $inviter, FolderPermissions $permissions): \Closure
+    private function sendInvitationCallback(Folder $folder, User $invitee, User $inviter, UAC $permissions): \Closure
     {
         return function () use ($folder, $invitee, $inviter, $permissions) {
             $this->inviteTokensStore->store(
@@ -132,13 +132,13 @@ final class SendFolderCollaborationInviteService
                 $permissions
             );
 
-            Mail::to($invitee->email->value)->queue(new Invite($inviter, $folder, $invitee, $permissions, $token));
+            Mail::to($invitee->email->value)->queue(new Invite($inviter, $folder, $invitee, $token));
         };
     }
 
     private function ensureInviteeIsNotAlreadyACollaborator(User $invitee, Folder $folder): void
     {
-        $collaboratorExist = $this->permissions->getUserPermissionsForFolder($invitee->id, $folder->folderID)->hasAnyPermission();
+        $collaboratorExist = $this->permissions->getUserAccessControls($invitee->id, $folder->folderID)->hasAnyPermission();
 
         if ($collaboratorExist) {
             throw HttpException::conflict([

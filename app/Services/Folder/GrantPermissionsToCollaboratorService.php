@@ -6,10 +6,10 @@ namespace App\Services\Folder;
 
 use App\Contracts\FolderRepositoryInterface;
 use App\Exceptions\HttpException;
-use App\FolderPermissions as Permissions;
 use App\Policies\EnsureAuthorizedUserOwnsResource as Policy;
 use App\QueryColumns\FolderAttributes;
 use App\Repositories\Folder\FolderPermissionsRepository;
+use App\UAC;
 use App\ValueObjects\ResourceID as FolderID;
 use App\ValueObjects\UserID;
 
@@ -21,10 +21,10 @@ final class GrantPermissionsToCollaboratorService
     ) {
     }
 
-    public function grant(UserID $collaboratorID, FolderID $folderID, Permissions $permissions): void
+    public function grant(UserID $collaboratorID, FolderID $folderID, UAC $permissions): void
     {
         $folder = $this->folderRepository->find($folderID, FolderAttributes::only('id,user_id'));
-        $collaboratorCurrentPermissions = $this->permissions->getUserPermissionsForFolder($collaboratorID, $folderID);
+        $collaboratorCurrentPermissions = $this->permissions->getUserAccessControls($collaboratorID, $folderID);
 
         (new Policy)($folder);
 
@@ -46,7 +46,7 @@ final class GrantPermissionsToCollaboratorService
         }
     }
 
-    private function ensureUserIsCurrentlyACollaborator(Permissions $collaboratorCurrentPermissions): void
+    private function ensureUserIsCurrentlyACollaborator(UAC $collaboratorCurrentPermissions): void
     {
         if (!$collaboratorCurrentPermissions->hasAnyPermission()) {
             throw HttpException::notFound([
@@ -55,10 +55,8 @@ final class GrantPermissionsToCollaboratorService
         }
     }
 
-    private function ensureCollaboratorDoesNotHavePermissions(
-        Permissions $collaboratorCurrentPermissions,
-        Permissions $grantPermissions
-    ): void {
+    private function ensureCollaboratorDoesNotHavePermissions(UAC $collaboratorCurrentPermissions, UAC $grantPermissions): void
+    {
         if ($collaboratorCurrentPermissions->containsAny($grantPermissions)) {
             throw HttpException::conflict([
                 'message' => 'user already has permissions'

@@ -57,8 +57,8 @@ final class AddBookmarksToFolderService
             (new EnsureAuthorizedUserOwnsResource)($folder);
         } catch (SymfonyHttpException $e) {
             $canAddBookmarksToFolder = $this->permissions
-                ->getUserPermissionsForFolder(UserID::fromAuthUser(), $folder->folderID)
-                ->canAddBookmarksToFolder();
+                ->getUserAccessControls(UserID::fromAuthUser(), $folder->folderID)
+                ->canAddBookmarks();
 
             if (!$canAddBookmarksToFolder) {
                 throw $e;

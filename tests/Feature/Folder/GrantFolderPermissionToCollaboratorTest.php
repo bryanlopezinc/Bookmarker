@@ -100,14 +100,14 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
         Passport::actingAs($collaborator);
         $this->getJson(route('sendFolderCollaborationInvite', $sendInviteRequest))->assertOk();
 
-        $collaboratorPermissions = (new Repository)->getUserPermissionsForFolder(
+        $collaboratorPermissions = (new Repository)->getUserAccessControls(
             new UserID($collaborator->id),
             new ResourceID($folder->id)
         );
 
         $this->assertTrue($collaboratorPermissions->canInviteUser());
-        $this->assertTrue($collaboratorPermissions->canAddBookmarksToFolder());
-        $this->assertFalse($collaboratorPermissions->canRemoveBookmarksFromFolder());
+        $this->assertTrue($collaboratorPermissions->canAddBookmarks());
+        $this->assertFalse($collaboratorPermissions->canRemoveBookmarks());
     }
 
     public function testCanGrantMultiplePermissions(): void
@@ -128,14 +128,14 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
             'permissions' => 'inviteUser,addBookmarks'
         ])->assertOk();
 
-        $collaboratorPermissions = (new Repository)->getUserPermissionsForFolder(
+        $collaboratorPermissions = (new Repository)->getUserAccessControls(
             new UserID($collaborator->id),
             new ResourceID($folder->id)
         );
 
         $this->assertTrue($collaboratorPermissions->canInviteUser());
-        $this->assertTrue($collaboratorPermissions->canAddBookmarksToFolder());
-        $this->assertFalse($collaboratorPermissions->canRemoveBookmarksFromFolder());
+        $this->assertTrue($collaboratorPermissions->canAddBookmarks());
+        $this->assertFalse($collaboratorPermissions->canRemoveBookmarks());
     }
 
     public function testCannotPerformActionOnSelf(): void

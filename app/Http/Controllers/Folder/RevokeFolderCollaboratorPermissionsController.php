@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Folder;
 
-use App\FolderPermissions;
-use App\Rules\PermissionsRule;
+use App\UAC;
 use App\Rules\ResourceIdRule;
 use App\Services\Folder\RevokeFolderCollaboratorPermissionsService as Service;
 use App\ValueObjects\ResourceID;
@@ -32,7 +31,7 @@ final class RevokeFolderCollaboratorPermissionsController
         $service->revokePermissions(
             new UserID((int) $request->input('user_id')),
             ResourceID::fromRequest($request, 'folder_id'),
-            FolderPermissions::fromRequest($request, 'permissions')
+            UAC::fromRequest($request, 'permissions')
         );
 
         return response()->json();

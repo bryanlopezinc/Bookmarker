@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Folder;
 
 use App\Cache\InviteTokensStore;
-use App\FolderPermissions;
+use App\UAC;
 use App\Models\FolderAccess;
 use App\Models\FolderPermission;
 use App\ValueObjects\ResourceID;
@@ -403,7 +403,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             new UserID($folderOwner->id),
             new UserID($collaborator->id),
             new ResourceID($folderID),
-            FolderPermissions::fromUnSerialized(['A_B'])
+            UAC::fromUnSerialized(['A_B'])
         );
 
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());

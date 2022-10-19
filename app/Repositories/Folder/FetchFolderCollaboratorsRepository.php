@@ -6,7 +6,7 @@ namespace App\Repositories\Folder;
 
 use App\DataTransferObjects\Builders\UserBuilder;
 use App\DataTransferObjects\FolderCollaborator;
-use App\FolderPermissions as Permissions;
+use App\UAC;
 use App\Models\FolderPermission;
 use App\Models\User;
 use App\PaginationData;
@@ -52,7 +52,7 @@ final class FetchFolderCollaboratorsRepository
         return function (User $collaborator) use ($collaboratorsPermissions) {
             return new FolderCollaborator(
                 UserBuilder::fromModel($collaborator)->build(),
-                new Permissions($collaboratorsPermissions->where('user_id', $collaborator->id)->pluck('name')->all())
+                new UAC($collaboratorsPermissions->where('user_id', $collaborator->id)->pluck('name')->all())
             );
         };
     }

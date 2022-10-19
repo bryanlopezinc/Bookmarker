@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Cache;
 
-use App\FolderPermissions as Permissions;
+use App\UAC;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use App\ValueObjects\Uuid;
@@ -26,7 +26,7 @@ final class InviteTokensStore
         UserID $inviterID,
         UserID $inviteeID,
         ResourceID $folderID,
-        Permissions $permissions
+        UAC $permissions
     ): void {
         $data = [
             self::INVITER_ID => $inviterID->toInt(),

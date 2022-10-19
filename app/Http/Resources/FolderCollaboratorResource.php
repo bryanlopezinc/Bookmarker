@@ -27,8 +27,8 @@ final class FolderCollaboratorResource extends JsonResource
                 'lastname' => $this->folderCollaborator->user->lastName->value,
                 'permissions' => [
                     'canInviteUsers' => $this->folderCollaborator->permissions->canInviteUser(),
-                    'canAddBookmarks' => $this->folderCollaborator->permissions->canAddBookmarksToFolder(),
-                    'canRemoveBookmarks' => $this->folderCollaborator->permissions->canRemoveBookmarksFromFolder(),
+                    'canAddBookmarks' => $this->folderCollaborator->permissions->canAddBookmarks(),
+                    'canRemoveBookmarks' => $this->folderCollaborator->permissions->canRemoveBookmarks(),
                 ],
             ]
         ];

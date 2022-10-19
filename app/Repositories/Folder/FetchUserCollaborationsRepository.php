@@ -12,8 +12,8 @@ use App\PaginationData;
 use App\QueryColumns\FolderAttributes;
 use App\ValueObjects\UserID;
 use Illuminate\Pagination\Paginator;
-use App\FolderPermissions as Permissions;
 use App\Models\DeletedUser;
+use App\UAC;
 use Illuminate\Support\Collection;
 
 final class FetchUserCollaborationsRepository
@@ -58,7 +58,7 @@ final class FetchUserCollaborationsRepository
         return function (Folder $collaboration) use ($collaboratorsPermissions) {
             return new UserCollaboration(
                 FolderBuilder::fromModel($collaboration)->build(),
-                new Permissions($collaboratorsPermissions->where('folder_id', $collaboration->id)->pluck('name')->all())
+                new UAC($collaboratorsPermissions->where('folder_id', $collaboration->id)->pluck('name')->all())
             );
         };
     }

@@ -10,7 +10,7 @@ use App\Contracts\FolderRepositoryInterface;
 use App\DataTransferObjects\Folder;
 use App\Exceptions\HttpException;
 use App\Exceptions\UserNotFoundHttpException;
-use App\FolderPermissions as Permissions;
+use App\UAC;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\Repositories\UserRepository;
 use App\QueryColumns\FolderAttributes;
@@ -59,17 +59,17 @@ final class AcceptFolderCollaborationInviteService
         }
     }
 
-    private function extractPermissions(array $invitationData): Permissions
+    private function extractPermissions(array $invitationData): UAC
     {
-        $permissionsCollaboratorWillHaveByDefault = Permissions::fromArray(['read']);
+        $permissionsCollaboratorWillHaveByDefault = UAC::fromArray(['read']);
 
-        $permissionsSetByFolderOwner = Permissions::fromUnSerialized($invitationData[Payload::PERMISSIONS]);
+        $permissionsSetByFolderOwner = UAC::fromUnSerialized($invitationData[Payload::PERMISSIONS]);
 
         if (!$permissionsSetByFolderOwner->hasAnyPermission()) {
             return $permissionsCollaboratorWillHaveByDefault;
         }
 
-        return new Permissions(
+        return new UAC(
             array_merge($permissionsSetByFolderOwner->permissions, $permissionsCollaboratorWillHaveByDefault->permissions)
         );
     }
@@ -88,7 +88,7 @@ final class AcceptFolderCollaborationInviteService
 
     private function ensureInvitationHasNotBeenAccepted(UserID $inviteeID, Folder $folder): void
     {
-        $collaboratorExist = $this->folderPermissionsRepository->getUserPermissionsForFolder($inviteeID, $folder->folderID)->hasAnyPermission();
+        $collaboratorExist = $this->folderPermissionsRepository->getUserAccessControls($inviteeID, $folder->folderID)->hasAnyPermission();
 
         if ($collaboratorExist) {
             throw HttpException::conflict([

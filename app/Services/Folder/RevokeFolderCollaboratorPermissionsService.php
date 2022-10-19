@@ -6,10 +6,10 @@ namespace App\Services\Folder;
 
 use App\Contracts\FolderRepositoryInterface;
 use App\Exceptions\HttpException;
-use App\FolderPermissions as Permissions;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\FolderAttributes;
 use App\Repositories\Folder\FolderPermissionsRepository;
+use App\UAC;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 
@@ -21,10 +21,10 @@ final class RevokeFolderCollaboratorPermissionsService
     ) {
     }
 
-    public function revokePermissions(UserID $collaboratorID, ResourceID $folderID, Permissions $revokePermissions): void
+    public function revokePermissions(UserID $collaboratorID, ResourceID $folderID, UAC $revokePermissions): void
     {
         $folder = $this->folderRepository->find($folderID, FolderAttributes::only('id,user_id'));
-        $collaboratorsCurrentPermissions = $this->permissions->getUserPermissionsForFolder($collaboratorID, $folderID);
+        $collaboratorsCurrentPermissions = $this->permissions->getUserAccessControls($collaboratorID, $folderID);
 
         (new EnsureAuthorizedUserOwnsResource)($folder);
 
@@ -46,7 +46,7 @@ final class RevokeFolderCollaboratorPermissionsService
         }
     }
 
-    private function ensureUserIsCurrentlyACollaborator(Permissions $collaboratorsCurrentPermissions): void
+    private function ensureUserIsCurrentlyACollaborator(UAC $collaboratorsCurrentPermissions): void
     {
         if (!$collaboratorsCurrentPermissions->hasAnyPermission()) {
             throw HttpException::notFound([
@@ -59,8 +59,8 @@ final class RevokeFolderCollaboratorPermissionsService
      * Ensure the collaborator currently has all the permissions the folder owner is trying to revoke.
      */
     private function ensureCollaboratorCurrentlyHasPermissions(
-        Permissions $collaboratorsCurrentPermissions,
-        Permissions $permissionsToRevoke
+        UAC $collaboratorsCurrentPermissions,
+        UAC $permissionsToRevoke
     ): void {
         if (!$collaboratorsCurrentPermissions->containsAll($permissionsToRevoke)) {
             throw HttpException::notFound([

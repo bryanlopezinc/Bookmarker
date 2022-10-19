@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Folder;
 
-use App\FolderPermissions as Permissions;
+use App\UAC;
 use App\Rules\ResourceIdRule;
 use App\Services\Folder\GrantPermissionsToCollaboratorService as Service;
 use App\ValueObjects\ResourceID as FolderID;
@@ -31,7 +31,7 @@ final class GrantPermissionsToCollaboratorController
         $service->grant(
             new UserID((int)$request->input('user_id')),
             FolderID::fromRequest($request, 'folder_id'),
-            Permissions::fromRequest($request, 'permissions')
+            UAC::fromRequest($request, 'permissions')
         );
 
         return response()->json();

@@ -10,11 +10,8 @@ use Illuminate\Http\Request;
 /**
  * Permission a user has to a folder resource.
  */
-final class FolderPermissions
+final class UAC
 {
-    /**
-     * @var array<string>
-     */
     private const VALID = [
         Model::VIEW_BOOKMARKS,
         Model::ADD_BOOKMARKS,
@@ -62,7 +59,7 @@ final class FolderPermissions
     }
 
     /**
-     * @param array<string> $permissions Accepted values = ['read', 'write']
+     * @param array<string> $permissions Accepted values = ['read']
      */
     public static function fromArray(array $permissions): self
     {
@@ -93,7 +90,6 @@ final class FolderPermissions
     public function serialize(): array
     {
         $serializable = [];
-
         $translation = [
             Model::ADD_BOOKMARKS => 'A_B',
             Model::DELETE_BOOKMARKS => 'D_B',
@@ -112,7 +108,7 @@ final class FolderPermissions
         return count($this->permissions) > 0;
     }
 
-    public function containsAll(FolderPermissions $permissions): bool
+    public function containsAll(UAC $permissions): bool
     {
         foreach ($permissions->permissions as $action) {
             if (!$this->hasPermissionTo($action)) {
@@ -123,7 +119,7 @@ final class FolderPermissions
         return true;
     }
 
-    public function containsAny(FolderPermissions $permissions): bool
+    public function containsAny(UAC $permissions): bool
     {
         foreach ($permissions->permissions as $action) {
             if ($this->hasPermissionTo($action)) {
@@ -134,12 +130,12 @@ final class FolderPermissions
         return false;
     }
 
-    public function canAddBookmarksToFolder(): bool
+    public function canAddBookmarks(): bool
     {
         return $this->hasPermissionTo(Model::ADD_BOOKMARKS);
     }
 
-    public function canRemoveBookmarksFromFolder(): bool
+    public function canRemoveBookmarks(): bool
     {
         return $this->hasPermissionTo(Model::DELETE_BOOKMARKS);
     }

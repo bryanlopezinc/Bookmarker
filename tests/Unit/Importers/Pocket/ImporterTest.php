@@ -66,7 +66,7 @@ class ImporterTest extends TestCase
         $this->swap(FilesystemInterface::class, $filesystem);
     }
 
-    public function testWillAttachPocketBookmarkTagsToBookmarkByDefault(): void
+    public function testWillUseBookmarkTagsByDefault(): void
     {
         Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
@@ -101,7 +101,7 @@ class ImporterTest extends TestCase
         $this->getImporter()->import(new UserID(200), Uuid::generate(), []);
     }
 
-    public function testWillAttachOnlyUniquePocketBookmarkTagsToBookmark(): void
+    public function testWillUseOnlyUniqueTags(): void
     {
         Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
@@ -136,7 +136,7 @@ class ImporterTest extends TestCase
         $this->getImporter()->import(new UserID(330), Uuid::generate(), []);
     }
 
-    public function testWillNotAttachPocketBookmarkTagsToBookmarkWhenIndicated(): void
+    public function testWillNotUseBookmarkTagsWhenIndicated(): void
     {
         Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
@@ -171,7 +171,7 @@ class ImporterTest extends TestCase
         $this->getImporter()->import(new UserID(7), Uuid::generate(), ['ignore_tags' => true]);
     }
 
-    public function test_will_not_attach_pocket_bookmark_tags_to_bookmark_when_pocket_bookmarks_tags_count_is_greater_than_15(): void
+    public function test_will_not_use_bookmark_tags_when_tags_count_is_greater_than_15(): void
     {
         Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
@@ -208,7 +208,7 @@ class ImporterTest extends TestCase
         $this->getImporter()->import(new UserID(45), Uuid::generate(), []);
     }
 
-    public function testWillNotAttachIncompatiblePocketBookmarkTagsToBookmark(): void
+    public function testWillNotUseIncompatibleBookmarkTags(): void
     {
         Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
@@ -256,7 +256,7 @@ class ImporterTest extends TestCase
         $this->swap(CreateBookmarkRepositoryInterface::class, $repository);
     }
 
-    public function testWillUsePocketBookmarkDateByDefault(): void
+    public function testWillUseBookmarkDateByDefault(): void
     {
         Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
@@ -291,7 +291,7 @@ class ImporterTest extends TestCase
         $this->getImporter()->import(new UserID(210), Uuid::generate(), []);
     }
 
-    public function testWillNotUsePocketBookmarkDateWhenIndicated(): void
+    public function testWillNotUseBookmarkDateWhenIndicated(): void
     {
         Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 

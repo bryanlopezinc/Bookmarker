@@ -123,6 +123,17 @@ final class FolderPermissions
         return true;
     }
 
+    public function containsAny(FolderPermissions $permissions): bool
+    {
+        foreach ($permissions->permissions as $action) {
+            if ($this->hasPermissionTo($action)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function canAddBookmarksToFolder(): bool
     {
         return $this->hasPermissionTo(Model::ADD_BOOKMARKS);

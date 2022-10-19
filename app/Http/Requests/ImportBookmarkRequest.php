@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use App\ValueObjects\Tag;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,52 +14,51 @@ final class ImportBookmarkRequest extends FormRequest
     public const POCKET = 'pocketExportFile';
     public const SAFARI = 'safariExportFile';
 
+    /**
+     * @var array<string,string>
+     */
+    private const VALIDATORS = [
+        self::CHROME => Imports\ChromeImportRequestValidator::class,
+        self::POCKET => Imports\PocketImportRequestValidator::class,
+        self::SAFARI => Imports\SafariImportRequestValidator::class,
+    ];
+
     public function rules(): array
     {
-        $source = $this->input('source', 0);
+        return array_merge($this->getSourceValidator()->rules(), [
+            'source' => [
+                'required', 'string', 'filled', Rule::in([
+                    self::CHROME,
+                    self::POCKET,
+                    self::SAFARI
+                ])
+            ]
+        ]);
+    }
 
-        $defaultRules = [
-            'source' => ['required', 'string', 'filled', Rule::in([self::CHROME, self::POCKET, self::SAFARI])],
-        ];
+    private function getSourceValidator(): Imports\RequestValidatorInterface
+    {
+        $validatorClass = self::VALIDATORS[$this->input('source', 100)] ?? false;
 
-        $sourceRulesMap = [
-            self::CHROME => $this->chromeImportRules(),
-            self::POCKET => $this->pocketImportRules(),
-            self::SAFARI => $this->safariImportRules(),
-        ];
-
-        if (!isset($sourceRulesMap[$source])) {
-            return $defaultRules;
+        if ($validatorClass == false) {
+            return new Imports\EmptyValidator;
         }
 
-        return array_merge($defaultRules, $sourceRulesMap[$source]);
+        return app($validatorClass);
     }
 
-    private function safariImportRules(): array
+    /**
+     * Configure the validator instance.
+     *
+     * @param  \Illuminate\Validation\Validator  $validator
+     * @return void
+     */
+    public function withValidator($validator)
     {
-        return [
-            'safari_html' => ['required', 'file', 'mimes:html', join(':', ['max', setting('MAX_SAFARI_FILE_SIZE')])],
-            'tags' => ['nullable', join(':', ['max', setting('MAX_BOOKMARKS_TAGS')])],
-            'tags.*' => Tag::rules(['distinct:strict']),
-        ];
-    }
+        $requestValidator = $this->getSourceValidator();
 
-    private function chromeImportRules(): array
-    {
-        return [
-            'use_timestamp' => ['nullable', 'bool'],
-            'html' => ['required', 'file', 'mimes:html', join(':', ['max', setting('MAX_CHROME_FILE_SIZE')])],
-            'tags' => ['nullable', join(':', ['max', setting('MAX_BOOKMARKS_TAGS')])],
-            'tags.*' => Tag::rules(['distinct:strict']),
-        ];
-    }
-
-    private function pocketImportRules(): array
-    {
-        return [
-            'use_timestamp' => ['nullable', 'bool'],
-            'ignore_tags' => ['nullable', 'bool'],
-            'pocket_export_file' => ['required', 'file', 'mimes:html', join(':', ['max', setting('MAX_POCKET_FILE_SIZE')])],
-        ];
+        if ($requestValidator instanceof Imports\AfterValidationInterface) {
+            $requestValidator->withValidator($validator);
+        }
     }
 }

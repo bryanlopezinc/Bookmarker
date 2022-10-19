@@ -19,7 +19,13 @@ class ImportBookmarksFromSafariExportFileTest extends ImportBookmarkBaseTest
         $this->importBookmarkResponse()
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'source' => ['The source field is required.']
+                'source' => ['The source field is required.'],
+            ]);
+
+        $this->importBookmarkResponse(['source' => 'safariExportFile',])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'safari_html' => ['The safari html field is required.']
             ]);
     }
 

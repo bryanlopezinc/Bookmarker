@@ -21,6 +21,12 @@ class ImportBookmarkFromChromeTest extends ImportBookmarkBaseTest
             ->assertJsonValidationErrors([
                 'source' => ['The source field is required.']
             ]);
+
+        $this->importBookmarkResponse(['source' => 'chromeExportFile',])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'html' => ['The html field is required.']
+            ]);
     }
 
     public function testSourceMustBeValid(): void

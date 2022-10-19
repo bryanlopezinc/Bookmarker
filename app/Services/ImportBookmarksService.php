@@ -37,9 +37,9 @@ final class ImportBookmarksService
             unset($validated[$input]);
         }
 
-        ImportBookmarks::dispatch(
+        dispatch(new ImportBookmarks(
             new ImportData($requestID, ImportSource::fromRequest($request), $userID, $validated)
-        );
+        ));
     }
 
     /**
@@ -49,6 +49,6 @@ final class ImportBookmarksService
      */
     private function inputFileTypes(): array
     {
-        return ['html', 'pocket_export_file', 'safari_html'];
+        return ['html', 'pocket_export_file', 'safari_html', 'instapaper_html'];
     }
 }

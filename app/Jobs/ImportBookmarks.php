@@ -43,6 +43,7 @@ final class ImportBookmarks implements ShouldQueue
             ImportSource::CHROME => app(ChromeImporter::class),
             ImportSource::POCKET => app(PocketImporter::class),
             ImportSource::SAFARI => app(SafariImporter::class),
+            ImportSource::INSTAPAPER => app(\App\Importers\Instapaper\Importer::class)
         };
     }
 }

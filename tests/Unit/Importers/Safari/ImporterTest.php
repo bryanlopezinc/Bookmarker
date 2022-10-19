@@ -20,7 +20,7 @@ use App\Importers\Safari\DOMParserInterface;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use App\Importers\Safari\Importer;
 
-class ImportBookmarksFromSafariExportFileTest extends TestCase
+class ImporterTest extends TestCase
 {
     use WithFaker;
 

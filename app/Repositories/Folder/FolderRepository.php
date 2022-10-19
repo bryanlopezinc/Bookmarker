@@ -22,7 +22,7 @@ final class FolderRepository implements FolderRepositoryInterface
         $attributes = $attributes ?: new FolderAttributes();
 
         /** @var Model|null */
-        $model = Model::onlyAttributes($attributes)->whereKey($folderID->toInt())->first();
+        $model = Model::onlyAttributes($attributes)->whereKey($folderID->value())->first();
 
         if ($model === null) {
             throw new FolderNotFoundHttpResponseException;

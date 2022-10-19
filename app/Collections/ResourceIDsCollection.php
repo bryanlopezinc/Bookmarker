@@ -29,6 +29,6 @@ final class ResourceIDsCollection extends BaseCollection
      */
     public function asIntegers(): Collection
     {
-        return $this->collection->map(fn (ResourceID $resourceID) => $resourceID->toInt());
+        return $this->collection->map(fn (ResourceID $resourceID) => $resourceID->value());
     }
 }

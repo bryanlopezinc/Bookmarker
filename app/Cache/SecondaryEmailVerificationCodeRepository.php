@@ -53,6 +53,6 @@ final class SecondaryEmailVerificationCodeRepository
 
     private function key(UserID $userID): string
     {
-        return 'se_vc:' . $userID->toInt();
+        return 'se_vc:' . $userID->value();
     }
 }

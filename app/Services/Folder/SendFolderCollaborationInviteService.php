@@ -118,7 +118,7 @@ final class SendFolderCollaborationInviteService
 
     private function key(User $inviter, Email $inviteeEmail): string
     {
-        return implode(':', ['f-col-invites', $inviter->id->toInt(), $inviteeEmail->value]);
+        return implode(':', ['f-col-invites', $inviter->id->value(), $inviteeEmail->value]);
     }
 
     private function sendInvitationCallback(Folder $folder, User $invitee, User $inviter, UAC $permissions): \Closure

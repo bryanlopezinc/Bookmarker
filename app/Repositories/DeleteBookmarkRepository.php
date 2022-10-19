@@ -23,8 +23,8 @@ final class DeleteBookmarkRepository
     public function fromSource(ResourceID $sourceID, UserID $userId): bool
     {
         return Model::query()->where([
-            'source_id' => $sourceID->toInt(),
-            'user_id' => $userId->toInt()
+            'source_id' => $sourceID->value(),
+            'user_id' => $userId->value()
         ])->chunkById(100, function (Collection $chunk) {
             $chunk->toQuery()->delete();
         });

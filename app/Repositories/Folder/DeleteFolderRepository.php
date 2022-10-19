@@ -28,15 +28,15 @@ final class DeleteFolderRepository
     private function deleteFolder(Folder $folder, bool $shouldDeleteBookmarksInFolder = false): bool
     {
         FolderBookmark::query()
-            ->where('folder_id', $folder->folderID->toInt())
+            ->where('folder_id', $folder->folderID->value())
             ->chunkById(100, function (Collection $chunk) use ($shouldDeleteBookmarksInFolder, $folder) {
                 if ($shouldDeleteBookmarksInFolder) {
-                    Bookmark::where('user_id', $folder->ownerID->toInt())->whereIn('id', $chunk->pluck('bookmark_id'))->delete();
+                    Bookmark::where('user_id', $folder->ownerID->value())->whereIn('id', $chunk->pluck('bookmark_id'))->delete();
                 }
 
                 $chunk->toQuery()->delete();
             });
 
-        return (bool) Model::query()->whereKey($folder->folderID->toInt())->delete();
+        return (bool) Model::query()->whereKey($folder->folderID->value())->delete();
     }
 }

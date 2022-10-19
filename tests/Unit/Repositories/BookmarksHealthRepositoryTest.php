@@ -23,15 +23,15 @@ class BookmarksHealthRepositoryTest extends TestCase
 
         [$first, $second, $third] = $ids;
 
-        BookmarkHealthFactory::new()->create(['bookmark_id' => $first->toInt()]); //Recently checked
-        BookmarkHealthFactory::new()->checkedDaysAgo(6)->create(['bookmark_id' => $second->toInt()]);
-        BookmarkHealthFactory::new()->checkedDaysAgo(7)->create(['bookmark_id' => $third->toInt()]);
+        BookmarkHealthFactory::new()->create(['bookmark_id' => $first->value()]); //Recently checked
+        BookmarkHealthFactory::new()->checkedDaysAgo(6)->create(['bookmark_id' => $second->value()]);
+        BookmarkHealthFactory::new()->checkedDaysAgo(7)->create(['bookmark_id' => $third->value()]);
 
         $result = (new BookmarksHealthRepository)->whereNotRecentlyChecked(new ResourceIDsCollection($ids));
 
         $this->assertCount(3, $result);
-        $this->assertContains($second->toInt(), $result->asIntegers()->all());
-        $this->assertContains($third->toInt(), $result->asIntegers()->all());
+        $this->assertContains($second->value(), $result->asIntegers()->all());
+        $this->assertContains($third->value(), $result->asIntegers()->all());
     }
 
     public function testWillReturnBookmarkIdsThatHasNeverBeenChecked(): void
@@ -54,7 +54,7 @@ class BookmarksHealthRepositoryTest extends TestCase
         $time = now()->toDateString();
 
         //first bookmarkID was healthy.
-        BookmarkHealthFactory::new()->create(['bookmark_id' => $first->toInt()]);
+        BookmarkHealthFactory::new()->create(['bookmark_id' => $first->value()]);
 
         (new BookmarksHealthRepository)->update([
             new HealthCheckResult($first, new Response(new Psr7Response(404))),
@@ -63,19 +63,19 @@ class BookmarksHealthRepositoryTest extends TestCase
         ]);
 
         $this->assertDatabaseHas(BookmarkHealth::class, [
-            'bookmark_id' => $first->toInt(),
+            'bookmark_id' => $first->value(),
             'is_healthy' => false,
             'last_checked' => $time
         ]);
 
         $this->assertDatabaseHas(BookmarkHealth::class, [
-            'bookmark_id' => $second->toInt(),
+            'bookmark_id' => $second->value(),
             'is_healthy' => true,
             'last_checked' => $time,
         ]);
 
         $this->assertDatabaseHas(BookmarkHealth::class, [
-            'bookmark_id' => $third->toInt(),
+            'bookmark_id' => $third->value(),
             'is_healthy' => true,
             'last_checked' => $time,
         ]);

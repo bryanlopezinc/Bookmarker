@@ -44,12 +44,12 @@ final class BookmarksHealthRepository implements BookmarksHealthRepositoryInterf
 
         collect($records)
             ->tap(function (Collection $collection) {
-                $bookmarkIDs = $collection->map(fn (HealthCheckResult $result) => $result->bookmarkID->toInt())->all();
+                $bookmarkIDs = $collection->map(fn (HealthCheckResult $result) => $result->bookmarkID->value())->all();
 
                 BookmarkHealth::whereIn('bookmark_id', $bookmarkIDs)->delete();
             })
             ->map(fn (HealthCheckResult $result) => [
-                'bookmark_id' => $result->bookmarkID->toInt(),
+                'bookmark_id' => $result->bookmarkID->value(),
                 'is_healthy' => $result->response->status() !== 404,
                 'last_checked' => $lastChecked
             ])

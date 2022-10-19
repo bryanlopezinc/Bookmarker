@@ -26,7 +26,7 @@ final class CheckFolderBelongsToDeletedUser implements FolderRepositoryInterface
     {
         $folder = $this->repository->find($folderID, $attributes);
 
-        $folderBelongsToDeletedUser = DeletedUser::query()->where('user_id', $folder->ownerID->toInt())->exists();
+        $folderBelongsToDeletedUser = DeletedUser::query()->where('user_id', $folder->ownerID->value())->exists();
 
         if ($folderBelongsToDeletedUser) {
             throw new FolderNotFoundHttpResponseException;

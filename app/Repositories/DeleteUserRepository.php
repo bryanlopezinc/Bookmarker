@@ -14,7 +14,7 @@ final class DeleteUserRepository
     public function delete(UserID $userID): void
     {
         /** @var User */
-        $user = User::query()->whereKey($userID->toInt())->first();
+        $user = User::query()->whereKey($userID->value())->first();
 
         $user->tokens()->chunkById(20, function (\Illuminate\Database\Eloquent\Collection $chunk) {
             $chunk->toQuery()->update(['revoked' => true]);

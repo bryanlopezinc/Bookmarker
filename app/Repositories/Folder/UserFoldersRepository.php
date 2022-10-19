@@ -21,8 +21,8 @@ final class UserFoldersRepository
     public function fetch(UserID $userID, PaginationData $pagination, SortCriteria $sortCriteria = SortCriteria::NEWEST): Paginator
     {
         $query = Model::onlyAttributes(new FolderAttributes())
-            ->where('user_id', $userID->toInt())
-            ->with('tags', fn ($builder) => $builder->where('tags.created_by', $userID->toInt()));
+            ->where('user_id', $userID->value())
+            ->with('tags', fn ($builder) => $builder->where('tags.created_by', $userID->value()));
 
         $this->addSortQuery($query, $sortCriteria);
 

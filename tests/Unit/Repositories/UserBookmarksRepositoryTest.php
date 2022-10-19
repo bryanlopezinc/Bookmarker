@@ -33,7 +33,7 @@ class UserBookmarksRepositoryTest extends TestCase
         ]);
 
         foreach ($this->repository->fetch(new UserID($userId), Data::fromArray([])) as $bookmark) {
-            $this->assertTrue($userId === $bookmark->ownerId->toInt());
+            $this->assertTrue($userId === $bookmark->ownerId->value());
             $this->assertFalse($bookmark->isUserFavorite);
         }
     }
@@ -56,7 +56,7 @@ class UserBookmarksRepositoryTest extends TestCase
         $this->assertCount(5, $result);
 
         foreach ($result as $bookmark) {
-            $this->assertEquals($bookmark->sourceID->toInt(), $sourceID);
+            $this->assertEquals($bookmark->sourceID->value(), $sourceID);
         }
     }
 
@@ -74,7 +74,7 @@ class UserBookmarksRepositoryTest extends TestCase
 
         $this->assertCount(1, $result);
 
-        $this->assertEquals($models[0]->id, $result[0]->id->toInt());
+        $this->assertEquals($models[0]->id, $result[0]->id->value());
     }
 
     public function testWillSetIsUserFavorite(): void
@@ -91,7 +91,7 @@ class UserBookmarksRepositoryTest extends TestCase
         /** @var Bookmark */
         $bookmark = $this->repository->fetch(new UserID($userId), Data::fromArray([]))
             ->getCollection()
-            ->filter(fn (Bookmark $bookmark) => $bookmark->id->toInt() === $favoriteID)
+            ->filter(fn (Bookmark $bookmark) => $bookmark->id->value() === $favoriteID)
             ->sole();
 
         $this->assertTrue($bookmark->isUserFavorite);

@@ -20,7 +20,7 @@ final class UpdateBookmarkRepository implements UpdateBookmarkRepositoryInterfac
     {
         /** @var Model */
         $model = Model::query()
-            ->whereKey($data->bookmark->id->toInt())
+            ->whereKey($data->bookmark->id->value())
             ->first(['title', 'has_custom_title', 'description', 'description_set_by_user', 'user_id', 'id']);
 
         if ($data->hasTags()) {

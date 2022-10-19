@@ -20,8 +20,8 @@ final class FolderPermissionsRepository
     {
         return FolderAccess::select('folders_permissions.name')
             ->join('folders_permissions', 'folders_access.permission_id', '=', 'folders_permissions.id')
-            ->where('folder_id', $folderID->toInt())
-            ->where('user_id', $userID->toInt())
+            ->where('folder_id', $folderID->value())
+            ->where('user_id', $userID->value())
             ->get()
             ->pluck('name')
             ->pipe(fn (Collection $permissionNames) => new UAC($permissionNames->all()));
@@ -36,8 +36,8 @@ final class FolderPermissionsRepository
             ->get()
             ->pluck('id')
             ->map(fn (int $permissionID) => [
-                'folder_id' => $folderID->toInt(),
-                'user_id' => $userID->toInt(),
+                'folder_id' => $folderID->value(),
+                'user_id' => $userID->value(),
                 'permission_id' => $permissionID,
                 'created_at' => $createdAt
             ])
@@ -49,16 +49,16 @@ final class FolderPermissionsRepository
     public function removeCollaborator(UserID $collaboratorID, ResourceID $folderID): void
     {
         FolderAccess::query()
-            ->where('folder_id', $folderID->toInt())
-            ->where('user_id', $collaboratorID->toInt())
+            ->where('folder_id', $folderID->value())
+            ->where('user_id', $collaboratorID->value())
             ->delete();
     }
 
     public function revoke(UserID $collaboratorID, ResourceID $folderID, UAC $permissions): void
     {
         FolderAccess::query()
-            ->where('folder_id', $folderID->toInt())
-            ->where('user_id', $collaboratorID->toInt())
+            ->where('folder_id', $folderID->value())
+            ->where('user_id', $collaboratorID->value())
             ->whereIn('permission_id',  FolderPermission::select('id')->whereIn('name', $permissions->permissions))
             ->delete();
     }

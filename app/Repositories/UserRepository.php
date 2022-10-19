@@ -31,7 +31,7 @@ final class UserRepository
 
     public function findByID(UserID $userID, UserAttributes $columns = new UserAttributes()): User|false
     {
-        $result = $this->findMany('users.id', [$userID->toInt()], $columns);
+        $result = $this->findMany('users.id', [$userID->value()], $columns);
 
         if ($result->isEmpty()) {
             return false;
@@ -97,7 +97,7 @@ final class UserRepository
     public function getUserSecondaryEmails(UserID $userID): array
     {
         return SecondaryEmail::query()
-            ->where('user_id', $userID->toInt())
+            ->where('user_id', $userID->value())
             ->get(['email'])
             ->map(fn (SecondaryEmail $secondaryEmail) => new Email($secondaryEmail->email))
             ->all();
@@ -112,7 +112,7 @@ final class UserRepository
     {
         SecondaryEmail::create([
             'email' => $secondaryEmail->value,
-            'user_id' => $userID->toInt(),
+            'user_id' => $userID->value(),
             'verified_at' => now()
         ]);
     }

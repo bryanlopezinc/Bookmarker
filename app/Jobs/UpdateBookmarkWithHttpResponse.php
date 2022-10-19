@@ -44,7 +44,7 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
             return;
         }
 
-        $builder = Builder::new()->id($bookmark->id->toInt())->resolvedAt(now());
+        $builder = Builder::new()->id($bookmark->id->value())->resolvedAt(now());
 
         if (!$this->canOpenUrl($bookmark->url)) {
             $repository->update(new Data($builder->resolvedUrl($bookmark->url)->build()));
@@ -106,7 +106,7 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
         }
 
         /** @var Source */
-        $source = Source::query()->where('id', $bookmark->source->id->toInt())->first(['name', 'id', 'host']);
+        $source = Source::query()->where('id', $bookmark->source->id->value())->first(['name', 'id', 'host']);
 
         if (!$bookmark->source->nameHasBeenUpdated) {
             $source->update([

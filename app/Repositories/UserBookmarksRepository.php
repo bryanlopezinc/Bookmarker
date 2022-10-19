@@ -27,14 +27,14 @@ final class UserBookmarksRepository
      */
     public function fetch(UserID $userID, UserBookmarksFilters $filters): Paginator
     {
-        $query = Model::WithQueryOptions(new Columns())->where('user_id', $userID->toInt());
+        $query = Model::WithQueryOptions(new Columns())->where('user_id', $userID->value());
 
         if (!$filters->hasAnyFilter()) {
             return $this->paginate($query->latest('bookmarks.id'), $userID, $filters->pagination);
         }
 
         if ($filters->wantsOnlyBookmarksFromParticularSource) {
-            $query->where('source_id', $filters->sourceID->toInt());
+            $query->where('source_id', $filters->sourceID->value());
         }
 
         if ($filters->wantsBookmarksWithSpecificTags) {

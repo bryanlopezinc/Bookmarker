@@ -21,7 +21,7 @@ final class FolderBookmarkRepository
             ->asIntegers()
             ->map(fn (int $bookmarkID) => [
                 'bookmark_id' => $bookmarkID,
-                'folder_id' => $folderID->toInt(),
+                'folder_id' => $folderID->value(),
                 'is_public' => $makeHidden->containsStrict($bookmarkID) ? false : true
             ])
             ->tap(fn (Collection $data) => FolderBookmarkModel::insert($data->all()));
@@ -33,7 +33,7 @@ final class FolderBookmarkRepository
 
     private function incrementFolderBookmarksCount(ResourceID $folderID, int $amount): void
     {
-        $model = FolderBookmarksCount::query()->firstOrCreate(['folder_id' => $folderID->toInt()], ['count' => $amount]);
+        $model = FolderBookmarksCount::query()->firstOrCreate(['folder_id' => $folderID->value()], ['count' => $amount]);
 
         if (!$model->wasRecentlyCreated) {
             $model->increment('count', $amount);
@@ -44,7 +44,7 @@ final class FolderBookmarkRepository
     {
         // Folder already exist.
         // @phpstan-ignore-next-line
-        Model::query()->whereKey($folderID->toInt())->first()->touch();
+        Model::query()->whereKey($folderID->value())->first()->touch();
     }
 
     /**
@@ -52,7 +52,7 @@ final class FolderBookmarkRepository
      */
     public function remove(ResourceID $folderID, IDs $bookmarkIDs): int
     {
-        $deleted = FolderBookmarkModel::where('folder_id', $folderID->toInt())->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())->delete();
+        $deleted = FolderBookmarkModel::where('folder_id', $folderID->value())->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())->delete();
 
         if ($deleted > 0) {
             $this->updateFolderTimeStamp($folderID);
@@ -63,7 +63,7 @@ final class FolderBookmarkRepository
 
     public function makeHidden(ResourceID $folderID, IDs $bookmarkIDs): void
     {
-        FolderBookmarkModel::where('folder_id', $folderID->toInt())
+        FolderBookmarkModel::where('folder_id', $folderID->value())
             ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())
             ->update(['is_public' => false]);
     }

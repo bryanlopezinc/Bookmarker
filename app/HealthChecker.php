@@ -43,7 +43,7 @@ final class HealthChecker
     {
         return Http::pool(function (Pool $pool) use ($bookmarks) {
             return collect($bookmarks)->map(function (Bookmark $bookmark) use ($pool) {
-                return $pool->as((string)$bookmark->id->toInt())
+                return $pool->as((string)$bookmark->id->value())
                     ->accept('text/html')
                     ->get($bookmark->url->toString());
             })->all();

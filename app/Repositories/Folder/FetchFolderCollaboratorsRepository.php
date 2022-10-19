@@ -25,7 +25,7 @@ final class FetchFolderCollaboratorsRepository
         /** @var Paginator */
         $collaborators = User::select(['users.id', 'firstname', 'lastname', 'folders_access.user_id'])
             ->join('folders_access', 'folders_access.user_id', '=', 'users.id')
-            ->where('folders_access.folder_id', $folderID->toInt())
+            ->where('folders_access.folder_id', $folderID->value())
             ->groupBy('folders_access.user_id')
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
 

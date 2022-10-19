@@ -26,7 +26,7 @@ final class FavoriteRepository
     public function createMany(ResourceIDsCollection $bookmarkIds, UserID $userId): bool
     {
         Favorite::insert($bookmarkIds->asIntegers()->map(fn (int $bookmarkID) => [
-            'user_id' => $userId->toInt(),
+            'user_id' => $userId->value(),
             'bookmark_id' => $bookmarkID
         ])->all());
 
@@ -37,7 +37,7 @@ final class FavoriteRepository
 
     private function incrementFavoritesCount(UserID $userId, int $amount = 1): void
     {
-        $favoritesCount = UserFavoritesCount::query()->firstOrCreate(['user_id' => $userId->toInt()], ['count' => $amount]);
+        $favoritesCount = UserFavoritesCount::query()->firstOrCreate(['user_id' => $userId->value()], ['count' => $amount]);
 
         if (!$favoritesCount->wasRecentlyCreated) {
             $favoritesCount->increment('count', $amount);
@@ -66,7 +66,7 @@ final class FavoriteRepository
     public function intersect(ResourceIDsCollection $bookmarkIDs, UserID $userID): ResourceIDsCollection
     {
         return ResourceIDsCollection::fromNativeTypes(
-            Favorite::where('user_id', $userID->toInt())
+            Favorite::where('user_id', $userID->value())
                 ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
                 ->get(['bookmark_id'])
                 ->pluck('bookmark_id')
@@ -75,7 +75,7 @@ final class FavoriteRepository
 
     public function delete(ResourceIDsCollection $bookmarkIDs, UserID $userId): bool
     {
-        $deleted = Favorite::where('user_id', $userId->toInt())
+        $deleted = Favorite::where('user_id', $userId->value())
             ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())
             ->delete();
 
@@ -90,7 +90,7 @@ final class FavoriteRepository
             return;
         }
 
-        UserFavoritesCount::query()->where('user_id', $userId->toInt())->decrement('count', $amount);
+        UserFavoritesCount::query()->where('user_id', $userId->value())->decrement('count', $amount);
     }
 
     /**
@@ -101,7 +101,7 @@ final class FavoriteRepository
         /** @var Paginator */
         $favorites = Model::WithQueryOptions(BookmarkAttributes::new())
             ->join('favourites', 'favourites.bookmark_id', '=', 'bookmarks.id')
-            ->where('favourites.user_id', $userId->toInt())
+            ->where('favourites.user_id', $userId->value())
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
 
         return $favorites->setCollection(

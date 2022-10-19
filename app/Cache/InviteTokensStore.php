@@ -29,9 +29,9 @@ final class InviteTokensStore
         UAC $permissions
     ): void {
         $data = [
-            self::INVITER_ID => $inviterID->toInt(),
-            self::INVITEE_ID => $inviteeID->toInt(),
-            self::FOLDER_ID => $folderID->toInt(),
+            self::INVITER_ID => $inviterID->value(),
+            self::INVITEE_ID => $inviteeID->value(),
+            self::FOLDER_ID => $folderID->value(),
             self::PERMISSIONS => $permissions->serialize()
         ];
 

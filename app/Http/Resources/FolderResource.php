@@ -22,7 +22,7 @@ final class FolderResource extends JsonResource
         return [
             'type' => 'folder',
             'attributes' => [
-                'id' => $this->folder->folderID->toInt(),
+                'id' => $this->folder->folderID->value(),
                 'name' => $this->folder->name->safe(),
                 'has_description' => !$this->folder->description->isEmpty(),
                 'description' => $this->when(!$this->folder->description->isEmpty(), fn () => $this->folder->description->safe()),

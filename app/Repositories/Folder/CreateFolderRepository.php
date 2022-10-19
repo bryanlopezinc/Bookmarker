@@ -22,7 +22,7 @@ final class CreateFolderRepository
         $model = Model::query()->create([
             'description' => $folder->description->value,
             'name' => $folder->name->value,
-            'user_id' => $folder->ownerID->toInt(),
+            'user_id' => $folder->ownerID->value(),
             'created_at' => $folder->createdAt,
             'is_public' => $folder->isPublic
         ]);
@@ -34,7 +34,7 @@ final class CreateFolderRepository
 
     private function incrementUserFoldersCount(UserID $userID): void
     {
-        $model = UserFoldersCount::query()->firstOrCreate(['user_id' => $userID->toInt()], ['count' => 1]);
+        $model = UserFoldersCount::query()->firstOrCreate(['user_id' => $userID->value()], ['count' => 1]);
 
         if (!$model->wasRecentlyCreated) {
             $model->increment('count');

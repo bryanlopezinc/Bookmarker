@@ -33,6 +33,6 @@ final class BookmarksCollection extends BaseCollection
     {
         $ids = $collection->asIntegers()->all();
 
-        return $this->collection->filter(fn (Bookmark $bookmark) => in_array($bookmark->id->toInt(), $ids, true))->pipeInto(self::class);
+        return $this->collection->filter(fn (Bookmark $bookmark) => in_array($bookmark->id->value(), $ids, true))->pipeInto(self::class);
     }
 }

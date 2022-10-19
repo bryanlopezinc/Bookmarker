@@ -46,7 +46,7 @@ final class FetchFolderBookmarksRepository
     {
         /** @var Paginator */
         $result = Model::query()
-            ->where('folder_id', $folderID->toInt())
+            ->where('folder_id', $folderID->value())
             ->when($options['onlyPublic'], fn ($query) => $query->where('is_public', true))
             ->simplePaginate($pagination->perPage(), ['bookmark_id', 'is_public'], page: $pagination->page());
 
@@ -61,12 +61,12 @@ final class FetchFolderBookmarksRepository
                 ->findManyById($bookmarkIDs)
                 ->map(function (Bookmark $bookmark) use ($favorites, $result) {
                     $bookmark = BookmarkBuilder::fromBookmark($bookmark)
-                        ->isUserFavorite($favorites->containsStrict($bookmark->id->toInt()))
+                        ->isUserFavorite($favorites->containsStrict($bookmark->id->value()))
                         ->build();
 
                     return new FolderBookmark(
                         $bookmark,
-                        $result->getCollection()->filter(fn (Model $model) => $model->bookmark_id === $bookmark->id->toInt())->sole()->is_public
+                        $result->getCollection()->filter(fn (Model $model) => $model->bookmark_id === $bookmark->id->value())->sole()->is_public
                     );
                 })
         );
@@ -83,7 +83,7 @@ final class FetchFolderBookmarksRepository
             return false;
         }
 
-        return Model::where('folder_id', $folderID->toInt())
+        return Model::where('folder_id', $folderID->value())
             ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
             ->count() > 0;
     }
@@ -97,7 +97,7 @@ final class FetchFolderBookmarksRepository
             return false;
         }
 
-        return Model::where('folder_id', $folderID->toInt())
+        return Model::where('folder_id', $folderID->value())
             ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
             ->count() === $bookmarkIDs->count();
     }

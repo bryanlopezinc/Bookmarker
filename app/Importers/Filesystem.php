@@ -27,7 +27,7 @@ final class Filesystem implements FilesystemInterface
 
     private function buildFileName(UserID $userID, Uuid $requestID): string
     {
-        return implode('::', [$userID->toInt(), $requestID->value]);
+        return implode('::', [$userID->value(), $requestID->value]);
     }
 
     public function delete(UserID $userID, Uuid $requestID): void

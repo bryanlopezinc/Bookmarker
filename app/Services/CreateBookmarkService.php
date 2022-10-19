@@ -78,7 +78,7 @@ final class CreateBookmarkService
             ->thumbnailUrl('')
             ->description($attributes->get('description'))
             ->descriptionWasSetByUser($attributes->get('descriptionSetByUser', false))
-            ->bookmarkedById($userID->toInt())
+            ->bookmarkedById($userID->value())
             ->source(SourceBuilder::new()->domainName($url->getHost())->name($url->toString())->build())
             ->tags($attributes->get('tags', []))
             ->bookmarkedOn($attributes->get('createdOn'))

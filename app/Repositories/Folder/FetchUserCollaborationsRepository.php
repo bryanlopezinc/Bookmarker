@@ -26,7 +26,7 @@ final class FetchUserCollaborationsRepository
         /** @var Paginator */
         $collaborations = Folder::onlyAttributes(new FolderAttributes())
             ->join('folders_access', 'folders_access.folder_id', '=', 'folders.id')
-            ->where('folders_access.user_id', $userID->toInt())
+            ->where('folders_access.user_id', $userID->value())
             ->whereNotIn('folders.user_id', DeletedUser::select('deleted_users.user_id'))
             ->groupBy('folders_access.folder_id')
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
@@ -47,7 +47,7 @@ final class FetchUserCollaborationsRepository
     {
         return FolderPermission::select('name', 'folder_id')
             ->join('folders_access', 'folders_access.permission_id', '=', 'folders_permissions.id')
-            ->where('user_id', $collaborator->toInt())
+            ->where('user_id', $collaborator->value())
             ->whereIn('folder_id', $folderIDs)
             ->get()
             ->map(fn (FolderPermission $model) => $model->toArray());

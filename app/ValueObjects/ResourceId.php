@@ -17,10 +17,13 @@ class ResourceID
 
     protected function validate(): void
     {
-        throw_if($this->id < 1, new InvalidResourceIdException("invalid " . class_basename($this) . ' ' . $this->id));
+        throw_if(
+            $this->id < 1,
+            new InvalidResourceIdException("invalid " . class_basename($this) . ' ' . $this->id)
+        );
     }
 
-    public function toInt(): int
+    public function value(): int
     {
         return $this->id;
     }
@@ -33,7 +36,7 @@ class ResourceID
     /**
      * @throws \RuntimeException
      */
-    public static function fromRequest(Request $request = null, string $key = 'id'): self
+    public static function fromRequest(Request $request, string $key = 'id'): self
     {
         return new self(static::getIdFromRequest($request, $key));
     }

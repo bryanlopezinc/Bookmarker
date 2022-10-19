@@ -14,7 +14,7 @@ final class UpdateFolderRepository
     public function update(ResourceID $folderID, Folder $newAttributes): void
     {
         /** @var Model|null */
-        $folder = Model::query()->whereKey($folderID->toInt())->first();
+        $folder = Model::query()->whereKey($folderID->value())->first();
 
         if ($folder === null) {
             throw new \Exception('Folder does not exist');

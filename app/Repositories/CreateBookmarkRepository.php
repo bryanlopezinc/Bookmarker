@@ -32,7 +32,7 @@ final class CreateBookmarkRepository implements CreateBookmarkRepositoryInterfac
             'description' => $bookmark->description->value,
             'description_set_by_user' => $bookmark->descriptionWasSetByUser,
             'source_id' => $source->id,
-            'user_id' => $bookmark->ownerId->toInt(),
+            'user_id' => $bookmark->ownerId->value(),
             'has_custom_title'  => $bookmark->hasCustomTitle,
             'preview_image_url' => $bookmark->hasThumbnailUrl ? $bookmark->thumbnailUrl->toString() : null,
             'created_at' => $bookmark->timeCreated,
@@ -50,7 +50,7 @@ final class CreateBookmarkRepository implements CreateBookmarkRepositoryInterfac
 
     private function incrementUserBookmarksCount(UserID $userId): void
     {
-        $bookmarksCount = UserBookmarksCount::query()->firstOrCreate(['user_id' => $userId->toInt()], ['count' => 1,]);
+        $bookmarksCount = UserBookmarksCount::query()->firstOrCreate(['user_id' => $userId->value()], ['count' => 1,]);
 
         if (!$bookmarksCount->wasRecentlyCreated) {
             $bookmarksCount->increment('count');

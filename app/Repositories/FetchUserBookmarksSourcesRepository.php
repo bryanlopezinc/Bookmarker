@@ -25,7 +25,7 @@ final class FetchUserBookmarksSourcesRepository
         $result = Model::select('bookmarks_sources.id', 'host', 'name')
             ->join('bookmarks', 'bookmarks_sources.id', '=', 'bookmarks.source_id')
             ->groupBy('bookmarks_sources.id')
-            ->where('user_id', $userId->toInt())
+            ->where('user_id', $userId->value())
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
 
         return $result->setCollection(

@@ -48,7 +48,7 @@ final class FolderRepository implements FolderRepositoryInterface
         }
 
         return (new Builder())
-            ->when($attributes->has('id'), fn (Builder $b) => $b->setID($folder->folderID->toInt()))
+            ->when($attributes->has('id'), fn (Builder $b) => $b->setID($folder->folderID->value()))
             ->when($attributes->has('user_id'), fn (Builder $b) => $b->setOwnerID($folder->ownerID))
             ->when($attributes->has('bookmarks_count'), fn (Builder $b) => $b->setBookmarksCount($folder->storage->total))
             ->when($attributes->has('is_public'), fn (Builder $b) => $b->setIsPublic($folder->isPublic))
@@ -65,6 +65,6 @@ final class FolderRepository implements FolderRepositoryInterface
 
     private function key(ResourceID $folderID): string
     {
-        return 'flds::' . $folderID->toInt();
+        return 'flds::' . $folderID->value();
     }
 }

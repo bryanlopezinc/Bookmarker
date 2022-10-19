@@ -35,7 +35,7 @@ class UserFoldersRepositoryTest extends TestCase
             ->getCollection()
             ->each(function (Folder $folder) use ($foldersBookmarksCount) {
                 $this->assertEquals(
-                    $foldersBookmarksCount[$folder->folderID->toInt()],
+                    $foldersBookmarksCount[$folder->folderID->value()],
                     $folder->storage->total
                 );
             });

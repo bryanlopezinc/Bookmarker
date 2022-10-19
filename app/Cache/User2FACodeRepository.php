@@ -36,6 +36,6 @@ final class User2FACodeRepository
 
     private function key(UserID $userID): string
     {
-        return 'Users::2fa::' . $userID->toInt();
+        return 'Users::2fa::' . $userID->value();
     }
 }

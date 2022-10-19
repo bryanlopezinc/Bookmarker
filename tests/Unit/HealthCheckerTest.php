@@ -45,7 +45,7 @@ class HealthCheckerTest extends TestCase
             ->with($this->callback(function (array $data) {
                 /** @var HealthCheckResult[] $data */
                 foreach ($data as $healthCheckResult) {
-                    if ($healthCheckResult->bookmarkID->toInt() === 250) {
+                    if ($healthCheckResult->bookmarkID->value() === 250) {
                         $this->assertEquals(404, $healthCheckResult->response->status());
                         continue;
                     }
@@ -110,7 +110,7 @@ class HealthCheckerTest extends TestCase
             ->with($this->callback(function (array $data) {
                 /** @var HealthCheckResult[] $data */
                 foreach ($data as $healthCheckResult) {
-                    $this->assertNotEquals(42, $healthCheckResult->bookmarkID->toInt());
+                    $this->assertNotEquals(42, $healthCheckResult->bookmarkID->value());
                 }
                 return true;
             }));

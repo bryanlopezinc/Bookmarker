@@ -52,7 +52,7 @@ final class Request2FACodeService
 
     private function key(User $user): string
     {
-        return 'sent2fa::' . $user->id->toInt();
+        return 'sent2fa::' . $user->id->value();
     }
 
     private function getUser(Request $request): User

@@ -28,12 +28,12 @@ final class UAC
 
         foreach ($permissions as $permission) {
             if (!in_array($permission, self::VALID, true)) {
-                throw new \Exception('Invalid permission type ' . $permission);
+                throw new \Exception('Invalid permission type ' . $permission, 1_600);
             }
         }
 
         if (!$isUnique) {
-            throw new \Exception('Permissions contains duplicate values : ' . implode(',', $permissions));
+            throw new \Exception('Permissions contains duplicate values : ' . implode(',', $permissions), 1_601);
         }
     }
 
@@ -108,9 +108,13 @@ final class UAC
         return count($this->permissions) > 0;
     }
 
-    public function containsAll(UAC $permissions): bool
+    public function containsAll(UAC $uac): bool
     {
-        foreach ($permissions->permissions as $action) {
+        if (!$uac->hasAnyPermission()) {
+            return false;
+        }
+
+        foreach ($uac->permissions as $action) {
             if (!$this->hasPermissionTo($action)) {
                 return false;
             }
@@ -119,9 +123,9 @@ final class UAC
         return true;
     }
 
-    public function containsAny(UAC $permissions): bool
+    public function containsAny(UAC $uac): bool
     {
-        foreach ($permissions->permissions as $action) {
+        foreach ($uac->permissions as $action) {
             if ($this->hasPermissionTo($action)) {
                 return true;
             }

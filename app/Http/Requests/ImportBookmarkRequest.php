@@ -22,7 +22,7 @@ final class ImportBookmarkRequest extends FormRequest
         self::CHROME => Imports\ChromeImportRequestValidator::class,
         self::POCKET => Imports\PocketImportRequestValidator::class,
         self::SAFARI => Imports\SafariImportRequestValidator::class,
-        self::INSTAPAPER => imports\InstapaperRequestValidator::class
+        self::INSTAPAPER => Imports\InstapaperRequestValidator::class
     ];
 
     public function rules(): array

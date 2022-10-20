@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Folder;
 
 use App\Contracts\FolderRepositoryInterface;
+use App\DataTransferObjects\FolderCollaborator;
 use App\PaginationData;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\FolderAttributes;

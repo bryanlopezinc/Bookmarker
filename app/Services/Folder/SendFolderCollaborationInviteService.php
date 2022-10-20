@@ -132,7 +132,7 @@ final class SendFolderCollaborationInviteService
                 $permissions
             );
 
-            Mail::to($invitee->email->value)->queue(new Invite($inviter, $folder, $invitee, $token));
+            Mail::to($invitee->email->value)->queue(new Invite($inviter, $folder, $token));
         };
     }
 

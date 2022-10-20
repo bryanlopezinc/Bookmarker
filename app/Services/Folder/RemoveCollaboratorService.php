@@ -9,14 +9,12 @@ use App\Exceptions\HttpException;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\FolderAttributes;
 use App\Repositories\Folder\FolderPermissionsRepository;
-use App\Repositories\UserRepository;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 
 final class RemoveCollaboratorService
 {
     public function __construct(
-        private UserRepository $userRepository,
         private FolderPermissionsRepository $permissions,
         private FolderRepositoryInterface $folderRepository
     ) {

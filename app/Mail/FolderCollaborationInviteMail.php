@@ -13,12 +13,8 @@ use App\ValueObjects\Uuid;
 
 final class FolderCollaborationInviteMail extends Mailable
 {
-    public function __construct(
-        private User $inviter,
-        private Folder $folder,
-        private User $invitee,
-        private Uuid $token
-    ) {
+    public function __construct(private User $inviter, private Folder $folder, private Uuid $token)
+    {
     }
 
     public function build(): self

@@ -106,7 +106,7 @@ class ImporterTest extends TestCase
                 <body>
                     <h1>Unread</h1>
                     <ul>
-                        <li><a href="https://cai.tools.sap/blog/top-telegram-bots-2017/" time_added="1627725769" tags="2017,bots,bots,telegram">Top 8 Telegram Bots in 2017 | SAP Conversational AI Blog</a></li>
+                        <li><a href="https://cai.tools.sap/blog/top-telegram-bots-2017/" time_added="1627725769" tags="2017,bots,bots,BOTS,BoTs,telegram">Top 8 Telegram Bots in 2017 | SAP Conversational AI Blog</a></li>
                     </ul>
         HTML;
 

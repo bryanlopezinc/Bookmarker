@@ -30,6 +30,7 @@ trait ResolveBookmarkTags
         }
 
         return collect($tags)
+            ->map(fn (string $tag) => mb_strtolower($tag))
             ->uniqueStrict()
             ->values()
             ->all();

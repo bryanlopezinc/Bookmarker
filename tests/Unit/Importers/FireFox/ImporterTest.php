@@ -102,7 +102,7 @@ class ImporterTest extends TestCase
                         </meta>
                         <DL>
                                 <DT><A HREF="https://store.playstation.com/en-us/concept/10004336" ADD_DATE="1666294452"
-                                        LAST_MODIFIED="1666294452" TAGS="fifa,gaming,fifa">EA SPORTS™ FIFA 23 Standard Edition PS5™<A>
+                                        LAST_MODIFIED="1666294452" TAGS="fifa,gaming,fifa,FIFA,fIFA,GAMING">EA SPORTS™ FIFA 23 Standard Edition PS5™<A>
                         </DL>
         HTML;
 

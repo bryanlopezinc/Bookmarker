@@ -14,6 +14,7 @@ final class ImportBookmarkRequest extends FormRequest
     public const POCKET = 'pocketExportFile';
     public const SAFARI = 'safariExportFile';
     public const INSTAPAPER = 'instapaperFile';
+    public const FIREFOX = 'firefoxFile';
 
     /**
      * @var array<string,string>
@@ -22,7 +23,8 @@ final class ImportBookmarkRequest extends FormRequest
         self::CHROME => Imports\ChromeImportRequestValidator::class,
         self::POCKET => Imports\PocketImportRequestValidator::class,
         self::SAFARI => Imports\SafariImportRequestValidator::class,
-        self::INSTAPAPER => Imports\InstapaperRequestValidator::class
+        self::INSTAPAPER => Imports\InstapaperRequestValidator::class,
+        self::FIREFOX => Imports\FireFoxImportRequestValidator::class,
     ];
 
     public function rules(): array
@@ -33,7 +35,8 @@ final class ImportBookmarkRequest extends FormRequest
                     self::CHROME,
                     self::POCKET,
                     self::SAFARI,
-                    self::INSTAPAPER
+                    self::INSTAPAPER,
+                    self::FIREFOX
                 ])
             ]
         ]);

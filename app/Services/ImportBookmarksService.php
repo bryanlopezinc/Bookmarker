@@ -49,6 +49,12 @@ final class ImportBookmarksService
      */
     private function inputFileTypes(): array
     {
-        return ['html', 'pocket_export_file', 'safari_html', 'instapaper_html'];
+        return [
+            'html',
+            'pocket_export_file',
+            'safari_html',
+            'instapaper_html',
+            'firefox_export_file'
+        ];
     }
 }

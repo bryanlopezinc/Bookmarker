@@ -15,14 +15,12 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Traits\ReflectsClosures;
 
 final class ImportBookmarks implements ShouldQueue
 {
     use Dispatchable,
         InteractsWithQueue,
-        Queueable,
-        ReflectsClosures;
+        Queueable;
 
     public function __construct(private ImportData $importData)
     {

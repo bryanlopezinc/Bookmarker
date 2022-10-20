@@ -14,6 +14,7 @@ use App\Models\Source;
 use App\Readers\BookmarkMetaData;
 use App\Readers\HttpClientInterface;
 use App\Repositories\FetchBookmarksRepository;
+use App\Repositories\UserRepository;
 use App\ValueObjects\Url;
 use Closure;
 use Database\Factories\BookmarkFactory;
@@ -46,12 +47,39 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         $this->handleUpdateBookmarkJob($bookmark);
     }
 
+    public function test_will_not_perform_any_update_if_user_has_deleted_account(): void
+    {
+        $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
+
+        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+            $mock->shouldReceive('findManyById')
+                ->once()
+                ->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
+        });
+
+        $this->mock(UserRepository::class, function (MockInterface $mock) {
+            $mock->shouldReceive('findByID')->once()->andReturn(false);
+        });
+
+        $this->mockClient(function (MockObject $mock) {
+            $mock->expects($this->never())->method('fetchBookmarkPageData');
+        });
+
+        $this->mockRepository(function (MockObject $mock) {
+            $mock->expects($this->never())->method('update');
+        });
+
+        $this->handleUpdateBookmarkJob($bookmark);
+    }
+
     public function test_will_not_perform_any_update_if_web_page_request_fails(): void
     {
         $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
 
         $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
-            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
+            $mock->shouldReceive('findManyById')
+                ->once()
+                ->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
         });
 
         $this->mockClient(function (MockObject $mock) {

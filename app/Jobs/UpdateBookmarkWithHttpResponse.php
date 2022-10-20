@@ -18,6 +18,7 @@ use App\DataTransferObjects\UpdateBookmarkData as Data;
 use App\Models\Source;
 use App\Readers\BookmarkMetaData;
 use App\Repositories\FetchBookmarksRepository;
+use App\Repositories\UserRepository;
 use App\ValueObjects\BookmarkDescription;
 use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\Url;
@@ -34,13 +35,17 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
         HttpClientInterface $client,
         Repository $repository,
         UrlHasherInterface $urlHasher,
-        FetchBookmarksRepository $bookmarkRepository = new FetchBookmarksRepository
+        FetchBookmarksRepository $bookmarkRepository = new FetchBookmarksRepository,
     ): void {
 
         /** @var Bookmark|null */
         $bookmark = $bookmarkRepository->findManyById($this->bookmark->id->toCollection())->first();
 
         if ($bookmark === null) {
+            return;
+        }
+
+        if ($this->userRepository()->findByID($bookmark->getOwnerID()) === false) {
             return;
         }
 
@@ -72,6 +77,11 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
         $this->updateSiteName($data, $bookmark);
 
         $repository->update(new Data($builder->build()));
+    }
+
+    private function userRepository(): UserRepository
+    {
+        return app(UserRepository::class);
     }
 
     private function canOpenUrl(Url $url): bool

@@ -16,7 +16,7 @@ use App\ValueObjects\Username;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Collection;
 
-final class UserRepository
+class UserRepository
 {
     public function findByUsername(Username $username, UserAttributes $columns = new UserAttributes()): User|false
     {
@@ -29,8 +29,9 @@ final class UserRepository
         return $result->sole();
     }
 
-    public function findByID(UserID $userID, UserAttributes $columns = new UserAttributes()): User|false
+    public function findByID(UserID $userID, UserAttributes $columns = null): User|false
     {
+        $columns = $columns ?: new UserAttributes();
         $result = $this->findMany('users.id', [$userID->value()], $columns);
 
         if ($result->isEmpty()) {

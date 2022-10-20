@@ -12,7 +12,7 @@ class SearchUserTagsTest extends TestCase
 {
     use CreatesBookmark;
 
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function searchUserTagsResponse(array $parameters = []): TestResponse
     {
         return $this->getJson(route('searchUserTags', $parameters));
     }
@@ -24,14 +24,14 @@ class SearchUserTagsTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->searchUserTagsResponse()->assertUnauthorized();
     }
 
     public function testWillThrowValidationExceptionWhenRequiredAttributesAreMissing(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse()->assertJsonValidationErrorFor('tag');
+        $this->searchUserTagsResponse()->assertJsonValidationErrorFor('tag');
     }
 
     public function testSearchTags(): void
@@ -40,7 +40,7 @@ class SearchUserTagsTest extends TestCase
 
         $this->saveBookmark(['tags' => [$tag = $this->faker->word]]);
 
-        $this->getTestResponse(['tag' => $tag])
+        $this->searchUserTagsResponse(['tag' => $tag])
             ->assertJsonCount(1, 'data')
             ->assertOk()
             ->assertExactJson([

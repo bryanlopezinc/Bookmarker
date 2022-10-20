@@ -16,9 +16,9 @@ class CreateFolderTest extends TestCase
 {
     use WithFaker;
 
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function createFolderResponse(array $data = []): TestResponse
     {
-        return $this->postJson(route('createFolder'), $parameters);
+        return $this->postJson(route('createFolder'), $data);
     }
 
     public function testIsAccessibleViaPath(): void
@@ -28,21 +28,21 @@ class CreateFolderTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->createFolderResponse()->assertUnauthorized();
     }
 
     public function testRequiredAttributesMustBePresent(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse()->assertJsonValidationErrors(['name']);
+        $this->createFolderResponse()->assertJsonValidationErrors(['name']);
     }
 
     public function testFolderNameMustNotBeEmpty(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->createFolderResponse([
             'name' => ' ',
         ])->assertJsonValidationErrors(['name']);
     }
@@ -51,25 +51,27 @@ class CreateFolderTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['name' => str_repeat('f', 51)])->assertJsonValidationErrors([
-            'name' => 'The name must not be greater than 50 characters.'
-        ]);
+        $this->createFolderResponse(['name' => str_repeat('f', 51)])
+            ->assertJsonValidationErrors([
+                'name' => 'The name must not be greater than 50 characters.'
+            ]);
     }
 
-    public function testFolderDescriptionCannotExceed_150(): void
+    public function testFolderDescriptionCannotBeGreaterThan_150(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['description' => str_repeat('f', 151)])->assertJsonValidationErrors([
-            'description' => 'The description must not be greater than 150 characters.'
-        ]);
+        $this->createFolderResponse(['description' => str_repeat('f', 151)])
+            ->assertJsonValidationErrors([
+                'description' => 'The description must not be greater than 150 characters.'
+            ]);
     }
 
     public function testCreateFolder(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->createFolderResponse([
             'name' => $name = $this->faker->word,
             'description' => $description = $this->faker->sentence
         ])->assertCreated();
@@ -94,7 +96,7 @@ class CreateFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->createFolderResponse([
             'name' => $this->faker->word,
         ])->assertCreated();
 
@@ -108,7 +110,7 @@ class CreateFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->createFolderResponse([
             'name' => $this->faker->word,
             'is_public' => true
         ])->assertCreated();
@@ -123,7 +125,7 @@ class CreateFolderTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->createFolderResponse([
             'name' => $this->faker->word,
             'tags' => 'howTo,howTo,stackOverflow'
         ])->assertJsonValidationErrors([
@@ -136,11 +138,11 @@ class CreateFolderTest extends TestCase
         ]);
     }
 
-    public function testFolderTagsCannotExceed_15(): void
+    public function testFolderTagsCannotBeGreaterThan_15(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->createFolderResponse([
             'name' => $this->faker->word,
             'tags' => TagFactory::new()->count(16)->make()->pluck('name')->implode(',')
         ])->assertJsonValidationErrors([
@@ -148,11 +150,11 @@ class CreateFolderTest extends TestCase
         ]);
     }
 
-    public function testCreateFolderWithTags(): void
+    public function testCanCreateFolderWithTags(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->createFolderResponse([
             'name' => $this->faker->word,
             'description' => $this->faker->sentence,
             'tags' => TagFactory::new()->count(15)->make()->pluck('name')->implode(',')

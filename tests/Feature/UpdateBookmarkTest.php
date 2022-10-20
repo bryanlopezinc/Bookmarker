@@ -20,7 +20,7 @@ class UpdateBookmarkTest extends TestCase
 {
     use WithFaker, WillCheckBookmarksHealth, CreatesBookmark;
 
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function updateBookmarkResponse(array $parameters = []): TestResponse
     {
         return $this->patchJson(route('updateBookmark'), $parameters);
     }
@@ -32,21 +32,21 @@ class UpdateBookmarkTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->updateBookmarkResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationExceptionWhenRequiredAttributesAreMissing(): void
+    public function testRequiredAttributesMustBePresent(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse()->assertJsonValidationErrorFor('id');
+        $this->updateBookmarkResponse()->assertJsonValidationErrorFor('id');
     }
 
-    public function testRequiresOneAttributeToBePresent(): void
+    public function testOneAttributeMustBePresent(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->updateBookmarkResponse([
             'id' => 112
         ])->assertJsonValidationErrors([
             'title' => 'The title field is required when none of tags / description are present.'
@@ -60,7 +60,7 @@ class UpdateBookmarkTest extends TestCase
         /** @var Bookmark */
         $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
 
-        $this->getTestResponse([
+        $this->updateBookmarkResponse([
             'id' => $model->id,
             'title' => $title = $title = $this->faker->sentence,
             'tags' => $tag = $this->faker->word,
@@ -93,7 +93,7 @@ class UpdateBookmarkTest extends TestCase
         /** @var Bookmark */
         $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
 
-        $this->getTestResponse([
+        $this->updateBookmarkResponse([
             'id' => $model->id,
             'tags' => $tag = $this->faker->word,
         ])->assertOk();
@@ -127,7 +127,7 @@ class UpdateBookmarkTest extends TestCase
         /** @var Bookmark */
         $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
 
-        $this->getTestResponse([
+        $this->updateBookmarkResponse([
             'id' => $model->id,
             'title' => $title = $this->faker->sentence
         ])->assertOk();
@@ -152,7 +152,7 @@ class UpdateBookmarkTest extends TestCase
         /** @var Bookmark */
         $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
 
-        $this->getTestResponse([
+        $this->updateBookmarkResponse([
             'id' => $model->id,
             'description' => $description = $this->faker->sentence
         ])->assertOk();
@@ -187,7 +187,7 @@ class UpdateBookmarkTest extends TestCase
                 ])->all());
             });
 
-        $this->getTestResponse([
+        $this->updateBookmarkResponse([
             'id' => $model->id,
             'tags' => TagFactory::new()->count(6)->make()->pluck('name')->implode(',')
         ])->assertStatus(400);
@@ -197,22 +197,20 @@ class UpdateBookmarkTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $model = BookmarkFactory::new()->create();
-
-        $this->getTestResponse([
-            'id' => $model->id + 1,
+        $this->updateBookmarkResponse([
+            'id' => BookmarkFactory::new()->create()->id + 1,
             'title' => 'title'
         ])->assertNotFound();
     }
 
-    public function testWillReturnForbiddenResponseWheUserDidNotCreateBookmark(): void
+    public function testBookmarkMustBelongToUser(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        [$user, $userWithBadIntention] = UserFactory::new()->count(2)->create();
+        $userBookmark = BookmarkFactory::new()->create(['user_id' => $user->id]);
 
-        $model = BookmarkFactory::new()->create();
-
-        $this->getTestResponse([
-            'id' => $model->id,
+        Passport::actingAs($userWithBadIntention);
+        $this->updateBookmarkResponse([
+            'id' => $userBookmark->id,
             'title' => 'title'
         ])->assertForbidden();
     }
@@ -225,7 +223,7 @@ class UpdateBookmarkTest extends TestCase
 
         shuffle($tags);
 
-        $this->getTestResponse([
+        $this->updateBookmarkResponse([
             'id' => Bookmark::query()->where('user_id', $user->id)->sole('id')->id,
             'tags' => $tags[0],
         ])->assertStatus(409)
@@ -236,7 +234,7 @@ class UpdateBookmarkTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->updateBookmarkResponse([
             'tags' => 'howTo,howTo,stackOverflow'
         ])->assertJsonValidationErrors([
             "tags.0" => [
@@ -254,7 +252,7 @@ class UpdateBookmarkTest extends TestCase
 
         $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
 
-        $this->getTestResponse([
+        $this->updateBookmarkResponse([
             'id' => $model->id,
             'title' => $this->faker->sentence
         ])->assertOk();

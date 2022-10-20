@@ -19,7 +19,7 @@ class SaveBookFromMailTest extends TestCase
 {
     use WithFaker;
 
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function createBookmarkResponse(array $parameters = []): TestResponse
     {
         return $this->post(route('saveBookmarkFromEmail', $parameters));
     }
@@ -31,13 +31,13 @@ class SaveBookFromMailTest extends TestCase
 
     public function testWillThrowValidationExceptionWhenRequiredAttributesAreMissing(): void
     {
-        $this->getTestResponse()->assertJsonValidationErrors(['email', 'rkv']);
-        $this->getTestResponse(['email' => 'foo'])->assertJsonValidationErrors(['rkv']);
+        $this->createBookmarkResponse()->assertJsonValidationErrors(['email', 'rkv']);
+        $this->createBookmarkResponse(['email' => 'foo'])->assertJsonValidationErrors(['rkv']);
     }
 
     public function testInboundKeyMustBeValid(): void
     {
-        $this->getTestResponse(['rkv' => 'foo'])->assertJsonValidationErrors(['rkv' => ['Invalid inbound key']]);
+        $this->createBookmarkResponse(['rkv' => 'foo'])->assertJsonValidationErrors(['rkv' => ['Invalid inbound key']]);
     }
 
     public function testSaveBookmark(): void
@@ -53,7 +53,7 @@ class SaveBookFromMailTest extends TestCase
             ->toString();
         $data['rkv'] = env('SENDGRID_INBOUND_KEY');
 
-        $this->getTestResponse($data)->assertOk();
+        $this->createBookmarkResponse($data)->assertOk();
 
         $this->assertDatabaseHas(Bookmark::class, ['user_id' => $user->id]);
     }
@@ -77,7 +77,7 @@ class SaveBookFromMailTest extends TestCase
             ->toString();
         $data['rkv'] = env('SENDGRID_INBOUND_KEY');
 
-        $this->getTestResponse($data)->assertOk();
+        $this->createBookmarkResponse($data)->assertOk();
 
         $this->assertDatabaseHas(Bookmark::class, ['user_id' => $user->id]);
     }
@@ -94,7 +94,7 @@ class SaveBookFromMailTest extends TestCase
             ->replace('{url}', $this->faker->url)
             ->toString();
 
-        $this->getTestResponse($data)->assertOk();
+        $this->createBookmarkResponse($data)->assertOk();
 
         Mail::assertQueued(EmailNotRegisteredMail::class);
     }
@@ -110,7 +110,7 @@ class SaveBookFromMailTest extends TestCase
             ->toString();
         $data['rkv'] = env('SENDGRID_INBOUND_KEY');
 
-        $this->getTestResponse($data)->assertOk();
+        $this->createBookmarkResponse($data)->assertOk();
 
         $this->assertDatabaseMissing(Bookmark::class, ['user_id' => $user->id]);
     }
@@ -129,7 +129,7 @@ class SaveBookFromMailTest extends TestCase
             ->replace('{url}', $this->faker->url)
             ->toString();
 
-        $this->getTestResponse($data)->assertOk();
+        $this->createBookmarkResponse($data)->assertOk();
 
         Mail::assertQueued(EmailNotVerifiedMail::class);
         $this->assertDatabaseMissing(Bookmark::class, ['user_id' => $user->id]);

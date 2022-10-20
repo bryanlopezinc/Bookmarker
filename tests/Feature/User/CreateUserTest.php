@@ -143,15 +143,11 @@ class CreateUserTest extends TestCase
         $this->assertEquals($lastname, $user->lastname);
         $this->assertNull($user->email_verified_at);
 
-        Notification::assertSentTo(
-            $user,
-            VerifyEmailNotification::class,
-            function (VerifyEmailNotification $notification) use ($user) {
-                static::$verificationUrl =  $notification->toMail($user)->actionUrl;
+        Notification::assertSentTo($user, VerifyEmailNotification::class, function (VerifyEmailNotification $notification) use ($user) {
+            static::$verificationUrl =  $notification->toMail($user)->actionUrl;
 
-                return true;
-            }
-        );
+            return true;
+        });
     }
 
     /**

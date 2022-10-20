@@ -21,7 +21,7 @@ class ResetPasswordTest extends TestCase
 
     private static User $user;
 
-    protected function getTestResponse(array $parameters = [], array $headers = []): TestResponse
+    protected function resetPasswordResponse(array $parameters = [], array $headers = []): TestResponse
     {
         return $this->postJson(route('resetPassword'), $parameters, $headers);
     }
@@ -33,23 +33,23 @@ class ResetPasswordTest extends TestCase
 
     public function testWillReturnValidationErrorsWhenClientCredentialsAreInvalid(): void
     {
-        $this->getTestResponse([])->assertUnauthorized();
+        $this->resetPasswordResponse([])->assertUnauthorized();
     }
 
     public function testWillReturnValidationErrorsWhenRequiredAttributesAreMissing(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->getTestResponse([])
+        $this->resetPasswordResponse([])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['email', 'password', 'token']);
     }
 
-    public function testWillReturnErrorResponseWhenUserDoesNotExists(): void
+    public function testWhenUserDoesNotExists(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->getTestResponse([
+        $this->resetPasswordResponse([
             'email'  => 'non-existentUser@yahoo.com',
             'password' => self::NEW_PASSWORD,
             'password_confirmation' => self::NEW_PASSWORD,
@@ -63,7 +63,7 @@ class ResetPasswordTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->getTestResponse([
+        $this->resetPasswordResponse([
             'email'  => UserFactory::new()->create([])->email,
             'password' => self::NEW_PASSWORD,
             'password_confirmation' => self::NEW_PASSWORD,
@@ -74,7 +74,7 @@ class ResetPasswordTest extends TestCase
             ]);
     }
 
-    public function testSuccessResponse(): void
+    public function testWillResetPassword(): void
     {
         Notification::fake();
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
@@ -92,7 +92,7 @@ class ResetPasswordTest extends TestCase
             return true;
         });
 
-        $this->getTestResponse([
+        $this->resetPasswordResponse([
             'email'  => $user->email,
             'password' => self::NEW_PASSWORD,
             'password_confirmation' => self::NEW_PASSWORD,
@@ -106,14 +106,12 @@ class ResetPasswordTest extends TestCase
     }
 
     /**
-     * @depends testSuccessResponse
+     * @depends testWillResetPassword
      */
     public function testUserCanLoginWithNewPasswordAfterReset(): void
     {
         $client = ClientFactory::new()->asPasswordClient()->create();
         $user = static::$user;
-
-        Mail::fake();
 
         //assert cannot login with old password
         $this->postJson(route('loginUser'), [
@@ -140,21 +138,20 @@ class ResetPasswordTest extends TestCase
         ])->assertOk();
     }
 
-
-    public function testPasswordMustBeAtLeast_8_characters(): void
+    public function testNewPasswordMustBeAtLeast_8_characters(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->getTestResponse(['password' => 'secured'])
+        $this->resetPasswordResponse(['password' => 'secured'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['password' => 'The password must be at least 8 characters.']);
     }
 
-    public function testPasswordMustContainOneNumber(): void
+    public function testNewPasswordMustContainOneNumber(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->getTestResponse(['password' => 'password_password'])
+        $this->resetPasswordResponse(['password' => 'password_password'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['password' => 'The password must contain at least one number.']);
     }

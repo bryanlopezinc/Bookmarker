@@ -11,7 +11,7 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 
-class RemoveEmailTest extends TestCase
+class RemoveSecondaryEmailTest extends TestCase
 {
     use WithFaker;
 

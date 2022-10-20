@@ -15,7 +15,7 @@ use Laravel\Passport\Passport;
 
 class Request2FACodeForLoginTest extends TestCase
 {
-    private function getTestResponse(array $parameters = [], array $headers = []): TestResponse
+    private function twoFARequestResponse(array $parameters = [], array $headers = []): TestResponse
     {
         return $this->postJson(route('requestVerificationCode'), $parameters, $headers);
     }
@@ -27,19 +27,19 @@ class Request2FACodeForLoginTest extends TestCase
 
     public function testUnAuthorizedClientCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->twoFARequestResponse()->assertUnauthorized();
     }
 
     public function testWillReturnValidationErrorsWhenClientCredentialsAreInvalid(): void
     {
-        $this->getTestResponse([])->assertUnauthorized();
+        $this->twoFARequestResponse([])->assertUnauthorized();
     }
 
     public function testWillReturnValidationErrorsWhenRequiredAttributesAreMissing(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->getTestResponse([])
+        $this->twoFARequestResponse([])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['username', 'password']);
     }
@@ -48,7 +48,7 @@ class Request2FACodeForLoginTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->getTestResponse([
+        $this->twoFARequestResponse([
             'username'  => UserFactory::randomUsername(),
             'password' => 'password',
         ])->assertUnauthorized();
@@ -58,7 +58,7 @@ class Request2FACodeForLoginTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->getTestResponse([
+        $this->twoFARequestResponse([
             'username'  => UserFactory::new()->create()->username,
             'password' => 'wrong-password',
         ])->assertUnauthorized();
@@ -75,7 +75,7 @@ class Request2FACodeForLoginTest extends TestCase
 
         $user = UserFactory::new()->create();
 
-        $this->getTestResponse([
+        $this->twoFARequestResponse([
             'username'  => $user->username,
             'password' => 'password',
         ])->assertOk();
@@ -95,7 +95,7 @@ class Request2FACodeForLoginTest extends TestCase
 
         $user = UserFactory::new()->create();
 
-        $this->getTestResponse([
+        $this->twoFARequestResponse([
             'username'  => $user->email,
             'password' => 'password',
         ])->assertOk();
@@ -107,17 +107,17 @@ class Request2FACodeForLoginTest extends TestCase
 
         $username = UserFactory::new()->create()->username;
 
-        $this->getTestResponse([
+        $this->twoFARequestResponse([
             'username'  => $username,
             'password' => 'password',
         ])->assertOk();
 
-        $this->getTestResponse([
+        $this->twoFARequestResponse([
             'username'  => $username,
             'password' => 'password',
         ])->assertStatus(Response::HTTP_TOO_MANY_REQUESTS);
 
-        $this->getTestResponse([
+        $this->twoFARequestResponse([
             'username'  => $username,
             'password' => 'password',
         ])->assertStatus(Response::HTTP_TOO_MANY_REQUESTS);
@@ -129,19 +129,19 @@ class Request2FACodeForLoginTest extends TestCase
 
         $username = UserFactory::new()->create()->username;
 
-        $this->getTestResponse([
+        $this->twoFARequestResponse([
             'username'  => $username,
             'password' => 'password',
         ])->assertOk();
 
-        $this->getTestResponse([
+        $this->twoFARequestResponse([
             'username'  => $username,
             'password' => 'password',
         ])->assertStatus(Response::HTTP_TOO_MANY_REQUESTS);
 
         $this->travel(62)->seconds();
 
-        $this->getTestResponse([
+        $this->twoFARequestResponse([
             'username'  => $username,
             'password' => 'password',
         ])->assertOk();

@@ -19,7 +19,7 @@ class FetchPublicFolderBookmarksTest extends TestCase
 {
     use WillCheckBookmarksHealth;
 
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function folderBookmarksResponse(array $parameters = []): TestResponse
     {
         return $this->getJson(route('viewPublicFolderBookmarks', $parameters));
     }
@@ -31,39 +31,39 @@ class FetchPublicFolderBookmarksTest extends TestCase
 
     public function testUnAuthorizedClientCannotAccessRoute(): void
     {
-        $this->getTestResponse(['folder_id' => 400])->assertUnauthorized();
+        $this->folderBookmarksResponse(['folder_id' => 400])->assertUnauthorized();
     }
 
     public function testRequiredAttributesMustBePresent(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->getTestResponse()->assertJsonValidationErrors(['folder_id']);
+        $this->folderBookmarksResponse()->assertJsonValidationErrors(['folder_id']);
     }
 
     public function testPaginationDataMustBeValid(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->getTestResponse(['per_page' => 3])
+        $this->folderBookmarksResponse(['per_page' => 3])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'per_page' => ['The per page must be at least 15.']
             ]);
 
-        $this->getTestResponse(['per_page' => 51])
+        $this->folderBookmarksResponse(['per_page' => 51])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'per_page' => ['The per page must not be greater than 39.']
             ]);
 
-        $this->getTestResponse(['page' => 2001])
+        $this->folderBookmarksResponse(['page' => 2001])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'page' => ['The page must not be greater than 2000.']
             ]);
 
-        $this->getTestResponse(['page' => -1])
+        $this->folderBookmarksResponse(['page' => -1])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'page' => ['The page must be at least 1.']
@@ -96,7 +96,7 @@ class FetchPublicFolderBookmarksTest extends TestCase
             ])->all()
         ));
 
-        $this->getTestResponse(['folder_id' => $folder->id])
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])
             ->assertOk()
             ->assertJsonCount(5, 'data')
             ->assertJson(function (AssertableJson $json) use ($publicFolderBookmarkIDs, $folder) {
@@ -172,7 +172,7 @@ class FetchPublicFolderBookmarksTest extends TestCase
             ])->all()
         ));
 
-        $this->getTestResponse(['folder_id' => $folder->id])->assertOk();
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
 
         $this->assertBookmarksHealthWillBeChecked($folderBookmarkIDs->all());
     }
@@ -183,7 +183,7 @@ class FetchPublicFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->create([]);
 
-        $this->getTestResponse(['folder_id' => $folder->id + 1])->assertNotFound();
+        $this->folderBookmarksResponse(['folder_id' => $folder->id + 1])->assertNotFound();
     }
 
     public function testWillReturnNotFoundWhenFolderIsPrivate(): void
@@ -192,7 +192,7 @@ class FetchPublicFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->create([]);
 
-        $this->getTestResponse(['folder_id' => $folder->id])->assertNotFound();
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertNotFound();
     }
 
     public function testWillReturnEmptyJsonWhenFolderHasNoItems(): void
@@ -201,6 +201,6 @@ class FetchPublicFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->public()->create([]);
 
-        $this->getTestResponse(['folder_id' => $folder->id])->assertJsonCount(0, 'data')->assertOk();
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertJsonCount(0, 'data')->assertOk();
     }
 }

@@ -20,7 +20,7 @@ class DeleteBookmarksTest extends TestCase
 {
     use CreatesBookmark, WillCheckBookmarksHealth;
 
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function deleteBookmarksResponse(array $parameters = []): TestResponse
     {
         return $this->deleteJson(route('deleteBookmark'), $parameters);
     }
@@ -32,21 +32,21 @@ class DeleteBookmarksTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->deleteBookmarksResponse()->assertUnauthorized();
     }
 
     public function testWillThrowValidationWhenRequiredAttributesAreMissing(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse()->assertJsonValidationErrorFor('ids');
+        $this->deleteBookmarksResponse()->assertJsonValidationErrorFor('ids');
     }
 
     public function testAttributesMustBeUnique(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->deleteBookmarksResponse([
             'ids' => '1,1,3,4,5',
         ])->assertJsonValidationErrors([
             "ids.0" => ["The ids.0 field has a duplicate value."],
@@ -58,7 +58,7 @@ class DeleteBookmarksTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['ids' => collect()->times(51)->implode(',')])
+        $this->deleteBookmarksResponse(['ids' => collect()->times(51)->implode(',')])
             ->assertJsonValidationErrorFor('ids')
             ->assertJsonValidationErrors([
                 'ids' => [
@@ -75,7 +75,7 @@ class DeleteBookmarksTest extends TestCase
 
         $bookmark = Bookmark::query()->where('user_id', $user->id)->first();
 
-        $this->getTestResponse(['ids' => (string)$bookmark->id])->assertOk();
+        $this->deleteBookmarksResponse(['ids' => (string)$bookmark->id])->assertOk();
 
         $this->assertDatabaseMissing(Bookmark::class, ['id' => $bookmark->id]);
 
@@ -97,7 +97,7 @@ class DeleteBookmarksTest extends TestCase
 
         $bookmark = BookmarkFactory::new()->create(['user_id' => $user->id]);
 
-        $this->getTestResponse(['ids' => (string)$bookmark->id])->assertOk();
+        $this->deleteBookmarksResponse(['ids' => (string)$bookmark->id])->assertOk();
 
         $this->assertBookmarksHealthWillNotBeChecked([$bookmark->id]);
     }
@@ -113,7 +113,7 @@ class DeleteBookmarksTest extends TestCase
         //Add created bookmark to favorites.
         $this->postJson(route('createFavorite'), ['bookmarks' => (string) $bookmark->id])->assertCreated();
 
-        $this->getTestResponse(['ids' => (string)$bookmark->id])->assertOk();
+        $this->deleteBookmarksResponse(['ids' => (string)$bookmark->id])->assertOk();
 
         $this->assertDatabaseMissing(Favorite::class, [
             'user_id' => $user->id,
@@ -136,7 +136,7 @@ class DeleteBookmarksTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse(['ids' => (string)($model->id + 1)])->assertOk();
+        $this->deleteBookmarksResponse(['ids' => (string)($model->id + 1)])->assertOk();
     }
 
     public function testWillReturnForbiddenWhenUserDoesNotOwnBookmark(): void
@@ -145,6 +145,6 @@ class DeleteBookmarksTest extends TestCase
 
         $model = BookmarkFactory::new()->create();
 
-        $this->getTestResponse(['ids' => (string)$model->id])->assertForbidden();
+        $this->deleteBookmarksResponse(['ids' => (string)$model->id])->assertForbidden();
     }
 }

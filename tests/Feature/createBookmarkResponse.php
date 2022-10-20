@@ -15,11 +15,11 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 
-class CreateBookmarksTest extends TestCase
+class CreateBookmarkTest extends TestCase
 {
     use WithFaker;
 
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function createBookmarkResponse(array $parameters = []): TestResponse
     {
         return $this->postJson(route('createBookmark'), $parameters);
     }
@@ -31,14 +31,14 @@ class CreateBookmarksTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->createBookmarkResponse()->assertUnauthorized();
     }
 
     public function testWillThrowValidationWhenRequiredAttributesAreMissing(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse()->assertJsonValidationErrorFor('url');
+        $this->createBookmarkResponse()->assertJsonValidationErrorFor('url');
     }
 
     public function testWillThrowValidationWhenAttributesAreInvalid(): void
@@ -49,10 +49,10 @@ class CreateBookmarksTest extends TestCase
             'url' => $this->faker->url
         ];
 
-        $this->getTestResponse(['url' => 'foo bar'])->assertJsonValidationErrorFor('url');
-        $this->getTestResponse(['tags' => ['foo', 'bar'], ...$valid])->assertJsonValidationErrorFor('tags');
-        $this->getTestResponse(['tags' => 'foo,bar,foobarzawqwe234urklslss,', ...$valid])->assertJsonValidationErrorFor('tags.2');
-        $this->getTestResponse(['title' => ' ', ...$valid])->assertJsonValidationErrorFor('title');
+        $this->createBookmarkResponse(['url' => 'foo bar'])->assertJsonValidationErrorFor('url');
+        $this->createBookmarkResponse(['tags' => ['foo', 'bar'], ...$valid])->assertJsonValidationErrorFor('tags');
+        $this->createBookmarkResponse(['tags' => 'foo,bar,foobarzawqwe234urklslss,', ...$valid])->assertJsonValidationErrorFor('tags.2');
+        $this->createBookmarkResponse(['title' => ' ', ...$valid])->assertJsonValidationErrorFor('title');
     }
 
     public function testCannotAddMoreThan15Tags(): void
@@ -61,16 +61,17 @@ class CreateBookmarksTest extends TestCase
 
         $tags = TagFactory::new()->count(16)->make()->pluck('name')->implode(',');
 
-        $this->getTestResponse(['url' => $this->faker->url, 'tags' => $tags])->assertJsonValidationErrors([
-            'tags' => 'The tags must not be greater than 15 characters.'
-        ]);
+        $this->createBookmarkResponse(['url' => $this->faker->url, 'tags' => $tags])
+            ->assertJsonValidationErrors([
+                'tags' => 'The tags must not be greater than 15 characters.'
+            ]);
     }
 
     public function testTagsMustBeUnique(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->createBookmarkResponse([
             'url' => $this->faker->url,
             'tags' => 'howTo,howTo,stackOverflow'
         ])->assertJsonValidationErrors([
@@ -87,26 +88,28 @@ class CreateBookmarksTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['url' => $this->faker->url, 'description' => str_repeat('a', 201)])->assertJsonValidationErrors([
-            'description' => 'The description must not be greater than 200 characters.'
-        ]);
+        $this->createBookmarkResponse(['url' => $this->faker->url, 'description' => str_repeat('a', 201)])
+            ->assertJsonValidationErrors([
+                'description' => 'The description must not be greater than 200 characters.'
+            ]);
     }
 
     public function testBookmarkTitleCannotExceed_100(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['url' => $this->faker->url, 'title' => str_repeat('a', 101)])->assertJsonValidationErrors([
-            'title' => 'The title must not be greater than 100 characters.'
-        ]);
+        $this->createBookmarkResponse(['url' => $this->faker->url, 'title' => str_repeat('a', 101)])
+            ->assertJsonValidationErrors([
+                'title' => 'The title must not be greater than 100 characters.'
+            ]);
     }
 
     public function testUrlMustNotBeHttp(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['url' => 'chrome://flags'])->assertCreated();
-        $this->getTestResponse(['url' => 'sgn://social-network.example.com/?ident=bob'])->assertCreated();
+        $this->createBookmarkResponse(['url' => 'chrome://flags'])->assertCreated();
+        $this->createBookmarkResponse(['url' => 'sgn://social-network.example.com/?ident=bob'])->assertCreated();
     }
 
     public function testWillCreateBookmark(): void
@@ -114,7 +117,7 @@ class CreateBookmarksTest extends TestCase
         Bus::fake(UpdateBookmarkWithHttpResponse::class);
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->getTestResponse(['url' => $url =  $this->faker->url])->assertCreated();
+        $this->createBookmarkResponse(['url' => $url =  $this->faker->url])->assertCreated();
 
         /** @var Bookmark */
         $bookmark = Bookmark::query()->where('user_id', $user->id)->sole();
@@ -141,7 +144,7 @@ class CreateBookmarksTest extends TestCase
 
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->createBookmarkResponse([
             'url'   => $this->faker->url,
             'title' => $title = '<h1>whatever</h1>',
         ])->assertCreated();
@@ -161,7 +164,7 @@ class CreateBookmarksTest extends TestCase
 
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->createBookmarkResponse([
             'url'   => $this->faker->url,
             'description' => $description = '<h2>my dog stepped on a bee :-(</h2>'
         ])->assertCreated();
@@ -180,7 +183,7 @@ class CreateBookmarksTest extends TestCase
 
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->createBookmarkResponse([
             'url'   => $this->faker->url,
             'tags'  => TagFactory::new()->count(3)->make()->pluck('name')->implode(',')
         ])->assertCreated();
@@ -197,7 +200,9 @@ class CreateBookmarksTest extends TestCase
 
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->withoutExceptionHandling()->getTestResponse(['url' => $url = $this->faker->url])->assertCreated();
+        $this->withoutExceptionHandling()
+            ->createBookmarkResponse(['url' => $this->faker->url])
+            ->assertCreated();
 
         Bus::assertDispatchedTimes(UpdateBookmarkWithHttpResponse::class, 1);
     }
@@ -222,7 +227,7 @@ class CreateBookmarksTest extends TestCase
 
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['url' => $this->faker->url])->assertCreated();
+        $this->createBookmarkResponse(['url' => $this->faker->url])->assertCreated();
     }
 
     /**
@@ -251,6 +256,6 @@ class CreateBookmarksTest extends TestCase
 
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['url' => $this->faker->url])->assertCreated();
+        $this->createBookmarkResponse(['url' => $this->faker->url])->assertCreated();
     }
 }

@@ -12,7 +12,7 @@ use Laravel\Passport\Passport;
 
 class RequestPasswordResetTest extends TestCase
 {
-    protected function getTestResponse(array $parameters = [], array $headers = []): TestResponse
+    protected function requestPasswordResetResponse(array $parameters = [], array $headers = []): TestResponse
     {
         return $this->postJson(route('requestPasswordResetToken'), $parameters, $headers);
     }
@@ -24,29 +24,29 @@ class RequestPasswordResetTest extends TestCase
 
     public function testUnauthorizedClientCannotAccessRoute(): void
     {
-        $this->getTestResponse(['email'  => UserFactory::new()->create()->email])->assertUnauthorized();
+        $this->requestPasswordResetResponse(['email'  => UserFactory::new()->create()->email])->assertUnauthorized();
     }
 
-    public function testWillReturnValidationErrorsWhenAttributesAreInvalid(): void
+    public function testAttributesMustBeValidInvalid(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asClientCredentials()->create());
 
-        $this->getTestResponse([])->assertUnprocessable()->assertJsonValidationErrors(['email']);
-        $this->getTestResponse(['email' => 'my mail@yahoo.com'])->assertUnprocessable();
+        $this->requestPasswordResetResponse([])->assertUnprocessable()->assertJsonValidationErrors(['email']);
+        $this->requestPasswordResetResponse(['email' => 'my mail@yahoo.com'])->assertUnprocessable();
     }
 
-    public function testWillReturnErrorResponseWhenUserDoesNotExists(): void
+    public function testEmailMustBelongToARegisteredUser(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asClientCredentials()->create());
 
-        $this->getTestResponse(['email'  => 'non-existentUser@yahoo.com'])
+        $this->requestPasswordResetResponse(['email'  => 'non-existentUser@yahoo.com'])
             ->assertNotFound()
             ->assertExactJson([
                 'message' => 'User not found'
             ]);
     }
 
-    public function testSuccessResponse(): void
+    public function testWillSendPasswordResetLink(): void
     {
         config(['settings.RESET_PASSWORD_URL' => 'https://url.com/reset?token=:token&email=:email&foo=bar']);
 
@@ -56,7 +56,7 @@ class RequestPasswordResetTest extends TestCase
 
         $user = UserFactory::new()->create();
 
-        $this->getTestResponse(['email'  => $user->email,])
+        $this->requestPasswordResetResponse(['email'  => $user->email,])
             ->assertOk()
             ->assertExactJson(['message' => 'success']);
 

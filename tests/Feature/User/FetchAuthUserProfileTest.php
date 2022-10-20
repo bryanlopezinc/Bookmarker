@@ -10,7 +10,7 @@ use Tests\TestCase;
 
 class FetchAuthUserProfileTest extends TestCase
 {
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function getUserProfileResponse(array $parameters = []): TestResponse
     {
         return $this->getJson(route('authUserProfile'), $parameters);
     }
@@ -22,14 +22,14 @@ class FetchAuthUserProfileTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->getUserProfileResponse()->assertUnauthorized();
     }
 
     public function testFetchUserProfile(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->getTestResponse()
+        $this->getUserProfileResponse()
             ->assertOk()
             ->assertJsonCount(1)
             ->assertJsonCount(7, 'data.attributes')

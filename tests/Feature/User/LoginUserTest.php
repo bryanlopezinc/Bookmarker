@@ -30,7 +30,7 @@ class LoginUserTest extends TestCase
         $this->user = UserFactory::new()->create();
     }
 
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function loginUserResponse(array $parameters = []): TestResponse
     {
         return $this->postJson(route('loginUser'), $parameters);
     }
@@ -49,7 +49,7 @@ class LoginUserTest extends TestCase
         ];
 
         //wrong password
-        $this->getTestResponse([
+        $this->loginUserResponse([
             'username'  => $this->user->username,
             'password'  => 'wrongPassword',
             'client_id' => $this->client->id,
@@ -59,7 +59,7 @@ class LoginUserTest extends TestCase
         ])->assertStatus(400)->assertExactJson($data);
 
         //username does not exists
-        $this->getTestResponse([
+        $this->loginUserResponse([
             'username'  =>  UserFactory::randomUsername(),
             'password'  => 'password',
             'client_id' => $this->client->id,
@@ -69,7 +69,7 @@ class LoginUserTest extends TestCase
         ])->assertStatus(400)->assertExactJson($data);
 
         //missing credentials
-        $this->getTestResponse([
+        $this->loginUserResponse([
             'username'  => $this->user->username,
             'password'  => 'password',
             'two_fa_code' => '12345',
@@ -83,7 +83,7 @@ class LoginUserTest extends TestCase
 
     public function testUsernameMustBeAnEmailOrUsername(): void
     {
-        $this->getTestResponse([
+        $this->loginUserResponse([
             'username'  => 'urhen#uh', //invalid username
             'password'  => 'password',
             'client_id' => $this->client->id,
@@ -98,7 +98,7 @@ class LoginUserTest extends TestCase
                 ]
             ]);
 
-        $this->getTestResponse([
+        $this->loginUserResponse([
             'username'  => 'bryanlopez.@yahoo.com',
             'password'  => 'password',
             'client_id' => $this->client->id,
@@ -127,7 +127,7 @@ class LoginUserTest extends TestCase
 
         $code = (string)$this->get2FACode($this->user->username, 'password');
 
-        $this->getTestResponse([
+        $this->loginUserResponse([
             'username'  => $this->user->username,
             'password'  => 'password',
             'client_id' => $this->client->id,
@@ -194,7 +194,7 @@ class LoginUserTest extends TestCase
 
         $code = (string)$this->get2FACode($email, 'password');
 
-        $this->getTestResponse([
+        $this->loginUserResponse([
             'username'  => $email,
             'password'  => 'password',
             'client_id' => $this->client->id,
@@ -219,7 +219,7 @@ class LoginUserTest extends TestCase
 
         $code = (string)$this->get2FACode($email, 'password');
 
-        $this->getTestResponse([
+        $this->loginUserResponse([
             'username'  => $email,
             'password'  => 'password',
             'client_id' => $this->client->id,
@@ -230,7 +230,7 @@ class LoginUserTest extends TestCase
             'with_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
         ])->assertOk();
 
-        $this->getTestResponse([
+        $this->loginUserResponse([
             'username'  => $email,
             'password'  => 'password',
             'client_id' => $this->client->id,
@@ -258,7 +258,7 @@ class LoginUserTest extends TestCase
         $code = (string)$this->get2FACode($email, 'password');
 
         $this->travel(11)->minutes(function () use ($code, $email) {
-            $this->getTestResponse([
+            $this->loginUserResponse([
                 'username'  => $email,
                 'password'  => 'password',
                 'client_id' => $this->client->id,
@@ -278,7 +278,7 @@ class LoginUserTest extends TestCase
         $code = $this->get2FACode($this->user->username, 'password');
 
         //wrong code
-        $this->getTestResponse([
+        $this->loginUserResponse([
             'username'  => $this->user->username,
             'password'  => 'password',
             'client_id' => $this->client->id,
@@ -292,7 +292,7 @@ class LoginUserTest extends TestCase
         ]);
 
         //valid code but different user
-        $this->getTestResponse([
+        $this->loginUserResponse([
             'username'  => UserFactory::new()->create()->username,
             'password'  => 'password',
             'client_id' => $this->client->id,
@@ -308,7 +308,7 @@ class LoginUserTest extends TestCase
 
     public function testAttributesMustBeFilledWhenPresent(): void
     {
-        $this->getTestResponse([
+        $this->loginUserResponse([
             'with_ip' => '',
             'with_agent' => '',
             'two_fa_code' => ''
@@ -323,7 +323,7 @@ class LoginUserTest extends TestCase
         Mail::fake();
         Http::fake();
 
-        $this->getTestResponse([
+        $this->loginUserResponse([
             'username'  => $this->user->username,
             'password'  => 'password',
             'client_id' => $this->client->id,
@@ -348,7 +348,7 @@ class LoginUserTest extends TestCase
 
         Mail::fake();
 
-        $this->getTestResponse([
+        $this->loginUserResponse([
             'username'  => $this->user->username,
             'password'  => 'password',
             'client_id' => $this->client->id,
@@ -371,7 +371,7 @@ class LoginUserTest extends TestCase
     {
         $user = UserFactory::new()->unverified()->create();
 
-        $this->getTestResponse([
+        $this->loginUserResponse([
             'username'  => $user->username,
             'password'  => 'password',
             'client_id' => $this->client->id,

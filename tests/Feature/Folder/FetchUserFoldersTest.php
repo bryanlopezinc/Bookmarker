@@ -18,7 +18,7 @@ class FetchUserFoldersTest extends TestCase
 {
     use WithFaker;
 
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function userFoldersResponse(array $parameters = []): TestResponse
     {
         return $this->getJson(route('userFolders', $parameters));
     }
@@ -30,39 +30,39 @@ class FetchUserFoldersTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->userFoldersResponse()->assertUnauthorized();
     }
 
     public function testPaginationDataMustBeValid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['per_page', 'page'])
+        $this->userFoldersResponse(['per_page', 'page'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'per_page' => ['The per page field must have a value.'],
                 'page' => ['The page field must have a value.'],
             ]);
 
-        $this->getTestResponse(['per_page' => 3])
+        $this->userFoldersResponse(['per_page' => 3])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'per_page' => ['The per page must be at least 15.']
             ]);
 
-        $this->getTestResponse(['per_page' => 40])
+        $this->userFoldersResponse(['per_page' => 40])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'per_page' => ['The per page must not be greater than 39.']
             ]);
 
-        $this->getTestResponse(['page' => 2001])
+        $this->userFoldersResponse(['page' => 2001])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'page' => ['The page must not be greater than 2000.']
             ]);
 
-        $this->getTestResponse(['page' => -1])
+        $this->userFoldersResponse(['page' => -1])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'page' => ['The page must be at least 1.']
@@ -81,7 +81,7 @@ class FetchUserFoldersTest extends TestCase
             'description' => "<script>alert(CSS)</script>",
         ]);
 
-        $this->getTestResponse([])
+        $this->userFoldersResponse([])
             ->assertOk()
             ->assertJsonCount(10, 'data')
             ->assertJson(function (AssertableJson $json) use ($userFolders) {
@@ -150,7 +150,7 @@ class FetchUserFoldersTest extends TestCase
                 ]
             ]);
 
-        $this->getTestResponse(['per_page' => 20])
+        $this->userFoldersResponse(['per_page' => 20])
             ->assertOk()
             ->assertJson(function (AssertableJson $json) {
                 $json->where('links.first', route('userFolders', ['per_page' => 20, 'page' => 1]))->etc();
@@ -163,7 +163,7 @@ class FetchUserFoldersTest extends TestCase
 
         $folders = FolderFactory::new()->count(5)->create(['user_id' => $user->id]);
 
-        $response = $this->getTestResponse([])->assertOk();
+        $response = $this->userFoldersResponse([])->assertOk();
 
         $this->assertEquals(
             $folders->pluck('id')->sortDesc()->values()->all(),
@@ -177,7 +177,7 @@ class FetchUserFoldersTest extends TestCase
 
         $folders = FolderFactory::new()->count(5)->create(['user_id' => $user->id]);
 
-        $response = $this->getTestResponse(['sort' => 'newest'])->assertOk();
+        $response = $this->userFoldersResponse(['sort' => 'newest'])->assertOk();
 
         $this->assertEquals(
             $folders->pluck('id')->sortDesc()->values()->all(),
@@ -191,7 +191,7 @@ class FetchUserFoldersTest extends TestCase
 
         $folders = FolderFactory::new()->count(5)->create(['user_id' => $user->id]);
 
-        $response = $this->getTestResponse(['sort' => 'oldest'])->assertOk();
+        $response = $this->userFoldersResponse(['sort' => 'oldest'])->assertOk();
 
         $this->assertEquals(
             $folders->pluck('id')->all(),
@@ -212,7 +212,7 @@ class FetchUserFoldersTest extends TestCase
             'folder' => $folderWithMostItems->id
         ])->assertCreated();
 
-        $response = $this->getTestResponse(['sort' => 'most_items'])->assertOk();
+        $response = $this->userFoldersResponse(['sort' => 'most_items'])->assertOk();
 
         $this->assertEquals(
             $folderWithMostItems->id,
@@ -240,7 +240,7 @@ class FetchUserFoldersTest extends TestCase
                 $bookmarksAmountToAddToFolder++;
             });
 
-        $response = $this->getTestResponse(['sort' => 'least_items'])->assertOk();
+        $response = $this->userFoldersResponse(['sort' => 'least_items'])->assertOk();
 
         $this->assertEquals(
             [$folderIDWithLeastItems, ...$userFoldersIDs->reject($folderIDWithLeastItems)->all()],
@@ -260,7 +260,7 @@ class FetchUserFoldersTest extends TestCase
             'name' => 'Links to all my billions'
         ]));
 
-        $response = $this->getTestResponse(['sort' => 'updated_recently'])->assertOk();
+        $response = $this->userFoldersResponse(['sort' => 'updated_recently'])->assertOk();
 
         $this->assertEquals(
             $recentlyUpdatedFolder->id,
@@ -276,7 +276,7 @@ class FetchUserFoldersTest extends TestCase
             'user_id' => $user->id,
         ]);
 
-        $this->getTestResponse([])
+        $this->userFoldersResponse([])
             ->assertOk()
             ->assertJsonCount(5, 'data')
             ->assertJson(function (AssertableJson $json) {
@@ -297,7 +297,7 @@ class FetchUserFoldersTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse(['per_page' => 17])
+        $this->userFoldersResponse(['per_page' => 17])
             ->assertOk()
             ->assertJsonCount(17, 'data');
     }
@@ -314,7 +314,7 @@ class FetchUserFoldersTest extends TestCase
             'tags' => $tags->implode(',')
         ])->assertCreated();
 
-        $this->getTestResponse([])
+        $this->userFoldersResponse([])
             ->assertOk()
             ->assertJsonCount(5, 'data.0.attributes.tags')
             ->assertJson(function (AssertableJson $json) use ($tags) {

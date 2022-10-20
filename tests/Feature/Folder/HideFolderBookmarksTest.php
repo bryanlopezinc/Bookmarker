@@ -14,7 +14,7 @@ use Tests\TestCase;
 
 class HideFolderBookmarksTest extends TestCase
 {
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function hideFolderResponse(array $parameters = []): TestResponse
     {
         return $this->postJson(route('hideFolderBookmarks', $parameters));
     }
@@ -26,21 +26,21 @@ class HideFolderBookmarksTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->hideFolderResponse()->assertUnauthorized();
     }
 
     public function testRequiredAttributesMustBePresent(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse()->assertJsonValidationErrors(['folder_id', 'bookmarks']);
+        $this->hideFolderResponse()->assertJsonValidationErrors(['folder_id', 'bookmarks']);
     }
 
     public function testAttributesMustBeUnique(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse([
+        $this->hideFolderResponse([
             'bookmarks' => '1,1,3,4,5',
         ])->assertJsonValidationErrors([
             "bookmarks.0" => ["The bookmarks.0 field has a duplicate value."],
@@ -52,7 +52,7 @@ class HideFolderBookmarksTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['bookmarks' => collect()->times(51)->implode(',')])
+        $this->hideFolderResponse(['bookmarks' => collect()->times(51)->implode(',')])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'bookmarks' => ['The bookmarks must not have more than 50 items.']
@@ -84,7 +84,7 @@ class HideFolderBookmarksTest extends TestCase
             ])->all()
         ));
 
-        $this->getTestResponse([
+        $this->hideFolderResponse([
             'folder_id' => $folder->id,
             'bookmarks' => $bookmarkIDs->implode(',')
         ])->assertOk();
@@ -113,7 +113,7 @@ class HideFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->create();
 
-        $this->getTestResponse([
+        $this->hideFolderResponse([
             'folder_id' => $folder->id,
             'bookmarks' => collect()->times(30)->implode(',')
         ])->assertForbidden();
@@ -127,7 +127,7 @@ class HideFolderBookmarksTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse([
+        $this->hideFolderResponse([
             'folder_id' => $folder->id + 1,
             'bookmarks' => collect()->times(30)->implode(',')
         ])->assertNotFound();
@@ -145,7 +145,7 @@ class HideFolderBookmarksTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->getTestResponse([
+        $this->hideFolderResponse([
             'folder_id' => $folder->id,
             'bookmarks' => $bookmarkIDs->map(fn (int $bookmarkID) => $bookmarkID + 1)->implode(',')
         ])->assertNotFound()

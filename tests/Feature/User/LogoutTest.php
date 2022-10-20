@@ -18,7 +18,7 @@ final class LogoutTest extends TestCase
     protected static string $accessToken;
     protected static string $refreshToken;
 
-    protected function getTestResponse(array $parameters = [], array $headers = []): TestResponse
+    protected function logOutResponse(array $parameters = [], array $headers = []): TestResponse
     {
         return $this->postJson(route('logoutUser'), $parameters, $headers);
     }
@@ -30,7 +30,7 @@ final class LogoutTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->logOutResponse()->assertUnauthorized();
     }
 
     public function testWillLogoutUser(): void
@@ -39,7 +39,7 @@ final class LogoutTest extends TestCase
 
         $this->setTokens($user);
 
-        $this->getTestResponse(headers: ['Authorization' => 'Bearer ' . static::$accessToken])->assertOk();
+        $this->logOutResponse(headers: ['Authorization' => 'Bearer ' . static::$accessToken])->assertOk();
     }
 
     private function setTokens(User $user): void

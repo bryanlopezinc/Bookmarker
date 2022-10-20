@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\DataTransferObjects\ImportData;
-use App\Enums\ImportSource;
-use App\Importers\Chrome\Importer as ChromeImporter;
-use App\Importers\ImporterInterface;
-use App\Importers\Pocket\Importer as PocketImporter;
-use App\Importers\Safari\Importer as SafariImporter;
+use App\ImporterFactory;
+use App\Repositories\UserRepository;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -26,22 +23,20 @@ final class ImportBookmarks implements ShouldQueue
     {
     }
 
-    public function handle(): void
+    public function handle(ImporterFactory $factory, UserRepository $repository): void
     {
-        DB::transaction(function () {
+        if ($repository->findByID($this->importData->userID()) === false) {
+            return;
+        }
+
+        DB::transaction(function () use ($factory) {
             $importData = $this->importData;
 
-            $this->getImporter()->import($importData->userID(), $importData->requestID(), $importData->data());
+            $factory->getImporter($importData->source())->import(
+                $importData->userID(),
+                $importData->requestID(),
+                $importData->data()
+            );
         });
-    }
-
-    public function getImporter(): ImporterInterface
-    {
-        return match ($this->importData->source()) {
-            ImportSource::CHROME => app(ChromeImporter::class),
-            ImportSource::POCKET => app(PocketImporter::class),
-            ImportSource::SAFARI => app(SafariImporter::class),
-            ImportSource::INSTAPAPER => app(\App\Importers\Instapaper\Importer::class)
-        };
     }
 }

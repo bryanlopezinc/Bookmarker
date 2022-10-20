@@ -7,7 +7,7 @@ namespace App\Importers\Pocket;
 use App\Exceptions\InvalidTagException;
 use App\Exceptions\MalformedURLException;
 use App\Importers\ResolveImportTimestamp;
-use App\Importers\FilesystemInterface;
+use App\Importers\Filesystem;
 use App\Importers\ImporterInterface;
 use App\Services\CreateBookmarkService;
 use App\ValueObjects\Tag;
@@ -22,7 +22,7 @@ final class Importer implements ImporterInterface
 
     public function __construct(
         private CreateBookmarkService $createBookmark,
-        private FilesystemInterface $filesystem,
+        private Filesystem $filesystem,
         private DOMParserInterface $parser = new DOMParser
     ) {
     }

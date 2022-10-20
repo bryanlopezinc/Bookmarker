@@ -4,20 +4,14 @@ declare(strict_types=1);
 
 namespace App\Importers;
 
-use App\Importers\FilesystemInterface;
 use App\ValueObjects\UserID;
 use App\ValueObjects\Uuid;
-use Illuminate\Contracts\Filesystem\FileNotFoundException;
-use Illuminate\Contracts\Filesystem\Filesystem as LaravelFilesystem;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Contracts\Filesystem\Filesystem as FilesystemContract;
 
-final class Filesystem implements FilesystemInterface
+final class Filesystem
 {
-    private LaravelFilesystem $filesystem;
-
-    public function __construct(string $disk)
+    public function __construct(private FilesystemContract $filesystem)
     {
-        $this->filesystem = Storage::disk($disk);
     }
 
     public function put(string $contents, UserID $userID, Uuid $requestID): void
@@ -45,7 +39,7 @@ final class Filesystem implements FilesystemInterface
         $contents = $this->filesystem->get($this->buildFileName($userID, $requestID));
 
         if ($contents === null) {
-            throw new FileNotFoundException();
+            return '';
         }
 
         return $contents;

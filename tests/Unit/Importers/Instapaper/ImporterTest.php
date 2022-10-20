@@ -12,17 +12,17 @@ use App\ValueObjects\UserID;
 use App\Jobs\UpdateBookmarkWithHttpResponse;
 use Illuminate\Support\Facades\Bus;
 use App\DataTransferObjects\Bookmark;
-use App\Importers\FilesystemInterface;
 use Illuminate\Foundation\Testing\WithFaker;
 use PHPUnit\Framework\MockObject\MockObject;
 use App\Contracts\CreateBookmarkRepositoryInterface;
 use App\Importers\Instapaper\DOMParserInterface;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use App\Importers\Instapaper\Importer;
+use Tests\Unit\Importers\MockFilesystem;
 
 class ImporterTest extends TestCase
 {
-    use WithFaker;
+    use WithFaker, MockFilesystem;
 
     public function testWillThrowExceptionIfFileDoesNotExists(): void
     {
@@ -52,15 +52,6 @@ class ImporterTest extends TestCase
         $this->swap(DOMParserInterface::class, $DOMParser);
 
         $this->getImporter()->import(new UserID(120), $requestID, []);
-    }
-
-    private function mockFilesystem(Closure $mock): void
-    {
-        $filesystem = $this->getMockBuilder(FilesystemInterface::class)->getMock();
-
-        $mock($filesystem);
-
-        $this->swap(FilesystemInterface::class, $filesystem);
     }
 
     public function testWillAttachTagsToBookmarks(): void

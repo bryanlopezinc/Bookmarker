@@ -3,8 +3,8 @@
 namespace App\Providers;
 
 use App\Importers\Filesystem;
-use App\Importers\FilesystemInterface;
 use Illuminate\Contracts\Support\DeferrableProvider;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
 
 class ImportersFilesystemServiceProvider extends ServiceProvider implements DeferrableProvider
@@ -16,11 +16,11 @@ class ImportersFilesystemServiceProvider extends ServiceProvider implements Defe
      */
     public function boot()
     {
-        $this->app->bind(FilesystemInterface::class, fn () => new Filesystem('imports'));
+        $this->app->bind(Filesystem::class, fn () => new Filesystem(Storage::disk('imports')));
     }
 
     public function provides(): array
     {
-        return [FilesystemInterface::class];
+        return [Filesystem::class];
     }
 }

@@ -8,7 +8,6 @@ use App\Contracts\CreateBookmarkRepositoryInterface;
 use App\DataTransferObjects\Bookmark;
 use App\Importers\Chrome\Importer as Importer;
 use App\Importers\Chrome\DOMParserInterface;
-use App\Importers\FilesystemInterface;
 use App\Jobs\UpdateBookmarkWithHttpResponse;
 use App\ValueObjects\UserID;
 use App\ValueObjects\Uuid;
@@ -19,10 +18,11 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
+use Tests\Unit\Importers\MockFilesystem;
 
 class ImporterTest extends TestCase
 {
-    use WithFaker;
+    use WithFaker, MockFilesystem;
 
     public function testWillThrowExceptionIfFileDoesNotExists(): void
     {
@@ -38,7 +38,6 @@ class ImporterTest extends TestCase
 
     public function testWillClearDataAfterImport(): void
     {
-        $requestID = Uuid::generate();
         $DOMParser = $this->getMockBuilder(DOMParserInterface::class)->getMock();
 
         $this->mockFilesystem(function (MockObject $mock) {
@@ -51,16 +50,7 @@ class ImporterTest extends TestCase
 
         $this->swap(DOMParserInterface::class, $DOMParser);
 
-        $this->getImporter()->import(new UserID(21), $requestID, []);
-    }
-
-    private function mockFilesystem(Closure $mock): void
-    {
-        $filesystem = $this->getMockBuilder(FilesystemInterface::class)->getMock();
-
-        $mock($filesystem);
-
-        $this->swap(FilesystemInterface::class, $filesystem);
+        $this->getImporter()->import(new UserID(21), Uuid::generate(), []);
     }
 
     public function testWillAttachTagsToBookmarks(): void

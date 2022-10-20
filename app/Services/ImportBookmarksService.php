@@ -7,14 +7,14 @@ namespace App\Services;
 use App\DataTransferObjects\ImportData;
 use App\Enums\ImportSource;
 use App\Http\Requests\ImportBookmarkRequest;
-use App\Importers\FilesystemInterface;
+use App\Importers\Filesystem;
 use App\Jobs\ImportBookmarks;
 use App\ValueObjects\UserID;
 use App\ValueObjects\Uuid;
 
 final class ImportBookmarksService
 {
-    public function __construct(private FilesystemInterface $filesystem)
+    public function __construct(private Filesystem $filesystem)
     {
     }
 

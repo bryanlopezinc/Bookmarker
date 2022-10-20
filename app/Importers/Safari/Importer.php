@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Importers\Safari;
 
 use App\Exceptions\MalformedURLException;
-use App\Importers\FilesystemInterface;
+use App\Importers\Filesystem;
 use App\Importers\ImporterInterface;
 use App\Services\CreateBookmarkService;
 use App\ValueObjects\Url;
@@ -17,7 +17,7 @@ final class Importer implements ImporterInterface
 {
     public function __construct(
         private CreateBookmarkService $createBookmark,
-        private FilesystemInterface $filesystem,
+        private Filesystem $filesystem,
         private DOMParserInterface $parser = new DOMParser
     ) {
     }

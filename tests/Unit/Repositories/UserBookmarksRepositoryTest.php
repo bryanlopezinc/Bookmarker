@@ -88,12 +88,14 @@ class UserBookmarksRepositoryTest extends TestCase
             'user_id' => $userId
         ]);
 
-        /** @var Bookmark */
-        $bookmark = $this->repository->fetch(new UserID($userId), Data::fromArray([]))
+        $this->repository->fetch(new UserID($userId), Data::fromArray([]))
             ->getCollection()
-            ->filter(fn (Bookmark $bookmark) => $bookmark->id->value() === $favoriteID)
-            ->sole();
-
-        $this->assertTrue($bookmark->isUserFavorite);
+            ->each(function (Bookmark $bookmark) use ($favoriteID) {
+                if ($bookmark->id->value() === $favoriteID) {
+                    $this->assertTrue($bookmark->isUserFavorite);
+                } else {
+                    $this->assertFalse($bookmark->isUserFavorite);
+                }
+            });
     }
 }

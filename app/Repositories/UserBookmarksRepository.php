@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Collections\ResourceIDsCollection;
 use App\Models\Bookmark as Model;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
@@ -14,7 +13,6 @@ use App\QueryColumns\BookmarkAttributes as Columns;
 use App\ValueObjects\UserID;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Collection;
 
 final class UserBookmarksRepository
 {
@@ -27,10 +25,13 @@ final class UserBookmarksRepository
      */
     public function fetch(UserID $userID, UserBookmarksFilters $filters): Paginator
     {
-        $query = Model::WithQueryOptions(new Columns())->where('user_id', $userID->value());
+        $query = Model::WithQueryOptions(new Columns())
+            ->where('bookmarks.user_id', $userID->value())
+            ->addSelect('favourites.bookmark_id as isFavourite')
+            ->join('favourites', 'favourites.bookmark_id', '=', 'bookmarks.id', 'left outer');
 
         if (!$filters->hasAnyFilter()) {
-            return $this->paginate($query->latest('bookmarks.id'), $userID, $filters->pagination);
+            return $this->paginate($query->latest('bookmarks.id'),  $filters->pagination);
         }
 
         if ($filters->wantsOnlyBookmarksFromParticularSource) {
@@ -55,35 +56,22 @@ final class UserBookmarksRepository
             $query->where('bookmarks_health.is_healthy', false);
         }
 
-        return $this->paginate($query, $userID, $filters->pagination);
+        return $this->paginate($query, $filters->pagination);
     }
 
     /**
      * @param Builder $query
      */
-    private function paginate($query, UserID $userID, PaginationData $pagination): Paginator
+    private function paginate($query, PaginationData $pagination): Paginator
     {
         /** @var Paginator */
         $result = $query->simplePaginate($pagination->perPage(), page: $pagination->page());
 
-        $collection = $this->setIsUserFavoriteAttributeOnBookmarks($result->getCollection(), $userID);
-
         return $result->setCollection(
-            $collection->map(fn (Model $bookmark) => BookmarkBuilder::fromModel($bookmark)->build())
+            $result->getCollection()
+                ->map(fn (Model $bookmark) => BookmarkBuilder::fromModel($bookmark)
+                    ->isUserFavorite((bool) $bookmark->isFavourite)
+                    ->build())
         );
-    }
-
-    private function setIsUserFavoriteAttributeOnBookmarks(Collection $bookmarks, UserID $userID): Collection
-    {
-        $userFavorites = $this->userFavorites->intersect(
-            ResourceIDsCollection::fromNativeTypes($bookmarks->pluck('id')),
-            $userID
-        )->asIntegers();
-
-        return $bookmarks->map(function (Model $bookmark) use ($userFavorites) {
-            $bookmark->setAttribute('is_user_favourite', $userFavorites->containsStrict($bookmark->id));
-
-            return $bookmark;
-        });
     }
 }

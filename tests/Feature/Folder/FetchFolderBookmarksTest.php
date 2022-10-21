@@ -282,4 +282,74 @@ class FetchFolderBookmarksTest extends TestCase
         ])->assertNotFound()
             ->assertExactJson(['message' => "The folder does not exists"]);
     }
+
+    public function test_isUserFavorite_willBeTrueForOnlyBookmarkOwners(): void
+    {
+        [$user, $folderOwner] = UserFactory::new()->count(2)->create();
+
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $userBookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $user->id])->pluck('id');
+        $folderOwnerBookmarks = BookmarkFactory::new()->count(5)->create(['user_id' => $folderOwner->id])->pluck('id');
+
+        // ****************** user adds bookmarks to favorites and folder actions ****************
+        Passport::actingAs($user);
+        FolderAccessFactory::new()
+            ->user($user->id)
+            ->folder($folder->id)
+            ->addBookmarksPermission()
+            ->create();
+
+        $this->postJson(route('addBookmarksToFolder'), [
+            'bookmarks' => $userBookmarks->implode(','),
+            'folder' => $folder->id
+        ])->assertCreated();
+
+        $this->postJson(route('createFavorite'), [
+            'bookmarks' => $userBookmarks->implode(',')
+        ])->assertCreated();
+
+        // ****************** folder owner adds bookmarks to favorites and folder actions ****************
+        Passport::actingAs($folderOwner);
+        $this->postJson(route('createFavorite'), [
+            'bookmarks' => $folderOwnerBookmarks->implode(',')
+        ])->assertCreated();
+
+        $this->postJson(route('addBookmarksToFolder'), [
+            'bookmarks' => $folderOwnerBookmarks->implode(','),
+            'folder' => $folder->id
+        ])->assertCreated();
+
+        //folder owner fetches folder bookmarks
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])
+            ->assertOk()
+            ->assertJsonCount(8, 'data')
+            ->collect('data')
+            ->each(function (array $data) use ($folderOwnerBookmarks) {
+                $assertableJson = AssertableJson::fromArray($data);
+
+                if ($folderOwnerBookmarks->contains($data['attributes']['id'])) {
+                    $assertableJson->where('attributes.is_user_favorite', true);
+                    return;
+                }
+
+                $assertableJson->where('attributes.is_user_favorite', false);
+            });
+
+        //user fetches folder bookmarks
+        Passport::actingAs($user);
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])
+            ->assertOk()
+            ->assertJsonCount(8, 'data')
+            ->collect('data')
+            ->each(function (array $data) use ($folderOwnerBookmarks) {
+                $assertableJson = AssertableJson::fromArray($data);
+
+                if ($folderOwnerBookmarks->contains($data['attributes']['id'])) {
+                    $assertableJson->where('attributes.is_user_favorite', false);
+                    return;
+                }
+
+                $assertableJson->where('attributes.is_user_favorite', true);
+            });
+    }
 }

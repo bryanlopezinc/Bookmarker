@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace App\Repositories\Folder;
 
-use App\Collections\ResourceIDsCollection as IDs;
-use App\DataTransferObjects\Bookmark;
-use App\DataTransferObjects\Builders\BookmarkBuilder;
+use App\DataTransferObjects\Builders\BookmarkBuilder as Builder;
 use App\DataTransferObjects\FolderBookmark;
-use App\Models\FolderBookmark as Model;
+use App\Models\Bookmark as BookmarkModel;
 use App\PaginationData;
-use App\Repositories\FavoriteRepository;
-use App\Repositories\BookmarkRepository;
+use App\QueryColumns\BookmarkAttributes;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Pagination\Paginator;
 
 final class FetchFolderBookmarksRepository
@@ -45,32 +43,35 @@ final class FetchFolderBookmarksRepository
     private function getBookmarks(ResourceID $folderID, PaginationData $pagination, array $options): Paginator
     {
         /** @var Paginator */
-        $result = Model::query()
-            ->where('folder_id', $folderID->value())
+        $result = BookmarkModel::WithQueryOptions(new BookmarkAttributes())
+            ->addSelect('folders_bookmarks.is_public')
+            ->join('folders_bookmarks', 'folders_bookmarks.bookmark_id', '=', 'bookmarks.id')
+            ->where('folders_bookmarks.folder_id', $folderID->value())
             ->when($options['onlyPublic'], fn ($query) => $query->where('is_public', true))
-            ->simplePaginate($pagination->perPage(), ['bookmark_id', 'is_public'], page: $pagination->page());
-
-        $bookmarkIDs = IDs::fromNativeTypes($result->getCollection()->pluck('bookmark_id'));
-
-        $favorites = isset($options['userID'])
-            ? (new FavoriteRepository)->intersect($bookmarkIDs, $options['userID'])->asIntegers()
-            : collect([]);
+            ->when(isset($options['userID']), function ($query) use ($options) {
+                $query->addSelect('favourites.bookmark_id as isFavourite')
+                    ->leftJoin('favourites', function (JoinClause $join) use ($options) {
+                        $join->on('favourites.bookmark_id', '=', 'bookmarks.id')->where('favourites.user_id', $options['userID']->value());
+                    });
+            })
+            ->simplePaginate($pagination->perPage(), [], page: $pagination->page());
 
         $result->setCollection(
-            (new BookmarkRepository)
-                ->findManyById($bookmarkIDs)
-                ->map(function (Bookmark $bookmark) use ($favorites, $result) {
-                    $bookmark = BookmarkBuilder::fromBookmark($bookmark)
-                        ->isUserFavorite($favorites->containsStrict($bookmark->id->value()))
-                        ->build();
-
-                    return new FolderBookmark(
-                        $bookmark,
-                        $result->getCollection()->filter(fn (Model $model) => $model->bookmark_id === $bookmark->id->value())->sole()->is_public
-                    );
-                })
+            $result->getCollection()->map($this->buildFolderBookmarkObject($options))
         );
 
         return $result;
+    }
+
+    private function buildFolderBookmarkObject(array $options): \Closure
+    {
+        return function (BookmarkModel $model) use ($options) {
+            $bookmark = Builder::fromModel($model)
+                ->when(isset($options['userID']), fn (Builder $b) => $b->isUserFavorite((bool)$model->isFavourite))
+                ->when(!isset($options['userID']), fn (Builder $b) => $b->isUserFavorite(false))
+                ->build();
+
+            return new FolderBookmark($bookmark, (bool) $model->is_public);
+        };
     }
 }

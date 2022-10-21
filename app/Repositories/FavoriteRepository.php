@@ -63,7 +63,7 @@ final class FavoriteRepository
     /**
      * Get only the bookmark IDs which exists in user favorites record from the given bookmarkIDs.
      */
-    public function intersect(ResourceIDsCollection $bookmarkIDs, UserID $userID): ResourceIDsCollection
+    private function intersect(ResourceIDsCollection $bookmarkIDs, UserID $userID): ResourceIDsCollection
     {
         return ResourceIDsCollection::fromNativeTypes(
             Favorite::where('user_id', $userID->value())

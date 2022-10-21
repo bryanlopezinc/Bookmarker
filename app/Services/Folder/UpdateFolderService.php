@@ -14,14 +14,14 @@ use App\Http\Requests\CreateFolderRequest;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\ValueObjects\ResourceID;
 use App\QueryColumns\FolderAttributes as Attributes;
-use App\Repositories\Folder\UpdateFolderRepository;
+use App\Repositories\Folder\FolderRepository;
 use Illuminate\Http\Response;
 
 final class UpdateFolderService
 {
     public function __construct(
         private FolderRepositoryInterface $folderRepository,
-        private UpdateFolderRepository $updateFolderRepository
+        private FolderRepository $updateFolderRepository
     ) {
     }
 

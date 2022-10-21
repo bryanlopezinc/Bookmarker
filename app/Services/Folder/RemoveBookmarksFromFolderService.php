@@ -9,7 +9,6 @@ use App\Contracts\FolderRepositoryInterface;
 use App\DataTransferObjects\Folder;
 use App\Events\FolderModifiedEvent;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\Repositories\Folder\FetchFolderBookmarksRepository;
 use App\ValueObjects\ResourceID;
 use App\Exceptions\HttpException;
 use App\QueryColumns\FolderAttributes as Attributes;
@@ -22,8 +21,7 @@ final class RemoveBookmarksFromFolderService
 {
     public function __construct(
         private FolderRepositoryInterface $repository,
-        private FetchFolderBookmarksRepository $folderBookmarks,
-        private FolderBookmarkRepository $deleteFolderBookmark,
+        private FolderBookmarkRepository $folderBookmarks,
         private FolderPermissionsRepository $permissions
     ) {
     }
@@ -36,7 +34,7 @@ final class RemoveBookmarksFromFolderService
 
         $this->ensureBookmarksExistsInFolder($folderID, $bookmarkIDs);
 
-        $this->deleteFolderBookmark->remove($folderID, $bookmarkIDs);
+        $this->folderBookmarks->remove($folderID, $bookmarkIDs);
 
         event(new FolderModifiedEvent($folderID));
     }

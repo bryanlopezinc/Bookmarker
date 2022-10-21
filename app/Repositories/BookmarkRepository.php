@@ -13,7 +13,7 @@ use App\Exceptions\BookmarkNotFoundException;
 use App\QueryColumns\BookmarkAttributes;
 use Illuminate\Support\Collection;
 
-class FetchBookmarksRepository
+class BookmarkRepository
 {
     /**
      * @throws BookmarkNotFoundException

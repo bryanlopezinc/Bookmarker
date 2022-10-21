@@ -9,14 +9,14 @@ use App\Events\TagsDetachedEvent;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkAttributes;
 use App\ValueObjects\ResourceID;
-use App\Repositories\FetchBookmarksRepository;
+use App\Repositories\BookmarkRepository;
 use App\Repositories\TagRepository;
 use App\ValueObjects\UserID;
 
 final class DeleteBookmarkTagsService
 {
     public function __construct(
-        private FetchBookmarksRepository $bookmarksRepository,
+        private BookmarkRepository $bookmarksRepository,
         private TagRepository $tagsRepository
     ) {
     }

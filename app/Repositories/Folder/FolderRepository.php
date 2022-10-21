@@ -11,6 +11,7 @@ use App\Exceptions\FolderNotFoundHttpResponseException;
 use App\Models\DeletedUser;
 use App\Models\Folder as Model;
 use App\QueryColumns\FolderAttributes;
+use App\Repositories\TagRepository;
 use App\ValueObjects\ResourceID;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
@@ -37,5 +38,19 @@ final class FolderRepository implements FolderRepositoryInterface
         } catch (ModelNotFoundException) {
             throw new FolderNotFoundHttpResponseException;
         }
+    }
+
+    public function update(ResourceID $folderID, Folder $newAttributes): void
+    {
+        /** @var Model|null */
+        $folder = Model::query()->whereKey($folderID->value())->sole();
+
+        $folder->update([
+            'description' => $newAttributes->description->isEmpty() ? null : $newAttributes->description->value,
+            'name' => $newAttributes->name->value,
+            'is_public' => $newAttributes->isPublic
+        ]);
+
+        (new TagRepository)->attach($newAttributes->tags, $folder);
     }
 }

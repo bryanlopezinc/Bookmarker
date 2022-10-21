@@ -67,4 +67,32 @@ final class FolderBookmarkRepository
             ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())
             ->update(['is_public' => false]);
     }
+
+    /**
+     * Check if ANY the given bookmarks exists in the given folder
+     */
+    public function contains(IDs $bookmarkIDs, ResourceID $folderID): bool
+    {
+        if ($bookmarkIDs->isEmpty()) {
+            return false;
+        }
+
+        return FolderBookmarkModel::where('folder_id', $folderID->value())
+            ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
+            ->count() > 0;
+    }
+
+    /**
+     * Check if ALL the given bookmarks exists in the given folder
+     */
+    public function containsAll(IDs $bookmarkIDs, ResourceID $folderID): bool
+    {
+        if ($bookmarkIDs->isEmpty()) {
+            return false;
+        }
+
+        return FolderBookmarkModel::where('folder_id', $folderID->value())
+            ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
+            ->count() === $bookmarkIDs->count();
+    }
 }

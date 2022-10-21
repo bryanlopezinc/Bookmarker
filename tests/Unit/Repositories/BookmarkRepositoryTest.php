@@ -4,7 +4,7 @@ namespace Tests\Unit\Repositories;
 
 use App\DataTransferObjects\Bookmark;
 use App\QueryColumns\BookmarkAttributes as BookmarkColumns;
-use App\Repositories\FetchBookmarksRepository;
+use App\Repositories\BookmarkRepository;
 use App\ValueObjects\ResourceID;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\BookmarkHealthFactory;
@@ -13,13 +13,13 @@ use Tests\TestCase;
 
 class BookmarksRepositoryTest extends TestCase
 {
-    private FetchBookmarksRepository $repository;
+    private BookmarkRepository $repository;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->repository = app(FetchBookmarksRepository::class);
+        $this->repository = app(BookmarkRepository::class);
     }
 
     public function testWillReturnOnlySpecifiedAttributes(): void

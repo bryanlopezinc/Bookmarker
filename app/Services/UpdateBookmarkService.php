@@ -8,7 +8,7 @@ use App\Collections\BookmarksCollection;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use Illuminate\Http\Response;
 use App\Http\Requests\UpdateBookmarkRequest;
-use App\Repositories\FetchBookmarksRepository;
+use App\Repositories\BookmarkRepository;
 use App\Repositories\UpdateBookmarkRepository as Repository;
 use App\DataTransferObjects\UpdateBookmarkData;
 use App\Exceptions\HttpException;
@@ -18,7 +18,7 @@ use App\QueryColumns\BookmarkAttributes;
 
 final class UpdateBookmarkService
 {
-    public function __construct(private Repository $repository, private FetchBookmarksRepository $bookmarksRepository)
+    public function __construct(private Repository $repository, private BookmarkRepository $bookmarksRepository)
     {
     }
 

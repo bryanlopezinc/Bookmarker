@@ -12,8 +12,7 @@ use App\DataTransferObjects\Folder;
 use App\Events\FolderModifiedEvent;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkAttributes;
-use App\Repositories\FetchBookmarksRepository;
-use App\Repositories\Folder\FetchFolderBookmarksRepository;
+use App\Repositories\BookmarkRepository;
 use App\ValueObjects\ResourceID;
 use App\Exceptions\HttpException as HttpException;
 use App\Jobs\CheckBookmarksHealth;
@@ -28,9 +27,8 @@ final class AddBookmarksToFolderService
 {
     public function __construct(
         private FolderRepositoryInterface $repository,
-        private FetchBookmarksRepository $bookmarksRepository,
-        private FetchFolderBookmarksRepository $folderBookmarks,
-        private FolderBookmarkRepository $createFolderBookmark,
+        private BookmarkRepository $bookmarksRepository,
+        private FolderBookmarkRepository $folderBookmarks,
         private FolderPermissionsRepository $permissions
     ) {
     }
@@ -45,7 +43,7 @@ final class AddBookmarksToFolderService
         $this->ensureBookmarksExistAndBelongToUser($bookmarks, $bookmarkIDs);
         $this->ensureFolderDoesNotContainBookmarks($folderID, $bookmarkIDs);
 
-        $this->createFolderBookmark->add($folderID, $bookmarkIDs, $makeHidden);
+        $this->folderBookmarks->add($folderID, $bookmarkIDs, $makeHidden);
 
         event(new FolderModifiedEvent($folderID));
         dispatch(new CheckBookmarksHealth(new BookmarksCollection($bookmarks)));

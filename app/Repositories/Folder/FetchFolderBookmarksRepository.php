@@ -11,7 +11,7 @@ use App\DataTransferObjects\FolderBookmark;
 use App\Models\FolderBookmark as Model;
 use App\PaginationData;
 use App\Repositories\FavoriteRepository;
-use App\Repositories\FetchBookmarksRepository;
+use App\Repositories\BookmarkRepository;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Illuminate\Pagination\Paginator;
@@ -57,7 +57,7 @@ final class FetchFolderBookmarksRepository
             : collect([]);
 
         $result->setCollection(
-            (new FetchBookmarksRepository)
+            (new BookmarkRepository)
                 ->findManyById($bookmarkIDs)
                 ->map(function (Bookmark $bookmark) use ($favorites, $result) {
                     $bookmark = BookmarkBuilder::fromBookmark($bookmark)
@@ -72,33 +72,5 @@ final class FetchFolderBookmarksRepository
         );
 
         return $result;
-    }
-
-    /**
-     * Check if ANY the given bookmarks exists in the given folder
-     */
-    public function contains(IDs $bookmarkIDs, ResourceID $folderID): bool
-    {
-        if ($bookmarkIDs->isEmpty()) {
-            return false;
-        }
-
-        return Model::where('folder_id', $folderID->value())
-            ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
-            ->count() > 0;
-    }
-
-    /**
-     * Check if ALL the given bookmarks exists in the given folder
-     */
-    public function containsAll(IDs $bookmarkIDs, ResourceID $folderID): bool
-    {
-        if ($bookmarkIDs->isEmpty()) {
-            return false;
-        }
-
-        return Model::where('folder_id', $folderID->value())
-            ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->unique()->all())
-            ->count() === $bookmarkIDs->count();
     }
 }

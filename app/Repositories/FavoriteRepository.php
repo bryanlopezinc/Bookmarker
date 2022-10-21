@@ -105,7 +105,8 @@ final class FavoriteRepository
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
 
         return $favorites->setCollection(
-            $favorites->getCollection()->map(fn (Model $bookmark) => BookmarkBuilder::fromModel($bookmark)->isUserFavorite(true)->build())
+            $favorites->getCollection()
+                ->map(fn (Model $bookmark) => BookmarkBuilder::fromModel($bookmark)->isUserFavorite(true)->build())
         );
     }
 }

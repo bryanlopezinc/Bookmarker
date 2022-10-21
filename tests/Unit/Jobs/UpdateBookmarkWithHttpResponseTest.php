@@ -13,7 +13,7 @@ use App\Models\Bookmark;
 use App\Models\Source;
 use App\Readers\BookmarkMetaData;
 use App\Readers\HttpClientInterface;
-use App\Repositories\FetchBookmarksRepository;
+use App\Repositories\BookmarkRepository;
 use App\Repositories\UserRepository;
 use App\ValueObjects\Url;
 use Closure;
@@ -32,7 +32,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
     {
         $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
 
-        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) {
+        $this->mock(BookmarkRepository::class, function (MockInterface $mock) {
             $mock->shouldReceive('findManyById')->once()->andReturn(collect());
         });
 
@@ -51,7 +51,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
     {
         $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
 
-        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
             $mock->shouldReceive('findManyById')
                 ->once()
                 ->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
@@ -76,7 +76,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
     {
         $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
 
-        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
             $mock->shouldReceive('findManyById')
                 ->once()
                 ->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
@@ -101,7 +101,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             'url' => 'payto://iban/DE75512108001245126199?amount=EUR:200.0&message=hello'
         ]);
 
-        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
             $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
         });
 
@@ -134,7 +134,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
     {
         $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
 
-        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
             $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
         });
 
@@ -174,7 +174,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
     {
         $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
 
-        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
             $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
         });
 
@@ -238,7 +238,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             'description_set_by_user' => true
         ]);
 
-        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
             $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
         });
 
@@ -272,7 +272,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
         $description = str_repeat('B', 201);
 
-        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
             $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
         });
 
@@ -306,7 +306,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
     {
         $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
 
-        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
             $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
         });
 
@@ -344,7 +344,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             'source_id' => $source->id
         ])->setRelation('source', $source);
 
-        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
             $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
         });
 
@@ -376,7 +376,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             'source_id' =>  $source->id
         ])->setRelation('source', $source);
 
-        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
             $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
         });
 
@@ -411,7 +411,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             'source_id' => $source->id
         ])->setRelation('source', $source);
 
-        $this->mock(FetchBookmarksRepository::class, function (MockInterface $mock) use ($bookmark) {
+        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
             $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
         });
 
@@ -461,7 +461,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             app(HttpClientInterface::class),
             app(Repository::class),
             app(UrlHasherInterface::class),
-            app(FetchBookmarksRepository::class)
+            app(BookmarkRepository::class)
         );
     }
 

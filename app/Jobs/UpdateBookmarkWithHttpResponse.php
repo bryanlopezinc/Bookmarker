@@ -17,7 +17,7 @@ use App\DataTransferObjects\Builders\BookmarkBuilder as Builder;
 use App\DataTransferObjects\UpdateBookmarkData as Data;
 use App\Models\Source;
 use App\Readers\BookmarkMetaData;
-use App\Repositories\FetchBookmarksRepository;
+use App\Repositories\BookmarkRepository;
 use App\Repositories\UserRepository;
 use App\ValueObjects\BookmarkDescription;
 use App\ValueObjects\BookmarkTitle;
@@ -35,7 +35,7 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
         HttpClientInterface $client,
         Repository $repository,
         UrlHasherInterface $urlHasher,
-        FetchBookmarksRepository $bookmarkRepository = new FetchBookmarksRepository,
+        BookmarkRepository $bookmarkRepository = new BookmarkRepository,
     ): void {
 
         /** @var Bookmark|null */

@@ -11,14 +11,14 @@ use App\Jobs\CheckBookmarksHealth;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkAttributes;
 use App\Repositories\FavoriteRepository;
-use App\Repositories\FetchBookmarksRepository;
+use App\Repositories\BookmarkRepository;
 use App\ValueObjects\UserID;
 
 final class CreateFavoriteService
 {
     public function __construct(
         private FavoriteRepository $repository,
-        private FetchBookmarksRepository $bookmarkRepository
+        private BookmarkRepository $bookmarkRepository
     ) {
     }
 

@@ -8,9 +8,11 @@ use App\Contracts\FolderRepositoryInterface;
 use App\DataTransferObjects\Builders\FolderBuilder;
 use App\DataTransferObjects\Folder;
 use App\Exceptions\FolderNotFoundHttpResponseException;
+use App\Models\DeletedUser;
 use App\Models\Folder as Model;
 use App\QueryColumns\FolderAttributes;
 use App\ValueObjects\ResourceID;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 final class FolderRepository implements FolderRepositoryInterface
 {
@@ -21,13 +23,19 @@ final class FolderRepository implements FolderRepositoryInterface
     {
         $attributes = $attributes ?: new FolderAttributes();
 
-        /** @var Model|null */
-        $model = Model::onlyAttributes($attributes)->whereKey($folderID->value())->first();
+        try {
+            $model = Model::onlyAttributes($attributes)
+                ->whereKey($folderID->value())
 
-        if ($model === null) {
+                // All user folders are not deleted immediately when user deletes account but are deleted by
+                // background tasks. This statement exists to ensure actions won't be performed on folders that
+                // belongs to a deleted user account
+                ->whereNotIn('folders.user_id', DeletedUser::select('user_id'))
+                ->sole();
+
+            return FolderBuilder::fromModel($model)->build();
+        } catch (ModelNotFoundException) {
             throw new FolderNotFoundHttpResponseException;
         }
-
-        return FolderBuilder::fromModel($model)->build();
     }
 }

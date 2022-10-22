@@ -90,6 +90,10 @@ class CreateFolderTest extends TestCase
             'count' => 1,
             'type' => UserFoldersCount::TYPE
         ]);
+
+        $this->assertDatabaseMissing(Taggable::class, [
+            'taggable_id' => $folder->id,
+        ]);
     }
 
     public function testCanCreateFolderWithoutDescription(): void

@@ -76,15 +76,10 @@ class FetchFolderBookmarksTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         //user bookmarks not in folder
-        BookmarkFactory::new()->count(5)->create([
-            'user_id' => $user->id
-        ]);
+        BookmarkFactory::new()->count(5)->create(['user_id' => $user->id]);
 
         $bookmarkShouldBePublicFn = fn (int $bookmarkID) => $bookmarkID % 2 === 0;
-
-        $bookmarkIDs = BookmarkFactory::new()->count(5)->create([
-            'user_id' => $user->id
-        ])->pluck('id');
+        $bookmarkIDs = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
 
         $folder = FolderFactory::new()->afterCreating(fn (Folder $folder) => FolderBookmark::insert(
             $bookmarkIDs->map(fn (int $bookmarkID) => [
@@ -96,9 +91,7 @@ class FetchFolderBookmarksTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $this->folderBookmarksResponse([
-            'folder_id' => $folder->id
-        ])
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])
             ->assertOk()
             ->assertJsonCount(5, 'data')
             ->assertJson(function (AssertableJson $json) use ($bookmarkIDs, $folder, $bookmarkShouldBePublicFn) {
@@ -115,7 +108,7 @@ class FetchFolderBookmarksTest extends TestCase
                             });
 
                         (new AssertableJsonString($json->toArray()))
-                            ->assertCount(15, 'attributes')
+                            ->assertCount(16, 'attributes')
                             ->assertCount(3, 'attributes.created_on')
                             ->assertStructure([
                                 'type',
@@ -133,6 +126,7 @@ class FetchFolderBookmarksTest extends TestCase
                                     'tags_count',
                                     'is_healthy',
                                     'is_user_favorite',
+                                    'can_favorite',
                                     'is_public',
                                     'created_on' => [
                                         'date_readable',
@@ -350,6 +344,74 @@ class FetchFolderBookmarksTest extends TestCase
                 }
 
                 $assertableJson->where('attributes.is_user_favorite', true);
+            });
+    }
+
+    public function testCanAddBookmarkToFavorites_willBeTrue_whenUserOwnsBookmarks_andBookmarkDoesNotExistInFavorites(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+
+        $this->postJson(route('addBookmarksToFolder'), [
+            'bookmarks' => $bookmarks->pluck('id')->implode(','),
+            'folder' => $folder->id
+        ])->assertCreated();
+
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])
+            ->assertOk()
+            ->collect('data')
+            ->each(function (array $data) {
+                $this->assertTrue($data['attributes']['can_favorite']);
+            });
+    }
+
+    public function testCanAddBookmarkToFavorites_willBeFalse_whenUserOwnsBookmarks_andBookmarkExistsInFavorites(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+
+        $this->postJson(route('addBookmarksToFolder'), [
+            'bookmarks' => $bookmarks->pluck('id')->implode(','),
+            'folder' => $folder->id
+        ])->assertCreated();
+
+        $this->postJson(route('createFavorite'), [
+            'bookmarks' => $bookmarks->pluck('id')->implode(',')
+        ])->assertCreated();
+
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])
+            ->assertOk()
+            ->collect('data')
+            ->each(function (array $data) {
+                $this->assertFalse($data['attributes']['can_favorite']);
+            });
+    }
+
+    public function testCanAddBookmarkToFavorites_willBeFalse_whenUserDoesNotOwnsBookmark(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+
+        $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        Passport::actingAs($folderOwner);
+        $this->postJson(route('addBookmarksToFolder'), [
+            'bookmarks' => $bookmarks->pluck('id')->implode(','),
+            'folder' => $folder->id
+        ])->assertCreated();
+
+        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
+
+        Passport::actingAs($collaborator);
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])
+            ->assertOk()
+            ->collect('data')
+            ->each(function (array $data) {
+                $this->assertFalse($data['attributes']['can_favorite']);
             });
     }
 }

@@ -106,6 +106,7 @@ class FetchPublicFolderBookmarksTest extends TestCase
                     ->each(function (AssertableJson $json) use ($publicFolderBookmarkIDs) {
                         $json->etc()
                             ->where('type', 'folderBookmark')
+                            ->where('attributes.can_favorite', false)
                             ->where('attributes.id', function (int $bookmarkID) use ($json, $publicFolderBookmarkIDs) {
                                 $json->where('attributes.is_public', true);
 
@@ -113,7 +114,7 @@ class FetchPublicFolderBookmarksTest extends TestCase
                             });
 
                         (new AssertableJsonString($json->toArray()))
-                            ->assertCount(15, 'attributes')
+                            ->assertCount(16, 'attributes')
                             ->assertCount(3, 'attributes.created_on')
                             ->assertStructure([
                                 'type',
@@ -131,6 +132,7 @@ class FetchPublicFolderBookmarksTest extends TestCase
                                     'tags_count',
                                     'is_healthy',
                                     'is_user_favorite',
+                                    'can_favorite',
                                     'is_public',
                                     'created_on' => [
                                         'date_readable',

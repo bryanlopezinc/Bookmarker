@@ -10,41 +10,64 @@ use App\DataTransferObjects\Builders\FolderBuilder;
 use App\DataTransferObjects\Folder;
 use App\Events\FolderModifiedEvent;
 use App\Exceptions\HttpException;
-use App\Http\Requests\CreateFolderRequest;
+use App\Http\Requests\CreateFolderRequest as Request;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\ValueObjects\ResourceID;
 use App\QueryColumns\FolderAttributes as Attributes;
+use App\Repositories\Folder\FolderPermissionsRepository;
 use App\Repositories\Folder\FolderRepository;
+use App\ValueObjects\UserID;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
+use Symfony\Component\HttpKernel\Exception\HttpException as SymfonyHttpException;
 
 final class UpdateFolderService
 {
     public function __construct(
         private FolderRepositoryInterface $folderRepository,
-        private FolderRepository $updateFolderRepository
+        private FolderRepository $updateFolderRepository,
+        private FolderPermissionsRepository $permissions
     ) {
     }
 
-    public function fromRequest(CreateFolderRequest $request): void
+    public function fromRequest(Request $request): void
     {
         $folder = $this->folderRepository->find(
             ResourceID::fromRequest($request, 'folder'),
             Attributes::only('id,user_id,name,description,is_public,tags')
         );
 
-        (new EnsureAuthorizedUserOwnsResource)($folder);
+        $this->ensureUserCanUpdateFolder($folder, $request);
 
         $newAttributes = $this->buildFolder($request, $folder);
-
-        $this->ensureCanAddTagsToFolder($folder, $newAttributes->tags);
 
         $this->updateFolderRepository->update($folder->folderID, $newAttributes);
 
         event(new FolderModifiedEvent($folder->folderID));
     }
 
-    private function buildFolder(CreateFolderRequest $request, Folder $folder): Folder
+    private function ensureUserCanUpdateFolder(Folder $folder, Request $request): void
     {
+        try {
+            (new EnsureAuthorizedUserOwnsResource)($folder);
+        } catch (SymfonyHttpException $e) {
+            $collaboratorHasUpdateFolderPermission = $this->permissions
+                ->getUserAccessControls(UserID::fromAuthUser(), $folder->folderID)
+                ->canUpdateFolder();
+
+            if (!$collaboratorHasUpdateFolderPermission || $request->has('is_public')) {
+                throw $e;
+            }
+        }
+    }
+
+    private function buildFolder(Request $request, Folder $folder): Folder
+    {
+        $this->confirmPasswordBeforeUpdatingPrivacy($request);
+
+        $this->ensureCanAddTagsToFolder($folder, $request);
+
         return (new FolderBuilder())
             ->setName($request->validated('name', $folder->name->value))
             ->setDescription($request->validated('description', $folder->description->value))
@@ -53,16 +76,40 @@ final class UpdateFolderService
             ->build();
     }
 
-    private function ensureCanAddTagsToFolder(Folder $folder, TagsCollection $tags): void
+    private function ensureCanAddTagsToFolder(Folder $folder, Request $request): void
     {
-        $canAddMoreTagsToFolder = $folder->tags->count() + $tags->count() <= setting('MAX_FOLDER_TAGS');
+        $newTags = TagsCollection::make($request->validated('tags', []));
+        $canAddMoreTagsToFolder = $folder->tags->count() + $newTags->count() <= setting('MAX_FOLDER_TAGS');
 
         if (!$canAddMoreTagsToFolder) {
-            throw new HttpException(['message' => 'Cannot add more tags to bookmark'], Response::HTTP_BAD_REQUEST);
+            throw new HttpException([
+                'message' => 'Cannot add more tags to bookmark'
+            ], Response::HTTP_BAD_REQUEST);
         }
 
-        if ($folder->tags->contains($tags)) {
+        if ($folder->tags->contains($newTags)) {
             throw HttpException::conflict(['message' => 'Duplicate tags']);
         }
+    }
+
+    private function confirmPasswordBeforeUpdatingPrivacy(Request $request): void
+    {
+        $key = 'f:update:cP' . auth('api')->id();
+
+        if (!$request->has('is_public') || Cache::has($key)) {
+            return;
+        }
+
+        if (!$request->has('password')) {
+            throw new HttpException([
+                'message' => 'Password confirmation required.'
+            ], Response::HTTP_LOCKED);
+        }
+
+        if (!Hash::check($request->input('password'), auth('api')->user()->getAuthPassword())) {
+            throw HttpException::unAuthorized(['message' => 'Invalid password']);
+        }
+
+        Cache::put($key, true, now()->addHour());
     }
 }

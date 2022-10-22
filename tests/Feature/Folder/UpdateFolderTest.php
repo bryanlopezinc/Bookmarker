@@ -5,6 +5,7 @@ namespace Tests\Feature\Folder;
 use App\Models\Folder;
 use App\Models\Tag;
 use App\Models\Taggable;
+use Database\Factories\FolderAccessFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
@@ -127,10 +128,10 @@ class UpdateFolderTest extends TestCase
             'is_public' => true
         ]);
 
-        $this->travel(61)->minute(function () {
+        $this->travel(61)->minute(function () use ($folderIDs) {
             $this->updateFolderResponse([
                 'is_public' => true,
-                'folder' => 11,
+                'folder' => $folderIDs->first(),
                 'name' => $this->faker->word,
             ])->assertStatus(423);
         });
@@ -373,16 +374,107 @@ class UpdateFolderTest extends TestCase
             ]);
 
         $this->updateFolderResponse([
-            'name' => $name = $this->faker->word,
-            'description' => $description = $this->faker->sentence,
+            'name' => $newName = $this->faker->word,
+            'description' => $newDescription = $this->faker->sentence,
             'folder' => $model->id
         ])->assertOk();
 
         $this->getJson(route('fetchFolder', ['id' => $model->id]))
             ->assertOk()
             ->assertJsonFragment([
-                'name' => $name,
-                'description' => $description
+                'name' => $newName,
+                'description' => $newDescription
             ]);
+    }
+
+    public function testCollaboratorCanUpdateFolder(): void
+    {
+        [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->updateFolderPermission()
+            ->create();
+
+        Passport::actingAs($collaborator);
+        $this->updateFolderResponse([
+            'name' => $this->faker->word,
+            'description' => $this->faker->sentence,
+            'folder' => $folder->id
+        ])->assertOk();
+    }
+
+    public function testCollaboratorMustHaveUpdateFolderPermission(): void
+    {
+        [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $factory = FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id);
+
+        $factory->addBookmarksPermission()->create();
+        $factory->removeBookmarksPermission()->create();
+        $factory->viewBookmarksPermission()->create();
+        $factory->inviteUser()->create();
+
+        Passport::actingAs($collaborator);
+        $this->updateFolderResponse([
+            'name' => $this->faker->word,
+            'folder' => $folder->id
+        ])->assertForbidden();
+    }
+
+    public function testOnlyFolderOwnerCanUpdatePrivacy(): void
+    {
+        [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->updateFolderPermission()
+            ->create();
+
+        Passport::actingAs($collaborator);
+        $this->updateFolderResponse([
+            'name' => $this->faker->word,
+            'description' => $this->faker->sentence,
+            'folder' => $folder->id,
+            'is_public' => true,
+        ])->assertForbidden();
+
+        //with folder owner password
+        $this->updateFolderResponse([
+            'name' => $this->faker->word,
+            'description' => $this->faker->sentence,
+            'folder' => $folder->id,
+            'is_public' => true,
+            'password' => 'password'
+        ])->assertForbidden();
+
+        $this->assertFalse(Folder::query()->find($folder->id)->is_public);
+    }
+
+    public function testCollaboratorCannotUpdateFolderWhenFolderOwnerHasDeletedAccount(): void
+    {
+        [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->updateFolderPermission()
+            ->create();
+
+        Passport::actingAs($folderOwner);
+        $this->deleteJson(route('deleteUserAccount'), ['password' => 'password'])->assertOk();
+
+        Passport::actingAs($collaborator);
+        $this->updateFolderResponse([
+            'name' => $this->faker->word,
+            'description' => $this->faker->sentence,
+            'folder' => $folder->id
+        ])->assertNotFound()
+            ->assertExactJson(['message' => "The folder does not exists"]);
     }
 }

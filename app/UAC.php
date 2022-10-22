@@ -158,6 +158,11 @@ final class UAC
         return $this->hasPermissionTo(Model::INVITE);
     }
 
+    public function canUpdateFolder(): bool
+    {
+        return $this->hasPermissionTo(Model::UPDATE_fOLDER);
+    }
+
     private function hasPermissionTo(string $action): bool
     {
         return in_array($action, $this->permissions, true);

@@ -5,7 +5,6 @@ use App\Http\Controllers\Auth as A;
 use App\Http\Controllers\Folder as F;
 use App\Http\Middleware\ExplodeString as StringToArray;
 use App\Http\Middleware\HandleDbTransactionsMiddleware as DBTransaction;
-use App\Http\Middleware\ConfirmPasswordBeforeMakingFolderPublicMiddleware as ConfirmPassword;
 use Illuminate\Support\Facades\Route;
 use Laravel\Passport\Http\Middleware\CheckClientCredentials;
 use Laravel\Passport\Http\Controllers\AccessTokenController;
@@ -49,7 +48,7 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
         Route::get('/', F\FetchFolderController::class)->name('fetchFolder');
         Route::delete('/', F\DeleteFolderController::class)->name('deleteFolder');
         Route::post('/', F\CreateFolderController::class)->middleware(StringToArray::keys('tags'))->name('createFolder');
-        Route::patch('/', F\UpdateFolderController::class)->middleware([ConfirmPassword::class, StringToArray::keys('tags')])->name('updateFolder');
+        Route::patch('/', F\UpdateFolderController::class)->middleware([StringToArray::keys('tags')])->name('updateFolder');
 
         Route::prefix('bookmarks')->group(function () {
             Route::get('/', F\FetchFolderBookmarksController::class)->name('folderBookmarks');

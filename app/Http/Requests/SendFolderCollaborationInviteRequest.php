@@ -19,12 +19,36 @@ final class SendFolderCollaborationInviteRequest extends FormRequest
             'email' => ['required', 'email'],
             'folder_id' => ['required', new ResourceIdRule],
             'permissions' => ['sometimes', 'array', Rule::in([
+                '*',
                 'addBookmarks',
                 'removeBookmarks',
                 'inviteUser',
-                'updateFolder'
+                'updateFolder',
             ])],
             'permissions.*' => ['filled', 'distinct:strict'],
         ];
+    }
+
+    /**
+     * Configure the validator instance.
+     *
+     * @param  \Illuminate\Validation\Validator  $validator
+     * @return void
+     */
+    public function withValidator($validator)
+    {
+        $validator->after(function (\Illuminate\Validation\Validator $validator) {
+            if (filled($validator->failed())) {
+                return;
+            }
+
+            if (!in_array('*', $permissions = $this->input('permissions', []), true)) {
+                return;
+            }
+
+            if (count($permissions) > 1) {
+                $validator->errors()->add('permissions', 'The permissions field cannot contain any other value with the * wildcard.');
+            }
+        });
     }
 }

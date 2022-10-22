@@ -86,6 +86,19 @@ class SendFolderCollaborationInviteTest extends TestCase
         ]);
     }
 
+    public function testPermissionsAttributeCannotBeHaveAnyOtherValueWhenSetToAll(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->sendInviteResponse([
+            'email' => $this->faker->unique()->email,
+            'folder_id' => 44,
+            'permissions' => '*,addBookmarks'
+        ])->assertJsonValidationErrors([
+            'permissions' => ['The permissions field cannot contain any other value with the * wildcard.'],
+        ]);
+    }
+
     public function testInviteeMustBeARegisteredUser(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
@@ -378,6 +391,7 @@ class SendFolderCollaborationInviteTest extends TestCase
 
     public function testCanSendInviteWithPermissions(): void
     {
+        $this->assertCanSendInviteWithPermissions(['*'], 50);
         $this->assertCanSendInviteWithPermissions(['addBookmarks'], 2);
         $this->assertCanSendInviteWithPermissions(['removeBookmarks'], 3);
         $this->assertCanSendInviteWithPermissions(['inviteUser'], 31);

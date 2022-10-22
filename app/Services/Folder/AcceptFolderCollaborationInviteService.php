@@ -70,7 +70,10 @@ final class AcceptFolderCollaborationInviteService
         }
 
         return new UAC(
-            array_merge($permissionsSetByFolderOwner->permissions, $permissionsCollaboratorWillHaveByDefault->permissions)
+            collect($permissionsSetByFolderOwner->permissions)
+                ->merge($permissionsCollaboratorWillHaveByDefault->permissions)
+                ->unique()
+                ->all()
         );
     }
 

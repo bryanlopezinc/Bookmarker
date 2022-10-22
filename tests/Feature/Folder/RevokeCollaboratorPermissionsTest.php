@@ -403,7 +403,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             new UserID($folderOwner->id),
             new UserID($collaborator->id),
             new ResourceID($folderID),
-            UAC::fromUnSerialized(['A_B'])
+            UAC::fromUnSerialized([FolderPermission::ADD_BOOKMARKS])
         );
 
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());

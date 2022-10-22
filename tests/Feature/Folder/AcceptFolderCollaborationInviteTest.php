@@ -124,40 +124,49 @@ class AcceptFolderCollaborationInviteTest extends TestCase
     public function testWillAcceptInviteWithPermissions(): void
     {
         //Will give only view-bookmarks permission if no permissions were specified
-        $this->assertWillAcceptInvite([], function (Collection $savedPermissionTypes) {
-            $this->assertCount(1, $savedPermissionTypes);
-            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::VIEW_BOOKMARKS));
+        $this->assertWillAcceptInvite([], function (Collection $savedPermissions) {
+            $this->assertCount(1, $savedPermissions);
+            $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
         });
 
-        $this->assertWillAcceptInvite(['addBookmarks'], function (Collection $savedPermissionTypes) {
-            $this->assertCount(2, $savedPermissionTypes);
-            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::ADD_BOOKMARKS));
-            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::VIEW_BOOKMARKS));
+        $this->assertWillAcceptInvite(['addBookmarks'], function (Collection $savedPermissions) {
+            $this->assertCount(2, $savedPermissions);
+            $this->assertTrue($savedPermissions->containsStrict(Permission::ADD_BOOKMARKS));
+            $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
         });
 
-        $this->assertWillAcceptInvite(['removeBookmarks'], function (Collection $savedPermissionTypes) {
-            $this->assertCount(2, $savedPermissionTypes);
-            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::DELETE_BOOKMARKS));
-            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::VIEW_BOOKMARKS));
+        $this->assertWillAcceptInvite(['removeBookmarks'], function (Collection $savedPermissions) {
+            $this->assertCount(2, $savedPermissions);
+            $this->assertTrue($savedPermissions->containsStrict(Permission::DELETE_BOOKMARKS));
+            $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
         });
 
-        $this->assertWillAcceptInvite(['inviteUser'], function (Collection $savedPermissionTypes) {
-            $this->assertCount(2, $savedPermissionTypes);
-            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::INVITE));
-            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::VIEW_BOOKMARKS));
+        $this->assertWillAcceptInvite(['inviteUser'], function (Collection $savedPermissions) {
+            $this->assertCount(2, $savedPermissions);
+            $this->assertTrue($savedPermissions->containsStrict(Permission::INVITE));
+            $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
         });
 
-        $this->assertWillAcceptInvite(['updateFolder'], function (Collection $savedPermissionTypes) {
-            $this->assertCount(2, $savedPermissionTypes);
-            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::UPDATE_fOLDER));
-            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::VIEW_BOOKMARKS));
+        $this->assertWillAcceptInvite(['updateFolder'], function (Collection $savedPermissions) {
+            $this->assertCount(2, $savedPermissions);
+            $this->assertTrue($savedPermissions->containsStrict(Permission::UPDATE_fOLDER));
+            $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
         });
 
-        $this->assertWillAcceptInvite(['removeBookmarks', 'addBookmarks'], function (Collection $savedPermissionTypes) {
-            $this->assertCount(3, $savedPermissionTypes);
-            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::DELETE_BOOKMARKS));
-            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::ADD_BOOKMARKS));
-            $this->assertTrue($savedPermissionTypes->containsStrict(Permission::VIEW_BOOKMARKS));
+        $this->assertWillAcceptInvite(['removeBookmarks', 'addBookmarks'], function (Collection $savedPermissions) {
+            $this->assertCount(3, $savedPermissions);
+            $this->assertTrue($savedPermissions->containsStrict(Permission::DELETE_BOOKMARKS));
+            $this->assertTrue($savedPermissions->containsStrict(Permission::ADD_BOOKMARKS));
+            $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
+        });
+
+        $this->assertWillAcceptInvite(['*'], function (Collection $savedPermissions) {
+            $this->assertCount(5, $savedPermissions);
+            $this->assertTrue($savedPermissions->containsStrict(Permission::DELETE_BOOKMARKS));
+            $this->assertTrue($savedPermissions->containsStrict(Permission::ADD_BOOKMARKS));
+            $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
+            $this->assertTrue($savedPermissions->containsStrict(Permission::UPDATE_fOLDER));
+            $this->assertTrue($savedPermissions->containsStrict(Permission::INVITE));
         });
     }
 
@@ -166,9 +175,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         [$user, $invitee] = UserFactory::new()->count(2)->create();
-
         $folder = FolderFactory::new()->create(['user_id' => $user->id]);
-
         $parameters = [
             'email' => $invitee->email,
             'folder_id' => $folder->id,

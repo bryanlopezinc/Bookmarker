@@ -40,7 +40,13 @@ final class UAC
 
     public static function fromRequest(Request $request, string $key): self
     {
-        return static::translate($request->input($key, []), [
+        $permissions = $request->input($key, []);
+
+        if (in_array('*', $permissions, true)) {
+            return new self(self::VALID);
+        }
+
+        return static::translate($permissions, [
             'addBookmarks' => Model::ADD_BOOKMARKS,
             'removeBookmarks' => Model::DELETE_BOOKMARKS,
             'inviteUser' => Model::INVITE,
@@ -53,12 +59,7 @@ final class UAC
      */
     public static function fromUnSerialized(array $unserialize): self
     {
-        return static::translate($unserialize, [
-            'A_B' => Model::ADD_BOOKMARKS,
-            'D_B' => Model::DELETE_BOOKMARKS,
-            'I_U' => Model::INVITE,
-            'U_F' => Model::UPDATE_fOLDER
-        ]);
+        return new self($unserialize);
     }
 
     /**
@@ -92,19 +93,7 @@ final class UAC
      */
     public function serialize(): array
     {
-        $serializable = [];
-        $translation = [
-            Model::ADD_BOOKMARKS => 'A_B',
-            Model::DELETE_BOOKMARKS => 'D_B',
-            Model::INVITE => 'I_U',
-            Model::UPDATE_fOLDER => 'U_F'
-        ];
-
-        foreach ($this->permissions as $permission) {
-            $serializable[] = $translation[$permission];
-        }
-
-        return $serializable;
+        return $this->permissions;
     }
 
     public function isEmpty(): bool

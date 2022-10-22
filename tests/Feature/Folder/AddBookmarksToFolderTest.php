@@ -161,19 +161,21 @@ class AddBookmarksToFolderTest extends TestCase
         ])->assertCreated();
     }
 
-    public function testUserWithOnly_viewBookmarksPermission_cannotAddBookmarksToFolder(): void
+    public function testCollaboratorMustHaveAddBookmarksPermission(): void
     {
-        [$folderOwner, $user] = UserFactory::new()->count(2)->create();
-
-        Passport::actingAs($user);
-
-        $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $user->id]);
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folderAccessFactory = FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id);
+        $collaboratorBookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $collaborator->id]);
 
-        FolderAccessFactory::new()->user($user->id)->folder($folder->id)->viewBookmarksPermission()->create();
+        $folderAccessFactory->updateFolderPermission()->create();
+        $folderAccessFactory->removeBookmarksPermission()->create();
+        $folderAccessFactory->viewBookmarksPermission()->create();
+        $folderAccessFactory->inviteUser()->create();
 
+        Passport::actingAs($collaborator);
         $this->addBookmarksToFolderResponse([
-            'bookmarks' => $bookmarks->pluck('id')->implode(','),
+            'bookmarks' => $collaboratorBookmarks->pluck('id')->implode(','),
             'folder' => $folder->id
         ])->assertForbidden();
     }

@@ -227,25 +227,22 @@ class RemoveBookmarksFromFolderTest extends TestCase
         ])->assertForbidden();
     }
 
-    public function testUserWithOnly_add_PermissionCannotRemoveBookmarks(): void
+    public function testCollaboratorMustHaveRemoveBookmarksPermission(): void
     {
-        [$folderOwner, $user] = UserFactory::new()->count(2)->create();
-
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarkIDs = BookmarkFactory::times(3)->create(['user_id' => $folderOwner->id])->pluck('id');
         $folderID = FolderFactory::new()->create(['user_id' => $folderOwner->id])->id;
+        $folderAccessFactory = FolderAccessFactory::new()->user($collaborator->id)->folder($folderID);
+
+        $folderAccessFactory->updateFolderPermission()->create();
+        $folderAccessFactory->addBookmarksPermission()->create();
+        $folderAccessFactory->viewBookmarksPermission()->create();
+        $folderAccessFactory->inviteUser()->create();
 
         Passport::actingAs($folderOwner);
-
         $this->addBookmarksToFolder($bookmarkIDs->implode(','), $folderID);
 
-        FolderAccessFactory::new()
-            ->user($user->id)
-            ->folder($folderID)
-            ->addBookmarksPermission()
-            ->create();
-
-        Passport::actingAs($user);
-
+        Passport::actingAs($collaborator);
         $this->removeFolderBookmarksResponse([
             'bookmarks' => $bookmarkIDs->implode(','),
             'folder' => $folderID

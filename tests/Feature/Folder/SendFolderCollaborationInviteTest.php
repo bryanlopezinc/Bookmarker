@@ -313,6 +313,24 @@ class SendFolderCollaborationInviteTest extends TestCase
         ])->assertOk();
     }
 
+    public function testCollaboratorMustHaveSendInvitePermission(): void
+    {
+        [$folderOwner, $collaborator, $invitee] = UserFactory::new()->count(3)->create();
+        $folderID = FolderFactory::new()->create(['user_id' => $folderOwner->id])->id;
+        $folderAccessFactory = FolderAccessFactory::new()->user($collaborator->id)->folder($folderID);
+
+        $folderAccessFactory->updateFolderPermission()->create();
+        $folderAccessFactory->addBookmarksPermission()->create();
+        $folderAccessFactory->viewBookmarksPermission()->create();
+        $folderAccessFactory->removeBookmarksPermission()->create();
+
+        Passport::actingAs($collaborator);
+        $this->sendInviteResponse([
+            'email' => $invitee->email,
+            'folder_id' => $folderID,
+        ])->assertForbidden();
+    }
+
     public function testUserWithPermissionCannotSendInviteToFolderOwner(): void
     {
         [$user, $folderOwner] = UserFactory::times(2)->create();

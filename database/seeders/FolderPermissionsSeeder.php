@@ -13,7 +13,8 @@ class FolderPermissionsSeeder extends Seeder
         'viewBookmarks',
         'addBookmarks',
         'deleteBookmarks',
-        'inviteUser'
+        'inviteUser',
+        'updateFolder'
     ];
 
     /**

@@ -89,4 +89,14 @@ final class FolderAccessFactory extends Factory
                 ->id
         ]);
     }
+
+    public function updateFolderPermission(): self
+    {
+        return $this->state([
+            'permission_id' => FolderPermission::query()
+                ->where('name', FolderPermission::UPDATE_fOLDER)
+                ->sole()
+                ->id
+        ]);
+    }
 }

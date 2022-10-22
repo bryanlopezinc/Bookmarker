@@ -16,7 +16,8 @@ final class UAC
         Model::VIEW_BOOKMARKS,
         Model::ADD_BOOKMARKS,
         Model::DELETE_BOOKMARKS,
-        Model::INVITE
+        Model::INVITE,
+        Model::UPDATE_fOLDER
     ];
 
     /**
@@ -42,7 +43,8 @@ final class UAC
         return static::translate($request->input($key, []), [
             'addBookmarks' => Model::ADD_BOOKMARKS,
             'removeBookmarks' => Model::DELETE_BOOKMARKS,
-            'inviteUser' => Model::INVITE
+            'inviteUser' => Model::INVITE,
+            'updateFolder' => Model::UPDATE_fOLDER
         ]);
     }
 
@@ -54,7 +56,8 @@ final class UAC
         return static::translate($unserialize, [
             'A_B' => Model::ADD_BOOKMARKS,
             'D_B' => Model::DELETE_BOOKMARKS,
-            'I_U' => Model::INVITE
+            'I_U' => Model::INVITE,
+            'U_F' => Model::UPDATE_fOLDER
         ]);
     }
 
@@ -93,7 +96,8 @@ final class UAC
         $translation = [
             Model::ADD_BOOKMARKS => 'A_B',
             Model::DELETE_BOOKMARKS => 'D_B',
-            Model::INVITE => 'I_U'
+            Model::INVITE => 'I_U',
+            Model::UPDATE_fOLDER => 'U_F'
         ];
 
         foreach ($this->permissions as $permission) {

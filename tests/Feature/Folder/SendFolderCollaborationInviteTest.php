@@ -381,6 +381,7 @@ class SendFolderCollaborationInviteTest extends TestCase
         $this->assertCanSendInviteWithPermissions(['addBookmarks'], 2);
         $this->assertCanSendInviteWithPermissions(['removeBookmarks'], 3);
         $this->assertCanSendInviteWithPermissions(['inviteUser'], 31);
+        $this->assertCanSendInviteWithPermissions(['updateFolder'], 32);
         $this->assertCanSendInviteWithPermissions(['addBookmarks', 'removeBookmarks'], 4);
         $this->assertCanSendInviteWithPermissions(['addBookmarks', 'removeBookmarks', 'inviteUser'], 14);
     }

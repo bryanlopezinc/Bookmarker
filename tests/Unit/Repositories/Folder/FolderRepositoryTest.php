@@ -95,8 +95,8 @@ class FolderRepositoryTest extends TestCase
         $folder = $repository->find(new ResourceID($model->id));
 
         $this->assertEquals(
-            [],
-            $folder->tags->toStringCollection()->diff($tags->pluck('name'))->all(),
+            $folder->tags->toStringCollection()->sort()->values()->all(),
+            $tags->pluck('name')->sort()->values()->all(),
         );
     }
 }

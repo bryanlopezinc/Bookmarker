@@ -22,9 +22,7 @@ final class FetchUserFoldersController
             UserID::fromAuthUser(),
             PaginationData::fromRequest($request),
             UserFoldersSortCriteria::fromRequest($request)
-        );
-
-        $result->appends('per_page', $request->input('per_page', PaginationData::DEFAULT_PER_PAGE))->withQueryString();
+        )->appends('per_page', $request->input('per_page', PaginationData::DEFAULT_PER_PAGE));
 
         return new PaginatedResourceCollection($result, FolderResource::class);
     }

@@ -10,14 +10,13 @@ use App\PaginationData;
 use App\Repositories\FetchUserBookmarksSourcesRepository as Repository;
 use App\ValueObjects\UserID;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
  * Fetch all the websites user has bookmarked a page from.
  */
 final class FetchUserBookmarksSourcesController
 {
-    public function __invoke(Request $request, Repository $repository): AnonymousResourceCollection
+    public function __invoke(Request $request, Repository $repository): PaginatedResourceCollection
     {
         $request->validate(
             PaginationData::new()->maxPerPage(setting('PER_PAGE_BOOKMARKS_SOURCES'))->asValidationRules()

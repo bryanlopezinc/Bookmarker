@@ -87,7 +87,8 @@ class FetchUserFoldersTest extends TestCase
             ->assertJson(function (AssertableJson $json) use ($userFolders) {
                 $json
                     ->etc()
-                    ->where('links.first', route('userFolders', ['per_page' => 15, 'page' => 1]))
+                    ->where('links.first', $link = route('userFolders', ['per_page' => 15, 'page' => 1]))
+                    ->where('links.prev', $link)
                     ->fromArray($json->toArray()['data'])
                     ->each(function (AssertableJson $json) use ($userFolders) {
                         $json->etc();

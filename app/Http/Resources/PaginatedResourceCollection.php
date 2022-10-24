@@ -4,38 +4,41 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
-use Illuminate\Contracts\Pagination\Paginator;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 
-final class PaginatedResourceCollection extends AnonymousResourceCollection
+final class PaginatedResourceCollection extends ResourceCollection
 {
     public function __construct(private Paginator $paginator, string $collects)
     {
-        parent::__construct($paginator, $collects);
+        $this->collects = $collects;
+
+        parent::__construct($paginator->getCollection());
     }
 
     /**
+     * Transform the resource collection into an array.
+     *
      * @param  \Illuminate\Http\Request  $request
-     * @param mixed $paginated
+     * @return array
      */
-    public function paginationInformation($request, $paginated, array $default): array
+    public function toArray($request)
     {
-        unset(
-            $default['links']['last'],
-            $default['meta']['from'],
-            $default['meta']['to']
-        );
+        $data = $this->paginator->toArray();
 
-        $default['meta']['has_more_pages'] = $this->paginator->hasMorePages();
-
-        if (!$this->paginator->hasMorePages()) {
-            unset($default['links']['next']);
-        }
-
-        if ($this->paginator->currentPage() === 1) {
-            $default['links']['prev'] = $default['links']['first'];
-        }
-
-        return $default;
+        return [
+            'data' => $this->collection,
+            'links' => [
+                'first' => $data['first_page_url'],
+                'prev' => $this->when($data['prev_page_url'], $data['prev_page_url'], $data['first_page_url']),
+                'next' => $this->when($this->paginator->hasMorePages(), $data['next_page_url']),
+            ],
+            'meta' => [
+                'current_page' => $data['current_page'],
+                'path' => $data['path'],
+                'per_page' => $data['per_page'],
+                'has_more_pages' => $this->paginator->hasMorePages(),
+            ]
+        ];
     }
 }

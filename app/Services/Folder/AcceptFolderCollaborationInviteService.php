@@ -79,12 +79,12 @@ final class AcceptFolderCollaborationInviteService
 
     private function ensureUsersStillExist(array $payload): void
     {
-        $result = $this->userRepository->findManyByIDs(
+        $users = $this->userRepository->findManyByIDs(
             IDs::fromNativeTypes([$payload[Payload::INVITER_ID], $payload[Payload::INVITEE_ID]]),
             \App\QueryColumns\UserAttributes::only('id')
         );
 
-        if ($result->count() !== 2) {
+        if ($users->count() !== 2) {
             throw new UserNotFoundHttpException;
         }
     }

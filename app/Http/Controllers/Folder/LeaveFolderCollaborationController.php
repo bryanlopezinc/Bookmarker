@@ -18,7 +18,7 @@ final class LeaveFolderCollaborationController
             'folder_id' => ['required', new ResourceIdRule]
         ]);
 
-        $service->removeAuthorizedAsCollaborator(ResourceID::fromRequest($request, 'folder_id'));
+        $service->leave(ResourceID::fromRequest($request, 'folder_id'));
 
         return response()->json();
     }

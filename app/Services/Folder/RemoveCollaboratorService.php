@@ -28,7 +28,7 @@ final class RemoveCollaboratorService
 
         $this->ensureIsNotRemovingSelf($collaboratorID);
 
-        $this->ensureUserIsACollaborator($collaboratorID, $folderID);
+        $this->ensureUserIsAnExistingCollaborator($collaboratorID, $folderID);
 
         $this->permissions->removeCollaborator($collaboratorID, $folderID);
     }
@@ -42,7 +42,7 @@ final class RemoveCollaboratorService
         }
     }
 
-    private function ensureUserIsACollaborator(UserID $collaboratorID, ResourceID $folderID): void
+    private function ensureUserIsAnExistingCollaborator(UserID $collaboratorID, ResourceID $folderID): void
     {
         $userHasAnyAccessToFolder = $this->permissions->getUserAccessControls($collaboratorID, $folderID)->isNotEmpty();
 

@@ -20,18 +20,18 @@ final class LeaveFolderCollaborationService
     ) {
     }
 
-    public function removeAuthorizedAsCollaborator(ResourceID $folderID): void
+    public function leave(ResourceID $folderID): void
     {
         $folder = $this->folderRepository->find($folderID, FolderAttributes::only('id,user_id'));
 
         $this->ensureCollaboratorDoesNotOwnFolder($collaboratorID = UserID::fromAuthUser(), $folder);
 
-        $this->ensureCollaboratorHasAccessToFolder($collaboratorID, $folderID);
+        $this->ensureCollaboratorHasPriorAccessToFolder($collaboratorID, $folderID);
 
         $this->permissionsRepository->removeCollaborator($collaboratorID, $folderID);
     }
 
-    private function ensureCollaboratorHasAccessToFolder(UserID $collaboratorID, ResourceID $folderID): void
+    private function ensureCollaboratorHasPriorAccessToFolder(UserID $collaboratorID, ResourceID $folderID): void
     {
         $isNotACollaborator = $this->permissionsRepository->getUserAccessControls($collaboratorID, $folderID)->isEmpty();
 

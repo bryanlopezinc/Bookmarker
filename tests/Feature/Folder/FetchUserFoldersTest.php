@@ -14,9 +14,6 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 
-/**
- * @group 119
- */
 class FetchUserFoldersTest extends TestCase
 {
     use WithFaker;

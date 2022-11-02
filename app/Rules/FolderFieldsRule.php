@@ -9,9 +9,9 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\MessageBag;
 use Illuminate\Validation\Rule;
 
-final class FolderFieldsRule implements RuleContract
+class FolderFieldsRule implements RuleContract
 {
-    private const ALLOWED = [
+    protected array $ALLOWED = [
         "id",
         "name",
         "description",
@@ -30,7 +30,7 @@ final class FolderFieldsRule implements RuleContract
         'storage.percentage_used'
     ];
 
-    private MessageBag $errors;
+    protected MessageBag $errors;
 
     public function __construct()
     {
@@ -45,7 +45,7 @@ final class FolderFieldsRule implements RuleContract
     public function passes($attribute, $value)
     {
         $validator = Validator::make([$attribute => $value], [
-            $attribute => ['array', Rule::in(self::ALLOWED)],
+            $attribute => ['array', Rule::in($this->ALLOWED)],
             "$attribute.*" => ['distinct:strict']
         ]);
 
@@ -78,7 +78,7 @@ final class FolderFieldsRule implements RuleContract
     /**
      * @return string|array
      */
-    public function message()
+    final public function message()
     {
         return $this->errors->all();
     }

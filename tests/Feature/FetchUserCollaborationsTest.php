@@ -324,4 +324,111 @@ class FetchUserCollaborationsTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonFragment(['id' => $jeffsFolder->id]);
     }
+
+    public function testCanRequestPartialResource(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
+
+        Passport::actingAs($collaborator);
+
+        $this->userCollaborationsResponse(['fields' => 'id,name,storage.items_count,permissions.canInviteUsers'])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->collect('data')
+            ->each(function (array $data) {
+                (new AssertableJsonString($data))
+                    ->assertCount(4, 'attributes')
+                    ->assertCount(1, 'attributes.storage')
+                    ->assertCount(1, 'attributes.permissions')
+                    ->assertStructure([
+                        "type",
+                        "attributes" => [
+                            "id",
+                            "name",
+                            "storage" => ['items_count'],
+                            'permissions' => ['canInviteUsers']
+                        ]
+                    ]);
+            });
+
+        $this->userCollaborationsResponse(['fields' => 'id,name,storage.items_count,permissions'])
+            ->assertOk()
+            ->collect('data')
+            ->each(function (array $data) {
+                (new AssertableJsonString($data))
+                    ->assertCount(4, 'attributes')
+                    ->assertCount(1, 'attributes.storage')
+                    ->assertCount(4, 'attributes.permissions')
+                    ->assertStructure([
+                        "type",
+                        "attributes" => [
+                            "id",
+                            "name",
+                            "storage" => ['items_count'],
+                            'permissions' => [
+                                'canInviteUsers',
+                                'canAddBookmarks',
+                                'canRemoveBookmarks',
+                                'canUpdateFolder'
+                            ]
+                        ]
+                    ]);
+            });
+    }
+
+    public function testFieldsMustBeValid(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->userCollaborationsResponse(['fields' => 'id,name,foo,1'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'fields' => ['The selected fields is invalid.']
+            ]);
+
+        $this->userCollaborationsResponse(['fields' => '1,2,3,4'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'fields' => ['The selected fields is invalid.']
+            ]);
+    }
+
+    public function testFieldsMustBeUnique(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->userCollaborationsResponse(['fields' => 'id,name,description,description'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'fields' => [
+                    'The fields.2 field has a duplicate value.',
+                    'The fields.3 field has a duplicate value.'
+                ]
+            ]);
+    }
+
+    public function testCannotRequestStorageWithAStorageChild(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->userCollaborationsResponse(['fields' => 'id,name,storage,storage.items_count'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'fields' => ['Cannot request storage with a storage child field']
+            ]);
+    }
+
+    public function testCannotRequestPermissionWithAPermissionChild(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->userCollaborationsResponse(['fields' => 'id,name,permissions,permissions.canInviteUsers'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'fields' => ['Cannot request permission with a permission child field']
+            ]);
+    }
 }

@@ -14,6 +14,9 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 
+/**
+ * @group 119
+ */
 class FetchUserFoldersTest extends TestCase
 {
     use WithFaker;
@@ -325,5 +328,74 @@ class FetchUserFoldersTest extends TestCase
                     return true;
                 })->etc();
             });
+    }
+
+    public function testCanRequestPartialResource(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        FolderFactory::new()->count(3)->create(['user_id' => $user->id]);
+
+        $this->userFoldersResponse(['fields' => 'id,name,storage.items_count'])
+            ->assertOk()
+            ->assertJsonCount(3, 'data')
+            ->collect('data')
+            ->each(function (array $data) {
+                (new AssertableJsonString($data))
+                    ->assertCount(3, 'attributes')
+                    ->assertCount(1, 'attributes.storage')
+                    ->assertStructure([
+                        "type",
+                        "attributes" => [
+                            "id",
+                            "name",
+                            "storage" => [
+                                'items_count'
+                            ],
+                        ]
+                    ]);
+            });
+    }
+
+    public function testFieldsMustBeValid(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->userFoldersResponse(['fields' => 'id,name,foo,1'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'fields' => ['The selected fields is invalid.']
+            ]);
+
+        $this->userFoldersResponse(['fields' => '1,2,3,4'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'fields' => ['The selected fields is invalid.']
+            ]);
+    }
+
+    public function testFieldsMustBeUnique(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->userFoldersResponse(['fields' => 'id,name,description,description'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'fields' => [
+                    'The fields.2 field has a duplicate value.',
+                    'The fields.3 field has a duplicate value.'
+                ]
+            ]);
+    }
+
+    public function testCannotRequestStorageWithAStorageChild(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->userFoldersResponse(['fields' => 'id,name,storage,storage.items_count'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'fields' => ['Cannot request storage with a storage child field']
+            ]);
     }
 }

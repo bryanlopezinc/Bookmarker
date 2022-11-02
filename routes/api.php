@@ -16,7 +16,7 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
         Route::get('me', A\FetchUserProfileController::class)->name('authUserProfile');
         Route::delete('/', A\DeleteUserAccountController::class)->name('deleteUserAccount');
 
-        Route::get('folders', F\FetchUserFoldersController::class)->name('userFolders');
+        Route::get('folders', F\FetchUserFoldersController::class)->middleware(StringToArray::keys('fields'))->name('userFolders');
         Route::get('folders/collaborations', C\FetchUserCollaborationsController::class)->name('fetchUserCollaborations');
         Route::delete('folders/collaborations/exit', F\LeaveFolderCollaborationController::class)->name('leaveFolderCollaboration');
 

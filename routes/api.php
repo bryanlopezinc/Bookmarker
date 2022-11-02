@@ -45,7 +45,7 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
     });
 
     Route::prefix('folders')->group(function () {
-        Route::get('/', F\FetchFolderController::class)->name('fetchFolder');
+        Route::get('/', F\FetchFolderController::class)->middleware([StringToArray::keys('fields')])->name('fetchFolder');
         Route::delete('/', F\DeleteFolderController::class)->name('deleteFolder');
         Route::post('/', F\CreateFolderController::class)->middleware(StringToArray::keys('tags'))->name('createFolder');
         Route::patch('/', F\UpdateFolderController::class)->middleware([StringToArray::keys('tags')])->name('updateFolder');

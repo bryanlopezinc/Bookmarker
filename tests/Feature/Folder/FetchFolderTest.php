@@ -104,4 +104,87 @@ class FetchFolderTest extends TestCase
 
         $this->fetchFolderResponse(['id' => FolderFactory::new()->create()->id])->assertForbidden();
     }
+
+    public function testCanRequestPartialResource(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        /** @var Model */
+        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+
+        $this->fetchFolderResponse([
+            'id' => $folder->id,
+            'fields' => 'id,name,description'
+        ])
+            ->assertOk()
+            ->assertJsonCount(3, 'data.attributes')
+            ->assertJson(function (AssertableJson $json) use ($folder) {
+                $json->etc();
+                $json->where('data.attributes.id', $folder->id);
+                $json->where('data.attributes.name', $folder->name);
+                $json->where('data.attributes.description', $folder->description);
+            })
+            ->assertJsonStructure([
+                "data" => [
+                    "type",
+                    "attributes" => [
+                        "id",
+                        "name",
+                        "description",
+                    ]
+                ]
+            ]);
+    }
+
+    public function testFieldsMustBeValid(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->fetchFolderResponse([
+            'id' => 33,
+            'fields' => 'id,name,foo,1'
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'fields' => ['The selected fields is invalid.']
+            ]);
+
+        $this->fetchFolderResponse([
+            'id' => 33,
+            'fields' => '1,2,3,4'
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'fields' => ['The selected fields is invalid.']
+            ]);
+    }
+
+    public function testFieldsMustBeUnique(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->fetchFolderResponse([
+            'id' => 33,
+            'fields' => 'id,name,description,description'
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'fields' => [
+                    'The fields.2 field has a duplicate value.',
+                    'The fields.3 field has a duplicate value.'
+                ]
+            ]);
+    }
+
+    public function testCannotRequestStorageWithAStorageChild(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->fetchFolderResponse([
+            'id' => 33,
+            'fields' => 'id,name,storage,storage.items_count'
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'fields' => ['Cannot request storage with a storage child field']
+            ]);
+    }
 }

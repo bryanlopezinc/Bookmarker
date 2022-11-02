@@ -143,7 +143,7 @@ class LoginUserTest extends TestCase
             ->assertJsonCount(4, 'data.token')
             ->assertJson(function (AssertableJson $json) {
                 $json->where('data.token.expires_in', function (int $expiresAt) {
-                    $this->assertEquals(1, now()->diffInHours(now()->addSeconds($expiresAt)));
+                    $this->assertLessThanOrEqual(1, now()->diffInHours(now()->addSeconds($expiresAt)));
 
                     return true;
                 });

@@ -93,6 +93,7 @@ class CreateFolderTest extends TestCase
 
         $this->assertDatabaseMissing(Taggable::class, [
             'taggable_id' => $folder->id,
+            'taggable_type' => Taggable::FOLDER_TYPE
         ]);
     }
 

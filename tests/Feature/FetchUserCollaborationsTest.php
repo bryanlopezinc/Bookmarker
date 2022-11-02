@@ -104,7 +104,7 @@ class FetchUserCollaborationsTest extends TestCase
                         });
 
                         (new AssertableJsonString($json->toArray()))
-                            ->assertCount(3, 'attributes.permissions')
+                            ->assertCount(4, 'attributes.permissions')
                             ->assertStructure([
                                 "type",
                                 "attributes" => [
@@ -128,7 +128,8 @@ class FetchUserCollaborationsTest extends TestCase
                                     'permissions' => [
                                         'canInviteUsers',
                                         'canAddBookmarks',
-                                        'canRemoveBookmarks'
+                                        'canRemoveBookmarks',
+                                        'canUpdateFolder'
                                     ]
                                 ]
                             ]);

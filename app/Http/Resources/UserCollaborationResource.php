@@ -27,7 +27,8 @@ final class UserCollaborationResource extends JsonResource
         Arr::set($response, 'attributes.permissions', [
             'canInviteUsers' => $this->userCollaboration->permissions->canInviteUser(),
             'canAddBookmarks' => $this->userCollaboration->permissions->canAddBookmarks(),
-            'canRemoveBookmarks' => $this->userCollaboration->permissions->canRemoveBookmarks()
+            'canRemoveBookmarks' => $this->userCollaboration->permissions->canRemoveBookmarks(),
+            'canUpdateFolder' => $this->userCollaboration->permissions->canUpdateFolder()
         ]);
 
         return $response;

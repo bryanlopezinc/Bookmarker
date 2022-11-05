@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('resolved_url');
             $table->timestamp('resolved_at')->nullable();
             $table->string('url_canonical');
-            $table->string('url_canonical_hash', 20);
+            $table->string('url_canonical_hash', 20)->index();
             $table->string('description', 200)->nullable();
             $table->boolean('description_set_by_user');
             $table->unsignedBigInteger('source_id')->index();

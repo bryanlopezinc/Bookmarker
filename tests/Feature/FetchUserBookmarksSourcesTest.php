@@ -11,7 +11,7 @@ use Tests\TestCase;
 
 class FetchUserBookmarksSourcesTest extends TestCase
 {
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function userBookmarksSourcesResponse(array $parameters = []): TestResponse
     {
         return $this->getJson(route('fetchUserBookmarksSources', $parameters));
     }
@@ -23,32 +23,32 @@ class FetchUserBookmarksSourcesTest extends TestCase
 
     public function testUnAuthorizedUserCannotAccessRoute(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->userBookmarksSourcesResponse()->assertUnauthorized();
     }
 
     public function testPaginationDataMustBeValid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['per_page' => 3])
+        $this->userBookmarksSourcesResponse(['per_page' => 3])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'per_page' => ['The per page must be at least 15.']
             ]);
 
-        $this->getTestResponse(['per_page' => 51])
+        $this->userBookmarksSourcesResponse(['per_page' => 51])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'per_page' => ['The per page must not be greater than 50.']
             ]);
 
-        $this->getTestResponse(['page' => 2001])
+        $this->userBookmarksSourcesResponse(['page' => 2001])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'page' => ['The page must not be greater than 2000.']
             ]);
 
-        $this->getTestResponse(['page' => -1])
+        $this->userBookmarksSourcesResponse(['page' => -1])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'page' => ['The page must be at least 1.']
@@ -71,7 +71,7 @@ class FetchUserBookmarksSourcesTest extends TestCase
         ]);
 
         $this->withoutExceptionHandling()
-            ->getTestResponse()
+            ->userBookmarksSourcesResponse()
             ->assertOk()
             ->assertJsonCount(6, 'data')
             ->assertJsonStructure([

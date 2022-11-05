@@ -20,12 +20,13 @@ final class BookmarkAttributes extends Attributes
             'tags',
             'is_dead_link',
             'url',
+            'url_canonical_hash'
         ];
     }
 
     /**
      * @param string $attributes A comma separated list of attributes which can only be
-     * any of id,source,user_id,tags,is_dead_link,url
+     * any of id,source,user_id,tags,is_dead_link,url,url_canonical_hash
      */
     public static function only(string $attributes): self
     {

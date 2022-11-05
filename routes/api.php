@@ -39,6 +39,7 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
     Route::prefix('bookmarks')->group(function () {
         Route::post('/', C\CreateBookmarkController::class)->middleware([StringToArray::keys('tags')])->name('createBookmark');
         Route::delete('/', C\DeleteBookmarkController::class)->middleware([StringToArray::keys('ids')])->name('deleteBookmark');
+        Route::get('/duplicates', C\FetchDuplicateBookmarksController::class)->name('fetchPossibleDuplicates');
         Route::patch('/', C\UpdateBookmarkController::class)->middleware([StringToArray::keys('tags')])->name('updateBookmark');
         Route::post('import', C\ImportBookmarkController::class)->middleware([StringToArray::keys('tags')])->withoutMiddleware(DBTransaction::class)->name('importBookmark');
         Route::delete('tags/remove', C\DeleteBookmarkTagsController::class)->middleware([StringToArray::keys('tags')])->name('deleteBookmarkTags');

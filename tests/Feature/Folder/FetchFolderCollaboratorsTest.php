@@ -104,7 +104,7 @@ class FetchFolderCollaboratorsTest extends TestCase
 
                         (new AssertableJsonString($json->toArray()))
                             ->assertCount(4, 'attributes')
-                            ->assertCount(3, 'attributes.permissions')
+                            ->assertCount(4, 'attributes.permissions')
                             ->assertStructure([
                                 'type',
                                 'attributes' => [
@@ -114,7 +114,8 @@ class FetchFolderCollaboratorsTest extends TestCase
                                     'permissions' => [
                                         'canInviteUsers',
                                         'canAddBookmarks',
-                                        'canRemoveBookmarks'
+                                        'canRemoveBookmarks',
+                                        'canUpdateFolder'
                                     ],
                                 ]
                             ]);
@@ -229,11 +230,12 @@ class FetchFolderCollaboratorsTest extends TestCase
         $this->fetchCollaboratorsResponse(['folder_id' => $userFolderID])
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonCount(3, 'data.0.attributes.permissions')
+            ->assertJsonCount(4, 'data.0.attributes.permissions')
             ->assertJsonFragment([
                 'canInviteUsers' => true,
                 'canAddBookmarks' => true,
-                'canRemoveBookmarks' => false
+                'canRemoveBookmarks' => false,
+                'canUpdateFolder' => false
             ]);
     }
 

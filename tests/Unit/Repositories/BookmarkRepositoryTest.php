@@ -11,7 +11,7 @@ use Database\Factories\BookmarkHealthFactory;
 use ReflectionProperty;
 use Tests\TestCase;
 
-class BookmarksRepositoryTest extends TestCase
+class BookmarkRepositoryTest extends TestCase
 {
     private BookmarkRepository $repository;
 

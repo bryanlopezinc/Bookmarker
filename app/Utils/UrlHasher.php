@@ -4,20 +4,17 @@ declare(strict_types=1);
 
 namespace App\Utils;
 
-use App\Contracts\UrlHasherInterface;
 use App\HashedUrl;
 use App\ValueObjects\Url;
 
-final class UrlHasher implements UrlHasherInterface
+class UrlHasher
 {
-    public function __construct(private readonly string $algo)
-    {
-    }
+    private const AlGO = 'xxh3';
 
     public function hashUrl(Url $url): HashedUrl
     {
-        return (new HashedUrl)->make(
-            hash($this->algo, $url->toString())
+        return new HashedUrl(
+            hash(self::AlGO, $url->toString())
         );
     }
 }

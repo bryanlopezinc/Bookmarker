@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Unit\Jobs;
 
 use App\Contracts\UpdateBookmarkRepositoryInterface as Repository;
-use App\Contracts\UrlHasherInterface;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\DataTransferObjects\UpdateBookmarkData;
 use App\Jobs\UpdateBookmarkWithHttpResponse;
@@ -15,6 +14,7 @@ use App\Readers\BookmarkMetaData;
 use App\Readers\HttpClientInterface;
 use App\Repositories\BookmarkRepository;
 use App\Repositories\UserRepository;
+use App\Utils\UrlHasher;
 use App\ValueObjects\Url;
 use Closure;
 use Database\Factories\BookmarkFactory;
@@ -219,13 +219,16 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         });
 
 
-        $this->mockUrlHasher(function (MockObject $repository) use ($canonicalUrl) {
-            $repository->expects($this->once())
+        $this->mockUrlHasher(function (MockObject $m) use ($canonicalUrl) {
+            $m->expects($this->once())
                 ->method('hashUrl')
                 ->with($this->callback(function (Url $url) use ($canonicalUrl) {
                     $this->assertEquals($url->toString(), $canonicalUrl->toString());
                     return true;
-                }));
+                }))
+                ->willReturnCallback(function (Url $url) {
+                    return (new UrlHasher)->hashUrl($url);
+                });
         });
 
         $this->handleUpdateBookmarkJob($bookmark);
@@ -254,8 +257,8 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
                 ]));
         });
 
-        $this->mockRepository(function (MockObject $repository) use ($bookmark) {
-            $repository->expects($this->once())
+        $this->mockRepository(function (MockObject $m) use ($bookmark) {
+            $m->expects($this->once())
                 ->method('update')
                 ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
                     $this->assertFalse($data->hasDescription());
@@ -288,8 +291,8 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
                 ]));
         });
 
-        $this->mockRepository(function (MockObject $repository) use ($bookmark) {
-            $repository->expects($this->once())
+        $this->mockRepository(function (MockObject $m) use ($bookmark) {
+            $m->expects($this->once())
                 ->method('update')
                 ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
                     $this->assertTrue($data->hasDescription());
@@ -322,8 +325,8 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
                 ]));
         });
 
-        $this->mockRepository(function (MockObject $repository) use ($bookmark) {
-            $repository->expects($this->once())
+        $this->mockRepository(function (MockObject $m) use ($bookmark) {
+            $m->expects($this->once())
                 ->method('update')
                 ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
                     $this->assertTrue($data->hasTitle());
@@ -460,17 +463,17 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         $job->handle(
             app(HttpClientInterface::class),
             app(Repository::class),
-            app(UrlHasherInterface::class),
+            app(UrlHasher::class),
             app(BookmarkRepository::class)
         );
     }
 
     private function mockUrlHasher(\Closure $mock): void
     {
-        $hasher = $this->getMockBuilder(UrlHasherInterface::class)->getMock();
+        $hasher = $this->getMockBuilder(UrlHasher::class)->getMock();
 
         $mock($hasher);
 
-        $this->swap(UrlHasherInterface::class, $hasher);
+        $this->swap(UrlHasher::class, $hasher);
     }
 }

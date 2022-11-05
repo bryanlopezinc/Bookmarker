@@ -2,14 +2,10 @@
 
 namespace App\Providers;
 
-use App\Contracts\HashedUrlInterface;
-use App\Contracts\UrlHasherInterface;
-use App\HashedUrl;
 use App\Cache\User2FACodeRepository;
 use App\Contracts\TwoFACodeGeneratorInterface;
 use App\Repositories\OAuth\EnsureEmailHasBeenVerified;
 use App\Repositories\OAuth\Verify2FACode;
-use App\Utils\UrlHasher;
 use App\Utils\TwoFACodeGenerator;
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Support\ServiceProvider;
@@ -38,13 +34,5 @@ class AppServiceProvider extends ServiceProvider
         }
 
         $this->app->bind(TwoFACodeGeneratorInterface::class, TwoFACodeGenerator::class);
-
-        $this->bindUrlHasher();
-    }
-
-    private function bindUrlHasher(): void
-    {
-        $this->app->bind(UrlHasherInterface::class, fn () => new UrlHasher('xxh3'));
-        $this->app->bind(HashedUrlInterface::class, fn () => new HashedUrl());
     }
 }

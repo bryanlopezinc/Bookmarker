@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Contracts\UrlHasherInterface;
 use App\Models\Bookmark;
+use App\Utils\UrlHasher;
 use App\ValueObjects\Url;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -20,8 +20,7 @@ final class BookmarkFactory extends Factory
      */
     public function definition()
     {
-        /** @var UrlHasherInterface */
-        $hasher = app(UrlHasherInterface::class);
+        $hasher = new UrlHasher;
 
         return [
             'title' => $url = $this->faker->url(),

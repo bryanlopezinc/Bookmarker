@@ -2,11 +2,11 @@
 
 namespace Tests\Unit\Repositories;
 
-use App\Contracts\UrlHasherInterface;
 use App\DataTransferObjects\Builders\BookmarkBuilder as Builder;
 use App\DataTransferObjects\UpdateBookmarkData as Data;
 use App\Models\Bookmark;
 use App\Repositories\UpdateBookmarkRepository;
+use App\Utils\UrlHasher;
 use App\ValueObjects\Url;
 use Database\Factories\BookmarkFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -18,8 +18,7 @@ class UpdateBookmarkRepositoryTest extends TestCase
 
     public function testUpdateBookmark(): void
     {
-        /** @var UrlHasherInterface */
-        $hasher = app(UrlHasherInterface::class);
+        $hasher = new UrlHasher;
 
         $this->assertUpdatedAttributesEquals(Builder::new()->tags([]), function (array $updatedAttributes) {
             $this->assertEmpty($updatedAttributes);

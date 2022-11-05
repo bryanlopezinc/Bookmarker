@@ -12,7 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use App\Contracts\UpdateBookmarkRepositoryInterface as Repository;
-use App\Contracts\UrlHasherInterface;
+use App\Utils\UrlHasher;
 use App\DataTransferObjects\Builders\BookmarkBuilder as Builder;
 use App\DataTransferObjects\UpdateBookmarkData as Data;
 use App\Models\Source;
@@ -34,7 +34,7 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
     public function handle(
         HttpClientInterface $client,
         Repository $repository,
-        UrlHasherInterface $urlHasher,
+        UrlHasher $urlHasher,
         BookmarkRepository $bookmarkRepository = new BookmarkRepository,
     ): void {
 

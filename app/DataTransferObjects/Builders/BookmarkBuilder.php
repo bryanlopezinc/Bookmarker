@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\DataTransferObjects\Builders;
 
 use App\Collections\TagsCollection;
-use App\Contracts\HashedUrlInterface;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Source;
+use App\HashedUrl;
 use App\Models\Bookmark as Model;
 use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\BookmarkDescription;
@@ -188,12 +188,9 @@ final class BookmarkBuilder extends Builder
         return $this;
     }
 
-    public function canonicalUrlHash(HashedUrlInterface|string $hash): self
+    public function canonicalUrlHash(HashedUrl|string $hash): self
     {
-        /** @var HashedUrlInterface */
-        $hashedUrlInterface = app(HashedUrlInterface::class);
-
-        $this->attributes['canonicalUrlHash'] = is_string($hash) ? $hashedUrlInterface->make($hash) : $hash;
+        $this->attributes['canonicalUrlHash'] = is_string($hash) ? new HashedUrl($hash) : $hash;
 
         return $this;
     }

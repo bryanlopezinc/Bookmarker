@@ -10,7 +10,7 @@ use App\ValueObjects\UserID;
 use App\ValueObjects\ResourceID;
 use App\Collections\TagsCollection;
 use App\Contracts\BelongsToUserInterface;
-use App\Contracts\HashedUrlInterface;
+use App\HashedUrl;
 use App\ValueObjects\BookmarkTitle;
 use App\ValueObjects\BookmarkDescription;
 use Carbon\Carbon;
@@ -35,7 +35,7 @@ final class Bookmark extends DataTransferObject implements BelongsToUserInterfac
     public bool $isHealthy;
     public bool $isUserFavorite;
     public readonly Url $canonicalUrl;
-    public readonly HashedUrlInterface $canonicalUrlHash;
+    public readonly HashedUrl $canonicalUrlHash;
     public readonly Url $resolvedUrl;
     public readonly Carbon $resolvedAt;
     public readonly bool  $IsResolved;

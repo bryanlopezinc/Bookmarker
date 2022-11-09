@@ -8,6 +8,7 @@ use App\Repositories\OAuth\EnsureEmailHasBeenVerified;
 use App\Repositories\OAuth\Verify2FACode;
 use App\Utils\TwoFACodeGenerator;
 use Illuminate\Contracts\Hashing\Hasher;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Bridge\UserRepository;
 
@@ -34,5 +35,9 @@ class AppServiceProvider extends ServiceProvider
         }
 
         $this->app->bind(TwoFACodeGeneratorInterface::class, TwoFACodeGenerator::class);
+
+        Relation::enforceMorphMap([
+            'user' => \App\Models\User::class
+        ]);
     }
 }

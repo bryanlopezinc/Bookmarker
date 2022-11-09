@@ -7,19 +7,18 @@ namespace App\Services\Folder;
 use App\Collections\BookmarksCollection;
 use App\Collections\ResourceIDsCollection as IDs;
 use App\Contracts\FolderRepositoryInterface;
-use App\DataTransferObjects\Bookmark;
-use App\DataTransferObjects\Folder;
+use App\DataTransferObjects\{Bookmark, Folder};
 use App\Events\FolderModifiedEvent;
 use App\Policies\EnsureAuthorizedUserOwnsResource;
 use App\QueryColumns\BookmarkAttributes;
 use App\Repositories\BookmarkRepository;
-use App\ValueObjects\ResourceID;
+use App\ValueObjects\{ResourceID, UserID};
 use App\Exceptions\HttpException as HttpException;
 use App\Jobs\CheckBookmarksHealth;
+use App\Notifications\BookmarksAddedToFolderNotification as Notification;
 use App\QueryColumns\FolderAttributes as Attributes;
 use App\Repositories\Folder\FolderBookmarkRepository;
 use App\Repositories\Folder\FolderPermissionsRepository;
-use App\ValueObjects\UserID;
 use Illuminate\Support\Collection;
 use Symfony\Component\HttpKernel\Exception\HttpException as SymfonyHttpException;
 
@@ -47,6 +46,8 @@ final class AddBookmarksToFolderService
 
         event(new FolderModifiedEvent($folderID));
         dispatch(new CheckBookmarksHealth(new BookmarksCollection($bookmarks)));
+
+        $this->notifyFolderOwner($bookmarks, $folder);
     }
 
     private function ensureUserHasPermissionToPerformAction(Folder $folder): void
@@ -92,5 +93,21 @@ final class AddBookmarksToFolderService
         if ($this->folderBookmarks->contains($bookmarkIDs, $folderID)) {
             throw HttpException::conflict(['message' => 'Bookmarks already exists']);
         }
+    }
+
+    /**
+     * @param Collection<Bookmark> $bookmarks
+     */
+    private function notifyFolderOwner(Collection $bookmarks, Folder $folder): void
+    {
+        $collaboratorID = UserID::fromAuthUser();
+        $bookmarksWasAddedByFolderOwner = $collaboratorID->equals($folder->ownerID);
+        $notification = new Notification(new BookmarksCollection($bookmarks), $folder->folderID, $collaboratorID);
+
+        if ($bookmarksWasAddedByFolderOwner) {
+            return;
+        }
+
+        (new \App\Models\User(['id' => $folder->ownerID->value()]))->notify($notification);
     }
 }

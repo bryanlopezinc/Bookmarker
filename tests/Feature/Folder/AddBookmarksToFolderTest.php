@@ -2,15 +2,19 @@
 
 namespace Tests\Feature\Folder;
 
+use App\Models\Bookmark;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Models\FolderBookmarksCount;
+use App\Notifications\BookmarksAddedToFolderNotification;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderAccessFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
@@ -142,6 +146,47 @@ class AddBookmarksToFolderTest extends TestCase
         $this->assertTrue(
             Folder::query()->whereKey($folderID)->first('updated_at')->updated_at->isToday()
         );
+    }
+
+    public function testWillNotSendNotificationWhenBookmarksWereAddedByFolderOwner(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $bookmarkIDs = BookmarkFactory::new()->count(2)->create(['user_id' => $user->id])->pluck('id');
+        $folderID = FolderFactory::new()->create(['user_id' => $user->id])->id;
+
+        Notification::fake();
+
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => $bookmarkIDs->implode(','),
+            'folder' => $folderID,
+        ])->assertCreated();
+
+        Notification::assertNothingSent();
+    }
+
+    public function testWillSendNotificationsWhenBookmarksWereNotAddedByFolderOwner(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $collaborator->id])->pluck('id');
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
+
+        Passport::actingAs($collaborator);
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => $bookmarks->implode(','),
+            'folder' => $folder->id
+        ])->assertCreated();
+
+        $notificationData = DatabaseNotification::query()->where('notifiable_id', $folderOwner->id)->sole(['data'])->data;
+
+        $this->assertEquals($folder->id, $notificationData['folder_id']);
+        $this->assertEquals($collaborator->id, $notificationData['added_by']);
+
+        foreach ($notificationData['bookmarks'] as $bookmarkID) {
+            $this->assertTrue($bookmarks->contains($bookmarkID));
+        }
     }
 
     public function testUserWithPermissionCanAddBookmarksToFolder(): void

@@ -9,12 +9,15 @@ use App\Models\FolderAccess;
 use App\Models\FolderPermission as Permission;
 use App\Models\SecondaryEmail;
 use App\ValueObjects\Url;
+use Database\Factories\FolderAccessFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Laravel\Passport\Passport;
@@ -429,5 +432,59 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         });
 
         return $parameters;
+    }
+
+    public function testWillNotNotifyFolderOwnerWhenInvitationWasSentByFolderOwner(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        Notification::fake();
+
+        Passport::actingAs($folderOwner);
+        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
+            $this->getJson(route('sendFolderCollaborationInvite', [
+                'email' => $invitee->email,
+                'folder_id' => $folder->id,
+            ]))->assertOk();
+        });
+
+        $this->acceptInviteResponse($parameters)->assertCreated();
+
+        Notification::assertNothingSent();
+    }
+
+    public function testWillNotifyFolderOwnerWhenInvitationWasNotSentByFolderOwner(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->create();
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->inviteUser()
+            ->create();
+
+        Passport::actingAs($collaborator);
+        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
+            $this->getJson(route('sendFolderCollaborationInvite', [
+                'email' => $invitee->email,
+                'folder_id' => $folder->id,
+            ]))->assertOk();
+        });
+
+        $this->acceptInviteResponse($parameters)->assertCreated();
+
+        $notificationData = DatabaseNotification::query()->where('notifiable_id', $folder->user_id)->sole(['data'])->data;
+
+        $this->assertEquals($notificationData, [
+            'collaborator_id' => $invitee->id,
+            'folder_id' => $folder->id,
+            'added_by' => $collaborator->id,
+        ]);
     }
 }

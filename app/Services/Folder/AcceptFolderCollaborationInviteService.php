@@ -18,6 +18,7 @@ use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Illuminate\Http\Request;
 use App\Cache\InviteTokensStore as Payload;
+use App\Notifications\CollaboratorAddedToFolderNotification as Notification;
 use App\ValueObjects\Uuid;
 
 final class AcceptFolderCollaborationInviteService
@@ -38,16 +39,14 @@ final class AcceptFolderCollaborationInviteService
 
         $this->ensureUsersStillExist($invitationData);
 
-        $folder = $this->folderRepository->find(new ResourceID($invitationData[Payload::FOLDER_ID]), FolderAttributes::only('id'));
+        $folder = $this->folderRepository->find(new ResourceID($invitationData[Payload::FOLDER_ID]), FolderAttributes::only('id,user_id'));
         $inviteeID = new UserID($invitationData[Payload::INVITEE_ID]);
 
         $this->ensureInvitationHasNotBeenAccepted($inviteeID, $folder);
 
-        $this->permissions->create(
-            $inviteeID,
-            $folder->folderID,
-            $this->extractPermissions($invitationData)
-        );
+        $this->permissions->create($inviteeID, $folder->folderID, $this->extractPermissions($invitationData));
+
+        $this->notifyFolderOwner(new UserID($invitationData[Payload::INVITER_ID]), $inviteeID, $folder);
     }
 
     private function ensureInvitationTokenIsValid(array $data): void
@@ -98,5 +97,17 @@ final class AcceptFolderCollaborationInviteService
                 'message' => 'Invitation already accepted'
             ]);
         }
+    }
+
+    private function notifyFolderOwner(UserID $inviterID, UserID $inviteeID, Folder $folder): void
+    {
+        $wasInvitedByFolderOwner = $folder->ownerID->equals($inviterID);
+        $notification = new Notification($inviterID, $folder->folderID, $inviteeID);
+
+        if ($wasInvitedByFolderOwner) {
+            return;
+        }
+
+        (new \App\Models\User(['id' => $folder->ownerID->value()]))->notify($notification);
     }
 }

@@ -21,6 +21,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Symfony\Component\HttpKernel\Exception\HttpException as SymfonyHttpException;
+use App\Notifications\FolderUpdatedNotification as Notification;
 
 final class UpdateFolderService
 {
@@ -45,6 +46,8 @@ final class UpdateFolderService
         $this->updateFolderRepository->update($folder->folderID, $newAttributes);
 
         event(new FolderModifiedEvent($folder->folderID));
+
+        $this->notifyFolderOwner($folder, $newAttributes);
     }
 
     private function ensureUserCanUpdateFolder(Folder $folder, Request $request): void
@@ -111,5 +114,17 @@ final class UpdateFolderService
         }
 
         Cache::put($key, true, now()->addHour());
+    }
+
+    private function notifyFolderOwner(Folder $original, Folder $updated): void
+    {
+        $folderWasUpdatedByOwner = $original->ownerID->equals($collaboratorID = UserID::fromAuthUser());
+        $notification = new Notification($original, $updated, $collaboratorID);
+
+        if ($folderWasUpdatedByOwner) {
+            return;
+        }
+
+        (new \App\Models\User(['id' => $original->ownerID->value()]))->notify($notification);
     }
 }

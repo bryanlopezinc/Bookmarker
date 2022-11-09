@@ -10,6 +10,7 @@ use Database\Factories\FolderFactory;
 use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
@@ -476,5 +477,65 @@ class UpdateFolderTest extends TestCase
             'folder' => $folder->id
         ])->assertNotFound()
             ->assertExactJson(['message' => "The folder does not exists"]);
+    }
+
+    public function testWillNotifyFolderOwnerWhenCollaboratorUpdatesFolder(): void
+    {
+        [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->updateFolderPermission()
+            ->create();
+
+        Passport::actingAs($collaborator);
+        $this->updateFolderResponse([
+            'name' => $newName = $this->faker->word,
+            'description' => $newDescription = $this->faker->sentence,
+            'folder' => $folder->id,
+            'tags' => $newTags = implode(',', $this->faker->words())
+        ])->assertOk();
+
+        $notificationData = DatabaseNotification::query()->where('notifiable_id', $folder->user_id)->sole(['data'])->data;
+
+        $this->assertEquals($notificationData, [
+            'folder_id' => $folder->id,
+            'updated_by' => $collaborator->id,
+            'changes' => [
+                'name' => [
+                    'from' => $folder->name,
+                    'to' => $newName
+                ],
+                'description' => [
+                    'from' => $folder->description,
+                    'to' => $newDescription
+                ],
+                'tags' => [
+                    'from' => '',
+                    'to' => $newTags
+                ]
+            ]
+        ]);
+    }
+
+    public function testWillNotSendNotificationWheUpdateWasPerformedByFolderOwner(): void
+    {
+        [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->updateFolderPermission()
+            ->create();
+
+        Passport::actingAs($collaborator);
+        $this->updateFolderResponse([
+            'name' => $this->faker->word,
+            'description' => $this->faker->sentence,
+            'folder' => $folder->id
+        ])->assertOk();
     }
 }

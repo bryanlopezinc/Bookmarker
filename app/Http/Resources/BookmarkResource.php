@@ -32,6 +32,7 @@ final class BookmarkResource extends JsonResource
                 'tags_count' => $this->bookmark->tags->count(),
                 'is_healthy' => $this->bookmark->isHealthy,
                 'is_user_favorite' => $this->bookmark->isUserFavorite,
+                'has_duplicates' => $this->bookmark->hasDuplicates,
                 'created_on' => [
                     'date_readable' => $this->bookmark->timeCreated->diffForHumans(),
                     'date_time' => $this->bookmark->timeCreated->toDateTimeString(),

@@ -2,17 +2,25 @@
 
 namespace Tests\Unit\Repositories;
 
+use App\Collections\ResourceIDsCollection as IDs;
 use App\DataTransferObjects\Bookmark;
+use App\Models\Bookmark as Model;
 use App\QueryColumns\BookmarkAttributes as BookmarkColumns;
 use App\Repositories\BookmarkRepository;
+use App\Utils\UrlHasher;
 use App\ValueObjects\ResourceID;
+use App\ValueObjects\Url;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\BookmarkHealthFactory;
+use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Collection;
 use ReflectionProperty;
 use Tests\TestCase;
 
 class BookmarkRepositoryTest extends TestCase
 {
+    use WithFaker;
+
     private BookmarkRepository $repository;
 
     protected function setUp(): void
@@ -100,5 +108,36 @@ class BookmarkRepositoryTest extends TestCase
         $bookmark = $this->repository->findById(new ResourceID($model->id));
 
         $this->assertFalse($bookmark->isHealthy);
+    }
+
+    public function testHasDuplicates(): void
+    {
+        $hash = (new UrlHasher)->hashUrl(new Url($this->faker->url));
+        $duplicates = BookmarkFactory::times(3)->create(['url_canonical_hash' => $hash])->pluck('id');
+
+        $unique = BookmarkFactory::times(4)
+            ->afterMaking(function (Model $bookmark) {
+                Model::query()->where('url_canonical_hash', $bookmark->url_canonical_hash)->delete();
+            })
+            ->create()
+            ->pluck('id');
+
+        $this->repository->findManyById(IDs::fromNativeTypes($duplicates))
+            ->each(fn (Bookmark $bookmark) => $this->assertTrue($bookmark->hasDuplicates))
+            ->tap(fn (Collection $bookmarks) => $this->assertCount(3, $bookmarks));
+
+        $this->repository->findManyById(IDs::fromNativeTypes($unique))
+            ->each(fn (Bookmark $bookmark) => $this->assertFalse($bookmark->hasDuplicates))
+            ->tap(fn (Collection $bookmarks) => $this->assertCount(4, $bookmarks));
+
+        $this->repository->findManyById(IDs::fromNativeTypes($duplicates->merge($unique)))
+            ->each(function (Bookmark $bookmark) use ($unique) {
+                if ($unique->contains($bookmark->id->value())) {
+                    $this->assertFalse($bookmark->hasDuplicates);
+                } else {
+                    $this->assertTrue($bookmark->hasDuplicates);
+                }
+            })
+            ->tap(fn (Collection $bookmarks) => $this->assertCount(7, $bookmarks));
     }
 }

@@ -106,7 +106,7 @@ final class UpdateFolderService
             ], Response::HTTP_LOCKED);
         }
 
-        if (!Hash::check($request->input('password'), auth('api')->user()->getAuthPassword())) {
+        if (!Hash::check($request->input('password'), auth('api')->user()->getAuthPassword())) {  // @phpstan-ignore-line
             throw HttpException::unAuthorized(['message' => 'Invalid password']);
         }
 

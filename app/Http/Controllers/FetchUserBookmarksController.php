@@ -11,7 +11,7 @@ use App\Http\Resources\BookmarkResource;
 use App\Http\Resources\PaginatedResourceCollection;
 use App\Jobs\CheckBookmarksHealth;
 use App\PaginationData;
-use App\Repositories\UserBookmarksRepository as Repository;
+use App\Repositories\FetchUserBookmarksRepository as Repository;
 use App\ValueObjects\UserID;
 
 final class FetchUserBookmarksController

@@ -20,6 +20,7 @@ final class FilterFolderResource extends JsonResource
      */
     public function toArray($request)
     {
+        /** @var array */
         $fullResponse = (new FolderResource($this->folder))->toArray($request);
         $filteredResponse = $fullResponse;
         $fields = $request->input('fields', []);

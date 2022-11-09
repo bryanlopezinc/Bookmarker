@@ -7,7 +7,7 @@ use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\UserBookmarksFilters as Data;
 use App\Models\Favorite;
 use App\Repositories\TagRepository;
-use App\Repositories\UserBookmarksRepository;
+use App\Repositories\FetchUserBookmarksRepository;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Database\Factories\BookmarkFactory;
@@ -15,15 +15,15 @@ use Database\Factories\SourceFactory;
 use Database\Factories\UserFactory;
 use Tests\TestCase;
 
-class UserBookmarksRepositoryTest extends TestCase
+class FetchUserBookmarksRepositoryTest extends TestCase
 {
-    private UserBookmarksRepository $repository;
+    private FetchUserBookmarksRepository $repository;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->repository = app(UserBookmarksRepository::class);
+        $this->repository = app(FetchUserBookmarksRepository::class);
     }
 
     public function testWillFetchUserBookmarks(): void

@@ -195,6 +195,13 @@ final class BookmarkBuilder extends Builder
         return $this;
     }
 
+    public function hasDuplicates(bool $hasDuplicates): self
+    {
+        $this->attributes['hasDuplicates'] = $hasDuplicates;
+
+        return $this;
+    }
+
     public function build(): Bookmark
     {
         return new Bookmark($this->attributes);

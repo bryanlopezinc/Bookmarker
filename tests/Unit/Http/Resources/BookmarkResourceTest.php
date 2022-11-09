@@ -28,6 +28,7 @@ class BookmarkResourceTest extends TestCase
             ->source(SourceBuilder::fromModel(SourceFactory::new()->create())->build())
             ->isHealthy(false)
             ->isUserFavorite(false)
+            ->hasDuplicates(true)
             ->build();
 
         $response = (new BookmarkResource($bookmark))->toResponse(request());
@@ -39,6 +40,7 @@ class BookmarkResourceTest extends TestCase
                 $assert->where('data.attributes.has_description', true);
                 $assert->where('data.attributes.is_healthy', false);
                 $assert->where('data.attributes.has_tags', true);
+                $assert->where('data.attributes.has_duplicates', true);
                 $assert->has('data.attributes.preview_image_url');
                 $assert->has('data.attributes.description');
                 $assert->etc();
@@ -57,6 +59,7 @@ class BookmarkResourceTest extends TestCase
             ->source(SourceBuilder::fromModel(SourceFactory::new()->create())->build())
             ->isHealthy(false)
             ->isUserFavorite(false)
+            ->hasDuplicates(false)
             ->build();
 
         $response = (new BookmarkResource($bookmark))->toResponse(request());
@@ -77,6 +80,7 @@ class BookmarkResourceTest extends TestCase
             ->source(SourceBuilder::fromModel(SourceFactory::new()->create())->build())
             ->isHealthy(false)
             ->isUserFavorite(false)
+            ->hasDuplicates(true)
             ->build();
 
         $response = (new BookmarkResource($bookmark))->toResponse(request());
@@ -98,6 +102,7 @@ class BookmarkResourceTest extends TestCase
             ->source(SourceBuilder::fromModel(SourceFactory::new()->create())->build())
             ->isHealthy(false)
             ->isUserFavorite(false)
+            ->hasDuplicates(false)
             ->build();
 
         $response = (new BookmarkResource($bookmark))->toResponse(request());

@@ -33,7 +33,8 @@ final class BuildBookmarkFromModel
             ->when($keyExists('url_canonical_hash'), fn (BookmarkBuilder $b) => $b->canonicalUrlHash($model->url_canonical_hash))
             ->when($keyExists('resolved_url'), fn (BookmarkBuilder $b) => $b->canonicalUrl($model->resolved_url))
             ->when($keyExists('url_canonical'), fn (BookmarkBuilder $b) => $b->resolvedUrl($model->url_canonical))
-            ->when($keyExists('resolved_at'), fn (BookmarkBuilder $b) => $b->resolvedAt($model->resolved_at));
+            ->when($keyExists('resolved_at'), fn (BookmarkBuilder $b) => $b->resolvedAt($model->resolved_at))
+            ->when($keyExists('has_duplicates'), fn (BookmarkBuilder $b) => $b->hasDuplicates((bool) $model->has_duplicates));
     }
 
     private function sourceBuilderCallback(Bookmark $bookmark): callable

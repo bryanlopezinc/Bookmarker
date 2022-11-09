@@ -20,6 +20,7 @@ final class FilterUserCollaborationResource extends JsonResource
      */
     public function toArray($request)
     {
+        /** @var array */
         $fullResponse = (new UserCollaborationResource($this->userCollaboration))->toArray($request);
         $filteredResponse = $fullResponse;
         $fields = $request->input('fields', []);

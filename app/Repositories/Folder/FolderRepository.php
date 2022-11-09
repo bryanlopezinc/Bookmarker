@@ -42,7 +42,7 @@ final class FolderRepository implements FolderRepositoryInterface
 
     public function update(ResourceID $folderID, Folder $newAttributes): void
     {
-        /** @var Model|null */
+        /** @var Model */
         $folder = Model::query()->whereKey($folderID->value())->sole();
 
         $folder->update([

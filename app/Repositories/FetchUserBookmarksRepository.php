@@ -14,12 +14,8 @@ use App\ValueObjects\UserID;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\Paginator;
 
-final class UserBookmarksRepository
+final class FetchUserBookmarksRepository
 {
-    public function __construct(private FavoriteRepository $userFavorites)
-    {
-    }
-
     /**
      * @return Paginator<Bookmark>
      */
@@ -28,7 +24,7 @@ final class UserBookmarksRepository
         $query = Model::WithQueryOptions(new Columns())
             ->where('bookmarks.user_id', $userID->value())
             ->addSelect('favourites.bookmark_id as isFavourite')
-            ->join('favourites', 'favourites.bookmark_id', '=', 'bookmarks.id', 'left outer');
+            ->leftJoin('favourites', 'favourites.bookmark_id', '=', 'bookmarks.id');
 
         if (!$filters->hasAnyFilter()) {
             return $this->paginate($query->latest('bookmarks.id'),  $filters->pagination);

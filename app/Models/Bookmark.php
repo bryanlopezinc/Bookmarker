@@ -100,6 +100,7 @@ final class Bookmark extends Model implements TaggableInterface
         $this->parseTagsRelationQuery($builder, $columns);
         $this->parseSourceRelationQuery($builder, $columns);
         $this->parseHealthCheckQuery($builder, $columns);
+        $this->parseHasDuplicatesQuery($builder, $columns);
 
         return $builder;
     }
@@ -151,5 +152,30 @@ final class Bookmark extends Model implements TaggableInterface
 
         return $builder->addSelect('bookmarks_health.is_healthy')
             ->join('bookmarks_health', 'bookmarks.id', '=', 'bookmarks_health.bookmark_id', 'left outer');
+    }
+
+    /**
+     * @param Builder $builder
+     *
+     * @return Builder
+     */
+    protected function parseHasDuplicatesQuery(&$builder, BookmarkAttributes $options)
+    {
+        $condition = $options->has('has_duplicates') ?: $options->isEmpty();
+
+        if (!$condition) {
+            return $builder;
+        }
+
+        $query = <<<SQL
+            SELECT
+                EXISTS(
+                    SELECT b.id
+                    from bookmarks b
+                    WHERE bookmarks.url_canonical_hash = b.url_canonical_hash
+                    AND bookmarks.id != b.id)
+        SQL;
+
+        return $builder->selectSub($query, 'has_duplicates');
     }
 }

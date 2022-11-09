@@ -114,7 +114,7 @@ class FetchPublicFolderBookmarksTest extends TestCase
                             });
 
                         (new AssertableJsonString($json->toArray()))
-                            ->assertCount(16, 'attributes')
+                            ->assertCount(17, 'attributes')
                             ->assertCount(3, 'attributes.created_on')
                             ->assertStructure([
                                 'type',
@@ -134,6 +134,7 @@ class FetchPublicFolderBookmarksTest extends TestCase
                                     'is_user_favorite',
                                     'can_favorite',
                                     'is_public',
+                                    'has_duplicates',
                                     'created_on' => [
                                         'date_readable',
                                         'date_time',

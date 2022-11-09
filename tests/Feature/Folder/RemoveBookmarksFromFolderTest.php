@@ -10,6 +10,8 @@ use Database\Factories\FolderAccessFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
@@ -367,5 +369,54 @@ class RemoveBookmarksFromFolderTest extends TestCase
             'folder' => $folder->id,
         ])->assertNotFound()
             ->assertExactJson(['message' => "The folder does not exists"]);
+    }
+
+    public function testWillNotSendNotificationWhenBookmarksWereRemovedByFolderOwner(): void
+    {
+        $folderOwner = UserFactory::new()->create();
+        $bookmarkIDs = BookmarkFactory::times(3)->create(['user_id' => $folderOwner->id])->pluck('id');
+        $folderID = FolderFactory::new()->create(['user_id' => $folderOwner->id])->id;
+
+        Notification::fake();
+
+        Passport::actingAs($folderOwner);
+        $this->addBookmarksToFolder($bookmarkIDs->implode(','), $folderID);
+        $this->removeFolderBookmarksResponse([
+            'bookmarks' => $bookmarkIDs->implode(','),
+            'folder' => $folderID
+        ])->assertOk();
+
+        Notification::assertNothingSent();
+    }
+
+    public function testWillSendNotificationsWhenBookmarksWereNotRemovedByFolderOwner(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $bookmarkIDs = BookmarkFactory::times(3)->create(['user_id' => $folderOwner->id])->pluck('id');
+        $folderID = FolderFactory::new()->create(['user_id' => $folderOwner->id])->id;
+
+        Passport::actingAs($folderOwner);
+        $this->addBookmarksToFolder($bookmarkIDs->implode(','), $folderID);
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folderID)
+            ->removeBookmarksPermission()
+            ->create();
+
+        Passport::actingAs($collaborator);
+        $this->removeFolderBookmarksResponse([
+            'bookmarks' => $bookmarkIDs->implode(','),
+            'folder' => $folderID
+        ])->assertOk();
+
+        $notificationData = DatabaseNotification::query()->where('notifiable_id', $folderOwner->id)->sole(['data'])->data;
+
+        $this->assertEquals($folderID, $notificationData['folder_id']);
+        $this->assertEquals($collaborator->id, $notificationData['removed_by']);
+
+        foreach ($notificationData['bookmarks'] as $bookmarkID) {
+            $this->assertTrue($bookmarkIDs->contains($bookmarkID));
+        }
     }
 }

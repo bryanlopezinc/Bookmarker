@@ -16,6 +16,7 @@ use App\Repositories\Folder\FolderBookmarkRepository;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\ValueObjects\UserID;
 use Symfony\Component\HttpKernel\Exception\HttpException as SymfonyHttpException;
+use App\Notifications\BookmarksRemovedFromFolderNotification as Notification;
 
 final class RemoveBookmarksFromFolderService
 {
@@ -37,6 +38,8 @@ final class RemoveBookmarksFromFolderService
         $this->folderBookmarks->remove($folderID, $bookmarkIDs);
 
         event(new FolderModifiedEvent($folderID));
+
+        $this->notifyFolderOwner($bookmarkIDs, $folder);
     }
 
     private function ensureUserCanPerformAction(Folder $folder): void
@@ -59,5 +62,18 @@ final class RemoveBookmarksFromFolderService
         if (!$this->folderBookmarks->containsAll($bookmarkIDs, $folderID)) {
             throw HttpException::notFound(['message' => "Bookmarks does not exists in folder"]);
         }
+    }
+
+    private function notifyFolderOwner(ResourceIDsCollection $bookmarkIDs, Folder $folder): void
+    {
+        $collaboratorID = UserID::fromAuthUser();
+        $bookmarksWereRemovedByFolderOwner = $collaboratorID->equals($folder->ownerID);
+        $notification = new Notification($bookmarkIDs, $folder->folderID, $collaboratorID);
+
+        if ($bookmarksWereRemovedByFolderOwner) {
+            return;
+        }
+
+        (new \App\Models\User(['id' => $folder->ownerID->value()]))->notify($notification);
     }
 }

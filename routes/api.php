@@ -34,6 +34,8 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
 
         Route::get('tags', C\FetchUserTagsController::class)->name('userTags');
         Route::get('tags/search', C\SearchUserTagsController::class)->name('searchUserTags');
+
+        Route::get('notifications', C\FetchUserNotificationsController::class)->name('fetchUserNotifications');
     });
 
     Route::prefix('bookmarks')->group(function () {

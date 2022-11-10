@@ -15,7 +15,7 @@ final class BookmarksRemovedFromFolderNotification extends Notification implemen
 {
     use Queueable;
 
-    public const DATABASE_TYPE = 'bookmarksRemovedFromFolder';
+    public const TYPE = 'bookmarksRemovedFromFolder';
 
     public function __construct(
         private ResourceIDsCollection $bookmarkIDs,
@@ -50,6 +50,6 @@ final class BookmarksRemovedFromFolderNotification extends Notification implemen
 
     public function databaseType(): string
     {
-        return self::DATABASE_TYPE;
+        return self::TYPE;
     }
 }

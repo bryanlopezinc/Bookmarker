@@ -18,7 +18,7 @@ use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Illuminate\Http\Request;
 use App\Cache\InviteTokensStore as Payload;
-use App\Notifications\CollaboratorAddedToFolderNotification as Notification;
+use App\Notifications\NewCollaboratorNotification as Notification;
 use App\ValueObjects\Uuid;
 
 final class AcceptFolderCollaborationInviteService
@@ -102,7 +102,7 @@ final class AcceptFolderCollaborationInviteService
     private function notifyFolderOwner(UserID $inviterID, UserID $inviteeID, Folder $folder): void
     {
         $wasInvitedByFolderOwner = $folder->ownerID->equals($inviterID);
-        $notification = new Notification($inviterID, $folder->folderID, $inviteeID);
+        $notification = new Notification($inviteeID, $folder->folderID, $inviterID);
 
         if ($wasInvitedByFolderOwner) {
             return;

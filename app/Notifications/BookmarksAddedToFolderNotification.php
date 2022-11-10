@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
-use App\Collections\BookmarksCollection;
+use App\Collections\ResourceIDsCollection;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -15,10 +15,10 @@ final class BookmarksAddedToFolderNotification extends Notification implements S
 {
     use Queueable;
 
-    public const DATABASE_TYPE = 'bookmarksAddedToFolder';
+    public const TYPE = 'bookmarksAddedToFolder';
 
     public function __construct(
-        private BookmarksCollection $bookmarks,
+        private ResourceIDsCollection $bookmarks,
         private ResourceID $folderID,
         private UserID $collaboratorID
     ) {
@@ -42,7 +42,7 @@ final class BookmarksAddedToFolderNotification extends Notification implements S
     public function toDatabase($notifiable): array
     {
         return [
-            'bookmarks' => $this->bookmarks->ids()->asIntegers()->all(),
+            'bookmarks' => $this->bookmarks->asIntegers()->all(),
             'folder_id' => $this->folderID->value(),
             'added_by' => $this->collaboratorID->value()
         ];
@@ -50,6 +50,6 @@ final class BookmarksAddedToFolderNotification extends Notification implements S
 
     public function databaseType(): string
     {
-        return self::DATABASE_TYPE;
+        return self::TYPE;
     }
 }

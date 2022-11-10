@@ -23,13 +23,15 @@ final class UserAttributes extends Attributes
             'password',
             'email_verified_at',
             'folders_count',
-            'email_verified_at'
+            'email_verified_at',
+            'firstname',
+            'lastname'
         ];
     }
 
     /**
      * @param string $attributes A comma separated list of attributes which can only be
-     * any of id,username,email,bookmarks_count,password,email_verified_at,folders_count,favourites_count
+     * any of id,username,email,bookmarks_count,password,email_verified_at,folders_count,favourites_count,firstname,lastname
      */
     public static function only(string $attributes): self
     {

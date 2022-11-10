@@ -10,16 +10,16 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Bus\Queueable;
 
-final class CollaboratorAddedToFolderNotification extends Notification implements ShouldQueue
+final class NewCollaboratorNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public const DATABASE_TYPE = 'collaboratorAddedToFolder';
+    public const TYPE = 'collaboratorAddedToFolder';
 
     public function __construct(
-        private UserID $inviterID,
+        private UserID $newCollaboratorID,
         private ResourceID $folderID,
-        private UserID $collaboratorID
+        private UserID $addedByCollaboratorID
     ) {
         $this->afterCommit();
     }
@@ -41,14 +41,14 @@ final class CollaboratorAddedToFolderNotification extends Notification implement
     public function toDatabase($notifiable): array
     {
         return [
-            'added_by' => $this->inviterID->value(),
+            'added_by' => $this->addedByCollaboratorID->value(),
             'folder_id' => $this->folderID->value(),
-            'collaborator_id' => $this->collaboratorID->value()
+            'new_collaborator_id' => $this->newCollaboratorID->value()
         ];
     }
 
     public function databaseType(): string
     {
-        return self::DATABASE_TYPE;
+        return self::TYPE;
     }
 }

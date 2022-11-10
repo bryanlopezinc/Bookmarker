@@ -482,7 +482,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         $notificationData = DatabaseNotification::query()->where('notifiable_id', $folder->user_id)->sole(['data'])->data;
 
         $this->assertEquals($notificationData, [
-            'collaborator_id' => $invitee->id,
+            'new_collaborator_id' => $invitee->id,
             'folder_id' => $folder->id,
             'added_by' => $collaborator->id,
         ]);

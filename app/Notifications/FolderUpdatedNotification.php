@@ -14,7 +14,7 @@ final class FolderUpdatedNotification extends Notification implements ShouldQueu
 {
     use Queueable;
 
-    public const DATABASE_TYPE = 'FolderUpdated';
+    public const TYPE = 'FolderUpdated';
 
     public function __construct(
         private Folder $original,
@@ -71,6 +71,6 @@ final class FolderUpdatedNotification extends Notification implements ShouldQueu
 
     public function databaseType(): string
     {
-        return self::DATABASE_TYPE;
+        return self::TYPE;
     }
 }

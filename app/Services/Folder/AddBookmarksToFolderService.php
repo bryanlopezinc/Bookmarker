@@ -47,7 +47,7 @@ final class AddBookmarksToFolderService
         event(new FolderModifiedEvent($folderID));
         dispatch(new CheckBookmarksHealth(new BookmarksCollection($bookmarks)));
 
-        $this->notifyFolderOwner($bookmarks, $folder);
+        $this->notifyFolderOwner($bookmarkIDs, $folder);
     }
 
     private function ensureUserHasPermissionToPerformAction(Folder $folder): void
@@ -95,14 +95,11 @@ final class AddBookmarksToFolderService
         }
     }
 
-    /**
-     * @param Collection<Bookmark> $bookmarks
-     */
-    private function notifyFolderOwner(Collection $bookmarks, Folder $folder): void
+    private function notifyFolderOwner(IDs $bookmarkIDs, Folder $folder): void
     {
         $collaboratorID = UserID::fromAuthUser();
         $bookmarksWasAddedByFolderOwner = $collaboratorID->equals($folder->ownerID);
-        $notification = new Notification(new BookmarksCollection($bookmarks), $folder->folderID, $collaboratorID);
+        $notification = new Notification($bookmarkIDs, $folder->folderID, $collaboratorID);
 
         if ($bookmarksWasAddedByFolderOwner) {
             return;

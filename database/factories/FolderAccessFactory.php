@@ -31,7 +31,7 @@ final class FolderAccessFactory extends Factory
     {
         return $this->afterMaking(function (FolderAccess $model) {
             if (!$model->offsetExists($offset = 'permission_id')) {
-                $model->setAttribute($offset, FolderPermission::query()->first()->id);
+                $model->setAttribute($offset, FolderPermission::query()->inRandomOrder()->first()->id);
             }
         });
     }

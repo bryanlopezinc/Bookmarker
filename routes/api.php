@@ -19,6 +19,7 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
         Route::get('folders', F\FetchUserFoldersController::class)->middleware(StringToArray::keys('fields'))->name('userFolders');
         Route::get('folders/collaborations', C\FetchUserCollaborationsController::class)->middleware(StringToArray::keys('fields'))->name('fetchUserCollaborations');
         Route::delete('folders/collaborations/exit', F\LeaveFolderCollaborationController::class)->name('leaveFolderCollaboration');
+        Route::get('folders/contains_collaborator', C\FetchUserFoldersWhereContainsCollaboratorController::class)->middleware(StringToArray::keys('fields'))->name('fetchUserFoldersWhereHasCollaborator');
 
         Route::post('emails/add', A\AddEmailToAccountController::class)->name('addEmailToAccount');
         Route::delete('emails/remove', A\DeleteEmailController::class)->name('removeEmailFromAccount');

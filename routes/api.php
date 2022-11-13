@@ -37,6 +37,7 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
         Route::get('tags/search', C\SearchUserTagsController::class)->name('searchUserTags');
 
         Route::get('notifications', C\FetchUserNotificationsController::class)->name('fetchUserNotifications');
+        Route::patch('notifications/read', C\MarkUserNotificationsAsReadController::class)->middleware([StringToArray::keys('ids')])->name('markNotificationsAsRead');
     });
 
     Route::prefix('bookmarks')->group(function () {

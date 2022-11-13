@@ -9,6 +9,8 @@ use App\ValueObjects\UserID;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Pagination\Paginator;
 use App\Contracts\TransformsNotificationInterface;
+use App\ValueObjects\Uuid;
+use Illuminate\Support\Arr;
 
 final class NotificationRepository
 {
@@ -29,5 +31,24 @@ final class NotificationRepository
         return $notifications->setCollection(
             $notifications->getCollection()->map(new SelectNotificationObject($notificationsResources))
         );
+    }
+
+    /**
+     * @param array<Uuid> $notificationIDs
+     * @return array<DatabaseNotification>
+     */
+    public function findManyByIDs(array $notificationIDs): array
+    {
+        $ids = array_map(fn (Uuid $notificationID) => $notificationID->value, $notificationIDs);
+
+        return DatabaseNotification::query()->find($ids, ['read_at', 'notifiable_id', 'id'])->all();
+    }
+
+    /**
+     * @param array<DatabaseNotification> $notifications
+     */
+    public function markAsRead(array $notifications): void
+    {
+        DatabaseNotification::whereIn('id', Arr::pluck($notifications, 'id'))->update(['read_at' => now()]);
     }
 }

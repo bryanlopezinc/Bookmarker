@@ -45,6 +45,10 @@ final class FetchUserCollaborationsRepository
      */
     private function getCollaboratorPermissions(array $folderIDs, UserID $collaborator): Collection
     {
+        if (empty($folderIDs)) {
+            return collect([]);
+        }
+
         return FolderPermission::select('name', 'folder_id')
             ->join('folders_access', 'folders_access.permission_id', '=', 'folders_permissions.id')
             ->where('user_id', $collaborator->value())

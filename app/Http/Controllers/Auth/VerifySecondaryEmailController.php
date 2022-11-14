@@ -24,7 +24,7 @@ final class VerifySecondaryEmailController
         $service->verify(
             UserID::fromAuthUser(),
             new Email($request->input('email')),
-            new TwoFACode($request->input('verification_code'))
+             TwoFACode::fromString($request->input('verification_code'))
         );
 
         return response()->json();

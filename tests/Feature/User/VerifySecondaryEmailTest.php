@@ -50,7 +50,7 @@ class VerifySecondaryEmailTest extends TestCase
 
         $this->verifySecondaryEmail([
             'email' => 'foo bar',
-            'verification_code' => 000,
+            'verification_code' => '000',
         ])->assertJsonValidationErrors([
             'email',
             'verification_code' => ['Invalid verification code format']
@@ -58,14 +58,7 @@ class VerifySecondaryEmailTest extends TestCase
 
         $this->verifySecondaryEmail([
             'email' => $this->faker->email,
-            'verification_code' => '13454',
-        ])->assertJsonValidationErrors([
-            'verification_code' => ['Invalid verification code format']
-        ]);
-
-        $this->verifySecondaryEmail([
-            'email' => $this->faker->email,
-            'verification_code' => 1345.4,
+            'verification_code' => '1345.4',
         ])->assertJsonValidationErrors([
             'verification_code' => ['Invalid verification code format']
         ]);
@@ -83,7 +76,7 @@ class VerifySecondaryEmailTest extends TestCase
 
         $this->verifySecondaryEmail([
             'email' => $email,
-            'verification_code' => $verificationCode
+            'verification_code' => (string) $verificationCode
         ])->assertOk();
 
         $this->assertDatabaseHas(SecondaryEmail::class, [
@@ -105,9 +98,9 @@ class VerifySecondaryEmailTest extends TestCase
         $this->travel(6)->minutes(function () use ($verificationCode, $email) {
             $this->verifySecondaryEmail([
                 'email' => $email,
-                'verification_code' => $verificationCode
+                'verification_code' => (string) $verificationCode
             ])->assertStatus(Response::HTTP_BAD_REQUEST)
-                ->assertExactJson(['message' => 'Verification code expired']);
+                ->assertExactJson(['message' => 'Verification code invalid or expired']);
         });
     }
 
@@ -120,9 +113,9 @@ class VerifySecondaryEmailTest extends TestCase
 
         $this->verifySecondaryEmail([
             'email' => $this->faker->unique()->email,
-            'verification_code' => $generator->generate()->code()
+            'verification_code' => (string) $generator->generate()->code()
         ])->assertStatus(Response::HTTP_BAD_REQUEST)
-            ->assertExactJson(['message' => 'Verification code expired']);
+            ->assertExactJson(['message' => 'Verification code invalid or expired']);
     }
 
     public function testVerificationCodeMustBeSameCodeSentToEmail(): void
@@ -139,9 +132,9 @@ class VerifySecondaryEmailTest extends TestCase
 
         $this->verifySecondaryEmail([
             'email' => $email,
-            'verification_code' => $invalidVerificationCode
+            'verification_code' =>(string) $invalidVerificationCode
         ])->assertStatus(Response::HTTP_BAD_REQUEST)
-            ->assertExactJson(['message' => 'Invalid verification code']);
+            ->assertExactJson(['message' => 'Verification code invalid or expired']);
     }
 
     public function testVerificationCodeMustMatchCodeAssignedToUserAccount(): void
@@ -162,9 +155,9 @@ class VerifySecondaryEmailTest extends TestCase
         //johns code arrives first, alex wants to beat john to it by using verification code generated for john.
         $this->verifySecondaryEmail([
             'email' => $email,
-            'verification_code' => $verificationCodeSentOnBehalfOfJohn
+            'verification_code' => (string) $verificationCodeSentOnBehalfOfJohn
         ])->assertStatus(Response::HTTP_BAD_REQUEST)
-            ->assertExactJson(['message' => 'Invalid verification code']);
+            ->assertExactJson(['message' => 'Verification code invalid or expired']);
     }
 
     public function testCannotVerifyAlreadyVerifiedEmailWithValidCode(): void
@@ -189,14 +182,14 @@ class VerifySecondaryEmailTest extends TestCase
         Passport::actingAs($brian);
         $this->verifySecondaryEmail([
             'email' => $email,
-            'verification_code' => $verificationCodeSentOnBehalfOfBrian
+            'verification_code' => (string) $verificationCodeSentOnBehalfOfBrian
         ])->assertOk();
 
         //stewie hates rupert now.
         Passport::actingAs($stewie);
         $this->verifySecondaryEmail([
             'email' => $email,
-            'verification_code' => $verificationCodeSentOnBehalfOfStewie
+            'verification_code' => (string) $verificationCodeSentOnBehalfOfStewie
         ])->assertForbidden()
             ->assertExactJson(['message' => 'Email already exists']);
     }
@@ -228,9 +221,9 @@ class VerifySecondaryEmailTest extends TestCase
 
         $this->verifySecondaryEmail([
             'email' => $anotherEmail,
-            'verification_code' => $verificationCode
+            'verification_code' => (string) $verificationCode
         ])->assertStatus(Response::HTTP_BAD_REQUEST)
-            ->assertExactJson(['message' => 'Invalid verification code']);
+            ->assertExactJson(['message' => 'Verification code invalid or expired']);
     }
 
     public function testCanAddNewEmailAfterVerification(): void
@@ -245,7 +238,7 @@ class VerifySecondaryEmailTest extends TestCase
 
         $this->verifySecondaryEmail([
             'email' => $email,
-            'verification_code' => $verificationCode
+            'verification_code' => (string) $verificationCode
         ])->assertOk();
 
         $this->addEmailToAccount(['email' => $this->faker->unique()->email])->assertOk();

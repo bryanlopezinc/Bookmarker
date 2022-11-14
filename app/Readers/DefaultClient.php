@@ -27,7 +27,7 @@ final class DefaultClient implements HttpClientInterface
             return $this->handleException($e->getPrevious(), $bookmark);
         }
 
-        if (!$response->successful() || !$response->redirect()) {
+        if (!$response->successful()) {
             return $this->emptyResponse($bookmark);
         }
 

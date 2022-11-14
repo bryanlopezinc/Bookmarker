@@ -116,11 +116,9 @@ class CreateUserTest extends TestCase
 
     public function testWillCreateUser(): void
     {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+        Passport::actingAsClient($client = ClientFactory::new()->asPasswordClient()->create());
 
         config(['settings.EMAIL_VERIFICATION_URL' => $this->faker->url . '?id=:id&hash=:hash&signature=:signature&expires=:expires']);
-
-        $client = ClientFactory::new()->asPasswordClient()->create();
 
         Notification::fake();
 

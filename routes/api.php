@@ -66,7 +66,7 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
         Route::delete('collaborators', F\DeleteCollaboratorController::class)->name('deleteFolderCollaborator');
         Route::delete('collaborators/revoke_permissions', F\RevokeFolderCollaboratorPermissionsController::class)->middleware([StringToArray::keys('permissions')])->name('revokePermissions');
         Route::patch('collaborators/grant', F\GrantPermissionsToCollaboratorController::class)->middleware([StringToArray::keys('permissions')])->name('grantPermission');
-        Route::get('invite', F\SendFolderCollaborationInviteController::class)->middleware([StringToArray::keys('permissions')])->name('sendFolderCollaborationInvite');
+        Route::post('invite', F\SendFolderCollaborationInviteController::class)->middleware([StringToArray::keys('permissions')])->name('sendFolderCollaborationInvite');
 
         Route::delete('tags/remove', F\DeleteFolderTagsController::class)->middleware([StringToArray::keys('tags')])->name('deleteFolderTags');
     });

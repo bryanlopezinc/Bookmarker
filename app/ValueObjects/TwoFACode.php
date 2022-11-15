@@ -5,28 +5,48 @@ declare(strict_types=1);
 namespace App\ValueObjects;
 
 use App\Exceptions\Invalid2FACodeException;
-use App\ValueObjects\PositiveNumber;
+use Closure;
 use Illuminate\Support\Facades\Crypt;
 
 final class TwoFACode
 {
     public const LENGTH = 5;
 
+    private static ?Closure $generator = null;
     private int $value;
 
     public function __construct(int $value)
     {
+        $length = strlen((string)$value);
         $this->value = $value;
 
-        new PositiveNumber($value);
-
-        $length = strlen((string)$value);
-
-        if ($length !== self::LENGTH) {
-            throw new Invalid2FACodeException(
-                sprintf('Two factor code must be %s numbers but got %s', self::LENGTH, $length)
-            );
+        if ($length !== self::LENGTH || $value < 0) {
+            throw new Invalid2FACodeException('Invalid 2FA code ' . $value);
         }
+    }
+
+    public static function generate(): self
+    {
+        $generator = static::$generator ??= function () {
+            return random_int(10_000, 99_999);
+        };
+
+        return new self($generator());
+    }
+
+    /**
+     * Set the generator that will be used to generate new 2Fa codes.
+     *
+     * @param Closure $generator The closure should return a valid integer that can pass the TwoFACode validation.
+     */
+    public static function useGenerator(Closure $generator = null): void
+    {
+        static::$generator = $generator;
+    }
+
+    public static function fromString(string $code): self
+    {
+        return new self((int) $code);
     }
 
     public function code(): int
@@ -34,9 +54,9 @@ final class TwoFACode
         return $this->value;
     }
 
-    public static function fromString(string $code): self
+    public function toString(): string
     {
-        return new self((int) $code);
+        return (string) $this->code();
     }
 
     public function equals(TwoFACode $code): bool
@@ -46,9 +66,7 @@ final class TwoFACode
 
     public function __serialize(): array
     {
-        return [
-            'value' => Crypt::encrypt($this->value)
-        ];
+        return ['value' => Crypt::encrypt($this->value)];
     }
 
     public function __unserialize(array $data): void

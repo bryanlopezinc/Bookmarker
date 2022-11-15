@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Traits;
 
-use App\Utils\TwoFACodeGenerator;
-use App\Contracts\TwoFACodeGeneratorInterface;
+use App\ValueObjects\TwoFACode;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Laravel\Passport\Passport;
 use Laravel\Passport\TokenRepository;
@@ -14,14 +13,10 @@ trait Requests2FACode
 {
     private function get2FACode(string $username, string $password): int
     {
+        $code = TwoFACode::generate()->code();
+        TwoFACode::useGenerator(fn () => $code);
+
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
-
-        $code = (new TwoFACodeGenerator)->generate();
-
-        $mock = $this->getMockBuilder(TwoFACodeGeneratorInterface::class)->getMock();
-        $mock->expects($this->once())->method('generate')->willReturn($code);
-        $this->swap(TwoFACodeGeneratorInterface::class, $mock);
-
         $this->postJson(route('requestVerificationCode'), [
             'username' => $username,
             'password' => $password
@@ -30,6 +25,8 @@ trait Requests2FACode
         app()->forgetInstance(TokenRepository::class);
         app()->forgetInstance(\League\OAuth2\Server\ResourceServer::class);
 
-        return $code->code();
+        TwoFACode::useGenerator();
+        
+        return $code;
     }
 }

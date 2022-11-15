@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Cache\SecondaryEmailVerificationCodeRepository as PendingVerifications;
-use App\Contracts\TwoFACodeGeneratorInterface as TwoFACodeGenerator;
 use App\Exceptions\HttpException;
 use App\Mail\TwoFACodeMail;
 use App\Repositories\UserRepository;
 use App\ValueObjects\Email;
+use App\ValueObjects\TwoFACode;
 use App\ValueObjects\UserID;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Mail;
@@ -18,7 +18,6 @@ final class AddEmailToAccountService
 {
     public function __construct(
         private UserRepository $userRepository,
-        private TwoFACodeGenerator $twoFACodeGenerator,
         private PendingVerifications $pendingVerifications
     ) {
     }
@@ -27,7 +26,7 @@ final class AddEmailToAccountService
     {
         $this->validateAction($userID, $secondaryEmail);
 
-        $verificationCode = $this->twoFACodeGenerator->generate();
+        $verificationCode = TwoFACode::generate();
 
         $this->pendingVerifications->put($userID, $secondaryEmail, $verificationCode, now()->addMinutes(5));
 

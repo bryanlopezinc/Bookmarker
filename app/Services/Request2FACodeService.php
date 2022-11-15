@@ -10,9 +10,8 @@ use App\QueryColumns\UserAttributes;
 use App\Repositories\UserRepository;
 use App\Cache\User2FACodeRepository;
 use App\Http\Requests\Request2FACodeRequest as Request;
-use App\Contracts\TwoFACodeGeneratorInterface;
 use App\Mail\TwoFACodeMail;
-use App\ValueObjects\{Email, Username};
+use App\ValueObjects\{Email, TwoFACode, Username};
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
@@ -25,7 +24,6 @@ final class Request2FACodeService
     public function __construct(
         private readonly User2FACodeRepository $user2FACodeRepository,
         private readonly UserRepository $userRepository,
-        private readonly TwoFACodeGeneratorInterface $twoFACodeGenerator
     ) {
     }
 
@@ -38,7 +36,7 @@ final class Request2FACodeService
         $twoFACodeSent = RateLimiter::attempt($this->key($user), $maxRequestsPerMinute, function () use ($user) {
             $this->user2FACodeRepository->put(
                 $user->id,
-                $twoFACode = $this->twoFACodeGenerator->generate(),
+                $twoFACode = TwoFACode::generate(),
                 now()->addMinutes(setting('VERIFICATION_CODE_EXPIRE'))
             );
 

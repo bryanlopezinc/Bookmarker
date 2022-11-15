@@ -3,10 +3,8 @@
 namespace App\Providers;
 
 use App\Cache\User2FACodeRepository;
-use App\Contracts\TwoFACodeGeneratorInterface;
 use App\Repositories\OAuth\EnsureEmailHasBeenVerified;
 use App\Repositories\OAuth\Verify2FACode;
-use App\Utils\TwoFACodeGenerator;
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
@@ -33,8 +31,6 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('local')) {
             $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
         }
-
-        $this->app->bind(TwoFACodeGeneratorInterface::class, TwoFACodeGenerator::class);
 
         Relation::enforceMorphMap([
             'user' => \App\Models\User::class

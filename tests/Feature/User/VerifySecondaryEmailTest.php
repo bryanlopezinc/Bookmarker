@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\User;
 
-use App\Contracts\TwoFACodeGeneratorInterface;
 use App\Mail\TwoFACodeMail;
 use App\Models\SecondaryEmail;
+use App\ValueObjects\TwoFACode;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
@@ -108,12 +108,9 @@ class VerifySecondaryEmailTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        /** @var TwoFACodeGeneratorInterface */
-        $generator = app(TwoFACodeGeneratorInterface::class);
-
         $this->verifySecondaryEmail([
             'email' => $this->faker->unique()->email,
-            'verification_code' => (string) $generator->generate()->code()
+            'verification_code' => TwoFACode::generate()->toString()
         ])->assertStatus(Response::HTTP_BAD_REQUEST)
             ->assertExactJson(['message' => 'Verification code invalid or expired']);
     }
@@ -140,7 +137,6 @@ class VerifySecondaryEmailTest extends TestCase
     public function testVerificationCodeMustMatchCodeAssignedToUserAccount(): void
     {
         $email = $this->faker->unique()->email;
-
         [$john, $alex] = UserFactory::new()->count(2)->create()->all();
 
         Passport::actingAs($john);

@@ -3,7 +3,6 @@
 namespace Tests\Feature\User;
 
 use App\ValueObjects\TwoFACode;
-use App\Contracts\TwoFACodeGeneratorInterface;
 use App\Mail\TwoFACodeMail;
 use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
@@ -66,14 +65,12 @@ class Request2FACodeForLoginTest extends TestCase
 
     public function testSuccessResponse(): void
     {
-        Mail::fake();
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
-
-        $mock = $this->getMockBuilder(TwoFACodeGeneratorInterface::class)->getMock();
-        $mock->expects($this->once())->method('generate')->willReturn(new TwoFACode($verificationCode = 12345));
-        $this->swap(TwoFACodeGeneratorInterface::class, $mock);
-
+        $verificationCode = TwoFACode::generate()->code();
         $user = UserFactory::new()->create();
+
+        TwoFACode::useGenerator(fn () => $verificationCode);
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+        Mail::fake();
 
         $this->twoFARequestResponse([
             'username'  => $user->username,
@@ -85,6 +82,8 @@ class Request2FACodeForLoginTest extends TestCase
             $this->assertSame($verificationCode, $mail->get2FACode()->code());
             return true;
         });
+
+        TwoFACode::useGenerator();
     }
 
     public function testCanRequestCodeWithValidEmail(): void

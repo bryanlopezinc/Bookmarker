@@ -291,10 +291,10 @@ class RevokeCollaboratorPermissionsTest extends TestCase
 
         //collaborator can invite user
         Passport::actingAs($collaborator);
-        $this->getJson(route('sendFolderCollaborationInvite', [
+        $this->postJson(route('sendFolderCollaborationInvite'), [
             'email' => UserFactory::new()->create()->email,
             'folder_id' => $folderID,
-        ]))->assertOk();
+        ])->assertOk();
 
         //folder owner revokes access
         Passport::actingAs($folderOwner);
@@ -306,10 +306,10 @@ class RevokeCollaboratorPermissionsTest extends TestCase
 
         //collaborator cannot invite user
         Passport::actingAs($collaborator);
-        $this->getJson(route('sendFolderCollaborationInvite', [
+        $this->postJson(route('sendFolderCollaborationInvite'), [
             'email' => UserFactory::new()->create()->email,
             'folder_id' => $folderID,
-        ]))->assertForbidden();
+        ])->assertForbidden();
 
         $this->assertDatabaseMissing(FolderAccess::class, [
             'folder_id' => $folderID,

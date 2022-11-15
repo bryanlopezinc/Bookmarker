@@ -32,6 +32,11 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         return $this->getJson(route('acceptFolderCollaborationInvite', $parameters));
     }
 
+    protected function sendInviteResponse(array $parameters = []): TestResponse
+    {
+        return $this->postJson(route('sendFolderCollaborationInvite'), $parameters);
+    }
+
     public function testIsAccessibleViaPath(): void
     {
         $this->assertRouteIsAccessibleViaPath('v1/folders/invite/accept', 'acceptFolderCollaborationInvite');
@@ -93,10 +98,10 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
             Passport::actingAs($user);
 
-            $this->getJson(route('sendFolderCollaborationInvite', [
+            $this->sendInviteResponse([
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,
-            ]))->assertOk();
+            ])->assertOk();
         });
 
         $this->travel(25)->hours(function () use ($parameters) {
@@ -190,7 +195,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $parameters = $this->extractInviteUrlParameters(function () use ($user, $parameters) {
             Passport::actingAs($user);
-            $this->getJson(route('sendFolderCollaborationInvite', $parameters))->assertOk();
+            $this->sendInviteResponse($parameters)->assertOk();
         });
 
         try {
@@ -229,10 +234,10 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
             Passport::actingAs($user);
 
-            $this->getJson(route('sendFolderCollaborationInvite', [
+            $this->sendInviteResponse([
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,
-            ]))->assertOk();
+            ])->assertOk();
         });
 
         $this->acceptInviteResponse($parameters)->assertCreated();
@@ -254,20 +259,20 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         $firstInviteParameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
             Passport::actingAs($user);
 
-            $this->getJson(route('sendFolderCollaborationInvite', [
+            $this->sendInviteResponse([
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,
-            ]))->assertOk();
+            ])->assertOk();
         });
 
         $secondInviteParameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
             Passport::actingAs($user);
 
             $this->travel(2)->minutes(function () use ($invitee, $folder) {
-                $this->getJson(route('sendFolderCollaborationInvite', [
+                $this->sendInviteResponse([
                     'email' => $invitee->email,
                     'folder_id' => $folder->id,
-                ]))->assertOk();
+                ])->assertOk();
             });
         });
 
@@ -294,18 +299,18 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $firstInviteParameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
             Passport::actingAs($user);
-            $this->getJson(route('sendFolderCollaborationInvite', [
+            $this->sendInviteResponse([
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,
-            ]))->assertOk();
+            ])->assertOk();
         });
 
         $secondInviteParameters = $this->extractInviteUrlParameters(function () use ($inviteeSecondaryEmail, $folder, $user) {
             Passport::actingAs($user);
-            $this->getJson(route('sendFolderCollaborationInvite', [
+            $this->sendInviteResponse([
                 'email' => $inviteeSecondaryEmail,
                 'folder_id' => $folder->id,
-            ]))->assertOk();
+            ])->assertOk();
         });
 
         $this->acceptInviteResponse($firstInviteParameters)->assertCreated();
@@ -329,10 +334,10 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         Passport::actingAs($user);
 
         $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
-            $this->getJson(route('sendFolderCollaborationInvite', [
+            $this->sendInviteResponse([
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,
-            ]))->assertOk();
+            ])->assertOk();
         });
 
         $this->deleteJson(route('deleteFolder'), ['folder' => $folder->id])->assertOk();
@@ -362,10 +367,10 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
             Passport::actingAs($user);
 
-            $this->getJson(route('sendFolderCollaborationInvite', [
+            $this->sendInviteResponse([
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,
-            ]))->assertOk();
+            ])->assertOk();
         });
 
         Passport::actingAs($invitee);
@@ -395,10 +400,10 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         Passport::actingAs($user);
 
         $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
-            $this->getJson(route('sendFolderCollaborationInvite', [
+            $this->sendInviteResponse([
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,
-            ]))->assertOk();
+            ])->assertOk();
         });
 
         $this->deleteJson(route('deleteUserAccount'), ['password' => 'password'])->assertOk();
@@ -445,10 +450,10 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         Passport::actingAs($folderOwner);
         $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
-            $this->getJson(route('sendFolderCollaborationInvite', [
+            $this->sendInviteResponse([
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,
-            ]))->assertOk();
+            ])->assertOk();
         });
 
         $this->acceptInviteResponse($parameters)->assertCreated();
@@ -471,10 +476,10 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         Passport::actingAs($collaborator);
         $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
-            $this->getJson(route('sendFolderCollaborationInvite', [
+            $this->sendInviteResponse([
                 'email' => $invitee->email,
                 'folder_id' => $folder->id,
-            ]))->assertOk();
+            ])->assertOk();
         });
 
         $this->acceptInviteResponse($parameters)->assertCreated();

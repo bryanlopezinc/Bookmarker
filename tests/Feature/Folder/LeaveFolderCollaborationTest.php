@@ -156,10 +156,10 @@ class LeaveFolderCollaborationTest extends TestCase
             'folder' => $folder->id
         ])->assertForbidden();
 
-        $this->getJson(route('sendFolderCollaborationInvite', [
+        $this->postJson(route('sendFolderCollaborationInvite'), [
             'email' => UserFactory::new()->create()->email,
             'folder_id' => $folder->id,
-        ]))->assertForbidden();
+        ])->assertForbidden();
 
         $this->getJson(route('folderBookmarks', [
             'folder_id' => $folder->id

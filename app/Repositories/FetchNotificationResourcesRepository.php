@@ -38,7 +38,7 @@ class FetchNotificationResourcesRepository
      * @var array<string>
      */
     private array $userIDKeys = [
-        'added_by', 'removed_by', 'new_collaborator_id', 'updated_by'
+        'added_by', 'removed_by', 'new_collaborator_id', 'updated_by', 'exited_by'
     ];
 
     /**

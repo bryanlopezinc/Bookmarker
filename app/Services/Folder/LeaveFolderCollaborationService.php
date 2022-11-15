@@ -7,6 +7,7 @@ namespace App\Services\Folder;
 use App\Contracts\FolderRepositoryInterface;
 use App\DataTransferObjects\Folder;
 use App\Exceptions\HttpException;
+use App\Notifications\CollaboratorExitNotification;
 use App\QueryColumns\FolderAttributes;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\ValueObjects\ResourceID;
@@ -29,6 +30,8 @@ final class LeaveFolderCollaborationService
         $this->ensureCollaboratorHasPriorAccessToFolder($collaboratorID, $folderID);
 
         $this->permissionsRepository->removeCollaborator($collaboratorID, $folderID);
+
+        $this->notifyFolderOwner($collaboratorID, $folder);
     }
 
     private function ensureCollaboratorHasPriorAccessToFolder(UserID $collaboratorID, ResourceID $folderID): void
@@ -49,5 +52,12 @@ final class LeaveFolderCollaborationService
                 'message' => 'Cannot exit from own folder'
             ]);
         }
+    }
+
+    private function notifyFolderOwner(UserID $collaboratorThatLeft, Folder $folder): void
+    {
+        (new \App\Models\User(['id' => $folder->ownerID->value()]))->notify(
+            new CollaboratorExitNotification($folder->folderID, $collaboratorThatLeft)
+        );
     }
 }

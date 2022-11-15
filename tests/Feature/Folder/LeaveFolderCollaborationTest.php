@@ -8,6 +8,7 @@ use Database\Factories\FolderAccessFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
@@ -207,5 +208,25 @@ class LeaveFolderCollaborationTest extends TestCase
             'folder_id' => $folder->id
         ]))->assertOk()
             ->assertJsonCount(0, 'data');
+    }
+
+    public function testWillNotifyFolderOwnerWhenUserExits(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
+
+        Passport::actingAs($collaborator);
+        $this->leaveFolderCollaborationResponse([
+            'folder_id' => $folder->id
+        ])->assertOk();
+
+        $notificationData = DatabaseNotification::query()->where('notifiable_id', $folderOwner->id)->sole(['data'])->data;
+
+        $this->assertEquals($notificationData, [
+            'folder_id' => $folder->id,
+            'exited_by' => $collaborator->id,
+        ]);
     }
 }

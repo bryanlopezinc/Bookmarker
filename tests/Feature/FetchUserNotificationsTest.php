@@ -20,6 +20,7 @@ use App\DataTransferObjects\Builders\FolderBuilder;
 use App\Notifications\BookmarksAddedToFolderNotification;
 use App\Notifications\NewCollaboratorNotification;
 use App\Notifications\BookmarksRemovedFromFolderNotification;
+use App\Notifications\CollaboratorExitNotification;
 use Illuminate\Notifications\DatabaseNotification;
 
 class FetchUserNotificationsTest extends TestCase
@@ -374,6 +375,63 @@ class FetchUserNotificationsTest extends TestCase
                                     'from',
                                     'to'
                                 ],
+                            ],
+                        ]
+                    ]);
+            });
+    }
+
+    public function testCollaboratorExitNotification(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::times(2)->create();
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        $folderOwner->notify(
+            new CollaboratorExitNotification(
+                new ResourceID($folder->id),
+                new UserID($collaborator->id)
+            )
+        );
+
+        Passport::actingAs($folderOwner);
+        $this->userNotificationsResponse()
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->collect('data')
+            ->each(function (array $data) use ($collaborator, $folder) {
+                AssertableJson::fromArray($data)
+                    ->where('type', 'CollaboratorExitNotification')
+                    ->where('attributes.collaborator_exists', true)
+                    ->where('attributes.id', fn (string $id) => Str::isUuid($id))
+                    ->where('attributes.folder_exists', true)
+                    ->where('attributes.collaborator', function (Collection $collaboratorData) use ($collaborator) {
+                        $this->assertEquals($collaborator->firstname, $collaboratorData['first_name']);
+                        $this->assertEquals($collaborator->lastname, $collaboratorData['last_name']);
+                        return true;
+                    })
+                    ->where('attributes.folder', function (Collection $folderData) use ($folder) {
+                        $this->assertEquals($folder->name, $folderData['name']);
+                        $this->assertEquals($folder->id, $folderData['id']);
+                        return true;
+                    });
+
+                (new  AssertableJsonString($data))
+                    ->assertCount(5, 'attributes')
+                    ->assertCount(2, 'attributes.collaborator')
+                    ->assertCount(2, 'attributes.folder')
+                    ->assertStructure([
+                        "type",
+                        "attributes" => [
+                            "id",
+                            "collaborator_exists",
+                            "folder_exists",
+                            "collaborator" =>  [
+                                "first_name",
+                                "last_name",
+                            ],
+                            "folder" => [
+                                "name",
+                                "id",
                             ],
                         ]
                     ]);

@@ -84,11 +84,12 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
             ->addBookmarksPermission()
             ->create();
 
+        //assert cannot send invite
         Passport::actingAs($collaborator);
-        $this->getJson(route('sendFolderCollaborationInvite', $sendInviteRequest = [
+        $this->postJson(route('sendFolderCollaborationInvite'), $sendInviteRequest = [
             'email' => UserFactory::new()->create()->email,
             'folder_id' => $folder->id,
-        ]))->assertForbidden();
+        ])->assertForbidden();
 
         Passport::actingAs($folderOwner);
         $this->grantPermissionsResponse([
@@ -97,8 +98,9 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
             'permissions' => 'inviteUser'
         ])->assertOk();
 
+        //can now perform action.
         Passport::actingAs($collaborator);
-        $this->getJson(route('sendFolderCollaborationInvite', $sendInviteRequest))->assertOk();
+        $this->postJson(route('sendFolderCollaborationInvite'), $sendInviteRequest)->assertOk();
 
         $collaboratorPermissions = (new Repository)->getUserAccessControls(
             new UserID($collaborator->id),
@@ -242,5 +244,24 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
             ->assertExactJson([
                 'message' => 'The folder does not exists'
             ]);
+    }
+
+    public function testCanGrantUpdateFolderPermission(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->addBookmarksPermission()
+            ->create();
+
+        Passport::actingAs($folderOwner);
+        $this->grantPermissionsResponse([
+            'user_id' => $collaborator->id,
+            'folder_id' => $folder->id,
+            'permissions' => 'updateFolder'
+        ])->assertOk();
     }
 }

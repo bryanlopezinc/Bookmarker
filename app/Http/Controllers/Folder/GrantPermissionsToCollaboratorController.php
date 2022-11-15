@@ -23,7 +23,8 @@ final class GrantPermissionsToCollaboratorController
             'permissions' => ['required', 'array', Rule::in([
                 'addBookmarks',
                 'removeBookmarks',
-                'inviteUser'
+                'inviteUser',
+                'updateFolder'
             ])],
             'permissions.*' => ['filled', 'distinct:strict'],
         ]);

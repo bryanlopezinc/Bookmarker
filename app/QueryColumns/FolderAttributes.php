@@ -15,13 +15,14 @@ final class FolderAttributes extends Attributes
             'is_public',
             'name',
             'description',
-            'tags'
+            'tags',
+            'settings'
         ];
     }
 
     /**
      * @param string $attributes A comma separated list of attributes which can only be
-     * any of id,user_id,bookmarks_count,is_public,name,description,tags
+     * any of id,user_id,bookmarks_count,is_public,name,description,tags,settings
      */
     public static function only(string $attributes): self
     {

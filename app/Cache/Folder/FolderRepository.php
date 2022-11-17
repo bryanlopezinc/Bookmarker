@@ -55,6 +55,7 @@ final class FolderRepository implements FolderRepositoryInterface
             ->when($attributes->has('name'), fn (Builder $b) => $b->setName($folder->name->value))
             ->when($attributes->has('description'), fn (Builder $b) => $b->setDescription($folder->description->value))
             ->when($attributes->has('tags'), fn (Builder $b) => $b->setTags($folder->tags))
+            ->when($attributes->has('settings'), fn (Builder $b) => $b->setSettings($folder->settings))
             ->build();
     }
 

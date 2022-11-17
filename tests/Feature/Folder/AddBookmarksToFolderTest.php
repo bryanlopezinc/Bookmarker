@@ -2,11 +2,10 @@
 
 namespace Tests\Feature\Folder;
 
-use App\Models\Bookmark;
+use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Models\FolderBookmarksCount;
-use App\Notifications\BookmarksAddedToFolderNotification;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderAccessFactory;
 use Database\Factories\FolderFactory;
@@ -474,5 +473,45 @@ class AddBookmarksToFolderTest extends TestCase
             'folder' => $folder->id,
         ])->assertNotFound()
             ->assertExactJson(['message' => "The folder does not exists"]);
+    }
+
+    public function testWillNotSendNotificationWhenNotificationsIsDisabled(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $collaborator->id])->pluck('id');
+        $folder = FolderFactory::new()
+            ->setting(fn (FolderSettingsBuilder $b) => $b->enableNotifications(false))
+            ->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
+        Notification::fake();
+
+        Passport::actingAs($collaborator);
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => $bookmarks->implode(','),
+            'folder' => $folder->id
+        ])->assertCreated();
+
+        Notification::assertNothingSent();
+    }
+
+    public function testWillNotSendNotificationWhenNewBookmarksNotificationIsDisabled(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $collaborator->id])->pluck('id');
+        $folder = FolderFactory::new()
+            ->setting(fn (FolderSettingsBuilder $b) => $b->notifyOnNewBookmarks(false))
+            ->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
+        Notification::fake();
+
+        Passport::actingAs($collaborator);
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => $bookmarks->implode(','),
+            'folder' => $folder->id
+        ])->assertCreated();
+
+        Notification::assertNothingSent();
     }
 }

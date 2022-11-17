@@ -34,7 +34,7 @@ final class AddBookmarksToFolderService
 
     public function add(IDs $bookmarkIDs, ResourceID $folderID, IDs $makeHidden): void
     {
-        $folder = $this->repository->find($folderID, Attributes::only('id,user_id,bookmarks_count'));
+        $folder = $this->repository->find($folderID, Attributes::only('id,user_id,bookmarks_count,settings'));
         $bookmarks = $this->bookmarksRepository->findManyById($bookmarkIDs, BookmarkAttributes::only('user_id,id,url'));
 
         $this->ensureUserHasPermissionToPerformAction($folder);
@@ -98,10 +98,14 @@ final class AddBookmarksToFolderService
     private function notifyFolderOwner(IDs $bookmarkIDs, Folder $folder): void
     {
         $collaboratorID = UserID::fromAuthUser();
-        $bookmarksWasAddedByFolderOwner = $collaboratorID->equals($folder->ownerID);
+        $bookmarksWereAddedByFolderOwner = $collaboratorID->equals($folder->ownerID);
         $notification = new Notification($bookmarkIDs, $folder->folderID, $collaboratorID);
 
-        if ($bookmarksWasAddedByFolderOwner) {
+        if (
+            $bookmarksWereAddedByFolderOwner ||
+            !$folder->settings->receiveNotifications()  ||
+            !$folder->settings->receiveNewBookmarksNotifications()
+        ) {
             return;
         }
 

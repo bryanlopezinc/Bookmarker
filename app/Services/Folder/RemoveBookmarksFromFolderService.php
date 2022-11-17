@@ -29,7 +29,7 @@ final class RemoveBookmarksFromFolderService
 
     public function remove(ResourceIDsCollection $bookmarkIDs, ResourceID $folderID): void
     {
-        $folder = $this->repository->find($folderID, Attributes::only('id,user_id'));
+        $folder = $this->repository->find($folderID, Attributes::only('id,user_id,settings'));
 
         $this->ensureUserCanPerformAction($folder);
 
@@ -70,7 +70,11 @@ final class RemoveBookmarksFromFolderService
         $bookmarksWereRemovedByFolderOwner = $collaboratorID->equals($folder->ownerID);
         $notification = new Notification($bookmarkIDs, $folder->folderID, $collaboratorID);
 
-        if ($bookmarksWereRemovedByFolderOwner) {
+        if (
+            $bookmarksWereRemovedByFolderOwner ||
+            !$folder->settings->receiveNotifications()  ||
+            !$folder->settings->receiveBookmarksRemovedNotifications()
+        ) {
             return;
         }
 

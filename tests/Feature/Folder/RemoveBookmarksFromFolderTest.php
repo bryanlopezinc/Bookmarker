@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Folder;
 
+use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Models\FolderBookmarksCount;
@@ -418,5 +419,61 @@ class RemoveBookmarksFromFolderTest extends TestCase
         foreach ($notificationData['bookmarks'] as $bookmarkID) {
             $this->assertTrue($bookmarkIDs->contains($bookmarkID));
         }
+    }
+
+    public function testWillNotSendNotificationsWhenNotificationsIsDisabled(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $bookmarkIDs = BookmarkFactory::times(3)->create(['user_id' => $folderOwner->id])->pluck('id');
+        $folderID = FolderFactory::new()
+            ->setting(fn (FolderSettingsBuilder $b) => $b->enableNotifications(false))
+            ->create(['user_id' => $folderOwner->id])->id;
+
+        Passport::actingAs($folderOwner);
+        $this->addBookmarksToFolder($bookmarkIDs->implode(','), $folderID);
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folderID)
+            ->removeBookmarksPermission()
+            ->create();
+
+        Notification::fake();
+
+        Passport::actingAs($collaborator);
+        $this->removeFolderBookmarksResponse([
+            'bookmarks' => $bookmarkIDs->implode(','),
+            'folder' => $folderID
+        ])->assertOk();
+
+        Notification::assertNothingSent();
+    }
+
+    public function testWillNotSendNotificationsWhenBookmarksRemovedNotificationsIsDisabled(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $bookmarkIDs = BookmarkFactory::times(3)->create(['user_id' => $folderOwner->id])->pluck('id');
+        $folderID = FolderFactory::new()
+            ->setting(fn (FolderSettingsBuilder $b) => $b->notifyOnBookmarksRemoved(false))
+            ->create(['user_id' => $folderOwner->id])->id;
+
+        Passport::actingAs($folderOwner);
+        $this->addBookmarksToFolder($bookmarkIDs->implode(','), $folderID);
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folderID)
+            ->removeBookmarksPermission()
+            ->create();
+
+        Notification::fake();
+
+        Passport::actingAs($collaborator);
+        $this->removeFolderBookmarksResponse([
+            'bookmarks' => $bookmarkIDs->implode(','),
+            'folder' => $folderID
+        ])->assertOk();
+
+        Notification::assertNothingSent();
     }
 }

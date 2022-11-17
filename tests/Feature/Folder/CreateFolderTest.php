@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Folder;
 
+use App\DataTransferObjects\FolderSettings;
 use App\Models\Folder;
 use App\Models\Taggable;
 use App\Models\UserFoldersCount;
@@ -84,6 +85,7 @@ class CreateFolderTest extends TestCase
         $this->assertFalse($folder->is_public);
         $this->assertTrue($folder->created_at->isSameMinute());
         $this->assertTrue($folder->updated_at->isSameMinute());
+        $this->assertEquals($folder->settings, FolderSettings::default()->toArray());
 
         $this->assertDatabaseHas(UserFoldersCount::class, [
             'user_id' => $user->id,

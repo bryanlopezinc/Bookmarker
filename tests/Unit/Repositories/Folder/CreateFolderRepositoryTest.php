@@ -8,7 +8,7 @@ use App\Models\UserFoldersCount;
 use App\Repositories\Folder\CreateFolderRepository;
 use Tests\TestCase;
 use App\Repositories\TagRepository;
-use Database\Factories\UserFactory;
+use Database\Factories\FolderFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 
 class CreateFolderRepositoryTest extends TestCase
@@ -17,12 +17,8 @@ class CreateFolderRepositoryTest extends TestCase
 
     public function testWillIncrementFoldersCount(): void
     {
-        $folder = (new FolderBuilder())
+        $folder = FolderBuilder::fromModel(FolderFactory::new()->make())
             ->setCreatedAt(now())
-            ->setDescription($this->faker->sentence)
-            ->setName($this->faker->word)
-            ->setOwnerID($userID = UserFactory::new()->create()->id)
-            ->setIsPublic(false)
             ->setTags(new TagsCollection([]))
             ->build();
 
@@ -33,7 +29,7 @@ class CreateFolderRepositoryTest extends TestCase
         $repository->create($folder);
 
         $this->assertDatabaseHas(UserFoldersCount::class, [
-            'user_id' => $userID,
+            'user_id' => $folder->ownerID->value(),
             'count' => 3,
             'type' => UserFoldersCount::TYPE
         ]);

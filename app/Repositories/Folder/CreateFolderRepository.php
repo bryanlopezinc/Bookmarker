@@ -24,7 +24,8 @@ final class CreateFolderRepository
             'name' => $folder->name->value,
             'user_id' => $folder->ownerID->value(),
             'created_at' => $folder->createdAt,
-            'is_public' => $folder->isPublic
+            'is_public' => $folder->isPublic,
+            'settings' => $folder->settings->toArray()
         ]);
 
         $this->tagsRepository->attach($folder->tags, $model);

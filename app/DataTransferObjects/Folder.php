@@ -26,6 +26,7 @@ final class Folder extends DataTransferObject implements BelongsToUserInterface
     public readonly FolderStorage $storage;
     public readonly bool $isPublic;
     public readonly TagsCollection $tags;
+    public readonly FolderSettings $settings;
 
     /**
      * @param array<string, mixed> $attributes
@@ -38,7 +39,7 @@ final class Folder extends DataTransferObject implements BelongsToUserInterface
 
         parent::__construct();
     }
-    
+
     public function getOwnerID(): UserID
     {
         return $this->ownerID;

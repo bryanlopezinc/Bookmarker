@@ -1,0 +1,80 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+        "version": {
+            "type": "string",
+            "pattern": "^([0-9]+).([0-9]+).([0-9]+)$",
+            "description": "The version number of the settings in SemVer format"
+        },
+        "notifications": {
+            "type": "object",
+            "description": "Notification settings for a folder",
+            "properties": {
+                "newCollaborator": {
+                    "type": "object",
+                    "description": "Notification setting for new collaborator event",
+                    "properties": {
+                        "notify": {
+                            "type": "boolean",
+                            "description": "Indicates if the user should be notified when new a user joins a folder as a collaborator"
+                        },
+                        "onlyCollaboratorsInvitedByMe": {
+                            "type": "boolean",
+                            "description": "Indicates if the user should be notified when new a user joins a folder as a collaborator ONLY if the collaborator was invited by user"
+                        }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                        "notify",
+                        "onlyCollaboratorsInvitedByMe"
+                    ]
+                },
+                "updated": {
+                    "type": "boolean",
+                    "description": "Indicates if the user should be notified on new folder updated events"
+                },
+                "bookmarksAdded": {
+                    "type": "boolean",
+                    "description": "Indicates if the user should be notified when bookmarks are added to folder"
+                },
+                "bookmarksRemoved": {
+                    "type": "boolean",
+                    "description": "Indicates if the user should be notified when bookmarks are removed from folder"
+                },
+                "collaboratorExit": {
+                    "type": "object",
+                    "description": "Notification setting for when a user leaves a folder as a collaborator",
+                    "properties": {
+                        "notify": {
+                            "type": "boolean",
+                            "description": "Indicates if the user should be notified when a user leaves a folder as a collaborator"
+                        },
+                        "onlyWhenCollaboratorHasWritePermission": {
+                            "type": "boolean",
+                            "description": "Indicates the user should be notified only if user has write permission"
+                        }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                        "notify",
+                        "onlyWhenCollaboratorHasWritePermission"
+                    ]
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "newCollaborator",
+                "updated",
+                "bookmarksAdded",
+                "bookmarksRemoved",
+                "collaboratorExit"
+            ]
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "notifications",
+        "version"
+    ]
+}

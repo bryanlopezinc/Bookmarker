@@ -6,6 +6,7 @@ namespace App\DataTransferObjects\Builders;
 
 use App\Collections\TagsCollection;
 use App\DataTransferObjects\Folder;
+use App\DataTransferObjects\FolderSettings;
 use App\Models\Folder as Model;
 use App\ValueObjects\FolderDescription;
 use App\ValueObjects\FolderName;
@@ -31,7 +32,8 @@ final class FolderBuilder extends Builder
             ->when($keyExists('updated_at'), fn (FolderBuilder $b) => $b->setUpdatedAt($folder->updated_at))
             ->when($keyExists('bookmarks_count'), fn (FolderBuilder $b) => $b->setBookmarksCount((int)$folder->bookmarks_count)) // @phpstan-ignore-line
             ->when($keyExists('is_public'), fn (FolderBuilder $b) => $b->setIsPublic($folder->is_public))
-            ->when($keyExists('tags'), fn (FolderBuilder $b) => $b->setTags($folder->getRelation('tags')->all()));
+            ->when($keyExists('tags'), fn (FolderBuilder $b) => $b->setTags($folder->getRelation('tags')->all()))
+            ->when($keyExists('settings'), fn (FolderBuilder $b) => $b->setSettings($folder->settings));
     }
 
     public function setID(int $id): self
@@ -93,6 +95,13 @@ final class FolderBuilder extends Builder
     public function setTags(TagsCollection|array $tags): self
     {
         $this->attributes['tags'] = is_array($tags) ? TagsCollection::make($tags) : $tags;
+
+        return $this;
+    }
+
+    public function setSettings(array|FolderSettings $settings): self
+    {
+        $this->attributes['settings'] =  is_array($settings) ? new FolderSettings($settings) : $settings;
 
         return $this;
     }

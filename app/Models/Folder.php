@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
  * @property int $id
  * @property string|null $description
  * @property string $name
+ * @property array $settings
  * @property bool $is_public
  * @property int $user_id foreign key to \App\Models\User
  * @property \Carbon\Carbon $created_at
@@ -39,7 +40,8 @@ final class Folder extends Model implements TaggableInterface
      * {@inheritdoc}
      */
     protected $casts = [
-        'is_public' => 'bool'
+        'is_public' => 'bool',
+        'settings' => 'array'
     ];
 
     public function taggableID(): ResourceID

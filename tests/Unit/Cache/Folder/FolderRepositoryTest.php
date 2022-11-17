@@ -127,7 +127,7 @@ class FolderRepositoryTest extends TestCase
         };
 
         $assert('', function (Folder $result) {
-            $this->assertCount(7, $result->toArray());
+            $this->assertCount(8, $result->toArray());
         });
 
         $assert('id,user_id', function (Folder $result) {

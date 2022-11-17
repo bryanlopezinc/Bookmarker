@@ -12,6 +12,7 @@
         "fruitcake/laravel-cors": "^2.0.5",
         "guzzlehttp/guzzle": "^7.2",
         "jenssegers/agent": "^2.6",
+        "justinrainbow/json-schema": "^5.2",
         "laravel/framework": "^9.32",
         "laravel/passport": "^10.3",
         "laravel/sanctum": "^2.14",

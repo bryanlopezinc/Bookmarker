@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Folder;
 
+use App\DataTransferObjects\Builders\FolderSettingsBuilder as SettingsBuilder;
 use App\Models\Folder;
 use App\Models\Tag;
 use App\Models\Taggable;
@@ -11,6 +12,7 @@ use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
@@ -520,10 +522,29 @@ class UpdateFolderTest extends TestCase
         ]);
     }
 
-    public function testWillNotSendNotificationWheUpdateWasPerformedByFolderOwner(): void
+    public function testWillNotSendNotificationWhenUpdateWasPerformedByFolderOwner(): void
+    {
+        $user = UserFactory::new()->create();
+        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+
+        Notification::fake();
+
+        Passport::actingAs($user);
+        $this->updateFolderResponse([
+            'name' => $this->faker->word,
+            'description' => $this->faker->sentence,
+            'folder' => $folder->id
+        ])->assertOk();
+
+        Notification::assertNothingSent();
+    }
+
+    public function testWillNotSendNotificationsWhenNotificationsIsDisabled(): void
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()
+            ->setting(fn (SettingsBuilder $b) => $b->enableNotifications(false))
+            ->create(['user_id' => $folderOwner->id]);
 
         FolderAccessFactory::new()
             ->user($collaborator->id)
@@ -531,11 +552,40 @@ class UpdateFolderTest extends TestCase
             ->updateFolderPermission()
             ->create();
 
+        Notification::fake();
+
         Passport::actingAs($collaborator);
         $this->updateFolderResponse([
             'name' => $this->faker->word,
             'description' => $this->faker->sentence,
-            'folder' => $folder->id
+            'folder' => $folder->id,
         ])->assertOk();
+
+        Notification::assertNothingSent();
+    }
+
+    public function testWillNotSendNotificationsWhenFolderUpdatedNotificationsIsDisabled(): void
+    {
+        [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()
+            ->setting(fn (SettingsBuilder $b) => $b->notifyOnFolderUpdate(false))
+            ->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->updateFolderPermission()
+            ->create();
+
+        Notification::fake();
+
+        Passport::actingAs($collaborator);
+        $this->updateFolderResponse([
+            'name' => $this->faker->word,
+            'description' => $this->faker->sentence,
+            'folder' => $folder->id,
+        ])->assertOk();
+
+        Notification::assertNothingSent();
     }
 }

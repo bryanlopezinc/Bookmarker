@@ -36,7 +36,7 @@ final class UpdateFolderService
     {
         $folder = $this->folderRepository->find(
             ResourceID::fromRequest($request, 'folder'),
-            Attributes::only('id,user_id,name,description,is_public,tags')
+            Attributes::only('id,user_id,name,description,is_public,tags,settings')
         );
 
         $this->ensureUserCanUpdateFolder($folder, $request);
@@ -121,7 +121,11 @@ final class UpdateFolderService
         $folderWasUpdatedByOwner = $original->ownerID->equals($collaboratorID = UserID::fromAuthUser());
         $notification = new Notification($original, $updated, $collaboratorID);
 
-        if ($folderWasUpdatedByOwner) {
+        if (
+            $folderWasUpdatedByOwner ||
+            !$original->settings->receiveNotifications() ||
+            !$original->settings->receiveNewUpdateNotifications()
+        ) {
             return;
         }
 

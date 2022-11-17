@@ -39,7 +39,7 @@ final class AcceptFolderCollaborationInviteService
 
         $this->ensureUsersStillExist($invitationData);
 
-        $folder = $this->folderRepository->find(new ResourceID($invitationData[Payload::FOLDER_ID]), FolderAttributes::only('id,user_id'));
+        $folder = $this->folderRepository->find(new ResourceID($invitationData[Payload::FOLDER_ID]), FolderAttributes::only('id,user_id,settings'));
         $inviteeID = new UserID($invitationData[Payload::INVITEE_ID]);
 
         $this->ensureInvitationHasNotBeenAccepted($inviteeID, $folder);
@@ -101,10 +101,16 @@ final class AcceptFolderCollaborationInviteService
 
     private function notifyFolderOwner(UserID $inviterID, UserID $inviteeID, Folder $folder): void
     {
-        $wasInvitedByFolderOwner = $folder->ownerID->equals($inviterID);
+        $collaboratorWasInvitedByFolderOwner = $folder->ownerID->equals($inviterID);
         $notification = new Notification($inviteeID, $folder->folderID, $inviterID);
 
-        if ($wasInvitedByFolderOwner) {
+        $shouldNotSendNotification = count(array_filter([
+            (!$folder->settings->receiveNotifications() || !$folder->settings->receiveNewCollaboratorNotifications()),
+            (!$collaboratorWasInvitedByFolderOwner && $folder->settings->receiveOnlyNewCollaboratorInvitedByMeNotifications()),
+            ($collaboratorWasInvitedByFolderOwner && !$folder->settings->receiveOnlyNewCollaboratorInvitedByMeNotifications())
+        ])) > 0;
+
+        if ($shouldNotSendNotification) {
             return;
         }
 

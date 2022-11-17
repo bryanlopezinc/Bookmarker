@@ -22,6 +22,7 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use App\DataTransferObjects\Builders\FolderSettingsBuilder as SettingsBuilder;
 
 class AcceptFolderCollaborationInviteTest extends TestCase
 {
@@ -491,5 +492,167 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             'folder_id' => $folder->id,
             'added_by' => $collaborator->id,
         ]);
+    }
+
+    public function testWillNotNotifyFolderOwnerWhenNotificationsIsDisabled(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()
+            ->setting(fn (SettingsBuilder $b) => $b->enableNotifications(false))
+            ->create();
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->inviteUser()
+            ->create();
+
+        Notification::fake();
+
+        Passport::actingAs($collaborator);
+        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
+            $this->sendInviteResponse([
+                'email' => $invitee->email,
+                'folder_id' => $folder->id,
+            ])->assertOk();
+        });
+
+        $this->acceptInviteResponse($parameters)->assertCreated();
+
+        Notification::assertNothingSent();
+    }
+
+    public function testWillNotNotifyFolderOwnerWhenNotificationsIsDisabled_andInviteWasSentByFolderOwner(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()
+            ->setting(fn (SettingsBuilder $b) => $b->enableNotifications(false))
+            ->create(['user_id' => $folderOwner->id]);
+
+        Notification::fake();
+
+        Passport::actingAs($folderOwner);
+        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
+            $this->sendInviteResponse([
+                'email' => $invitee->email,
+                'folder_id' => $folder->id,
+            ])->assertOk();
+        });
+
+        $this->acceptInviteResponse($parameters)->assertCreated();
+
+        Notification::assertNothingSent();
+    }
+
+    public function testWillNotNotifyFolderOwnerWhenNewCollaboratorNotificationIsDisabled(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()
+            ->setting(fn (SettingsBuilder $b) => $b->notifyOnNewCollaborator(false))
+            ->create();
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->inviteUser()
+            ->create();
+
+        Notification::fake();
+
+        Passport::actingAs($collaborator);
+        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
+            $this->sendInviteResponse([
+                'email' => $invitee->email,
+                'folder_id' => $folder->id,
+            ])->assertOk();
+        });
+
+        $this->acceptInviteResponse($parameters)->assertCreated();
+
+        Notification::assertNothingSent();
+    }
+
+    public function testWillNotNotifyFolderOwnerWhenNewCollaboratorNotificationIsDisabled_andInviteWasSentByFolderOwner(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()
+            ->setting(fn (SettingsBuilder $b) => $b->notifyOnNewCollaborator(false))
+            ->create(['user_id' => $folderOwner->id]);
+
+        Notification::fake();
+
+        Passport::actingAs($folderOwner);
+        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
+            $this->sendInviteResponse([
+                'email' => $invitee->email,
+                'folder_id' => $folder->id,
+            ])->assertOk();
+        });
+
+        $this->acceptInviteResponse($parameters)->assertCreated();
+
+        Notification::assertNothingSent();
+    }
+
+    public function testWillNotNotifyFolderOwnerWhen_onlyCollaboratorsInvitedByMe_Notification_enabled(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()
+            ->setting(fn (SettingsBuilder $b) => $b->notifyOnNewCollaboratorOnlyInvitedByMe(true))
+            ->create();
+
+        FolderAccessFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->inviteUser()
+            ->create();
+
+        Notification::fake();
+
+        Passport::actingAs($collaborator);
+        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
+            $this->sendInviteResponse([
+                'email' => $invitee->email,
+                'folder_id' => $folder->id,
+            ])->assertOk();
+        });
+
+        $this->acceptInviteResponse($parameters)->assertCreated();
+
+        Notification::assertNothingSent();
+    }
+
+    public function testWill_NotifyFolderOwnerWhen_onlyCollaboratorsInvitedByMe_Notification_enabled_andInviteWasSentByFolderOwner(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()
+            ->setting(fn (SettingsBuilder $b) => $b->notifyOnNewCollaboratorOnlyInvitedByMe(true))
+            ->create(['user_id' => $folderOwner->id]);
+
+        Notification::fake();
+
+        Passport::actingAs($folderOwner);
+        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
+            $this->sendInviteResponse([
+                'email' => $invitee->email,
+                'folder_id' => $folder->id,
+            ])->assertOk();
+        });
+
+        $this->acceptInviteResponse($parameters)->assertCreated();
+
+        Notification::assertTimesSent(1, \App\Notifications\NewCollaboratorNotification::class);
     }
 }

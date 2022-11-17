@@ -11,6 +11,10 @@
             "type": "object",
             "description": "Notification settings for a folder",
             "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Will disable all notifications if false"
+                },
                 "newCollaborator": {
                     "type": "object",
                     "description": "Notification setting for new collaborator event",
@@ -64,6 +68,7 @@
             },
             "additionalProperties": false,
             "required": [
+                "enabled",
                 "newCollaborator",
                 "updated",
                 "bookmarksAdded",

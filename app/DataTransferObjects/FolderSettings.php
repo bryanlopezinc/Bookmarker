@@ -29,6 +29,7 @@ final class FolderSettings
         return new self([
             'version' => '1.0.0',
             'notifications' => [
+                'enabled' => true,
                 'newCollaborator' => [
                     'notify' => true,
                     'onlyCollaboratorsInvitedByMe' => false,

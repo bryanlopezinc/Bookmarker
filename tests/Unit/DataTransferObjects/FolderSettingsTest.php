@@ -46,6 +46,7 @@ class FolderSettingsTest extends TestCase
         foreach ($interacted = [
             "version",
             "notifications",
+            "notifications.enabled",
             "notifications.newCollaborator",
             "notifications.newCollaborator.notify",
             "notifications.newCollaborator.onlyCollaboratorsInvitedByMe",
@@ -86,6 +87,8 @@ class FolderSettingsTest extends TestCase
         $this->assertPropertyMustBeType('notifications', 'array');
         $this->assertPropertyMustBeType('notifications', 'NonEmptyArray');
         $this->assertPropertyMustBeType('notifications', 'onlyKnowAttributes');
+
+        $this->assertPropertyMustBeType('notifications.enabled', 'boolean');
 
         $this->assertPropertyMustBeType('notifications.newCollaborator', 'array');
         $this->assertPropertyMustBeType('notifications.newCollaborator', 'NonEmptyArray');

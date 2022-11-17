@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Rules\FolderSettingsRule;
 use App\Rules\ResourceIdRule;
 use App\ValueObjects\FolderDescription;
 use App\ValueObjects\FolderName;
@@ -24,6 +25,7 @@ final class CreateFolderRequest extends FormRequest
         ];
 
         if ($this->routeIs('createFolder')) {
+            $rules['settings'] = ['sometimes', new FolderSettingsRule()];
             $rules['name'] = ['required', ...$rules['name']];
         }
 

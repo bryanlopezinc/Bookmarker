@@ -45,6 +45,46 @@ final class FolderSettings
         ]);
     }
 
+    public function receiveNotifications(): bool
+    {
+        return $this->get('notifications.enabled');
+    }
+
+    public function receiveNewCollaboratorNotifications(): bool
+    {
+        return $this->get('notifications.newCollaborator.notify');
+    }
+
+    public function receiveOnlyNewCollaboratorInvitedByMeNotifications(): bool
+    {
+        return $this->get('notifications.newCollaborator.onlyCollaboratorsInvitedByMe');
+    }
+
+    public function receiveNewUpdateNotifications(): bool
+    {
+        return $this->get('notifications.updated');
+    }
+
+    public function receiveNewBookmarksNotifications(): bool
+    {
+        return $this->get('notifications.bookmarksAdded');
+    }
+
+    public function receiveBookmarksRemovedNotifications(): bool
+    {
+        return $this->get('notifications.bookmarksRemoved');
+    }
+
+    public function receiveCollaboratorExitNotifications(): bool
+    {
+        return $this->get('notifications.collaboratorExit.notify');
+    }
+
+    public function receiveCollaboratorExitNotificationsWhenHasWritePermission(): bool
+    {
+        return $this->get('notifications.collaboratorExit.onlyWhenCollaboratorHasWritePermission');
+    }
+
     private function validate(): void
     {
         $validator = new Validator;

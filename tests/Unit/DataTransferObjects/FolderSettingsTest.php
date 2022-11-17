@@ -149,7 +149,7 @@ class FolderSettingsTest extends TestCase
 
         (new FolderSettingsBuilder())
             ->notifyOnNewCollaborator(false)
-            ->notifyOnNewCollaboratorOnlyWhenInvitedByMe(true)
+            ->notifyOnNewCollaboratorOnlyInvitedByMe(true)
             ->build();
     }
 
@@ -159,7 +159,7 @@ class FolderSettingsTest extends TestCase
 
         (new FolderSettingsBuilder())
             ->notifyOnCollaboratorExit(false)
-            ->notifyOnCollaboratorExitOnlyWhenHasPermission(true)
+            ->notifyOnCollaboratorExitOnlyWhenHasWritePermission(true)
             ->build();
     }
 

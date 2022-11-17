@@ -16,6 +16,34 @@ final class FolderSettingsBuilder extends Builder
         parent::__construct($attributes);
     }
 
+    public function enableNotifications(bool $enable): self
+    {
+        Arr::set($this->attributes, 'notifications.enabled', $enable);
+
+        return $this;
+    }
+
+    public function notifyOnFolderUpdate(bool $notify): self
+    {
+        Arr::set($this->attributes, 'notifications.updated', $notify);
+
+        return $this;
+    }
+
+    public function notifyOnNewBookmarks(bool $notify): self
+    {
+        Arr::set($this->attributes, 'notifications.bookmarksAdded', $notify);
+
+        return $this;
+    }
+
+    public function notifyOnBookmarksRemoved(bool $notify): self
+    {
+        Arr::set($this->attributes, 'notifications.bookmarksRemoved', $notify);
+
+        return $this;
+    }
+
     public function notifyOnNewCollaborator(bool $notify): self
     {
         Arr::set($this->attributes, 'notifications.newCollaborator.notify', $notify);
@@ -23,7 +51,7 @@ final class FolderSettingsBuilder extends Builder
         return $this;
     }
 
-    public function notifyOnNewCollaboratorOnlyWhenInvitedByMe(bool $notify): self
+    public function notifyOnNewCollaboratorOnlyInvitedByMe(bool $notify): self
     {
         Arr::set($this->attributes, 'notifications.newCollaborator.onlyCollaboratorsInvitedByMe', $notify);
 
@@ -37,7 +65,7 @@ final class FolderSettingsBuilder extends Builder
         return $this;
     }
 
-    public function notifyOnCollaboratorExitOnlyWhenHasPermission(bool $notify): self
+    public function notifyOnCollaboratorExitOnlyWhenHasWritePermission(bool $notify): self
     {
         Arr::set($this->attributes, 'notifications.collaboratorExit.onlyWhenCollaboratorHasWritePermission', $notify);
 

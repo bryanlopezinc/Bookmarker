@@ -172,4 +172,241 @@ class CreateFolderTest extends TestCase
             'taggable_type' => Taggable::FOLDER_TYPE,
         ]);
     }
+
+    public function testCanDisableNotifications(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->createFolderResponse([
+            'name' => $this->faker->word,
+            'settings' => ['N-enable' => false]
+        ])->assertCreated();
+
+        $settings = Folder::query()->where('user_id', $user->id)->sole()->settings;
+
+        $this->assertFalse($settings['notifications']['enabled']);
+    }
+
+    public function testCanDisableNewCollaboratorNotifications(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->createFolderResponse([
+            'name' => $this->faker->word,
+            'settings' => ['N-newCollaborator' => false]
+        ])->assertCreated();
+
+        $settings = Folder::query()->where('user_id', $user->id)->sole()->settings;
+
+        $this->assertFalse($settings['notifications']['newCollaborator']['notify']);
+    }
+
+    public function testCanDisableFolderUpdatedNotification(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->createFolderResponse([
+            'name' => $this->faker->word,
+            'settings' => ['N-updated' => false]
+        ])->assertCreated();
+
+        $settings = Folder::query()->where('user_id', $user->id)->sole()->settings;
+
+        $this->assertFalse($settings['notifications']['updated']);
+    }
+
+    public function testCanDisableBookmarkAddedNotification(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->createFolderResponse([
+            'name' => $this->faker->word,
+            'settings' => ['N-newBookmarks' => false]
+        ])->assertCreated();
+
+        $settings = Folder::query()->where('user_id', $user->id)->sole()->settings;
+
+        $this->assertFalse($settings['notifications']['bookmarksAdded']);
+    }
+
+    public function testCanDisableBookmarkRemovedNotification(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->createFolderResponse([
+            'name' => $this->faker->word,
+            'settings' => ['N-bookmarkDelete' => false]
+        ])->assertCreated();
+
+        $settings = Folder::query()->where('user_id', $user->id)->sole()->settings;
+
+        $this->assertFalse($settings['notifications']['bookmarksRemoved']);
+    }
+
+    public function testCanDisableCollaboratorExitNotification(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->createFolderResponse([
+            'name' => $this->faker->word,
+            'settings' => ['N-collaboratorExit' => false]
+        ])->assertCreated();
+
+        $settings = Folder::query()->where('user_id', $user->id)->sole()->settings;
+
+        $this->assertFalse($settings['notifications']['collaboratorExit']['notify']);
+    }
+
+    public function testCanEnable_onlyCollaboratorsInvitedByMe_Notification(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->createFolderResponse([
+            'name' => $this->faker->word,
+            'settings' => ['N-onlyNewCollaboratorsByMe' => false]
+        ])->assertCreated();
+
+        $settings = Folder::query()->where('user_id', $user->id)->sole()->settings;
+
+        $this->assertFalse($settings['notifications']['newCollaborator']['onlyCollaboratorsInvitedByMe']);
+    }
+
+    public function testCanEnable_collaboratorExitOnlyHasWritePermission_Notification(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->createFolderResponse([
+            'name' => $this->faker->word,
+            'settings' => ['N-collaboratorExitOnlyHasWritePermission' => false]
+        ])->assertCreated();
+
+        $settings = Folder::query()->where('user_id', $user->id)->sole()->settings;
+
+        $this->assertFalse($settings['notifications']['collaboratorExit']['onlyWhenCollaboratorHasWritePermission']);
+    }
+
+    public function testCanHaveMultipleSettings(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $this->createFolderResponse([
+            'name' => $this->faker->word,
+            'settings' => [
+                'N-newCollaborator' => false,
+                'N-updated' => false,
+                'N-collaboratorExit' => false
+            ]
+        ])->assertCreated();
+
+        $settings = Folder::query()->where('user_id', $user->id)->sole()->settings;
+
+        $this->assertFalse($settings['notifications']['collaboratorExit']['notify']);
+        $this->assertFalse($settings['notifications']['updated']);
+        $this->assertFalse($settings['notifications']['newCollaborator']['notify']);
+    }
+
+    public function testFolderSettingsMustBeValid(): void
+    {
+        Passport::actingAs(UserFactory::new()->make());
+
+        //Assert settings must be an array
+        $this->createFolderResponse(['settings' => 'foo'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'settings' => ['The settings must be an array.']
+            ]);
+
+        //Assert settings cannot be empty
+        $this->createFolderResponse(['settings' => []])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'settings' => ['The settings field must have a value.']
+            ]);
+
+        //Assert settings must have a valid value and settings.N-enable must be a boolean
+        $this->createFolderResponse([
+            'settings' => [
+                'foo' => false,
+                'N-enable' => 'foo',
+            ]
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'settings' => [
+                    "The settings.N-enable field must be true or false.",
+                    "The selected settings.foo is invalid."
+                ]
+            ]);
+
+        //Assert all values must be a boolean.
+        $this->createFolderResponse([
+            'settings' => [
+                'N-newCollaborator' => 'foo',
+                'N-onlyNewCollaboratorsByMe' => 'foo',
+                'N-updated' => 'foo',
+                'N-newBookmarks' => 'foo',
+                'N-bookmarkDelete' => 'foo',
+                'N-collaboratorExit' => 'foo',
+                'N-collaboratorExitOnlyHasWritePermission' => 'foo'
+            ]
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['settings' => [
+                "The settings.N-newCollaborator field must be true or false.",
+                "The settings.N-onlyNewCollaboratorsByMe field must be true or false.",
+                "The settings.N-updated field must be true or false.",
+                "The settings.N-newBookmarks field must be true or false.",
+                "The settings.N-bookmarkDelete field must be true or false.",
+                "The settings.N-collaboratorExit field must be true or false.",
+                "The settings.N-collaboratorExitOnlyHasWritePermission field must be true or false."
+            ]]);
+
+        //Assert other values should not be present when notification is disabled.
+        $this->createFolderResponse([
+            'settings' => [
+                'N-enable' => false,
+                'N-newCollaborator' => true,
+                'N-onlyNewCollaboratorsByMe' => false,
+                'N-updated' => true,
+                'N-newBookmarks' => true,
+                'N-bookmarkDelete' => true,
+                'N-collaboratorExit' => true,
+                'N-collaboratorExitOnlyHasWritePermission' => true
+            ]
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['settings' => [
+                "The settings.N-newCollaborator field is prohibited.",
+                "The settings.N-onlyNewCollaboratorsByMe field is prohibited.",
+                "The settings.N-updated field is prohibited.",
+                "The settings.N-newBookmarks field is prohibited.",
+                "The settings.N-bookmarkDelete field is prohibited.",
+                "The settings.N-collaboratorExit field is prohibited.",
+                "The settings.N-collaboratorExitOnlyHasWritePermission field is prohibited."
+            ]]);
+
+        //Assert N-onlyNewCollaboratorsByMe setting cannot be true when N-newCollaborator value is false.
+        $this->createFolderResponse([
+            'name' => $this->faker->word,
+            'settings' => [
+                'N-enable' => true,
+                'N-newCollaborator' => false,
+                'N-onlyNewCollaboratorsByMe' => true,
+            ]
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'settings' => [
+                    "The settings N-onlyNewCollaboratorsByMe cannot be true when N-newCollaborator is false.",
+                ]
+            ]);
+
+        //Assert N-collaboratorExitOnlyHasWritePermission setting cannot be true when N-collaboratorExit value is false.
+        $this->createFolderResponse([
+            'settings' => [
+                'N-enable' => true,
+                'N-collaboratorExit' => false,
+                'N-collaboratorExitOnlyHasWritePermission' => true
+            ]
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['settings' => [
+                "The settings N-collaboratorExitOnlyHasWritePermission cannot be true when N-collaboratorExit is false.",
+            ]]);
+    }
 }

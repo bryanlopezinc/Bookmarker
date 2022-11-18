@@ -16,58 +16,88 @@ final class FolderSettingsBuilder extends Builder
         parent::__construct($attributes);
     }
 
-    public function enableNotifications(bool $enable): self
+    public function enableNotifications(bool $enable = true): self
     {
         Arr::set($this->attributes, 'notifications.enabled', $enable);
 
         return $this;
     }
 
-    public function notifyOnFolderUpdate(bool $notify): self
+    public function disableNotifications(): self
     {
-        Arr::set($this->attributes, 'notifications.updated', $notify);
+        return $this->enableNotifications(false);
+    }
+
+    public function enableFolderUpdatedNotification(bool $enable = true): self
+    {
+        Arr::set($this->attributes, 'notifications.updated', $enable);
 
         return $this;
     }
 
-    public function notifyOnNewBookmarks(bool $notify): self
+    public function disableFolderUpdatedNotification(): self
     {
-        Arr::set($this->attributes, 'notifications.bookmarksAdded', $notify);
+        return $this->enableFolderUpdatedNotification(false);
+    }
+
+    public function enableNewBookmarksNotification(bool $enable = true): self
+    {
+        Arr::set($this->attributes, 'notifications.bookmarksAdded', $enable);
 
         return $this;
     }
 
-    public function notifyOnBookmarksRemoved(bool $notify): self
+    public function disableNewBookmarksNotification(): self
+    {
+        return $this->enableNewBookmarksNotification(false);
+    }
+
+    public function enableBookmarksRemovedNotification(bool $notify = true): self
     {
         Arr::set($this->attributes, 'notifications.bookmarksRemoved', $notify);
 
         return $this;
     }
 
-    public function notifyOnNewCollaborator(bool $notify): self
+    public function disableBookmarksRemovedNotification(): self
     {
-        Arr::set($this->attributes, 'notifications.newCollaborator.notify', $notify);
+        return $this->enableBookmarksRemovedNotification(false);
+    }
+
+    public function enableNewCollaboratorNotification(bool $enable = true): self
+    {
+        Arr::set($this->attributes, 'notifications.newCollaborator.notify', $enable);
 
         return $this;
     }
 
-    public function notifyOnNewCollaboratorOnlyInvitedByMe(bool $notify): self
+    public function disableNewCollaboratorNotification(): self
     {
-        Arr::set($this->attributes, 'notifications.newCollaborator.onlyCollaboratorsInvitedByMe', $notify);
+        return $this->enableNewCollaboratorNotification(false);
+    }
+
+    public function enableOnlyCollaboratorsInvitedByMeNotification(bool $enable = true): self
+    {
+        Arr::set($this->attributes, 'notifications.newCollaborator.onlyCollaboratorsInvitedByMe', $enable);
 
         return $this;
     }
 
-    public function notifyOnCollaboratorExit(bool $notify): self
+    public function enableCollaboratorExitNotification(bool $enable = true): self
     {
-        Arr::set($this->attributes, 'notifications.collaboratorExit.notify', $notify);
+        Arr::set($this->attributes, 'notifications.collaboratorExit.notify', $enable);
 
         return $this;
     }
 
-    public function notifyOnCollaboratorExitOnlyWhenHasWritePermission(bool $notify): self
+    public function disableCollaboratorExitNotification(): self
     {
-        Arr::set($this->attributes, 'notifications.collaboratorExit.onlyWhenCollaboratorHasWritePermission', $notify);
+        return $this->enableCollaboratorExitNotification(false);
+    }
+
+    public function enableOnlyCollaboratorWithWritePermissionNotification(bool $enable = true): self
+    {
+        Arr::set($this->attributes, 'notifications.collaboratorExit.onlyWhenCollaboratorHasWritePermission', $enable);
 
         return $this;
     }

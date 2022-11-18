@@ -500,7 +500,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
-            ->setting(fn (SettingsBuilder $b) => $b->enableNotifications(false))
+            ->setting(fn (SettingsBuilder $b) => $b->disableNotifications())
             ->create();
 
         FolderAccessFactory::new()
@@ -530,7 +530,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
-            ->setting(fn (SettingsBuilder $b) => $b->enableNotifications(false))
+            ->setting(fn (SettingsBuilder $b) => $b->disableNotifications())
             ->create(['user_id' => $folderOwner->id]);
 
         Notification::fake();
@@ -554,7 +554,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
-            ->setting(fn (SettingsBuilder $b) => $b->notifyOnNewCollaborator(false))
+            ->setting(fn (SettingsBuilder $b) => $b->disableNewCollaboratorNotification())
             ->create();
 
         FolderAccessFactory::new()
@@ -584,7 +584,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
-            ->setting(fn (SettingsBuilder $b) => $b->notifyOnNewCollaborator(false))
+            ->setting(fn (SettingsBuilder $b) => $b->disableNewCollaboratorNotification())
             ->create(['user_id' => $folderOwner->id]);
 
         Notification::fake();
@@ -608,7 +608,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
-            ->setting(fn (SettingsBuilder $b) => $b->notifyOnNewCollaboratorOnlyInvitedByMe(true))
+            ->setting(fn (SettingsBuilder $b) => $b->enableOnlyCollaboratorsInvitedByMeNotification())
             ->create();
 
         FolderAccessFactory::new()
@@ -638,7 +638,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
-            ->setting(fn (SettingsBuilder $b) => $b->notifyOnNewCollaboratorOnlyInvitedByMe(true))
+            ->setting(fn (SettingsBuilder $b) => $b->enableOnlyCollaboratorsInvitedByMeNotification())
             ->create(['user_id' => $folderOwner->id]);
 
         Notification::fake();

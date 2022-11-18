@@ -543,7 +543,7 @@ class UpdateFolderTest extends TestCase
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
-            ->setting(fn (SettingsBuilder $b) => $b->enableNotifications(false))
+            ->setting(fn (SettingsBuilder $b) => $b->disableNotifications())
             ->create(['user_id' => $folderOwner->id]);
 
         FolderAccessFactory::new()
@@ -568,7 +568,7 @@ class UpdateFolderTest extends TestCase
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
-            ->setting(fn (SettingsBuilder $b) => $b->notifyOnFolderUpdate(false))
+            ->setting(fn (SettingsBuilder $b) => $b->disableFolderUpdatedNotification())
             ->create(['user_id' => $folderOwner->id]);
 
         FolderAccessFactory::new()

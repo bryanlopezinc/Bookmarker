@@ -101,13 +101,14 @@ final class AcceptFolderCollaborationInviteService
 
     private function notifyFolderOwner(UserID $inviterID, UserID $inviteeID, Folder $folder): void
     {
-        $collaboratorWasInvitedByFolderOwner = $folder->ownerID->equals($inviterID);
+        $wasInvitedByFolderOwner = $folder->ownerID->equals($inviterID);
+        $wasNotInvitedByFolderOwner = !$wasInvitedByFolderOwner;
         $notification = new Notification($inviteeID, $folder->folderID, $inviterID);
 
         $shouldNotSendNotification = count(array_filter([
-            (!$folder->settings->receiveNotifications() || !$folder->settings->receiveNewCollaboratorNotifications()),
-            (!$collaboratorWasInvitedByFolderOwner && $folder->settings->receiveOnlyNewCollaboratorInvitedByMeNotifications()),
-            ($collaboratorWasInvitedByFolderOwner && !$folder->settings->receiveOnlyNewCollaboratorInvitedByMeNotifications())
+            ($folder->settings->notificationsAreDisabled() || $folder->settings->newCollaboratorNotificationIsDisabled()),
+            ($wasNotInvitedByFolderOwner && $folder->settings->onlyCollaboratorsInvitedByMeNotificationIsEnabled()),
+            ($wasInvitedByFolderOwner && $folder->settings->onlyCollaboratorsInvitedByMeNotificationIsDisabled())
         ])) > 0;
 
         if ($shouldNotSendNotification) {

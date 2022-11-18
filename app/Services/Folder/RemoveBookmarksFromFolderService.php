@@ -72,8 +72,8 @@ final class RemoveBookmarksFromFolderService
 
         if (
             $bookmarksWereRemovedByFolderOwner ||
-            !$folder->settings->receiveNotifications()  ||
-            !$folder->settings->receiveBookmarksRemovedNotifications()
+            $folder->settings->notificationsAreDisabled()  ||
+            $folder->settings->bookmarksRemovedNotificationIsDisabled()
         ) {
             return;
         }

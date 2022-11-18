@@ -6,7 +6,7 @@ namespace App\Http\Controllers\Folder;
 
 use App\Collections\TagsCollection;
 use App\DataTransferObjects\Builders\FolderBuilder;
-use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\DataTransferObjects\Builders\FolderSettingsBuilder as Builder;
 use App\DataTransferObjects\FolderSettings;
 use App\Http\Requests\CreateFolderRequest;
 use App\Repositories\Folder\CreateFolderRepository;
@@ -41,23 +41,23 @@ final class CreateFolderController
             return $default;
         }
 
-        return (new FolderSettingsBuilder())
-            ->enableNotifications($request->validated('settings.N-enable', $default->receiveNotifications()))
-            ->notifyOnNewCollaborator($request->validated('settings.N-newCollaborator', $default->receiveNewCollaboratorNotifications()))
-            ->notifyOnFolderUpdate($request->validated('settings.N-updated', $default->receiveNewUpdateNotifications()))
-            ->notifyOnNewBookmarks($request->validated('settings.N-newBookmarks', $default->receiveNewBookmarksNotifications()))
-            ->notifyOnBookmarksRemoved($request->validated('settings.N-bookmarkDelete', $default->receiveBookmarksRemovedNotifications()))
-            ->notifyOnCollaboratorExit($request->validated('settings.N-collaboratorExit', $default->receiveCollaboratorExitNotifications()))
-            ->notifyOnNewCollaboratorOnlyInvitedByMe(
+        return (new Builder())
+            ->enableNotifications($request->validated('settings.N-enable', $default->notificationsAreEnabled()))
+            ->enableNewCollaboratorNotification($request->validated('settings.N-newCollaborator', $default->newCollaboratorNotificationIsEnabled()))
+            ->enableFolderUpdatedNotification($request->validated('settings.N-updated', $default->folderUpdatedNotificationIsEnabled()))
+            ->enableNewBookmarksNotification($request->validated('settings.N-newBookmarks', $default->newBookmarksNotificationIsEnabled()))
+            ->enableBookmarksRemovedNotification($request->validated('settings.N-bookmarkDelete', $default->bookmarksRemovedNotificationIsEnabled()))
+            ->enableCollaboratorExitNotification($request->validated('settings.N-collaboratorExit', $default->collaboratorExitNotificationIsEnabled()))
+            ->enableOnlyCollaboratorsInvitedByMeNotification(
                 $request->validated(
                     'settings.N-onlyNewCollaboratorsByMe',
-                    $default->receiveOnlyNewCollaboratorInvitedByMeNotifications()
+                    $default->onlyCollaboratorsInvitedByMeNotificationIsEnabled()
                 )
             )
-            ->notifyOnCollaboratorExitOnlyWhenHasWritePermission(
+            ->enableOnlyCollaboratorWithWritePermissionNotification(
                 $request->validated(
                     'settings.N-collaboratorExitOnlyHasWritePermission',
-                    $default->receiveCollaboratorExitNotificationsWhenHasWritePermission()
+                    $default->onlyCollaboratorWithWritePermissionNotificationIsEnabled()
                 )
             )
             ->build();

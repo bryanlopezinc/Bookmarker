@@ -480,7 +480,7 @@ class AddBookmarksToFolderTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $collaborator->id])->pluck('id');
         $folder = FolderFactory::new()
-            ->setting(fn (FolderSettingsBuilder $b) => $b->enableNotifications(false))
+            ->setting(fn (FolderSettingsBuilder $b) => $b->disableNotifications())
             ->create(['user_id' => $folderOwner->id]);
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
@@ -500,7 +500,7 @@ class AddBookmarksToFolderTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $collaborator->id])->pluck('id');
         $folder = FolderFactory::new()
-            ->setting(fn (FolderSettingsBuilder $b) => $b->notifyOnNewBookmarks(false))
+            ->setting(fn (FolderSettingsBuilder $b) => $b->disableNewBookmarksNotification())
             ->create(['user_id' => $folderOwner->id]);
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();

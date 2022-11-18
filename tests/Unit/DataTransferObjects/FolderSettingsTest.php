@@ -148,8 +148,8 @@ class FolderSettingsTest extends TestCase
         $this->expectExceptionCode(1778);
 
         (new FolderSettingsBuilder())
-            ->notifyOnNewCollaborator(false)
-            ->notifyOnNewCollaboratorOnlyInvitedByMe(true)
+            ->disableNewCollaboratorNotification()
+            ->enableOnlyCollaboratorsInvitedByMeNotification()
             ->build();
     }
 
@@ -158,8 +158,8 @@ class FolderSettingsTest extends TestCase
         $this->expectExceptionCode(1778);
 
         (new FolderSettingsBuilder())
-            ->notifyOnCollaboratorExit(false)
-            ->notifyOnCollaboratorExitOnlyWhenHasWritePermission(true)
+            ->disableCollaboratorExitNotification()
+            ->enableOnlyCollaboratorWithWritePermissionNotification()
             ->build();
     }
 

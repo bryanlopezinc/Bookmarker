@@ -31,9 +31,7 @@ final class FolderFactory extends Factory
 
     public function public(): self
     {
-        return $this->state([
-            'is_public' => true,
-        ]);
+        return $this->state(['is_public' => true]);
     }
 
     /**

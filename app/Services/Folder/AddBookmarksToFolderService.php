@@ -103,8 +103,8 @@ final class AddBookmarksToFolderService
 
         if (
             $bookmarksWereAddedByFolderOwner ||
-            !$folder->settings->receiveNotifications()  ||
-            !$folder->settings->receiveNewBookmarksNotifications()
+            $folder->settings->notificationsAreDisabled()  ||
+            $folder->settings->newBookmarksNotificationIsDisabled()
         ) {
             return;
         }

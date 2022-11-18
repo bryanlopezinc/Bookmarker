@@ -123,8 +123,8 @@ final class UpdateFolderService
 
         if (
             $folderWasUpdatedByOwner ||
-            !$original->settings->receiveNotifications() ||
-            !$original->settings->receiveNewUpdateNotifications()
+            $original->settings->notificationsAreDisabled() ||
+            $original->settings->folderUpdatedNotificationIsDisabled()
         ) {
             return;
         }

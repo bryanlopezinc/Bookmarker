@@ -153,6 +153,11 @@ final class FolderSettings
         return $this->get('notifications.collaboratorExit.notify');
     }
 
+    public function collaboratorExitNotificationIsDisabled(): bool
+    {
+        return !$this->collaboratorExitNotificationIsEnabled();
+    }
+
     /**
      * Notify user when collaborator leaves IF the collaborator had any write permission
      */

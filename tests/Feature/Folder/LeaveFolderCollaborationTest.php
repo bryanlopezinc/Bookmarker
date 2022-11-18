@@ -9,9 +9,11 @@ use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use App\DataTransferObjects\Builders\FolderSettingsBuilder as SettingsBuilder;
 
 class LeaveFolderCollaborationTest extends TestCase
 {
@@ -228,5 +230,101 @@ class LeaveFolderCollaborationTest extends TestCase
             'folder_id' => $folder->id,
             'exited_by' => $collaborator->id,
         ]);
+    }
+
+    public function testWillNotNotifyFolderOwner_whenNotificationsAreDisabled(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()
+            ->setting(fn (SettingsBuilder $b) => $b->disableNotifications())
+            ->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
+        Notification::fake();
+
+        Passport::actingAs($collaborator);
+        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
+
+        Notification::assertNothingSent();
+    }
+
+    public function testWillNotNotifyFolderOwner_whenNotificationsAreDisabled_andCollaboratorHasWritePermission(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()
+            ->setting(fn (SettingsBuilder $b) => $b->disableNotifications())
+            ->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
+        Notification::fake();
+
+        Passport::actingAs($collaborator);
+        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
+
+        Notification::assertNothingSent();
+    }
+
+    public function testWillNotNotifyFolderOwner_whenCollaboratorExitNotificationsAreDisabled(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()
+            ->setting(fn (SettingsBuilder $b) => $b->disableCollaboratorExitNotification())
+            ->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
+        Notification::fake();
+
+        Passport::actingAs($collaborator);
+        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
+
+        Notification::assertNothingSent();
+    }
+
+    public function testWillNotNotifyFolderOwner_whenCollaboratorExitNotificationsAreDisabled_andCollaboratorHasWritePermission(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()
+            ->setting(fn (SettingsBuilder $b) => $b->disableCollaboratorExitNotification())
+            ->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
+        Notification::fake();
+
+        Passport::actingAs($collaborator);
+        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
+
+        Notification::assertNothingSent();
+    }
+
+    public function testWillNotNotifyFolderOwner_whenCollaboratorDoesNotHaveWritePermission_and_onlyWhenCollaboratorHasWritePermissionNotificationIsEnabled(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()
+            ->setting(fn (SettingsBuilder $b) => $b->enableOnlyCollaboratorWithWritePermissionNotification())
+            ->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->viewBookmarksPermission()->create();
+        Notification::fake();
+
+        Passport::actingAs($collaborator);
+        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
+
+        Notification::assertNothingSent();
+    }
+
+    public function testWillNotifyFolderOwner_whenCollaboratorHasWritePermission_and_onlyWhenCollaboratorHasWritePermissionNotificationIsEnabled(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()
+            ->setting(fn (SettingsBuilder $b) => $b->enableOnlyCollaboratorWithWritePermissionNotification())
+            ->create(['user_id' => $folderOwner->id]);
+
+        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->removeBookmarksPermission()->create();
+        Notification::fake();
+
+        Passport::actingAs($collaborator);
+        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
+
+        Notification::assertTimesSent(1, \App\Notifications\CollaboratorExitNotification::class);
     }
 }

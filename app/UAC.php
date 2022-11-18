@@ -152,6 +152,11 @@ final class UAC
         return $this->hasPermissionTo(Model::UPDATE_fOLDER);
     }
 
+    public function hasOnlyReadPermission(): bool
+    {
+        return $this->hasPermissionTo(Model::VIEW_BOOKMARKS) && count($this->permissions) === 1;
+    }
+
     private function hasPermissionTo(string $action): bool
     {
         return in_array($action, $this->permissions, true);

@@ -10,6 +10,7 @@ use App\Exceptions\HttpException;
 use App\Notifications\CollaboratorExitNotification;
 use App\QueryColumns\FolderAttributes;
 use App\Repositories\Folder\FolderPermissionsRepository;
+use App\UAC;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 
@@ -23,22 +24,21 @@ final class LeaveFolderCollaborationService
 
     public function leave(ResourceID $folderID): void
     {
-        $folder = $this->folderRepository->find($folderID, FolderAttributes::only('id,user_id'));
+        $folder = $this->folderRepository->find($folderID, FolderAttributes::only('id,user_id,settings'));
+        $collaboratorPermissions = $this->permissionsRepository->getUserAccessControls($collaboratorID = UserID::fromAuthUser(), $folderID);
 
-        $this->ensureCollaboratorDoesNotOwnFolder($collaboratorID = UserID::fromAuthUser(), $folder);
+        $this->ensureCollaboratorDoesNotOwnFolder($collaboratorID, $folder);
 
-        $this->ensureCollaboratorHasPriorAccessToFolder($collaboratorID, $folderID);
+        $this->ensureCollaboratorHasAccessToFolder($collaboratorPermissions);
 
         $this->permissionsRepository->removeCollaborator($collaboratorID, $folderID);
 
-        $this->notifyFolderOwner($collaboratorID, $folder);
+        $this->notifyFolderOwner($collaboratorID, $folder, $collaboratorPermissions);
     }
 
-    private function ensureCollaboratorHasPriorAccessToFolder(UserID $collaboratorID, ResourceID $folderID): void
+    private function ensureCollaboratorHasAccessToFolder(UAC $folderUAC): void
     {
-        $isNotACollaborator = $this->permissionsRepository->getUserAccessControls($collaboratorID, $folderID)->isEmpty();
-
-        if ($isNotACollaborator) {
+        if ($folderUAC->isEmpty()) {
             throw HttpException::notFound([
                 'message' => 'User not a collaborator'
             ]);
@@ -54,8 +54,18 @@ final class LeaveFolderCollaborationService
         }
     }
 
-    private function notifyFolderOwner(UserID $collaboratorThatLeft, Folder $folder): void
+    private function notifyFolderOwner(UserID $collaboratorThatLeft, Folder $folder, UAC $collaboratorPermissions): void
     {
+        $folderNotificationSettings = $folder->settings;
+
+        if (
+            $folderNotificationSettings->notificationsAreDisabled() ||
+            $folderNotificationSettings->collaboratorExitNotificationIsDisabled() ||
+            ($collaboratorPermissions->hasOnlyReadPermission() && $folderNotificationSettings->onlyCollaboratorWithWritePermissionNotificationIsEnabled())
+        ) {
+            return;
+        }
+
         (new \App\Models\User(['id' => $folder->ownerID->value()]))->notify(
             new CollaboratorExitNotification($folder->folderID, $collaboratorThatLeft)
         );

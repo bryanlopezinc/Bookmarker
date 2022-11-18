@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Folder;
+namespace Tests\Feature;
 
 use App\Notifications\NewCollaboratorNotification;
 use App\ValueObjects\ResourceID;

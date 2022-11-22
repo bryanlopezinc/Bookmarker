@@ -313,6 +313,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
     public function testWillNotReturnStaleData(): void
     {
         cache()->setDefaultDriver('redis');
+        $this->artisan('cache:clear')->run();
 
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -413,10 +414,10 @@ class RemoveBookmarksFromFolderTest extends TestCase
 
         $notificationData = DatabaseNotification::query()->where('notifiable_id', $folderOwner->id)->sole(['data'])->data;
 
-        $this->assertEquals($folderID, $notificationData['folder_id']);
+        $this->assertEquals($folderID, $notificationData['removed_from_folder']);
         $this->assertEquals($collaborator->id, $notificationData['removed_by']);
 
-        foreach ($notificationData['bookmarks'] as $bookmarkID) {
+        foreach ($notificationData['bookmarks_removed'] as $bookmarkID) {
             $this->assertTrue($bookmarkIDs->contains($bookmarkID));
         }
     }

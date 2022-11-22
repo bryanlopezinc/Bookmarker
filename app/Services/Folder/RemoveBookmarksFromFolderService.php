@@ -17,13 +17,15 @@ use App\Repositories\Folder\FolderPermissionsRepository;
 use App\ValueObjects\UserID;
 use Symfony\Component\HttpKernel\Exception\HttpException as SymfonyHttpException;
 use App\Notifications\BookmarksRemovedFromFolderNotification as Notification;
+use App\Repositories\NotificationRepository;
 
 final class RemoveBookmarksFromFolderService
 {
     public function __construct(
         private FolderRepositoryInterface $repository,
         private FolderBookmarkRepository $folderBookmarks,
-        private FolderPermissionsRepository $permissions
+        private FolderPermissionsRepository $permissions,
+        private NotificationRepository $notifications
     ) {
     }
 
@@ -78,6 +80,6 @@ final class RemoveBookmarksFromFolderService
             return;
         }
 
-        (new \App\Models\User(['id' => $folder->ownerID->value()]))->notify($notification);
+        $this->notifications->notify($folder->ownerID, $notification);
     }
 }

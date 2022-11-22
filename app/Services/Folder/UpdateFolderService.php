@@ -22,13 +22,15 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Symfony\Component\HttpKernel\Exception\HttpException as SymfonyHttpException;
 use App\Notifications\FolderUpdatedNotification as Notification;
+use App\Repositories\NotificationRepository;
 
 final class UpdateFolderService
 {
     public function __construct(
         private FolderRepositoryInterface $folderRepository,
         private FolderRepository $updateFolderRepository,
-        private FolderPermissionsRepository $permissions
+        private FolderPermissionsRepository $permissions,
+        private NotificationRepository $notifications
     ) {
     }
 
@@ -55,11 +57,11 @@ final class UpdateFolderService
         try {
             (new EnsureAuthorizedUserOwnsResource)($folder);
         } catch (SymfonyHttpException $e) {
-            $collaboratorHasUpdateFolderPermission = $this->permissions
+            $hasUpdateFolderPermission = $this->permissions
                 ->getUserAccessControls(UserID::fromAuthUser(), $folder->folderID)
                 ->canUpdateFolder();
 
-            if (!$collaboratorHasUpdateFolderPermission || $request->has('is_public')) {
+            if (!$hasUpdateFolderPermission || $request->has('is_public')) {
                 throw $e;
             }
         }
@@ -129,6 +131,6 @@ final class UpdateFolderService
             return;
         }
 
-        (new \App\Models\User(['id' => $original->ownerID->value()]))->notify($notification);
+        $this->notifications->notify($original->ownerID, $notification);
     }
 }

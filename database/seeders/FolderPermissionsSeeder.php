@@ -32,11 +32,7 @@ class FolderPermissionsSeeder extends Seeder
                 'name' => $permission,
                 'created_at' => now()
             ])
-            ->tap(function (Collection $permissions) {
-                if ($permissions->isEmpty()) {
-                    return;
-                }
-
+            ->whenNotEmpty(function (Collection $permissions) {
                 FolderPermission::insert($permissions->all());
             });
     }

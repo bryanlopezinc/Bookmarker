@@ -4,20 +4,24 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects;
 
+use App\Exceptions\InvalidJsonException;
+use App\Utils\JsonValidator;
 use Exception;
 use Illuminate\Support\Arr;
-use JsonSchema\Validator;
 
 final class FolderSettings
 {
-    private const VERSIONS = ['1.0.0'];
+    /**
+     * The jsonSchema that will be used to validate the folder settings.
+     */
+    private static string $jsonSchema = '';
 
     /**
      * @param array<string,string|array|bool> $settings
      */
     public function __construct(private readonly array $settings)
     {
-        $this->validate();
+        $this->ensureIsValid();
     }
 
     public static function default(): self
@@ -41,22 +45,30 @@ final class FolderSettings
         ]);
     }
 
-    private function validate(): void
+    private function ensureIsValid(): void
     {
-        $validator = new Validator;
-        $settings = json_decode(json_encode($this->settings));
-
-        $validator->validate($settings, json_decode(file_get_contents(base_path('database/JsonSchema/folder_settings_1.0.0.json'))));
-
-        if (!$validator->isValid()) {
-            throw new Exception('The given settings is invalid. errors : ' . json_encode($validator->getErrors(), JSON_PRETTY_PRINT), 1777);
-        }
-
-        if (!in_array($this->settings['version'], self::VERSIONS, true)) {
-            throw new Exception('The given settings version is invalid.', 1779);
+        try {
+            (new JsonValidator)->validate($this->settings, $this->getSchema());
+        } catch (InvalidJsonException $e) {
+            throw new Exception($e->getMessage(), 1777);
         }
 
         $this->ensureHasValidState();
+    }
+
+    private function getSchema(): string
+    {
+        if (!empty(static::$jsonSchema)) {
+            return static::$jsonSchema;
+        }
+
+        $schema = file_get_contents(base_path('database/JsonSchema/folder_settings_1.0.0.json'));
+
+        if ($schema === false) {
+            throw new \Exception('could not get schema contents');
+        }
+
+        return static::$jsonSchema = $schema;
     }
 
     private function ensureHasValidState(): void

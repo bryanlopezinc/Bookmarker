@@ -19,6 +19,7 @@ use App\ValueObjects\UserID;
 use Illuminate\Http\Request;
 use App\Cache\InviteTokensStore as Payload;
 use App\Notifications\NewCollaboratorNotification as Notification;
+use App\Repositories\NotificationRepository;
 use App\ValueObjects\Uuid;
 
 final class AcceptFolderCollaborationInviteService
@@ -27,7 +28,7 @@ final class AcceptFolderCollaborationInviteService
         private FolderRepositoryInterface $folderRepository,
         private UserRepository $userRepository,
         private FolderPermissionsRepository $permissions,
-        private InviteTokensStore $inviteTokensStore
+        private InviteTokensStore $inviteTokensStore,
     ) {
     }
 
@@ -60,17 +61,17 @@ final class AcceptFolderCollaborationInviteService
 
     private function extractPermissions(array $invitationData): UAC
     {
-        $permissionsCollaboratorWillHaveByDefault = UAC::fromArray(['read']);
+        $defaultPermissions = UAC::fromArray(['read']);
 
         $permissionsSetByFolderOwner = UAC::fromUnSerialized($invitationData[Payload::PERMISSIONS]);
 
         if ($permissionsSetByFolderOwner->isEmpty()) {
-            return $permissionsCollaboratorWillHaveByDefault;
+            return $defaultPermissions;
         }
 
         return new UAC(
             collect($permissionsSetByFolderOwner->permissions)
-                ->merge($permissionsCollaboratorWillHaveByDefault->permissions)
+                ->merge($defaultPermissions->permissions)
                 ->unique()
                 ->all()
         );
@@ -90,9 +91,9 @@ final class AcceptFolderCollaborationInviteService
 
     private function ensureInvitationHasNotBeenAccepted(UserID $inviteeID, Folder $folder): void
     {
-        $userHasAnyAccessToFolder = $this->permissions->getUserAccessControls($inviteeID, $folder->folderID)->isNotEmpty();
+        $isAlreadyACollaborator = $this->permissions->getUserAccessControls($inviteeID, $folder->folderID)->isNotEmpty();
 
-        if ($userHasAnyAccessToFolder) {
+        if ($isAlreadyACollaborator) {
             throw HttpException::conflict([
                 'message' => 'Invitation already accepted'
             ]);
@@ -115,6 +116,6 @@ final class AcceptFolderCollaborationInviteService
             return;
         }
 
-        (new \App\Models\User(['id' => $folder->ownerID->value()]))->notify($notification);
+        (new NotificationRepository)->notify($folder->ownerID, $notification);
     }
 }

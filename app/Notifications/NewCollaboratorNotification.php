@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
+use App\Enums\NotificationType;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -12,9 +13,7 @@ use Illuminate\Bus\Queueable;
 
 final class NewCollaboratorNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
-
-    public const TYPE = 'collaboratorAddedToFolder';
+    use Queueable, FormatDatabaseNotification;
 
     public function __construct(
         private UserID $newCollaboratorID,
@@ -40,15 +39,16 @@ final class NewCollaboratorNotification extends Notification implements ShouldQu
      */
     public function toDatabase($notifiable): array
     {
-        return [
-            'added_by' => $this->addedByCollaboratorID->value(),
-            'folder_id' => $this->folderID->value(),
+        return $this->formatNotificationData([
+            'N-type'=> $this->databaseType(),
+            'added_by_collaborator' => $this->addedByCollaboratorID->value(),
+            'added_to_folder' => $this->folderID->value(),
             'new_collaborator_id' => $this->newCollaboratorID->value()
-        ];
+        ]);
     }
 
     public function databaseType(): string
     {
-        return self::TYPE;
+        return NotificationType::NEW_COLLABORATOR->value;
     }
 }

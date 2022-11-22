@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Illuminate\Testing\Assert as PHPUnit;
 
 class UpdateFolderTest extends TestCase
 {
@@ -502,8 +503,8 @@ class UpdateFolderTest extends TestCase
 
         $notificationData = DatabaseNotification::query()->where('notifiable_id', $folder->user_id)->sole(['data'])->data;
 
-        $this->assertEquals($notificationData, [
-            'folder_id' => $folder->id,
+        PHPUnit::assertArraySubset([
+            'folder_updated' => $folder->id,
             'updated_by' => $collaborator->id,
             'changes' => [
                 'name' => [
@@ -519,7 +520,7 @@ class UpdateFolderTest extends TestCase
                     'to' => $newTags
                 ]
             ]
-        ]);
+        ], $notificationData);
     }
 
     public function testWillNotSendNotificationWhenUpdateWasPerformedByFolderOwner(): void

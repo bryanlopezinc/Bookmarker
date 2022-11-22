@@ -7,10 +7,10 @@ namespace App\Http\Resources\Notifications;
 use App\DataTransferObjects\Bookmark;
 use App\DataTransferObjects\Folder;
 use App\Contracts\TransformsNotificationInterface;
+use App\DataTransferObjects\DatabaseNotification;
 use App\DataTransferObjects\User;
 use App\Repositories\FetchNotificationResourcesRepository as Repository;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Notifications\DatabaseNotification;
 
 final class BookmarksAddedToFolderNotificationResource extends JsonResource implements TransformsNotificationInterface
 {
@@ -30,18 +30,18 @@ final class BookmarksAddedToFolderNotificationResource extends JsonResource impl
         return [
             'type' => 'BookmarksAddedToFolderNotification',
             'attributes' => [
-                'id' => $this->notification->id,
+                'id' => $this->notification->id->value,
                 'collaborator_exists' => $collaborator !== null,
                 'folder_exists' => $folder !== null,
                 'bookmarks_count' => count($bookmarks),
                 'by_collaborator' => $this->when($collaborator !== null, fn () => [
-                    'id' => $collaborator->id->value(),
-                    'first_name' => $collaborator->firstName->value,
-                    'last_name' => $collaborator->lastName->value
+                    'id' => $collaborator->id->value(), // @phpstan-ignore-line
+                    'first_name' => $collaborator->firstName->value, // @phpstan-ignore-line
+                    'last_name' => $collaborator->lastName->value // @phpstan-ignore-line
                 ]),
                 'folder' => $this->when($folder !== null, fn () => [
-                    'name' => $folder->name->safe(),
-                    'id' => $folder->folderID->value()
+                    'name' => $folder->name->safe(), // @phpstan-ignore-line
+                    'id' => $folder->folderID->value() // @phpstan-ignore-line
                 ]),
                 'bookmarks' => array_map(fn (Bookmark $bookmark) => [
                     'title' => $bookmark->title->safe()
@@ -55,12 +55,12 @@ final class BookmarksAddedToFolderNotificationResource extends JsonResource impl
      */
     private function getCollaborator(): ?User
     {
-        return $this->repository->findUserByID($this->notification->data['added_by']);
+        return $this->repository->findUserByID($this->notification->notificationData['added_by']);
     }
 
     private function getFolder(): ?Folder
     {
-        return $this->repository->findFolderByID($this->notification->data['folder_id']);
+        return $this->repository->findFolderByID($this->notification->notificationData['added_to_folder']);
     }
 
     /**
@@ -68,7 +68,7 @@ final class BookmarksAddedToFolderNotificationResource extends JsonResource impl
      */
     private function getBookmarks(): array
     {
-        return $this->repository->findBookmarksByIDs($this->notification->data['bookmarks']);
+        return $this->repository->findBookmarksByIDs($this->notification->notificationData['bookmarks_added_to_folder']);
     }
 
     public function toJsonResource(): JsonResource

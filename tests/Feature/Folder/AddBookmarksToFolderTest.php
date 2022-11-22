@@ -113,10 +113,7 @@ class AddBookmarksToFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarkIDs = BookmarkFactory::new()->count(10)->create([
-            'user_id' => $user->id
-        ])->pluck('id');
-
+        $bookmarkIDs = BookmarkFactory::new()->count(10)->create(['user_id' => $user->id])->pluck('id');
         $folderID = FolderFactory::new()->create([
             'user_id' => $user->id,
             'created_at' => $createdAt = now()->yesterday(),
@@ -128,13 +125,15 @@ class AddBookmarksToFolderTest extends TestCase
             'folder' => $folderID,
         ])->assertCreated();
 
-        $bookmarkIDs->each(function (int $bookmarkID) use ($folderID) {
-            $this->assertDatabaseHas(FolderBookmark::class, [
-                'bookmark_id' => $bookmarkID,
-                'folder_id' => $folderID,
-                'is_public' => true
-            ]);
-        });
+        $folderBookmarksIDs = FolderBookmark::query()
+            ->where('folder_id', $folderID)
+            ->get('bookmark_id')
+            ->pluck('bookmark_id')
+            ->sort()
+            ->values()
+            ->all();
+
+        $this->assertEquals($folderBookmarksIDs, $bookmarkIDs->sort()->values()->all());
 
         $this->assertDatabaseHas(FolderBookmarksCount::class, [
             'folder_id' => $folderID,
@@ -180,10 +179,10 @@ class AddBookmarksToFolderTest extends TestCase
 
         $notificationData = DatabaseNotification::query()->where('notifiable_id', $folderOwner->id)->sole(['data'])->data;
 
-        $this->assertEquals($folder->id, $notificationData['folder_id']);
+        $this->assertEquals($folder->id, $notificationData['added_to_folder']);
         $this->assertEquals($collaborator->id, $notificationData['added_by']);
 
-        foreach ($notificationData['bookmarks'] as $bookmarkID) {
+        foreach ($notificationData['bookmarks_added_to_folder'] as $bookmarkID) {
             $this->assertTrue($bookmarks->contains($bookmarkID));
         }
     }
@@ -425,6 +424,7 @@ class AddBookmarksToFolderTest extends TestCase
     public function testWillNotReturnStaleData(): void
     {
         cache()->setDefaultDriver('redis');
+        $this->artisan('cache:clear')->run();
 
         Passport::actingAs($user = UserFactory::new()->create());
 

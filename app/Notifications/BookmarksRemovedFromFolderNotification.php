@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Notifications;
 
 use App\Collections\ResourceIDsCollection;
+use App\Enums\NotificationType;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,9 +14,7 @@ use Illuminate\Bus\Queueable;
 
 final class BookmarksRemovedFromFolderNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
-
-    public const TYPE = 'bookmarksRemovedFromFolder';
+    use Queueable, FormatDatabaseNotification;
 
     public function __construct(
         private ResourceIDsCollection $bookmarkIDs,
@@ -41,15 +40,16 @@ final class BookmarksRemovedFromFolderNotification extends Notification implemen
      */
     public function toDatabase($notifiable): array
     {
-        return [
-            'bookmarks' => $this->bookmarkIDs->asIntegers()->all(),
-            'folder_id' => $this->folderID->value(),
+        return $this->formatNotificationData([
+            'N-type' => $this->databaseType(),
+            'bookmarks_removed' => $this->bookmarkIDs->asIntegers()->all(),
+            'removed_from_folder' => $this->folderID->value(),
             'removed_by' => $this->collaboratorID->value()
-        ];
+        ]);
     }
 
     public function databaseType(): string
     {
-        return self::TYPE;
+        return NotificationType::BOOKMARKS_REMOVED_FROM_FOLDER->value;
     }
 }

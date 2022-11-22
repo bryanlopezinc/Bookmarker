@@ -10,6 +10,7 @@ use App\Exceptions\HttpException;
 use App\Notifications\CollaboratorExitNotification;
 use App\QueryColumns\FolderAttributes;
 use App\Repositories\Folder\FolderPermissionsRepository;
+use App\Repositories\NotificationRepository;
 use App\UAC;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
@@ -18,7 +19,8 @@ final class LeaveFolderCollaborationService
 {
     public function __construct(
         private FolderRepositoryInterface $folderRepository,
-        private FolderPermissionsRepository $permissionsRepository
+        private FolderPermissionsRepository $permissionsRepository,
+        private NotificationRepository $notifications
     ) {
     }
 
@@ -66,7 +68,8 @@ final class LeaveFolderCollaborationService
             return;
         }
 
-        (new \App\Models\User(['id' => $folder->ownerID->value()]))->notify(
+        $this->notifications->notify(
+            $folder->ownerID,
             new CollaboratorExitNotification($folder->folderID, $collaboratorThatLeft)
         );
     }

@@ -17,6 +17,7 @@ use Illuminate\Testing\Fluent\AssertableJson;
 use App\Notifications\FolderUpdatedNotification;
 use App\Collections\ResourceIDsCollection as IDs;
 use App\DataTransferObjects\Builders\FolderBuilder;
+use App\Enums\NotificationType;
 use App\Notifications\BookmarksAddedToFolderNotification;
 use App\Notifications\NewCollaboratorNotification;
 use App\Notifications\BookmarksRemovedFromFolderNotification;
@@ -449,13 +450,20 @@ class FetchUserNotificationsTest extends TestCase
     public function testWillFetchOnlyUnReadNotifications(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
+        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+
+        $data = (new FolderUpdatedNotification(
+            FolderBuilder::fromModel($folder)->setName('foo')->setTags([])->build(),
+            FolderBuilder::fromModel($folder)->setName('baz')->setTags([])->build(),
+            new UserID(UserFactory::new()->create()->id)
+        ))->toDatabase($user);
 
         DatabaseNotification::query()->create([
             'id' => Str::uuid()->toString(),
-            'type' => FolderUpdatedNotification::TYPE,
+            'type' => NotificationType::FOLDER_UPDATED,
             'notifiable_type' => 'user',
             'notifiable_id' => $user->id,
-            'data' => [],
+            'data' => $data,
             'read_at' => now()
         ]);
 

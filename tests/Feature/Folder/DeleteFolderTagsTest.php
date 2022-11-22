@@ -96,6 +96,7 @@ class DeleteFolderTagsTest extends TestCase
     public function testWillNotReturnStaleData(): void
     {
         cache()->setDefaultDriver('redis');
+        $this->artisan('cache:clear')->run();
 
         Passport::actingAs($user = UserFactory::new()->create());
 

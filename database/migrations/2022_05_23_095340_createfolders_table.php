@@ -29,9 +29,7 @@ return new class extends Migration
 
         DB::unprepared(
             <<<SQL
-                ALTER TABLE folders ADD CONSTRAINT validate_folder_setting CHECK(
-                    JSON_SCHEMA_VALID('$json', settings)
-                )
+                ALTER TABLE folders ADD CONSTRAINT validate_folder_setting CHECK(JSON_SCHEMA_VALID('$json', settings))
             SQL
         );
     }

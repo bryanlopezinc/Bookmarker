@@ -10,6 +10,13 @@ use Tests\TestCase;
 
 class FolderSettingsTest extends TestCase
 {
+    public function testValid(): void
+    {
+        $this->expectNotToPerformAssertions();
+
+        FolderSettings::default();
+    }
+
     public function test_settings_must_be_valid(): void
     {
         $this->expectExceptionCode(1777);
@@ -169,15 +176,6 @@ class FolderSettingsTest extends TestCase
 
         (new FolderSettingsBuilder())
             ->version('major.2.beta')
-            ->build();
-    }
-
-    public function test_version_must_be_known(): void
-    {
-        $this->expectExceptionCode(1779);
-
-        (new FolderSettingsBuilder())
-            ->version('1.0.1')
             ->build();
     }
 }

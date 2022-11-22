@@ -6,10 +6,10 @@ namespace App\Http\Resources\Notifications;
 
 use App\DataTransferObjects\Folder;
 use App\Contracts\TransformsNotificationInterface;
+use App\DataTransferObjects\DatabaseNotification;
 use App\DataTransferObjects\User;
 use App\Repositories\FetchNotificationResourcesRepository as Repository;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Notifications\DatabaseNotification;
 
 final class NewCollaboratorNotificationResource extends JsonResource implements TransformsNotificationInterface
 {
@@ -29,23 +29,23 @@ final class NewCollaboratorNotificationResource extends JsonResource implements 
         return [
             'type' => 'CollaboratorAddedToFolderNotification',
             'attributes' => [
-                'id' => $this->notification->id,
+                'id' => $this->notification->id->value,
                 'collaborator_exists' => $collaborator !== null,
                 'folder_exists' => $folder !== null,
                 'new_collaborator_exists' => $newCollaborator !== null,
                 'collaborator' => $this->when($collaborator !== null, fn () => [
-                    'id' => $collaborator->id->value(),
-                    'first_name' => $collaborator->firstName->value,
-                    'last_name' => $collaborator->lastName->value
+                    'id' => $collaborator->id->value(), // @phpstan-ignore-line
+                    'first_name' => $collaborator->firstName->value, // @phpstan-ignore-line
+                    'last_name' => $collaborator->lastName->value // @phpstan-ignore-line
                 ]),
                 'folder' => $this->when($folder !== null, fn () => [
-                    'name' => $folder->name->safe(),
-                    'id' => $folder->folderID->value()
+                    'name' => $folder->name->safe(), // @phpstan-ignore-line
+                    'id' => $folder->folderID->value() // @phpstan-ignore-line
                 ]),
                 'new_collaborator' => $this->when($newCollaborator !== null, fn () => [
-                    'id' => $newCollaborator->id->value(),
-                    'first_name' => $newCollaborator->firstName->value,
-                    'last_name' => $newCollaborator->lastName->value
+                    'id' => $newCollaborator->id->value(), // @phpstan-ignore-line
+                    'first_name' => $newCollaborator->firstName->value, // @phpstan-ignore-line
+                    'last_name' => $newCollaborator->lastName->value // @phpstan-ignore-line
                 ]),
             ]
         ];
@@ -56,7 +56,7 @@ final class NewCollaboratorNotificationResource extends JsonResource implements 
      */
     private function addedByCollaborator(): ?User
     {
-        return $this->repository->findUserByID($this->notification->data['added_by']);
+        return $this->repository->findUserByID($this->notification->notificationData['added_by_collaborator']);
     }
 
     /**
@@ -64,12 +64,12 @@ final class NewCollaboratorNotificationResource extends JsonResource implements 
      */
     private function getNewCollaborator(): ?User
     {
-        return $this->repository->findUserByID($this->notification->data['new_collaborator_id']);
+        return $this->repository->findUserByID($this->notification->notificationData['new_collaborator_id']);
     }
 
     private function getFolder(): ?Folder
     {
-        return $this->repository->findFolderByID($this->notification->data['folder_id']);
+        return $this->repository->findFolderByID($this->notification->notificationData['added_to_folder']);
     }
 
     public function toJsonResource(): JsonResource

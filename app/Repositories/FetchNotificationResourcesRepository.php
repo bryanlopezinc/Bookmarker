@@ -6,8 +6,7 @@ namespace App\Repositories;
 
 use App\Collections\ResourceIDsCollection as IDs;
 use Illuminate\Support\Collection;
-use Illuminate\Notifications\DatabaseNotification;
-use App\DataTransferObjects\{Bookmark, User, Folder};
+use App\DataTransferObjects\{Bookmark, DatabaseNotification, User, Folder};
 use App\DataTransferObjects\Builders\FolderBuilder;
 use App\Models\Folder as FolderModel;
 use App\QueryColumns\BookmarkAttributes;
@@ -38,7 +37,12 @@ class FetchNotificationResourcesRepository
      * @var array<string>
      */
     private array $userIDKeys = [
-        'added_by', 'removed_by', 'new_collaborator_id', 'updated_by', 'exited_by'
+        'added_by_collaborator',
+        'removed_by',
+        'new_collaborator_id',
+        'updated_by',
+        'exited_by',
+        'added_by'
     ];
 
     /**
@@ -46,14 +50,22 @@ class FetchNotificationResourcesRepository
      *
      * @var array<string>
      */
-    private array $folderIDKeys = ['folder_id'];
+    private array $folderIDKeys = [
+        'added_to_folder',
+        'removed_from_folder',
+        'exited_from_folder',
+        'folder_updated'
+    ];
 
     /**
      * The key names in the notification data array used to store bookmark ids.
      *
      * @var array<string>
      */
-    private array $bookmarkIDKeys = ['bookmarks'];
+    private array $bookmarkIDKeys = [
+        'bookmarks_added_to_folder',
+        'bookmarks_removed',
+    ];
 
     /**
      * The folders retrieved from database.
@@ -92,7 +104,7 @@ class FetchNotificationResourcesRepository
     private function extractResourceIDsFromNotifications(Collection $notifications): void
     {
         $notifications->each(function (DatabaseNotification $notification) {
-            $data = $notification->data;
+            $data = $notification->notificationData->data;
 
             $this->setResourceIDs('userIDs', Arr::only($data, $this->userIDKeys));
             $this->setResourceIDs('folderIDs', Arr::only($data, $this->folderIDKeys));

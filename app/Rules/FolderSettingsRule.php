@@ -37,6 +37,8 @@ final class FolderSettingsRule implements RuleContract, DataAwareRule
     public function setData($data)
     {
         $this->data = $data;
+
+        return $this;
     }
 
     /**

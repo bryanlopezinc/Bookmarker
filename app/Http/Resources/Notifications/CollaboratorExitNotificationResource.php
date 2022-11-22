@@ -6,10 +6,10 @@ namespace App\Http\Resources\Notifications;
 
 use App\DataTransferObjects\Folder;
 use App\Contracts\TransformsNotificationInterface;
+use App\DataTransferObjects\DatabaseNotification;
 use App\DataTransferObjects\User;
 use App\Repositories\FetchNotificationResourcesRepository as Repository;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Notifications\DatabaseNotification;
 
 final class CollaboratorExitNotificationResource extends JsonResource implements TransformsNotificationInterface
 {
@@ -28,16 +28,16 @@ final class CollaboratorExitNotificationResource extends JsonResource implements
         return [
             'type' => 'CollaboratorExitNotification',
             'attributes' => [
-                'id' => $this->notification->id,
+                'id' => $this->notification->id->value,
                 'collaborator_exists' => $collaboratorThatLeft !== null,
                 'folder_exists' => $folder !== null,
                 'collaborator' => $this->when($collaboratorThatLeft !== null, fn () => [
-                    'first_name' => $collaboratorThatLeft->firstName->value,
-                    'last_name' => $collaboratorThatLeft->lastName->value
+                    'first_name' => $collaboratorThatLeft->firstName->value, // @phpstan-ignore-line
+                    'last_name' => $collaboratorThatLeft->lastName->value // @phpstan-ignore-line
                 ]),
                 'folder' => $this->when($folder !== null, fn () => [
-                    'name' => $folder->name->safe(),
-                    'id' => $folder->folderID->value()
+                    'name' => $folder->name->safe(), // @phpstan-ignore-line
+                    'id' => $folder->folderID->value() // @phpstan-ignore-line
                 ]),
             ]
         ];
@@ -45,12 +45,12 @@ final class CollaboratorExitNotificationResource extends JsonResource implements
 
     private function getCollaborator(): ?User
     {
-        return $this->repository->findUserByID($this->notification->data['exited_by']);
+        return $this->repository->findUserByID($this->notification->notificationData['exited_by']);
     }
 
     private function getFolder(): ?Folder
     {
-        return $this->repository->findFolderByID($this->notification->data['folder_id']);
+        return $this->repository->findFolderByID($this->notification->notificationData['exited_from_folder']);
     }
 
     public function toJsonResource(): JsonResource

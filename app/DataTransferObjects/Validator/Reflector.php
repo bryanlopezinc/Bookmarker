@@ -29,7 +29,7 @@ class Reflector
 
         return $attributes
             ->reject(fn (?ReflectionAttribute $a): bool => is_null($a))
-            ->map(fn (ReflectionAttribute $a): AfterDTOSetUpHookInterface => $a->newInstance())
+            ->map(fn (ReflectionAttribute $a): AfterDTOSetUpHookInterface => $a->newInstance()) // @phpstan-ignore-line
             ->all();
     }
 }

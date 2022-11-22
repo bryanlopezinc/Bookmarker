@@ -6,31 +6,61 @@ namespace App\Repositories;
 
 use App\PaginationData;
 use App\ValueObjects\UserID;
-use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Notifications\DatabaseNotification as NotificationModel;
 use Illuminate\Pagination\Paginator;
 use App\Contracts\TransformsNotificationInterface;
+use App\DataTransferObjects\Builders\DatabaseNotificationBuilder;
+use App\DataTransferObjects\DatabaseNotification;
+use App\Models\User;
 use App\ValueObjects\Uuid;
-use Illuminate\Support\Arr;
+use Illuminate\Notifications\Notification;
 
 final class NotificationRepository
 {
+    public function notify(UserID $userID, Notification $notification): void
+    {
+        $notifiable = new User(['id' => $userID->value()]);
+        $channels = (array)$notification->via($notifiable); // @phpstan-ignore-line
+
+        if (!in_array('database', $channels, true)) {
+            throw new \Exception('The notification must include a database channel');
+        }
+
+        $notifiable->notify($notification);
+    }
+
     /**
      * @return Paginator<TransformsNotificationInterface>
      */
     public function unread(UserID $userID, PaginationData $pagination): Paginator
     {
         /** @var Paginator */
-        $notifications = DatabaseNotification::select(['data', 'type', 'id'])
+        $notifications = NotificationModel::select(['data', 'type', 'id', 'notifiable_id'])
             ->unRead()
             ->where('notifiable_id', $userID->value())
             ->latest()
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
+
+        $notifications->setCollection($notifications->getCollection()->map($this->mapNotificationFn()));
 
         $notificationsResources = (new FetchNotificationResourcesRepository($notifications->getCollection()));
 
         return $notifications->setCollection(
             $notifications->getCollection()->map(new SelectNotificationObject($notificationsResources))
         );
+    }
+
+    private function mapNotificationFn(): \Closure
+    {
+        return function (NotificationModel $notification) {
+            return DatabaseNotificationBuilder::new()
+                ->id($notification->id)
+                ->type($notification->type)
+                ->notifiableID($notification->notifiable_id)
+                ->data($notification->data)
+                ->readAt($notification->read_at)
+                ->build();
+        };
     }
 
     /**
@@ -41,14 +71,17 @@ final class NotificationRepository
     {
         $ids = array_map(fn (Uuid $notificationID) => $notificationID->value, $notificationIDs);
 
-        return DatabaseNotification::query()->find($ids, ['read_at', 'notifiable_id', 'id'])->all();
+        return NotificationModel::query()
+            ->find($ids, ['read_at', 'notifiable_id', 'id', 'type', 'data'])
+            ->map($this->mapNotificationFn())
+            ->all();
     }
 
     /**
-     * @param array<DatabaseNotification> $notifications
+     * @param array<Uuid> $notificationIDs
      */
-    public function markAsRead(array $notifications): void
+    public function markAsRead(array $notificationIDs): void
     {
-        DatabaseNotification::whereIn('id', Arr::pluck($notifications, 'id'))->update(['read_at' => now()]);
+        NotificationModel::whereIn('id', collect($notificationIDs)->map(fn (Uuid $id) => $id->value))->update(['read_at' => now()]);
     }
 }

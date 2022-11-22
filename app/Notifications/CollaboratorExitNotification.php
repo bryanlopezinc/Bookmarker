@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
+use App\Enums\NotificationType;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -12,9 +13,7 @@ use Illuminate\Bus\Queueable;
 
 final class CollaboratorExitNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
-
-    public const TYPE = 'collaboratorExitedFolder';
+    use Queueable, FormatDatabaseNotification;
 
     public function __construct(private ResourceID $folderID, private UserID $collaboratorThatLeft)
     {
@@ -37,14 +36,15 @@ final class CollaboratorExitNotification extends Notification implements ShouldQ
      */
     public function toDatabase($notifiable): array
     {
-        return [
-            'folder_id' => $this->folderID->value(),
+        return $this->formatNotificationData([
+            'N-type' => $this->databaseType(),
+            'exited_from_folder' => $this->folderID->value(),
             'exited_by' => $this->collaboratorThatLeft->value()
-        ];
+        ]);
     }
 
     public function databaseType(): string
     {
-        return self::TYPE;
+        return NotificationType::COLLABORATOR_EXIT->value;
     }
 }

@@ -3,9 +3,11 @@
 namespace Tests\Unit\Notifications;
 
 use App\DataTransferObjects\Builders\FolderBuilder;
-use App\Notifications\FolderUpdatedNotification;
+use App\Notifications\FolderUpdatedNotification as Notification;
 use App\ValueObjects\UserID;
+use Database\Factories\UserFactory;
 use Tests\TestCase;
+use Illuminate\Testing\Assert as PHPUnit;
 
 class FolderUpdatedNotificationTest extends TestCase
 {
@@ -25,10 +27,10 @@ class FolderUpdatedNotificationTest extends TestCase
             ->setTags([])
             ->build();
 
-        $notification = new FolderUpdatedNotification($original, $updated, new UserID(33));
+        $notification = new Notification($original, $updated, new UserID(33));
 
-        $this->assertEquals($notification->toDatabase(''), [
-            'folder_id' => 30,
+        PHPUnit::assertArraySubset([
+            'folder_updated' => 30,
             'updated_by' => 33,
             'changes' => [
                 'name' => [
@@ -36,7 +38,7 @@ class FolderUpdatedNotificationTest extends TestCase
                     'to' => 'baz'
                 ]
             ]
-        ]);
+        ], $notification->toDatabase(''));
     }
 
     public function testWhenOnlyDescriptionWasUpdated(): void
@@ -55,10 +57,10 @@ class FolderUpdatedNotificationTest extends TestCase
             ->setTags([])
             ->build();
 
-        $notification = new FolderUpdatedNotification($original, $updated, new UserID(33));
+        $notification = new Notification($original, $updated, new UserID(33));
 
-        $this->assertEquals($notification->toDatabase(''), [
-            'folder_id' => 30,
+        PHPUnit::assertArraySubset([
+            'folder_updated' => 30,
             'updated_by' => 33,
             'changes' => [
                 'description' => [
@@ -66,7 +68,7 @@ class FolderUpdatedNotificationTest extends TestCase
                     'to' => 'new collection'
                 ]
             ]
-        ]);
+        ], $notification->toDatabase(''));
     }
 
     public function testWhenTagsWereAddedToAFolderWithoutTags(): void
@@ -85,10 +87,10 @@ class FolderUpdatedNotificationTest extends TestCase
             ->setTags(['foo', 'bar'])
             ->build();
 
-        $notification = new FolderUpdatedNotification($original, $updated, new UserID(33));
+        $notification = new Notification($original, $updated, new UserID(33));
 
-        $this->assertEquals($notification->toDatabase(''), [
-            'folder_id' => 30,
+        PHPUnit::assertArraySubset([
+            'folder_updated' => 30,
             'updated_by' => 33,
             'changes' => [
                 'tags' => [
@@ -96,7 +98,7 @@ class FolderUpdatedNotificationTest extends TestCase
                     'to' => 'foo,bar'
                 ]
             ]
-        ]);
+        ], $notification->toDatabase(''));
     }
 
     public function testWhenTagsWereAddedToAFolderWithTags(): void
@@ -115,10 +117,10 @@ class FolderUpdatedNotificationTest extends TestCase
             ->setTags(['foo', 'bar'])
             ->build();
 
-        $notification = new FolderUpdatedNotification($original, $updated, new UserID(33));
+        $notification = new Notification($original, $updated, new UserID(33));
 
-        $this->assertEquals($notification->toDatabase(''), [
-            'folder_id' => 30,
+        PHPUnit::assertArraySubset([
+            'folder_updated' => 30,
             'updated_by' => 33,
             'changes' => [
                 'tags' => [
@@ -126,6 +128,20 @@ class FolderUpdatedNotificationTest extends TestCase
                     'to' => 'foobar,foo,bar'
                 ]
             ]
-        ]);
+        ], $notification->toDatabase(''));
+    }
+
+    public function testFoldersMustContainChanges(): void
+    {
+        $this->expectExceptionCode(902);
+
+        $original = (new FolderBuilder)
+            ->setID(30)
+            ->setName('foo')
+            ->setDescription('stop using foo in your tests !!!')
+            ->setTags(['foobar'])
+            ->build();
+
+        (new Notification($original, $original, new UserID(33)))->toDatabase(UserFactory::new()->make());
     }
 }

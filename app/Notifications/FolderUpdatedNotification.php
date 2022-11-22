@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Notifications;
 
 use App\DataTransferObjects\Folder;
+use App\Enums\NotificationType;
 use App\ValueObjects\UserID;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
@@ -12,15 +13,10 @@ use Illuminate\Bus\Queueable;
 
 final class FolderUpdatedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, FormatDatabaseNotification;
 
-    public const TYPE = 'FolderUpdated';
-
-    public function __construct(
-        private Folder $original,
-        private Folder $updated,
-        private UserID $updatedBy
-    ) {
+    public function __construct(private Folder $original, private Folder $updated, private UserID $updatedBy)
+    {
         $this->afterCommit();
     }
 
@@ -40,15 +36,19 @@ final class FolderUpdatedNotification extends Notification implements ShouldQueu
      */
     public function toDatabase($notifiable): array
     {
-        return [
+        return $this->formatNotificationData([
+            'N-type' => $this->databaseType(),
             'updated_by' => $this->updatedBy->value(),
-            'folder_id' => $this->original->folderID->value(),
+            'folder_updated' => $this->original->folderID->value(),
             'changes' => $this->getChanges()
-        ];
+        ]);
     }
 
     private function getChanges(): array
     {
+        $initialTags = $this->original->tags->toStringCollection();
+        $updatedTags = $this->updated->tags->toStringCollection();
+
         $changes = [
             'name' => [
                 'from' => $this->original->name->safe(),
@@ -59,18 +59,19 @@ final class FolderUpdatedNotification extends Notification implements ShouldQueu
                 'to' => $this->updated->description->safe()
             ],
             'tags' => [
-                'from' => $this->original->tags->toStringCollection()->implode(','),
-                'to' => $this->original->tags->toStringCollection()->merge($this->updated->tags->toStringCollection())->implode(','),
+                'from' => $initialTags->implode(','),
+                'to' => $initialTags == $updatedTags ? $initialTags->implode(',') : $initialTags->merge($updatedTags)->implode(',')
             ]
         ];
 
-        return array_filter($changes, function (array $change) {
-            return $change['from'] !== $change['to'];
-        });
+        return collect($changes)
+            ->filter(fn (array $change) => $change['from'] !== $change['to'])
+            ->whenEmpty(fn () => throw new \Exception('No changes were found for folders', 902))
+            ->all();
     }
 
     public function databaseType(): string
     {
-        return self::TYPE;
+        return NotificationType::FOLDER_UPDATED->value;
     }
 }

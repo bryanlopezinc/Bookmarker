@@ -19,6 +19,7 @@ use App\Notifications\BookmarksAddedToFolderNotification as Notification;
 use App\QueryColumns\FolderAttributes as Attributes;
 use App\Repositories\Folder\FolderBookmarkRepository;
 use App\Repositories\Folder\FolderPermissionsRepository;
+use App\Repositories\NotificationRepository;
 use Illuminate\Support\Collection;
 use Symfony\Component\HttpKernel\Exception\HttpException as SymfonyHttpException;
 
@@ -28,7 +29,7 @@ final class AddBookmarksToFolderService
         private FolderRepositoryInterface $repository,
         private BookmarkRepository $bookmarksRepository,
         private FolderBookmarkRepository $folderBookmarks,
-        private FolderPermissionsRepository $permissions
+        private FolderPermissionsRepository $permissions,
     ) {
     }
 
@@ -109,6 +110,6 @@ final class AddBookmarksToFolderService
             return;
         }
 
-        (new \App\Models\User(['id' => $folder->ownerID->value()]))->notify($notification);
+        (new NotificationRepository)->notify($folder->ownerID, $notification);
     }
 }

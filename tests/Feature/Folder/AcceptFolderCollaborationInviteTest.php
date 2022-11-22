@@ -23,6 +23,7 @@ use Laravel\Passport\Database\Factories\ClientFactory;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder as SettingsBuilder;
+use Illuminate\Testing\Assert as PHPUnit;
 
 class AcceptFolderCollaborationInviteTest extends TestCase
 {
@@ -487,11 +488,11 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $notificationData = DatabaseNotification::query()->where('notifiable_id', $folder->user_id)->sole(['data'])->data;
 
-        $this->assertEquals($notificationData, [
+        PHPUnit::assertArraySubset([
             'new_collaborator_id' => $invitee->id,
-            'folder_id' => $folder->id,
-            'added_by' => $collaborator->id,
-        ]);
+            'added_to_folder' => $folder->id,
+            'added_by_collaborator' => $collaborator->id,
+        ], $notificationData);
     }
 
     public function testWillNotNotifyFolderOwnerWhenNotificationsIsDisabled(): void

@@ -12,6 +12,8 @@ use App\ValueObjects\ResourceID;
 
 final class UserBookmarksFilters extends DataTransferObject
 {
+    use Constructor;
+
     public readonly ResourceID $sourceID;
     public readonly bool $wantsOnlyBookmarksFromParticularSource;
     public readonly TagsCollection $tags;
@@ -21,18 +23,6 @@ final class UserBookmarksFilters extends DataTransferObject
     public readonly bool $hasSortCriteria;
     public readonly UserBookmarksSortCriteria $sortCriteria;
     public readonly bool $wantsBookmarksWithDeadLinks;
-
-    /**
-     * @param array<string, mixed> $attributes
-     */
-    public function __construct(protected array $attributes)
-    {
-        foreach ($this->attributes as $key => $value) {
-            $this->{$key} = $value;
-        }
-
-        parent::__construct();
-    }
 
     public static function fromRequest(FetchUserBookmarksRequest $request): self
     {

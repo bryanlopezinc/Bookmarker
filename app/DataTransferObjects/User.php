@@ -12,6 +12,8 @@ use App\ValueObjects\Username;
 
 final class User extends DataTransferObject
 {
+    use Constructor;
+
     public readonly UserID $id;
     public readonly Username $username;
     public readonly NonEmptyString $firstName;
@@ -22,16 +24,4 @@ final class User extends DataTransferObject
     public readonly PositiveNumber $favoritesCount;
     public readonly PositiveNumber $foldersCount;
     public readonly bool $hasVerifiedEmail;
-
-    /**
-     * @param array<string, mixed> $attributes
-     */
-    public function __construct(protected array $attributes)
-    {
-        foreach ($this->attributes as $key => $value) {
-            $this->{$key} = $value;
-        }
-
-        parent::__construct();
-    }
 }

@@ -4,29 +4,20 @@ declare(strict_types=1);
 
 namespace App\Readers;
 
+use App\DataTransferObjects\Constructor;
 use App\DataTransferObjects\DataTransferObject;
 use App\ValueObjects\Url;
 
 final class BookmarkMetaData extends DataTransferObject
 {
+    use Constructor;
+
     public readonly string|false $description;
     public readonly string|false $title;
     public readonly string|false $hostSiteName;
     public readonly Url|false $thumbnailUrl;
     public readonly Url|false $canonicalUrl;
     public readonly Url $resolvedUrl;
-
-    /**
-     * @param array<string, mixed> $attributes
-     */
-    public function __construct(protected array $attributes)
-    {
-        foreach ($this->attributes as $key => $value) {
-            $this->{$key} = $value;
-        }
-
-        parent::__construct();
-    }
 
     /**
      * @param array<string,mixed> $data

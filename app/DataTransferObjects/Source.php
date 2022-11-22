@@ -11,21 +11,11 @@ use Carbon\Carbon;
 
 final class Source extends DataTransferObject
 {
+    use Constructor;
+
     public readonly ResourceID $id;
     public readonly DomainName $domainName;
     public readonly SiteName $name;
     public readonly bool $nameHasBeenUpdated;
     public readonly Carbon $nameUpdatedAt;
-
-    /**
-     * @param array<string, mixed> $attributes
-     */
-    public function __construct(protected array $attributes)
-    {
-        foreach ($this->attributes as $key => $value) {
-            $this->{$key} = $value;
-        }
-
-        parent::__construct();
-    }
 }

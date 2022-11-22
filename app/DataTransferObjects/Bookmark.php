@@ -18,6 +18,8 @@ use Carbon\Carbon;
 #[EnsureValidTagsCount('MAX_BOOKMARKS_TAGS', 'tags')]
 final class Bookmark extends DataTransferObject implements BelongsToUserInterface
 {
+    use Constructor;
+
     public readonly ResourceID $id;
     public readonly BookmarkTitle $title;
     public readonly bool $hasCustomTitle;
@@ -40,18 +42,6 @@ final class Bookmark extends DataTransferObject implements BelongsToUserInterfac
     public readonly Carbon $resolvedAt;
     public readonly bool  $IsResolved;
     public readonly bool $hasDuplicates;
-
-    /**
-     * @param array<string, mixed> $attributes
-     */
-    public function __construct(protected array $attributes)
-    {
-        foreach ($this->attributes as $key => $value) {
-            $this->{$key} = $value;
-        }
-
-        parent::__construct();
-    }
 
     public function getOwnerID(): UserID
     {

@@ -17,6 +17,8 @@ use Carbon\Carbon;
 #[EnsureValidTagsCount('MAX_FOLDER_TAGS', 'tags')]
 final class Folder extends DataTransferObject implements BelongsToUserInterface
 {
+    use Constructor;
+    
     public readonly ResourceID $folderID;
     public readonly FolderName $name;
     public readonly UserID $ownerID;
@@ -27,18 +29,6 @@ final class Folder extends DataTransferObject implements BelongsToUserInterface
     public readonly bool $isPublic;
     public readonly TagsCollection $tags;
     public readonly FolderSettings $settings;
-
-    /**
-     * @param array<string, mixed> $attributes
-     */
-    public function __construct(protected array $attributes)
-    {
-        foreach ($this->attributes as $key => $value) {
-            $this->{$key} = $value;
-        }
-
-        parent::__construct();
-    }
 
     public function getOwnerID(): UserID
     {

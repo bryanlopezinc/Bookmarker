@@ -78,7 +78,7 @@ class UpdateFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         /** @var Folder */
-        $model = FolderFactory::new()->create(['user_id' => $user->id]);
+        $model = FolderFactory::new()->for($user)->create();
 
         $this->updateFolderResponse([
             'name' => $name = $this->faker->word,
@@ -99,7 +99,7 @@ class UpdateFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folderIDs = FolderFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
+        $folderIDs = FolderFactory::new()->count(5)->for($user)->create()->pluck('id');
 
         $this->updateFolderResponse([
             'is_public' => true,
@@ -145,9 +145,7 @@ class UpdateFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $this->updateFolderResponse([
             'is_public' => true,
@@ -163,7 +161,7 @@ class UpdateFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         /** @var Folder */
-        $model = FolderFactory::new()->create(['user_id' => $user->id]);
+        $model = FolderFactory::new()->for($user)->create();
 
         $this->updateFolderResponse([
             'description' => '',
@@ -184,7 +182,7 @@ class UpdateFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         /** @var Folder */
-        $model = FolderFactory::new()->create(['user_id' => $user->id]);
+        $model = FolderFactory::new()->for($user)->create();
 
         $this->updateFolderResponse([
             'is_public' => true,
@@ -206,7 +204,7 @@ class UpdateFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         /** @var Folder */
-        $model = FolderFactory::new()->create(['user_id' => $user->id]);
+        $model = FolderFactory::new()->for($user)->create();
 
         $this->updateFolderResponse([
             'description' => $description = $this->faker->sentence,
@@ -227,7 +225,7 @@ class UpdateFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         /** @var Folder */
-        $model = FolderFactory::new()->create(['user_id' => $user->id]);
+        $model = FolderFactory::new()->for($user)->create();
 
         $this->updateFolderResponse([
             'name' => $name = $this->faker->word,
@@ -259,7 +257,7 @@ class UpdateFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $this->updateFolderResponse([
             'name' => $this->faker->word,
@@ -273,7 +271,7 @@ class UpdateFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         /** @var Folder */
-        $model = FolderFactory::new()->create(['user_id' => $user->id]);
+        $model = FolderFactory::new()->for($user)->create();
         $tags = TagFactory::new()->count(5)->create(['created_by' => $user->id]);
 
         $this->updateFolderResponse([
@@ -302,7 +300,7 @@ class UpdateFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
         $tags = TagFactory::new()->count(6)->make()->pluck('name');
 
         $this->updateFolderResponse([
@@ -320,7 +318,7 @@ class UpdateFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $this->updateFolderResponse([
             'tags' => TagFactory::new()->count(15)->make()->pluck('name')->implode(','),
@@ -367,7 +365,7 @@ class UpdateFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         /** @var Folder */
-        $model = FolderFactory::new()->create(['user_id' => $user->id]);
+        $model = FolderFactory::new()->for($user)->create();
 
         //should cache folder.
         $this->getJson(route('fetchFolder', ['id' => $model->id]))
@@ -394,7 +392,7 @@ class UpdateFolderTest extends TestCase
     public function testCollaboratorCanUpdateFolder(): void
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()
             ->user($collaborator->id)
@@ -413,7 +411,7 @@ class UpdateFolderTest extends TestCase
     public function testCollaboratorMustHaveUpdateFolderPermission(): void
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
         $factory = FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id);
 
         $factory->addBookmarksPermission()->create();
@@ -431,7 +429,7 @@ class UpdateFolderTest extends TestCase
     public function testOnlyFolderOwnerCanUpdatePrivacy(): void
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()
             ->user($collaborator->id)
@@ -462,7 +460,7 @@ class UpdateFolderTest extends TestCase
     public function testCollaboratorCannotUpdateFolderWhenFolderOwnerHasDeletedAccount(): void
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()
             ->user($collaborator->id)
@@ -485,7 +483,7 @@ class UpdateFolderTest extends TestCase
     public function testWillNotifyFolderOwnerWhenCollaboratorUpdatesFolder(): void
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()
             ->user($collaborator->id)
@@ -526,7 +524,7 @@ class UpdateFolderTest extends TestCase
     public function testWillNotSendNotificationWhenUpdateWasPerformedByFolderOwner(): void
     {
         $user = UserFactory::new()->create();
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         Notification::fake();
 
@@ -544,8 +542,9 @@ class UpdateFolderTest extends TestCase
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
+            ->for($folderOwner)
             ->setting(fn (SettingsBuilder $b) => $b->disableNotifications())
-            ->create(['user_id' => $folderOwner->id]);
+            ->create();
 
         FolderAccessFactory::new()
             ->user($collaborator->id)
@@ -569,8 +568,9 @@ class UpdateFolderTest extends TestCase
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
+            ->for($folderOwner)
             ->setting(fn (SettingsBuilder $b) => $b->disableFolderUpdatedNotification())
-            ->create(['user_id' => $folderOwner->id]);
+            ->create();
 
         FolderAccessFactory::new()
             ->user($collaborator->id)

@@ -39,7 +39,7 @@ class FetchFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         /** @var Model */
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $this->fetchFolderResponse(['id' => $folder->id])
             ->assertOk()
@@ -93,7 +93,7 @@ class FetchFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         /** @var Model */
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $this->fetchFolderResponse(['id' => $folder->id + 1])->assertNotFound();
     }
@@ -110,7 +110,7 @@ class FetchFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         /** @var Model */
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $this->fetchFolderResponse([
             'id' => $folder->id,

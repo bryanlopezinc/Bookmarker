@@ -77,7 +77,8 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
         [$user, $collaborator] = UserFactory::times(2)->create();
         $factory = FolderAccessFactory::new()->user($collaborator->id);
         $folders = FolderFactory::times(3)
-            ->create(['user_id' => $user->id])
+            ->for($user)
+            ->create()
             ->each(fn (Folder $folder) => $factory->folder($folder->id)->create())
             ->pluck('id')
             ->all();
@@ -145,7 +146,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
     public function testWillReturnCorrectPermissions(): void
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
         $factory = FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id);
 
         $factory->addBookmarksPermission()->create();
@@ -165,8 +166,8 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
         [$user, $collaborator, $anotherUser] = UserFactory::times(3)->create();
         $factory = FolderAccessFactory::new()->user($collaborator->id);
 
-        $userFolder = FolderFactory::new()->create(['user_id' => $user->id]);
-        $anotherUserFolder = FolderFactory::new()->create(['user_id' => $anotherUser->id]);
+        $userFolder = FolderFactory::new()->for($user)->create();
+        $anotherUserFolder = FolderFactory::new()->for($anotherUser)->create();
 
         //is a collaborator in both folders
         $factory->folder($userFolder->id)->create();
@@ -197,7 +198,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
     public function testWillReturnEmptyDataSetWhen_userIsACollaborator_butHasDeletedAccount(): void
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
-        $userFolder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $userFolder = FolderFactory::new()->for($user)->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($userFolder->id)->create();
 
@@ -211,7 +212,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
     public function testCanRequestPartialResource(): void
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
-        $userFolder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $userFolder = FolderFactory::new()->for($user)->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($userFolder->id)->create();
 

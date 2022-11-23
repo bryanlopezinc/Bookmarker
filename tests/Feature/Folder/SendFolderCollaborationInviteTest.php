@@ -103,9 +103,7 @@ class SendFolderCollaborationInviteTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $this->sendInviteResponse([
             'email' => $this->faker->unique()->email,
@@ -141,7 +139,7 @@ class SendFolderCollaborationInviteTest extends TestCase
     {
         [$user, $invitee] = UserFactory::times(2)->create();
 
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         Passport::actingAs($user);
 
@@ -158,9 +156,7 @@ class SendFolderCollaborationInviteTest extends TestCase
     {
         [$user, $invitee, $secondInvitee] = UserFactory::new()->count(3)->create();
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         SecondaryEmail::query()->create([
             'email' => $inviteeSecondaryEmail = $this->faker->unique()->email,
@@ -206,7 +202,7 @@ class SendFolderCollaborationInviteTest extends TestCase
 
         [$user, $invitee] = UserFactory::new()->count(2)->create();
         $mailer = Mail::getFacadeRoot();
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         Passport::actingAs($user);
         Mail::fake();
@@ -235,9 +231,7 @@ class SendFolderCollaborationInviteTest extends TestCase
     {
         [$user, $invitee] = UserFactory::new()->count(2)->create();
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         Passport::actingAs($user);
 
@@ -257,9 +251,7 @@ class SendFolderCollaborationInviteTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $this->sendInviteResponse([
             'email' => $user->email,
@@ -274,9 +266,7 @@ class SendFolderCollaborationInviteTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         SecondaryEmail::query()->create([
             'email' => $secondaryEmail = $this->faker->unique()->email,
@@ -297,7 +287,7 @@ class SendFolderCollaborationInviteTest extends TestCase
     {
         [$user, $invitee, $folderOwner] = UserFactory::times(3)->create();
 
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         Passport::actingAs($user);
 
@@ -316,7 +306,7 @@ class SendFolderCollaborationInviteTest extends TestCase
     public function testCollaboratorMustHaveSendInvitePermission(): void
     {
         [$folderOwner, $collaborator, $invitee] = UserFactory::new()->count(3)->create();
-        $folderID = FolderFactory::new()->create(['user_id' => $folderOwner->id])->id;
+        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
         $folderAccessFactory = FolderAccessFactory::new()->user($collaborator->id)->folder($folderID);
 
         $folderAccessFactory->updateFolderPermission()->create();
@@ -335,7 +325,7 @@ class SendFolderCollaborationInviteTest extends TestCase
     {
         [$user, $folderOwner] = UserFactory::times(2)->create();
 
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         Passport::actingAs($user);
 
@@ -358,7 +348,7 @@ class SendFolderCollaborationInviteTest extends TestCase
     {
         [$user, $folderOwner] = UserFactory::times(2)->create();
 
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         Passport::actingAs($user);
 
@@ -387,7 +377,7 @@ class SendFolderCollaborationInviteTest extends TestCase
     {
         [$user, $invitee, $folderOwner] = UserFactory::times(3)->create();
 
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         Passport::actingAs($user);
 
@@ -424,7 +414,7 @@ class SendFolderCollaborationInviteTest extends TestCase
 
         Passport::actingAs($user);
 
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $parameters = [
             'email' => $invitee->email,
@@ -451,7 +441,7 @@ class SendFolderCollaborationInviteTest extends TestCase
     {
         [$collaborator, $invitee, $folderOwner] = UserFactory::times(3)->create();
 
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()
             ->user($collaborator->id)

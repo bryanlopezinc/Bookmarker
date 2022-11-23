@@ -75,7 +75,7 @@ class FetchUserCollaborationsTest extends TestCase
                 $permissionIDs = FolderPermission::all(['id'])->pluck(['id']);
 
                 $records = $folderOwners->map(function (User $folderOwner) use ($collaborator, $permissionIDs, &$foldersWhereUserIsACollaborator) {
-                    $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+                    $folder = FolderFactory::new()->for($folderOwner)->create();
                     $foldersWhereUserIsACollaborator[] = $folder;
 
                     return [
@@ -140,7 +140,7 @@ class FetchUserCollaborationsTest extends TestCase
     public function testWhenUserIsRemovedAsCollaborator(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()
             ->user($collaborator->id)
@@ -176,7 +176,7 @@ class FetchUserCollaborationsTest extends TestCase
     public function testWhenFolderIsDeletedByOwner(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()
             ->user($collaborator->id)
@@ -278,7 +278,7 @@ class FetchUserCollaborationsTest extends TestCase
     public function testWhenFolderOwnerHasDeletedAccount(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()
             ->user($collaborator->id)
@@ -303,8 +303,8 @@ class FetchUserCollaborationsTest extends TestCase
     {
         [$mark, $jeff, $collaborator] = UserFactory::new()->count(3)->create();
 
-        $marksFolder = FolderFactory::new()->create(['user_id' => $mark->id]);
-        $jeffsFolder = FolderFactory::new()->create(['user_id' => $jeff->id]);
+        $marksFolder = FolderFactory::new()->for($mark)->create();
+        $jeffsFolder = FolderFactory::new()->for($jeff)->create();
         $permission =  FolderAccessFactory::new()->user($collaborator->id);
 
         $permission->folder($marksFolder->id)->create();
@@ -328,7 +328,7 @@ class FetchUserCollaborationsTest extends TestCase
     public function testCanRequestPartialResource(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
 

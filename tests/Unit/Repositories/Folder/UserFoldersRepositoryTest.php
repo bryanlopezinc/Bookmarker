@@ -21,17 +21,19 @@ class UserFoldersRepositoryTest extends TestCase
     {
         $foldersBookmarksCount = [];
 
-        FolderFactory::new()->count(10)->create([
-            'user_id' => $userID = UserFactory::new()->create()->id
-        ])->each(function (Model $folder) use (&$foldersBookmarksCount) {
-            FolderBookmarksCount::create([
-                'folder_id' => $folder->id,
-                'count' => $foldersBookmarksCount[$folder->id] = rand(1, 200)
-            ]);
-        });
+        FolderFactory::new()
+            ->count(10)
+            ->for($user = UserFactory::new()->create())
+            ->create()
+            ->each(function (Model $folder) use (&$foldersBookmarksCount) {
+                FolderBookmarksCount::create([
+                    'folder_id' => $folder->id,
+                    'count' => $foldersBookmarksCount[$folder->id] = rand(1, 200)
+                ]);
+            });
 
         (new UserFoldersRepository)
-            ->fetch(new UserID($userID), PaginationData::new())
+            ->fetch(new UserID($user->id), PaginationData::new())
             ->getCollection()
             ->each(function (Folder $folder) use ($foldersBookmarksCount) {
                 $this->assertEquals(
@@ -43,11 +45,11 @@ class UserFoldersRepositoryTest extends TestCase
 
     public function testWillReturnCorrectFolderTags(): void
     {
-        $userID = UserFactory::new()->create()->id;
-        FolderFactory::new()->count(5)->create(['user_id' => $userID]);
+        $user = UserFactory::new()->create();
+        FolderFactory::new()->count(5)->for($user)->create();
 
         (new UserFoldersRepository)
-            ->fetch(new UserID($userID), PaginationData::new())
+            ->fetch(new UserID($user->id), PaginationData::new())
             ->getCollection()
             ->each(function (Folder $folder) {
                 $this->assertTrue($folder->tags->isEmpty());

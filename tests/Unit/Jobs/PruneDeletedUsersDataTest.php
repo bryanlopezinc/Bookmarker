@@ -35,7 +35,8 @@ class PruneDeletedUsersDataTest extends TestCase
 
         $userFolders = FolderFactory::new()
             ->count(10)
-            ->create(['user_id' => $user->id])
+            ->for($user)
+            ->create()
             ->each(function (Folder $folder) {
                 FolderBookmarksCount::query()->create([
                     'folder_id' => $folder->id,
@@ -59,7 +60,7 @@ class PruneDeletedUsersDataTest extends TestCase
                     'tag_id' => $tags->random()->id,
                 ]);
 
-            Favorite::query()->create([
+                Favorite::query()->create([
                     'bookmark_id' => $bookmark->id,
                     'user_id' => $bookmark->user_id
                 ]);

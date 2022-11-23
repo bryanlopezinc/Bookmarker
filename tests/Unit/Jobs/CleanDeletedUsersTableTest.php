@@ -35,7 +35,7 @@ class CleanDeletedUsersTableTest extends TestCase
 
         $user = UserFactory::new()->create();
 
-        FolderFactory::new()->create(['user_id' => $user->id]);
+        FolderFactory::new()->for($user)->create();
 
         DeletedUser::query()->create(['user_id' => $user->id]);
 

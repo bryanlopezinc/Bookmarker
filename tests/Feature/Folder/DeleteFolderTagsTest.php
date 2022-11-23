@@ -41,7 +41,7 @@ class DeleteFolderTagsTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $model = FolderFactory::new()->create(['user_id' => $user->id]);
+        $model = FolderFactory::new()->for($user)->create();
         $tag = TagFactory::new()->create(['created_by' => $user->id]);
 
         Taggable::create($tagAttributes = [
@@ -62,9 +62,7 @@ class DeleteFolderTagsTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $model = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $model = FolderFactory::new()->for($user)->create();
 
         $this->deleteFolderTagsResponse(['id' => $model->id + 1, 'tags' => $this->faker->word])->assertNotFound();
     }
@@ -73,7 +71,7 @@ class DeleteFolderTagsTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $model = FolderFactory::new()->create(['user_id' => $user->id]);
+        $model = FolderFactory::new()->for($user)->create();
 
         $this->deleteFolderTagsResponse([
             'id' => $model->id,
@@ -100,7 +98,7 @@ class DeleteFolderTagsTest extends TestCase
 
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folderID = FolderFactory::new()->create(['user_id' => $user->id])->id;
+        $folderID = FolderFactory::new()->for($user)->create()->id;
         $tag = TagFactory::new()->create(['created_by' => $user->id]);
 
         Taggable::create([

@@ -114,8 +114,7 @@ class AddBookmarksToFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         $bookmarkIDs = BookmarkFactory::new()->count(10)->create(['user_id' => $user->id])->pluck('id');
-        $folderID = FolderFactory::new()->create([
-            'user_id' => $user->id,
+        $folderID = FolderFactory::new()->for($user)->create([
             'created_at' => $createdAt = now()->yesterday(),
             'updated_at' => $createdAt,
         ])->id;
@@ -151,7 +150,7 @@ class AddBookmarksToFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         $bookmarkIDs = BookmarkFactory::new()->count(2)->create(['user_id' => $user->id])->pluck('id');
-        $folderID = FolderFactory::new()->create(['user_id' => $user->id])->id;
+        $folderID = FolderFactory::new()->for($user)->create()->id;
 
         Notification::fake();
 
@@ -167,7 +166,7 @@ class AddBookmarksToFolderTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $collaborator->id])->pluck('id');
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
 
@@ -194,7 +193,7 @@ class AddBookmarksToFolderTest extends TestCase
         Passport::actingAs($user);
 
         $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $user->id]);
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()->user($user->id)->folder($folder->id)->addBookmarksPermission()->create();
 
@@ -207,7 +206,7 @@ class AddBookmarksToFolderTest extends TestCase
     public function testCollaboratorMustHaveAddBookmarksPermission(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
         $folderAccessFactory = FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id);
         $collaboratorBookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $collaborator->id]);
 
@@ -227,10 +226,10 @@ class AddBookmarksToFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folderID = FolderFactory::new()->create($attributes = ['user_id' => $user->id])->id;
+        $folderID = FolderFactory::new()->for($user)->create()->id;
 
         for ($i = 0; $i < 4; $i++) {
-            $bookmarkIDs = BookmarkFactory::new()->count(50)->create($attributes)->pluck('id');
+            $bookmarkIDs = BookmarkFactory::new()->count(50)->create(['user_id' => $user->id])->pluck('id');
 
             $this->addBookmarksToFolderResponse([
                 'bookmarks' => $bookmarkIDs->implode(','),
@@ -239,7 +238,7 @@ class AddBookmarksToFolderTest extends TestCase
         }
 
         $this->addBookmarksToFolderResponse([
-            'bookmarks' => (string) BookmarkFactory::new()->create($attributes)->id,
+            'bookmarks' => (string) BookmarkFactory::new()->create(['user_id' => $user->id])->id,
             'folder' => $folderID,
         ])
             ->assertForbidden()
@@ -250,10 +249,10 @@ class AddBookmarksToFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folderID = FolderFactory::new()->create($attributes = ['user_id' => $user->id])->id;
+        $folderID = FolderFactory::new()->for($user)->create()->id;
 
         for ($i = 0; $i < 4; $i++) {
-            $bookmarkIDs = BookmarkFactory::new()->count(45)->create($attributes)->pluck('id');
+            $bookmarkIDs = BookmarkFactory::new()->count(45)->create(['user_id' => $user->id])->pluck('id');
 
             $this->addBookmarksToFolderResponse([
                 'bookmarks' => $bookmarkIDs->implode(','),
@@ -262,7 +261,7 @@ class AddBookmarksToFolderTest extends TestCase
         }
 
         $this->addBookmarksToFolderResponse([
-            'bookmarks' => BookmarkFactory::new()->count(21)->create($attributes)->pluck('id')->implode(','),
+            'bookmarks' => BookmarkFactory::new()->count(21)->create(['user_id' => $user->id])->pluck('id')->implode(','),
             'folder' => $folderID,
         ])
             ->assertForbidden()
@@ -274,8 +273,7 @@ class AddBookmarksToFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         $bookmarkIDs = BookmarkFactory::new()->count(10)->create(['user_id' => $user->id])->pluck('id');
-
-        $folderID = FolderFactory::new()->create(['user_id' => $user->id])->id;
+        $folderID = FolderFactory::new()->for($user)->create()->id;
 
         $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmarkIDs->implode(','),
@@ -291,7 +289,7 @@ class AddBookmarksToFolderTest extends TestCase
 
         $bookmarkIDsToMakePrivate = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
         $bookmarkIDsToMakePublic = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
-        $folderID = FolderFactory::new()->create(['user_id' => $user->id,])->id;
+        $folderID = FolderFactory::new()->for($user)->create()->id;
 
         $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmarkIDsToMakePrivate->merge($bookmarkIDsToMakePublic)->shuffle()->implode(','),
@@ -320,13 +318,8 @@ class AddBookmarksToFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarks = BookmarkFactory::new()->count(3)->create([
-            'user_id' => $user->id
-        ]);
-
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmarks->pluck('id')->implode(','),
@@ -343,13 +336,8 @@ class AddBookmarksToFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarks = BookmarkFactory::new()->count(10)->create([
-            'user_id' => $user->id
-        ]);
-
-        $otherUsersFolder = FolderFactory::new()->create([
-            'user_id' => UserFactory::new()->create()->id //Another user's folder
-        ]);
+        $bookmarks = BookmarkFactory::new()->count(10)->create(['user_id' => $user->id]);
+        $otherUsersFolder = FolderFactory::new()->for(UserFactory::new()->create())->create();
 
         $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmarks->pluck('id')->implode(','),
@@ -386,9 +374,7 @@ class AddBookmarksToFolderTest extends TestCase
             ->map(fn (int $bookmarkID) => $bookmarkID + 1)
             ->implode(',');
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $this->addBookmarksToFolderResponse([
             'bookmarks' => $invalidBookmarkIDs,
@@ -408,9 +394,7 @@ class AddBookmarksToFolderTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmarks->pluck('id')->implode(','),
@@ -428,10 +412,7 @@ class AddBookmarksToFolderTest extends TestCase
 
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folderID = FolderFactory::new()->create([
-            'user_id' => $user->id,
-            'created_at' => now(),
-        ])->id;
+        $folderID = FolderFactory::new()->for($user)->create(['created_at' => now()])->id;
 
         //should cache folder.
         $this->getJson(route('fetchFolder', ['id' => $folderID]))
@@ -456,7 +437,7 @@ class AddBookmarksToFolderTest extends TestCase
     {
         [$collaborator, $folderOwner] = UserFactory::times(2)->create();
 
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()
             ->user($collaborator->id)
@@ -481,7 +462,8 @@ class AddBookmarksToFolderTest extends TestCase
         $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $collaborator->id])->pluck('id');
         $folder = FolderFactory::new()
             ->setting(fn (FolderSettingsBuilder $b) => $b->disableNotifications())
-            ->create(['user_id' => $folderOwner->id]);
+            ->for($folderOwner)
+            ->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
         Notification::fake();
@@ -501,7 +483,8 @@ class AddBookmarksToFolderTest extends TestCase
         $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $collaborator->id])->pluck('id');
         $folder = FolderFactory::new()
             ->setting(fn (FolderSettingsBuilder $b) => $b->disableNewBookmarksNotification())
-            ->create(['user_id' => $folderOwner->id]);
+            ->for($folderOwner)
+            ->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
         Notification::fake();

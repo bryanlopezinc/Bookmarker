@@ -23,7 +23,7 @@ final class FolderFactory extends Factory
         return [
             'name' => $this->faker->word,
             'description' => $this->faker->sentence,
-            'user_id' => UserFactory::new()->create()->id,
+            'user_id' => UserFactory::new(),
             'is_public' => false,
             'settings' => FolderSettings::default()->toArray()
         ];
@@ -41,9 +41,9 @@ final class FolderFactory extends Factory
     {
         return $this->state(function (array $data) use ($setting) {
             $setting($builder = new FolderSettingsBuilder($data['settings']));
-            $data['settings'] = $builder->build()->toArray();
-
-            return $data;
+            return [
+                'settings' => $builder->build()->toArray()
+            ];
         });
     }
 }

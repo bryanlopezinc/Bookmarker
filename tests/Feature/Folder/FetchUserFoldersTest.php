@@ -75,8 +75,7 @@ class FetchUserFoldersTest extends TestCase
 
         FolderFactory::new()->count(10)->create(); //folders does not belong to current user.
 
-        $userFolders = FolderFactory::new()->count(10)->create([
-            'user_id' => $user->id,
+        $userFolders = FolderFactory::new()->for($user)->count(10)->create([
             'name' => "<script>alert(Cross Site Scripting)</script>",
             'description' => "<script>alert(CSS)</script>",
         ]);
@@ -162,7 +161,7 @@ class FetchUserFoldersTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folders = FolderFactory::new()->count(5)->create(['user_id' => $user->id]);
+        $folders = FolderFactory::new()->for($user)->count(5)->create();
 
         $response = $this->userFoldersResponse([])->assertOk();
 
@@ -176,7 +175,7 @@ class FetchUserFoldersTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folders = FolderFactory::new()->count(5)->create(['user_id' => $user->id]);
+        $folders = FolderFactory::new()->count(5)->for($user)->create();
 
         $response = $this->userFoldersResponse(['sort' => 'newest'])->assertOk();
 
@@ -190,7 +189,7 @@ class FetchUserFoldersTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folders = FolderFactory::new()->count(5)->create(['user_id' => $user->id]);
+        $folders = FolderFactory::new()->count(5)->for($user)->create();
 
         $response = $this->userFoldersResponse(['sort' => 'oldest'])->assertOk();
 
@@ -204,7 +203,7 @@ class FetchUserFoldersTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $userFolders = FolderFactory::new()->count(7)->create(['user_id' => $user->id]);
+        $userFolders = FolderFactory::new()->count(7)->for($user)->create();
 
         $folderWithMostItems = $userFolders->random();
 
@@ -225,7 +224,7 @@ class FetchUserFoldersTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $userFoldersIDs = FolderFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
+        $userFoldersIDs = FolderFactory::new()->count(5)->for($user)->create()->pluck('id');
 
         $folderIDWithLeastItems = $userFoldersIDs->random();
         $bookmarksAmountToAddToFolder = 1;
@@ -253,7 +252,7 @@ class FetchUserFoldersTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $userFolders = FolderFactory::new()->count(5)->create(['user_id' => $user->id]);
+        $userFolders = FolderFactory::new()->count(5)->for($user)->create();
 
         $recentlyUpdatedFolder = $userFolders->random();
 
@@ -273,9 +272,7 @@ class FetchUserFoldersTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        FolderFactory::new()->count(5)->public()->create([
-            'user_id' => $user->id,
-        ]);
+        FolderFactory::new()->count(5)->public()->for($user)->create();
 
         $this->userFoldersResponse([])
             ->assertOk()
@@ -294,9 +291,7 @@ class FetchUserFoldersTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        FolderFactory::new()->count(20)->create([
-            'user_id' => $user->id
-        ]);
+        FolderFactory::new()->count(20)->for($user)->create();
 
         $this->userFoldersResponse(['per_page' => 17])
             ->assertOk()
@@ -331,7 +326,7 @@ class FetchUserFoldersTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        FolderFactory::new()->count(3)->create(['user_id' => $user->id]);
+        FolderFactory::new()->count(3)->for($user)->create();
 
         $this->userFoldersResponse(['fields' => 'id,name,storage.items_count'])
             ->assertOk()

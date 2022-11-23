@@ -74,7 +74,7 @@ class FetchUserNotificationsTest extends TestCase
     {
         [$user, $tom, $sean, $taylor] = UserFactory::times(4)->create();
         $tomsBookmarks = BookmarkFactory::times(3)->create(['user_id' => $tom->id])->pluck('id');
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $notifications =  [
             new BookmarksAddedToFolderNotification(IDs::fromNativeTypes($tomsBookmarks), new ResourceID($folder->id), new UserID($tom->id)),
@@ -101,7 +101,7 @@ class FetchUserNotificationsTest extends TestCase
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
         $collaboratorBookmarks = BookmarkFactory::times(3)->create(['user_id' => $collaborator->id])->pluck('id');
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $user->notify(
             new BookmarksAddedToFolderNotification(
@@ -167,7 +167,7 @@ class FetchUserNotificationsTest extends TestCase
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
         $collaboratorBookmarks = BookmarkFactory::times(3)->create(['user_id' => $collaborator->id])->pluck('id');
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $user->notify(
             new BookmarksRemovedFromFolderNotification(
@@ -236,7 +236,7 @@ class FetchUserNotificationsTest extends TestCase
     public function testCollaboratorAddedToFolderNotification(): void
     {
         [$folderOwner, $collaborator, $newCollaborator] = UserFactory::times(3)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         $folderOwner->notify(
             new NewCollaboratorNotification(
@@ -310,7 +310,7 @@ class FetchUserNotificationsTest extends TestCase
     public function testFolderUpdatedNotification(): void
     {
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         $folderOwner->notify(
             new FolderUpdatedNotification(
@@ -385,7 +385,7 @@ class FetchUserNotificationsTest extends TestCase
     public function testCollaboratorExitNotification(): void
     {
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         $folderOwner->notify(
             new CollaboratorExitNotification(
@@ -450,7 +450,7 @@ class FetchUserNotificationsTest extends TestCase
     public function testWillFetchOnlyUnReadNotifications(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $data = (new FolderUpdatedNotification(
             FolderBuilder::fromModel($folder)->setName('foo')->setTags([])->build(),
@@ -475,7 +475,7 @@ class FetchUserNotificationsTest extends TestCase
     public function testWillFetchOnlyUserNotifications(): void
     {
         [$folderOwner, $collaborator, $user] = UserFactory::times(3)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         $folderOwner->notify(
             new FolderUpdatedNotification(

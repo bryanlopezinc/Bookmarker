@@ -50,7 +50,7 @@ class DeleteFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folderIDs = FolderFactory::new()->count(3)->create(['user_id' => $user->id])->pluck('id');
+        $folderIDs = FolderFactory::new()->for($user)->count(3)->create()->pluck('id');
         $folderIDToDelete = $folderIDs->random();
 
         //Save 3 bookmarks for user
@@ -101,7 +101,7 @@ class DeleteFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folderID = FolderFactory::new()->create(['user_id' => $user->id])->id;
+        $folderID = FolderFactory::new()->for($user)->create()->id;
 
         UserFoldersCount::create([
             'count' => 1,
@@ -185,10 +185,7 @@ class DeleteFolderTest extends TestCase
 
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folderID = FolderFactory::new()->create([
-            'user_id' => $user->id,
-            'created_at' => now(),
-        ])->id;
+        $folderID = FolderFactory::new()->for($user)->create(['created_at' => now()])->id;
 
         //should cache folder.
         $this->getJson(route('fetchFolder', ['id' => $folderID]))->assertOk();
@@ -203,7 +200,7 @@ class DeleteFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         [$userBookmark, $userBookmarkAddedToFolder] = BookmarkFactory::new()->count(2)->create(['user_id' => $user->id]);
-        $folderID = FolderFactory::new()->create(['user_id' => $user->id])->id;
+        $folderID = FolderFactory::new()->for($user)->create()->id;
 
         $this->postJson(route('addBookmarksToFolder'), [
             'bookmarks' => (string) $userBookmarkAddedToFolder->id,
@@ -223,11 +220,7 @@ class DeleteFolderTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
         $collaboratorBookmarks = BookmarkFactory::new()->count(2)->create(['user_id' => $collaborator->id]);
-
-        $folderID = FolderFactory::new()->create([
-            'user_id' => $folderOwner->id,
-            'created_at' => now(),
-        ])->id;
+        $folderID = FolderFactory::new()->for($folderOwner)->create(['created_at' => now()])->id;
 
         FolderAccessFactory::new()
             ->folder($folderID)

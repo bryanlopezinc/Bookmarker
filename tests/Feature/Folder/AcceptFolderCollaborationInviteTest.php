@@ -93,9 +93,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         [$user, $invitee] = UserFactory::new()->count(2)->create();
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
             Passport::actingAs($user);
@@ -185,7 +183,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         [$user, $invitee] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
         $parameters = [
             'email' => $invitee->email,
             'folder_id' => $folder->id,
@@ -228,10 +226,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         [$user, $invitee] = UserFactory::new()->count(2)->create();
-
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
             Passport::actingAs($user);
@@ -256,7 +251,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         [$user, $invitee] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $firstInviteParameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
             Passport::actingAs($user);
@@ -291,7 +286,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         [$user, $invitee] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         SecondaryEmail::query()->create([
             'email' => $inviteeSecondaryEmail = $this->faker->unique()->email,
@@ -329,9 +324,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         [$user, $invitee] = UserFactory::new()->count(2)->create();
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         Passport::actingAs($user);
 
@@ -362,9 +355,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         [$user, $invitee] = UserFactory::new()->count(2)->create();
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
             Passport::actingAs($user);
@@ -395,9 +386,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         [$user, $invitee] = UserFactory::new()->count(2)->create();
 
-        $folder = FolderFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         Passport::actingAs($user);
 
@@ -446,7 +435,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         Notification::fake();
 
@@ -532,7 +521,8 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
             ->setting(fn (SettingsBuilder $b) => $b->disableNotifications())
-            ->create(['user_id' => $folderOwner->id]);
+            ->for($folderOwner)
+            ->create();
 
         Notification::fake();
 
@@ -586,7 +576,8 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
             ->setting(fn (SettingsBuilder $b) => $b->disableNewCollaboratorNotification())
-            ->create(['user_id' => $folderOwner->id]);
+            ->for($folderOwner)
+            ->create();
 
         Notification::fake();
 
@@ -640,7 +631,8 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
             ->setting(fn (SettingsBuilder $b) => $b->enableOnlyCollaboratorsInvitedByMeNotification())
-            ->create(['user_id' => $folderOwner->id]);
+            ->for($folderOwner)
+            ->create();
 
         Notification::fake();
 

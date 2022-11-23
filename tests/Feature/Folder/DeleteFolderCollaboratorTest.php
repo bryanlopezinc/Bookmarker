@@ -59,7 +59,7 @@ class DeleteFolderCollaboratorTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $this->deleteCollaboratorResponse([
             'user_id' => UserFactory::new()->create()->id,
@@ -84,7 +84,7 @@ class DeleteFolderCollaboratorTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $this->deleteCollaboratorResponse([
             'user_id' => UserFactory::new()->create()->id,
@@ -99,7 +99,7 @@ class DeleteFolderCollaboratorTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $this->deleteCollaboratorResponse([
             'user_id' => UserFactory::new()->create()->id + 1,
@@ -116,7 +116,7 @@ class DeleteFolderCollaboratorTest extends TestCase
 
         Passport::actingAs($user);
 
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
 
@@ -132,7 +132,7 @@ class DeleteFolderCollaboratorTest extends TestCase
     public function testWillRemoveCollaborator(): void
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->viewBookmarksPermission()->create();
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
@@ -162,7 +162,7 @@ class DeleteFolderCollaboratorTest extends TestCase
         [$user, $collaborator, $anotherCollaborator] = UserFactory::times(3)->create();
 
         Passport::actingAs($user);
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
         FolderAccessFactory::new()->user($anotherCollaborator->id)->folder($folder->id)->create();

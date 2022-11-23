@@ -72,7 +72,7 @@ class FetchFolderCollaboratorsTest extends TestCase
     public function testWillFetchCollaborators(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
-        $userFolder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $userFolder = FolderFactory::new()->for($user)->create();
 
         $collaborators = UserFactory::times(5)
             ->create()
@@ -126,7 +126,7 @@ class FetchFolderCollaboratorsTest extends TestCase
     public function testWillReturnCorrectPermissions(): void
     {
         [$folderOwner, $collaborator, $anotherCollaborator] = UserFactory::times(3)->create();
-        $userFolderID = FolderFactory::new()->create(['user_id' => $folderOwner->id])->id;
+        $userFolderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
         FolderAccessFactory::new()
             ->user($collaborator->id)
@@ -174,7 +174,7 @@ class FetchFolderCollaboratorsTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $userFolder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $userFolder = FolderFactory::new()->for($user)->create();
 
         $this->fetchCollaboratorsResponse(['folder_id' => $userFolder->id])
             ->assertOk()
@@ -184,7 +184,7 @@ class FetchFolderCollaboratorsTest extends TestCase
     public function testWillNotIncludeDeletedUserAccountsInResponse(): void
     {
         [$folderOwner, $collaborator, $anotherCollaborator] = UserFactory::times(3)->create();
-        $userFolderID = FolderFactory::new()->create(['user_id' => $folderOwner->id])->id;
+        $userFolderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
         FolderAccessFactory::new()
             ->user($collaborator->id)
@@ -211,7 +211,7 @@ class FetchFolderCollaboratorsTest extends TestCase
     public function testWillNotReturnDuplicateRecords(): void
     {
         [$folderOwner, $collaborator] = UserFactory::times(3)->create();
-        $userFolderID = FolderFactory::new()->create(['user_id' => $folderOwner->id])->id;
+        $userFolderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
         FolderAccessFactory::new()
             ->user($collaborator->id)
@@ -242,11 +242,12 @@ class FetchFolderCollaboratorsTest extends TestCase
     public function testWillReturnOnlyCollaboratorsForSpecifiedFolder(): void
     {
         $folderOwner = UserFactory::new()->create();
-        $userFolderID = FolderFactory::new()->create(['user_id' => $folderOwner->id])->id;
+        $userFolderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
         FolderFactory::new()
             ->count(3)
-            ->create(['user_id' => $folderOwner->id])
+            ->for($folderOwner)
+            ->create()
             ->tap(function (Collection $folders) {
                 $permissionIDs = FolderPermission::all(['id'])->pluck(['id']);
 

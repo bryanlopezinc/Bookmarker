@@ -76,7 +76,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
     public function testWillGrantPermissions(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()
             ->user($collaborator->id)
@@ -115,7 +115,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
     public function testCanGrantMultiplePermissions(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()
             ->user($collaborator->id)
@@ -143,7 +143,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
     public function testCannotPerformActionOnSelf(): void
     {
         $self = UserFactory::new()->create();
-        $folder = FolderFactory::new()->create(['user_id' => $self->id]);
+        $folder = FolderFactory::new()->for($self)->create();
 
         Passport::actingAs($self);
         $this->grantPermissionsResponse([
@@ -170,7 +170,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
     public function testWhenCollaboratorAlreadyHasPermissions(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()
             ->user($collaborator->id)
@@ -202,7 +202,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
     public function testWhenUserIsNotACollaborator(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         Passport::actingAs($folderOwner);
         $this->grantPermissionsResponse([
@@ -218,7 +218,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
     public function testWhenCollaboratorIsNotARegisteredUser(): void
     {
         $folderOwner = UserFactory::new()->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         Passport::actingAs($folderOwner);
         $this->grantPermissionsResponse([
@@ -249,7 +249,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
     public function testCanGrantUpdateFolderPermission(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()
             ->user($collaborator->id)

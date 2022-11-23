@@ -97,7 +97,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
     {
         [$folderOwner, $anotherUser, $collaborator] = UserFactory::times(3)->create();
 
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         Passport::actingAs($anotherUser);
 
@@ -112,7 +112,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
     {
         [$folderOwner, $collaborator, $anotherCollaborator] = UserFactory::times(3)->create();
 
-        $folderID = FolderFactory::new()->create(['user_id' => $folderOwner->id])->id;
+        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folderID)->create();
         FolderAccessFactory::new()->user($anotherCollaborator->id)->folder($folderID)->addBookmarksPermission()->create();
@@ -142,7 +142,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $this->revokePermissionsResponse([
             'user_id' => UserFactory::new()->create()->id,
@@ -158,7 +158,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         $this->revokePermissionsResponse([
             'user_id' => UserFactory::new()->create()->id + 1,
@@ -176,7 +176,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
 
         Passport::actingAs($user);
 
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
 
@@ -193,7 +193,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
     public function testCollaboratorMustAlreadyHavePermissions(): void
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $user->id]);
+        $folder = FolderFactory::new()->for($user)->create();
 
         Passport::actingAs($user);
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
@@ -212,7 +212,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
 
-        $folderID = FolderFactory::new()->create(['user_id' => $user->id])->id;
+        $folderID = FolderFactory::new()->for($user)->create()->id;
         $collaboratorBookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $collaborator->id])->pluck('id');
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folderID)->addBookmarksPermission()->create();
@@ -249,7 +249,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
     public function testWillRevokeRemoveBookmarksPermission(): void
     {
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
-        $folderID = FolderFactory::new()->create(['user_id' => $folderOwner->id])->id;
+        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folderID)->removeBookmarksPermission()->create();
 
@@ -285,7 +285,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
     public function testWillRevokeInviteUserPermission(): void
     {
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
-        $folderID = FolderFactory::new()->create(['user_id' => $folderOwner->id])->id;
+        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folderID)->inviteUser()->create();
 
@@ -321,7 +321,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
     public function testCanRevokeMultiplePermissionsInOneRequest(): void
     {
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
-        $folderID = FolderFactory::new()->create(['user_id' => $folderOwner->id])->id;
+        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folderID)->inviteUser()->create();
         FolderAccessFactory::new()->user($collaborator->id)->folder($folderID)->addBookmarksPermission()->create();
@@ -350,7 +350,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
 
-        $folderID = FolderFactory::new()->create(['user_id' => $user->id])->id;
+        $folderID = FolderFactory::new()->for($user)->create()->id;
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folderID)->addBookmarksPermission()->create();
         FolderAccessFactory::new()->user($collaborator->id)->folder($folderID)->inviteUser()->create();
@@ -373,7 +373,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
     {
         [$user, $collaborator, $anotherCollaborator] = UserFactory::times(3)->create();
 
-        $folderID = FolderFactory::new()->create(['user_id' => $user->id])->id;
+        $folderID = FolderFactory::new()->for($user)->create()->id;
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folderID)->addBookmarksPermission()->create();
         FolderAccessFactory::new()->user($anotherCollaborator->id)->folder($folderID)->addBookmarksPermission()->create();
@@ -396,7 +396,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::times(3)->create();
 
-        $folderID = FolderFactory::new()->create(['user_id' => $folderOwner->id])->id;
+        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
         (new InviteTokensStore(app('cache')->store()))->store(
             $token = Uuid::generate(),

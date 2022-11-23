@@ -58,7 +58,7 @@ class LeaveFolderCollaborationTest extends TestCase
     public function testExitCollaboration(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
 
@@ -77,8 +77,8 @@ class LeaveFolderCollaborationTest extends TestCase
     public function testWillOnlyLeaveSpecifiedFolder(): void
     {
         [$mark, $tony, $collaborator] = UserFactory::new()->count(3)->create();
-        $marksFolder = FolderFactory::new()->create(['user_id' => $mark->id]);
-        $tonysFolder = FolderFactory::new()->create(['user_id' => $tony->id]);
+        $marksFolder = FolderFactory::new()->for($mark)->create();
+        $tonysFolder = FolderFactory::new()->for($tony)->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($marksFolder->id)->create();
         FolderAccessFactory::new()->user($collaborator->id)->folder($tonysFolder->id)->create();
@@ -126,7 +126,7 @@ class LeaveFolderCollaborationTest extends TestCase
         Passport::actingAs($folderOwner = UserFactory::new()->create());
 
         $this->leaveFolderCollaborationResponse([
-            'folder_id' =>  FolderFactory::new()->create(['user_id' => $folderOwner->id])->id
+            'folder_id' =>  FolderFactory::new()->for($folderOwner)->create()->id
         ])->assertForbidden()
             ->assertExactJson([
                 'message' => 'Cannot exit from own folder'
@@ -136,7 +136,7 @@ class LeaveFolderCollaborationTest extends TestCase
     public function testWillNotHaveAccessToFolderAfterAction(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
         $factory = FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id);
         $collaboratorBookmarks = BookmarkFactory::new()->count(2)->create();
 
@@ -173,7 +173,7 @@ class LeaveFolderCollaborationTest extends TestCase
     public function testFolderWillNotShowInUserCollaborations(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
 
@@ -191,7 +191,7 @@ class LeaveFolderCollaborationTest extends TestCase
     public function testFolderOwnerWillNotSeeUserAsCollaborator(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
 
@@ -216,7 +216,7 @@ class LeaveFolderCollaborationTest extends TestCase
     public function testWillNotifyFolderOwnerWhenUserExits(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create(['user_id' => $folderOwner->id]);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
 
@@ -237,8 +237,9 @@ class LeaveFolderCollaborationTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
+            ->for($folderOwner)
             ->setting(fn (SettingsBuilder $b) => $b->disableNotifications())
-            ->create(['user_id' => $folderOwner->id]);
+            ->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
         Notification::fake();
@@ -253,8 +254,9 @@ class LeaveFolderCollaborationTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
+            ->for($folderOwner)
             ->setting(fn (SettingsBuilder $b) => $b->disableNotifications())
-            ->create(['user_id' => $folderOwner->id]);
+            ->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
         Notification::fake();
@@ -269,8 +271,9 @@ class LeaveFolderCollaborationTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
+            ->for($folderOwner)
             ->setting(fn (SettingsBuilder $b) => $b->disableCollaboratorExitNotification())
-            ->create(['user_id' => $folderOwner->id]);
+            ->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
         Notification::fake();
@@ -286,7 +289,8 @@ class LeaveFolderCollaborationTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
             ->setting(fn (SettingsBuilder $b) => $b->disableCollaboratorExitNotification())
-            ->create(['user_id' => $folderOwner->id]);
+            ->for($folderOwner)
+            ->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
         Notification::fake();
@@ -302,7 +306,8 @@ class LeaveFolderCollaborationTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
             ->setting(fn (SettingsBuilder $b) => $b->enableOnlyCollaboratorWithWritePermissionNotification())
-            ->create(['user_id' => $folderOwner->id]);
+            ->for($folderOwner)
+            ->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->viewBookmarksPermission()->create();
         Notification::fake();
@@ -318,7 +323,8 @@ class LeaveFolderCollaborationTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()
             ->setting(fn (SettingsBuilder $b) => $b->enableOnlyCollaboratorWithWritePermissionNotification())
-            ->create(['user_id' => $folderOwner->id]);
+            ->for($folderOwner)
+            ->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->removeBookmarksPermission()->create();
         Notification::fake();

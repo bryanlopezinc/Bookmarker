@@ -46,7 +46,8 @@ class PruneDeletedUsersDataTest extends TestCase
 
         $userBookmarks = BookmarkFactory::new()
             ->count(10)
-            ->create(['user_id' => $user->id])
+            ->for($user)
+            ->create()
             ->each(function (Bookmark $bookmark, int $index) use ($tags, $userFolders) {
                 BookmarkHealth::query()->create([
                     'bookmark_id' => $bookmark->id,

@@ -50,7 +50,7 @@ class CleanDeletedUsersTableTest extends TestCase
 
         $user = UserFactory::new()->create();
 
-        BookmarkFactory::new()->create(['user_id' => $user->id]);
+        BookmarkFactory::new()->for($user)->create();
 
         DeletedUser::query()->create(['user_id' => $user->id]);
 

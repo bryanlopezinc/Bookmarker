@@ -28,28 +28,24 @@ class FetchUserBookmarksRepositoryTest extends TestCase
 
     public function testWillFetchUserBookmarks(): void
     {
-        BookmarkFactory::new()->count(5)->create([
-            'user_id' => $userId = UserFactory::new()->create()->id
-        ]);
+        BookmarkFactory::new()->count(5)->for($user = UserFactory::new()->create())->create();
 
-        foreach ($this->repository->fetch(new UserID($userId), Data::fromArray([])) as $bookmark) {
-            $this->assertTrue($userId === $bookmark->ownerId->value());
+        foreach ($this->repository->fetch(new UserID($user->id), Data::fromArray([])) as $bookmark) {
+            $this->assertTrue($user->id === $bookmark->ownerId->value());
             $this->assertFalse($bookmark->isUserFavorite);
         }
     }
 
     public function testWillReturnUserBookmarksFromAParticularSource(): void
     {
-        BookmarkFactory::new()->count(5)->create([
-            'user_id' => $userId = UserFactory::new()->create()->id,
-        ]);
+        BookmarkFactory::new()->count(5)->for($user = UserFactory::new()->create())->create();
 
         BookmarkFactory::new()->count(5)->create([
-            'user_id' => $userId,
+            'user_id' => $user->id,
             'source_id' => $sourceID = SourceFactory::new()->create()->id
         ]);
 
-        $result = $this->repository->fetch(new UserID($userId), Data::fromArray([
+        $result = $this->repository->fetch(new UserID($user->id), Data::fromArray([
             'source_id' => new ResourceID($sourceID)
         ]));
 
@@ -62,13 +58,11 @@ class FetchUserBookmarksRepositoryTest extends TestCase
 
     public function testWillReturnUserBookmarksWithAParticularTag(): void
     {
-        $models = BookmarkFactory::new()->count(10)->create([
-            'user_id' => $userId = UserFactory::new()->create()->id,
-        ]);
+        $models = BookmarkFactory::new()->count(10)->for($user = UserFactory::new()->create())->create();
 
         (new TagRepository)->attach(TagsCollection::make(['foobar']), $models[0]);
 
-        $result = $this->repository->fetch(new UserID($userId), Data::fromArray([
+        $result = $this->repository->fetch(new UserID($user->id), Data::fromArray([
             'tags' => ['foobar']
         ]));
 
@@ -79,16 +73,14 @@ class FetchUserBookmarksRepositoryTest extends TestCase
 
     public function testWillSetIsUserFavorite(): void
     {
-        $bookmarks = BookmarkFactory::new()->count(5)->create([
-            'user_id' => $userId = UserFactory::new()->create()->id
-        ]);
+        $bookmarks = BookmarkFactory::new()->count(5)->for($user = UserFactory::new()->create())->create();
 
         Favorite::query()->create([
             'bookmark_id' => $favoriteID = $bookmarks->first()->id,
-            'user_id' => $userId
+            'user_id' => $user->id
         ]);
 
-        $this->repository->fetch(new UserID($userId), Data::fromArray([]))
+        $this->repository->fetch(new UserID($user->id), Data::fromArray([]))
             ->getCollection()
             ->each(function (Bookmark $bookmark) use ($favoriteID) {
                 if ($bookmark->id->value() === $favoriteID) {

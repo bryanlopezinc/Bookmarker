@@ -54,6 +54,11 @@ final class Bookmark extends Model implements TaggableInterface
         'resolved_at' => 'datetime'
     ];
 
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+    
     public function tags(): HasManyThrough
     {
         return $this->hasManyThrough(Tag::class, Taggable::class, 'taggable_id', 'id', 'id', 'tag_id')

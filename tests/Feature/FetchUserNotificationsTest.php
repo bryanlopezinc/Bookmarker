@@ -73,7 +73,7 @@ class FetchUserNotificationsTest extends TestCase
     public function testWillFetchUserNotifications(): void
     {
         [$user, $tom, $sean, $taylor] = UserFactory::times(4)->create();
-        $tomsBookmarks = BookmarkFactory::times(3)->create(['user_id' => $tom->id])->pluck('id');
+        $tomsBookmarks = BookmarkFactory::times(3)->for($tom)->create()->pluck('id');
         $folder = FolderFactory::new()->for($user)->create();
 
         $notifications =  [
@@ -100,7 +100,7 @@ class FetchUserNotificationsTest extends TestCase
     public function testBookmarksAddedToFolderNotification(): void
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
-        $collaboratorBookmarks = BookmarkFactory::times(3)->create(['user_id' => $collaborator->id])->pluck('id');
+        $collaboratorBookmarks = BookmarkFactory::times(3)->for($collaborator)->create()->pluck('id');
         $folder = FolderFactory::new()->for($user)->create();
 
         $user->notify(
@@ -166,7 +166,7 @@ class FetchUserNotificationsTest extends TestCase
     public function testBookmarksRemovedFromFolderNotification(): void
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
-        $collaboratorBookmarks = BookmarkFactory::times(3)->create(['user_id' => $collaborator->id])->pluck('id');
+        $collaboratorBookmarks = BookmarkFactory::times(3)->for($collaborator)->create()->pluck('id');
         $folder = FolderFactory::new()->for($user)->create();
 
         $user->notify(

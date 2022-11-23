@@ -61,14 +61,9 @@ class FetchUserBookmarksSourcesTest extends TestCase
 
         $source = SourceFactory::new()->create();
 
-        BookmarkFactory::new()->count(5)->create([
-            'user_id' => $user->id,
-            'source_id' => $source->id
-        ]);
+        BookmarkFactory::new()->count(5)->for($user)->create(['source_id' => $source->id]);
 
-        BookmarkFactory::new()->count(5)->create([
-            'user_id' => $user->id
-        ]);
+        BookmarkFactory::new()->for($user)->count(5)->create();
 
         $this->withoutExceptionHandling()
             ->userBookmarksSourcesResponse()

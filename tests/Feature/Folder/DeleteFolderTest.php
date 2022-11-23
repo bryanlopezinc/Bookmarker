@@ -199,7 +199,7 @@ class DeleteFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        [$userBookmark, $userBookmarkAddedToFolder] = BookmarkFactory::new()->count(2)->create(['user_id' => $user->id]);
+        [$userBookmark, $userBookmarkAddedToFolder] = BookmarkFactory::new()->count(2)->for($user)->create();
         $folderID = FolderFactory::new()->for($user)->create()->id;
 
         $this->postJson(route('addBookmarksToFolder'), [
@@ -219,7 +219,7 @@ class DeleteFolderTest extends TestCase
     public function test_will_not_delete_bookmarks_added_by_collaborators_when_deleting_folder_and_its_bookmarks(): void
     {
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
-        $collaboratorBookmarks = BookmarkFactory::new()->count(2)->create(['user_id' => $collaborator->id]);
+        $collaboratorBookmarks = BookmarkFactory::new()->count(2)->for($collaborator)->create();
         $folderID = FolderFactory::new()->for($folderOwner)->create(['created_at' => now()])->id;
 
         FolderAccessFactory::new()

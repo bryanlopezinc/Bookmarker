@@ -14,15 +14,14 @@ class FetchUserBookmarksSourcesRepositoryTest extends TestCase
 {
     public function testWillFetchUserBookmarksSources(): void
     {
-        BookmarkFactory::new()->count(5)->create([
-            'user_id' => $userId = UserFactory::new()->create()->id,
+        BookmarkFactory::new()->count(5)->for($user = UserFactory::new()->create())->create([
             'source_id' => SourceFactory::new()->create()->id
         ]);
 
-        BookmarkFactory::new()->count(4)->create(['user_id' => $userId]);
+        BookmarkFactory::new()->count(4)->create(['user_id' => $user->id]);
         BookmarkFactory::new()->count(5)->create();
 
-        $result = (new Repository)->get(new UserID($userId), new PaginationData());
+        $result = (new Repository)->get(new UserID($user->id), new PaginationData());
 
         $this->assertCount(5, $result);
     }

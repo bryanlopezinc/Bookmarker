@@ -58,7 +58,7 @@ class UpdateBookmarkTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         /** @var Bookmark */
-        $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
+        $model = BookmarkFactory::new()->for($user)->create();
 
         $this->updateBookmarkResponse([
             'id' => $model->id,
@@ -91,7 +91,7 @@ class UpdateBookmarkTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         /** @var Bookmark */
-        $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
+        $model = BookmarkFactory::new()->for($user)->create();
 
         $this->updateBookmarkResponse([
             'id' => $model->id,
@@ -125,7 +125,7 @@ class UpdateBookmarkTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         /** @var Bookmark */
-        $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
+        $model = BookmarkFactory::new()->for($user)->create();
 
         $this->updateBookmarkResponse([
             'id' => $model->id,
@@ -150,7 +150,7 @@ class UpdateBookmarkTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         /** @var Bookmark */
-        $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
+        $model = BookmarkFactory::new()->for($user)->create();
 
         $this->updateBookmarkResponse([
             'id' => $model->id,
@@ -174,7 +174,7 @@ class UpdateBookmarkTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
+        $model = BookmarkFactory::new()->for($user)->create();
 
         TagFactory::new()
             ->count(10)
@@ -206,7 +206,7 @@ class UpdateBookmarkTest extends TestCase
     public function testBookmarkMustBelongToUser(): void
     {
         [$user, $userWithBadIntention] = UserFactory::new()->count(2)->create();
-        $userBookmark = BookmarkFactory::new()->create(['user_id' => $user->id]);
+        $userBookmark = BookmarkFactory::new()->for($user)->create();
 
         Passport::actingAs($userWithBadIntention);
         $this->updateBookmarkResponse([
@@ -250,7 +250,7 @@ class UpdateBookmarkTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
+        $model = BookmarkFactory::new()->for($user)->create();
 
         $this->updateBookmarkResponse([
             'id' => $model->id,

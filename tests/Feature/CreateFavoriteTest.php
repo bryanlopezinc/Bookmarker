@@ -69,7 +69,7 @@ class CreateFavoriteTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmark = BookmarkFactory::new()->create(['user_id' => $user->id]);
+        $bookmark = BookmarkFactory::new()->for($user)->create();
 
         $this->createFavoriteResponse(['bookmarks' => (string) $bookmark->id])->assertCreated();
 
@@ -89,7 +89,7 @@ class CreateFavoriteTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarks = BookmarkFactory::new()->count($amount = 5)->create([ 'user_id' => $user->id]);
+        $bookmarks = BookmarkFactory::new()->count($amount = 5)->for($user)->create();
 
         $this->createFavoriteResponse(['bookmarks' => $bookmarks->pluck('id')->implode(',')])->assertCreated();
 
@@ -111,7 +111,7 @@ class CreateFavoriteTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarks = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id]);
+        $bookmarks = BookmarkFactory::new()->count(5)->for($user)->create();
 
         $this->createFavoriteResponse(['bookmarks' => $bookmarks->pluck('id')->implode(',')])->assertCreated();
 
@@ -122,7 +122,7 @@ class CreateFavoriteTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmark = BookmarkFactory::new()->create(['user_id' => $user->id]);
+        $bookmark = BookmarkFactory::new()->for($user)->create();
 
         $this->createFavoriteResponse(['bookmarks' => (string) $bookmark->id])->assertCreated();
         $this->createFavoriteResponse(['bookmarks' => (string) $bookmark->id])
@@ -145,9 +145,7 @@ class CreateFavoriteTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmark = BookmarkFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $bookmark = BookmarkFactory::new()->for($user)->create();
 
         $this->createFavoriteResponse(['bookmarks' => (string) ($bookmark->id + 1)])
             ->assertNotFound()

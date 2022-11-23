@@ -43,9 +43,7 @@ class DeleteBookmarkTagsTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $model = BookmarkFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $model = BookmarkFactory::new()->for($user)->create();
 
         $tag = TagFactory::new()->create(['created_by' => $model->user_id]);
 
@@ -63,9 +61,7 @@ class DeleteBookmarkTagsTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $model = BookmarkFactory::new()->create([
-            'user_id' => $user->id
-        ]);
+        $model = BookmarkFactory::new()->for($user)->create();
 
         $this->deleteBookmarkTagsResponse(['id' => $model->id + 1, 'tags' => $this->faker->word])->assertNotFound();
     }
@@ -74,7 +70,7 @@ class DeleteBookmarkTagsTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $model = BookmarkFactory::new()->create(['user_id' => $user->id]);
+        $model = BookmarkFactory::new()->for($user)->create();
 
         $this->deleteBookmarkTagsResponse([
             'id' => $model->id,

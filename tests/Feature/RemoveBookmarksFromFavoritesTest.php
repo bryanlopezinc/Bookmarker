@@ -50,7 +50,7 @@ class RemoveBookmarksFromFavoritesTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmark = BookmarkFactory::new()->create(['user_id' => $user->id]);
+        $bookmark = BookmarkFactory::new()->for($user)->create();
 
         $this->postJson(route('createFavorite'), ['bookmarks' => (string) $bookmark->id])->assertCreated();
 
@@ -74,7 +74,8 @@ class RemoveBookmarksFromFavoritesTest extends TestCase
 
         $bookmarkIDs = BookmarkFactory::new()
             ->count(10)
-            ->create(['user_id' => $user->id])
+            ->for($user)
+            ->create()
             ->pluck('id')
             ->each(fn (int $bookmarkID) => $this->postJson(route('createFavorite'), ['bookmarks' => (string) $bookmarkID])->assertCreated());
 
@@ -115,7 +116,7 @@ class RemoveBookmarksFromFavoritesTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmark = BookmarkFactory::new()->create([ 'user_id' => $user->id]);
+        $bookmark = BookmarkFactory::new()->for($user)->create();
 
         $this->postJson(route('createFavorite'), ['bookmarks' => (string) $bookmark->id])->assertCreated();
 
@@ -128,8 +129,8 @@ class RemoveBookmarksFromFavoritesTest extends TestCase
     {
         [$frank, $dan]= UserFactory::new()->count(2)->create();
 
-        $franksBookmark = BookmarkFactory::new()->create(['user_id' => $frank->id]);
-        $dansBookmark = BookmarkFactory::new()->create(['user_id' => $dan->id]);
+        $franksBookmark = BookmarkFactory::new()->for($frank)->create();
+        $dansBookmark = BookmarkFactory::new()->for($dan)->create();
 
         Passport::actingAs($frank);
         $this->postJson(route('createFavorite'), ['bookmarks' => (string) $franksBookmark->id])->assertCreated();

@@ -76,8 +76,8 @@ class FetchPublicFolderBookmarksTest extends TestCase
 
         $user = UserFactory::new()->create();
 
-        $privateFolderBookmarkIDs = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
-        $publicFolderBookmarkIDs = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
+        $privateFolderBookmarkIDs = BookmarkFactory::new()->for($user)->count(5)->create()->pluck('id');
+        $publicFolderBookmarkIDs = BookmarkFactory::new()->count(5)->for($user)->create()->pluck('id');
         $folder = FolderFactory::new()->for($user)->public()->create();
 
         $publicFolderBookmarkIDs->tap(fn (Collection $collection) => FolderBookmark::insert(
@@ -164,7 +164,7 @@ class FetchPublicFolderBookmarksTest extends TestCase
 
         $user = UserFactory::new()->create();
 
-        $folderBookmarkIDs = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
+        $folderBookmarkIDs = BookmarkFactory::new()->count(5)->for($user)->create()->pluck('id');
         $folder = FolderFactory::new()->public()->for($user)->create();
 
         $folderBookmarkIDs->tap(fn (Collection $collection) => FolderBookmark::insert(

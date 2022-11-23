@@ -84,8 +84,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarkIDs = BookmarkFactory::new()->count(10)->create([
-            'user_id' => $user->id,
+        $bookmarkIDs = BookmarkFactory::new()->count(10)->for($user)->create([
             'created_at' => $createdAt = now()->yesterday(),
             'updated_at' => $createdAt,
         ])->pluck('id');
@@ -130,7 +129,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarkIDs = BookmarkFactory::new()->count(3)->create(['user_id' => $user->id])->pluck('id');
+        $bookmarkIDs = BookmarkFactory::new()->count(3)->for($user)->create()->pluck('id');
         $folderID = FolderFactory::new()->for($user)->create()->id;
 
         //Assert will return not found when all bookmarks don't exist in folder
@@ -159,7 +158,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarks = BookmarkFactory::new()->count(10)->create(['user_id' => $user->id]);
+        $bookmarks = BookmarkFactory::new()->count(10)->for($user)->create();
         $folder = FolderFactory::new()->for(UserFactory::new())->create();
 
         $this->removeFolderBookmarksResponse([
@@ -172,7 +171,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
     {
         [$folderOwner, $user] = UserFactory::new()->count(2)->create();
 
-        $bookmarkIDs = BookmarkFactory::times(3)->create(['user_id' => $folderOwner->id])->pluck('id');
+        $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
         $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
         Passport::actingAs($folderOwner);
@@ -221,7 +220,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
     public function testCollaboratorMustHaveRemoveBookmarksPermission(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $bookmarkIDs = BookmarkFactory::times(3)->create(['user_id' => $folderOwner->id])->pluck('id');
+        $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
         $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
         $folderAccessFactory = FolderAccessFactory::new()->user($collaborator->id)->folder($folderID);
 
@@ -252,7 +251,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarks = BookmarkFactory::new()->count(3)->create(['user_id' => $user->id]);
+        $bookmarks = BookmarkFactory::new()->count(3)->for($user)->create();
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->removeFolderBookmarksResponse([
@@ -268,8 +267,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarkIDs = BookmarkFactory::new()->count(10)->create([
-            'user_id' => $user->id,
+        $bookmarkIDs = BookmarkFactory::new()->count(10)->for($user)->create([
             'created_at' => $createdAt = now()->yesterday(),
             'updated_at' => $createdAt,
         ])->pluck('id');
@@ -300,8 +298,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
 
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarkIDs = BookmarkFactory::new()->count(10)->create([
-            'user_id' => $user->id,
+        $bookmarkIDs = BookmarkFactory::new()->count(10)->for($user)->create([
             'created_at' => $createdAt = now()->yesterday(),
             'updated_at' => $createdAt,
         ])->pluck('id');
@@ -359,7 +356,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
     public function testWillNotSendNotificationWhenBookmarksWereRemovedByFolderOwner(): void
     {
         $folderOwner = UserFactory::new()->create();
-        $bookmarkIDs = BookmarkFactory::times(3)->create(['user_id' => $folderOwner->id])->pluck('id');
+        $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
         $folderID = FolderFactory::new()->create(['user_id' => $folderOwner->id])->id;
 
         Notification::fake();
@@ -377,7 +374,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
     public function testWillSendNotificationsWhenBookmarksWereNotRemovedByFolderOwner(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $bookmarkIDs = BookmarkFactory::times(3)->create(['user_id' => $folderOwner->id])->pluck('id');
+        $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
         $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
         Passport::actingAs($folderOwner);
@@ -408,7 +405,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
     public function testWillNotSendNotificationsWhenNotificationsIsDisabled(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $bookmarkIDs = BookmarkFactory::times(3)->create(['user_id' => $folderOwner->id])->pluck('id');
+        $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
         $folderID = FolderFactory::new()
             ->for($folderOwner)
             ->setting(fn (FolderSettingsBuilder $b) => $b->disableNotifications())
@@ -437,7 +434,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
     public function testWillNotSendNotificationsWhenBookmarksRemovedNotificationsIsDisabled(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $bookmarkIDs = BookmarkFactory::times(3)->create(['user_id' => $folderOwner->id])->pluck('id');
+        $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
         $folderID = FolderFactory::new()
             ->for($folderOwner)
             ->setting(fn (FolderSettingsBuilder $b) => $b->disableBookmarksRemovedNotification())

@@ -27,7 +27,7 @@ class FolderPermissionsSeeder extends Seeder
         $seeded = FolderPermission::all(['name'])->pluck('name');
 
         collect(self::PERMISSIONS)
-            ->filter(fn (string $permission) => !$seeded->contains($permission))
+            ->filter(fn (string $permission) => $seeded->doesntContain($permission))
             ->map(fn (string $permission) => [
                 'name' => $permission,
                 'created_at' => now()

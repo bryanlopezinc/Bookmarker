@@ -67,7 +67,7 @@ class DeleteBookmarksFromSourceTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $userBookmarks = BookmarkFactory::new()->count(2)->create(['user_id' => $user->id]);
+        $userBookmarks = BookmarkFactory::new()->for($user)->count(2)->create();
 
         $this->deleteBookmarksResponse(['source_id' => $userBookmarks->first()->source_id])->assertOk();
 

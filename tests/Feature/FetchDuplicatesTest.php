@@ -85,10 +85,11 @@ class FetchDuplicatesTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $userBookmarks = BookmarkFactory::new()->count(5)->create([
-            'url_canonical_hash' => (new UrlHasher)->hashUrl(new Url($this->faker->url)),
-            'user_id' => $user->id
-        ])->pluck('id');
+        $userBookmarks = BookmarkFactory::new()
+            ->for($user)
+            ->count(5)
+            ->create(['url_canonical_hash' => (new UrlHasher)->hashUrl(new Url($this->faker->url))])
+            ->pluck('id');
 
         $this->fetchDuplicatesResponse(['id' => $userBookmarks->first()])
             ->assertOk()
@@ -121,10 +122,7 @@ class FetchDuplicatesTest extends TestCase
 
         BookmarkFactory::times(5)->create(['url_canonical_hash' => $hash]);
 
-        $userBookmarks = BookmarkFactory::new()->count(3)->create([
-            'url_canonical_hash' => $hash,
-            'user_id' => $user->id
-        ])->pluck('id');
+        $userBookmarks = BookmarkFactory::new()->count(3)->for($user)->create(['url_canonical_hash' => $hash])->pluck('id');
 
         $this->fetchDuplicatesResponse(['id' => $userBookmarks->first()])
             ->assertOk()

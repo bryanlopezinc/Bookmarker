@@ -63,8 +63,8 @@ class HideFolderBookmarksTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $dontHideBookmarkIDs = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
-        $bookmarkIDs = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id])->pluck('id');
+        $dontHideBookmarkIDs = BookmarkFactory::new()->count(5)->for($user)->create()->pluck('id');
+        $bookmarkIDs = BookmarkFactory::new()->count(5)->for($user)->create()->pluck('id');
 
         $folder = FolderFactory::new()
             ->for($user)
@@ -135,10 +135,7 @@ class HideFolderBookmarksTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarkIDs = BookmarkFactory::new()->count(5)->create([
-            'user_id' => $user->id
-        ])->pluck('id');
-
+        $bookmarkIDs = BookmarkFactory::new()->count(5)->for($user)->create()->pluck('id');
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->hideFolderResponse([

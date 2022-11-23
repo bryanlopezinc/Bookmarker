@@ -106,10 +106,10 @@ class TagRepositoryTest extends TestCase
         $tag  = TagFactory::new()->make()->name;
         $repository = new TagRepository;
 
-        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->create(['user_id' => $user->id]));
-        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->create(['user_id' => $user->id]));
-        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->create(['user_id' => $user->id]));
-        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->create(['user_id' => $user->id]));
+        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->for($user)->create());
+        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->for($user)->create());
+        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->for($user)->create());
+        $repository->attach(TagsCollection::make([$tag]), BookmarkFactory::new()->for($user)->create());
 
         $this->assertEquals(1, Tag::where('created_by', $user->id)->whereIn('name', [$tag])->get(['name'])->count());
     }

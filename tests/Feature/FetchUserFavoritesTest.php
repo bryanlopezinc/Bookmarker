@@ -65,8 +65,7 @@ class FetchUserFavoritesTest extends TestCase
 
         $this->getTestResponse()->assertOk()->assertJsonCount(0, 'data');
 
-        $bookmarks = BookmarkFactory::new()->count(5)->create([
-            'user_id' => $user->id,
+        $bookmarks = BookmarkFactory::new()->count(5)->for($user)->create([
             'title' => '<h1>did you forget something?</h1>',
             'description' => 'And <h1>spoof!</h1>'
         ]);
@@ -107,7 +106,7 @@ class FetchUserFavoritesTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarks = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id]);
+        $bookmarks = BookmarkFactory::new()->count(5)->for($user)->create();
 
         $this->postJson(route('createFavorite'), ['bookmarks' => (string) $bookmarks->pluck('id')->implode(',')])->assertCreated();
 

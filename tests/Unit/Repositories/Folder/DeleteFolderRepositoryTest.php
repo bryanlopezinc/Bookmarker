@@ -29,7 +29,7 @@ class DeleteFolderRepositoryTest extends TestCase
     {
         $user = UserFactory::new()->create();
 
-        $bookmark = BookmarkFactory::new()->create(['user_id' => $user->id]);
+        $bookmark = BookmarkFactory::new()->for($user)->create();
         $folder = FolderFactory::new()->for($user)->create();
         $tags = TagsCollection::make(TagFactory::new()->count(5)->make());
 

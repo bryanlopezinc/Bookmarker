@@ -208,7 +208,7 @@ class FetchUserFoldersTest extends TestCase
         $folderWithMostItems = $userFolders->random();
 
         $this->postJson(route('addBookmarksToFolder'), [
-            'bookmarks' => BookmarkFactory::new()->count(3)->create(['user_id' => $user->id])->pluck('id')->implode(','),
+            'bookmarks' => BookmarkFactory::new()->count(3)->for($user)->create()->pluck('id')->implode(','),
             'folder' => $folderWithMostItems->id
         ])->assertCreated();
 
@@ -233,7 +233,7 @@ class FetchUserFoldersTest extends TestCase
             ->reject($folderIDWithLeastItems)
             ->each(function (int $folderID) use (&$bookmarksAmountToAddToFolder, $user) {
                 $this->postJson(route('addBookmarksToFolder'), [
-                    'bookmarks' => BookmarkFactory::new()->count($bookmarksAmountToAddToFolder)->create(['user_id' => $user->id])->pluck('id')->implode(','),
+                    'bookmarks' => BookmarkFactory::new()->count($bookmarksAmountToAddToFolder)->for($user)->create()->pluck('id')->implode(','),
                     'folder' => $folderID
                 ])->assertCreated();
 

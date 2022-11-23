@@ -104,8 +104,7 @@ class FetchUserBookmarksTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $userBookmarks = BookmarkFactory::new()->count(10)->create([
-            'user_id' => $user->id,
+        $userBookmarks = BookmarkFactory::new()->count(10)->for($user)->create([
             'title' => '<h1>did you forget something?</h1>',
             'description' => 'And <h1>spoof!</h1>'
         ]);
@@ -169,7 +168,7 @@ class FetchUserBookmarksTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarks = BookmarkFactory::new()->count(10)->create(['user_id' => $user->id]);
+        $bookmarks = BookmarkFactory::new()->for($user)->count(10)->create();
 
         $this->userBookmarksResponse([])->assertOk();
 
@@ -367,7 +366,7 @@ class FetchUserBookmarksTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarks = BookmarkFactory::new()->count(5)->create(['user_id' => $user->id]);
+        $bookmarks = BookmarkFactory::new()->count(5)->for($user)->create();
 
         $userFavorite = $bookmarks->random();
 

@@ -28,10 +28,7 @@ class DeleteBookmarkRepositoryTest extends TestCase
     public function testWillDecrementUserBookmarksCount(): void
     {
         $user = UserFactory::new()->create();
-
-        $bookmarks = BookmarkFactory::new()->count(5)->create([
-            'user_id' => $user->id
-        ]);
+        $bookmarks = BookmarkFactory::new()->count(5)->for($user)->create();
 
         UserBookmarksCount::create([
             'user_id' => $user->id,
@@ -51,11 +48,8 @@ class DeleteBookmarkRepositoryTest extends TestCase
 
     public function testWillDeleteBookmarkFromFolderWhenBookmarkExistsInFolder(): void
     {
-        $userID = UserFactory::new()->create()->id;
-
-        $bookmarkIDs = BookmarkFactory::new()->count(5)->create([
-            'user_id' => $userID
-        ])->pluck('id');
+        $user= UserFactory::new()->create();
+        $bookmarkIDs = BookmarkFactory::new()->count(5)->for($user)->create()->pluck('id');
 
         FolderBookmark::create([
             'bookmark_id' => $bookmarkID = $bookmarkIDs->first(),
@@ -86,11 +80,8 @@ class DeleteBookmarkRepositoryTest extends TestCase
 
     public function testWillNotDeleteBookmarkFromFolderWhenBookmarkDoesNotExistsInFolder(): void
     {
-        $userID = UserFactory::new()->create()->id;
-
-        $bookmarkIDs = BookmarkFactory::new()->count(2)->create([
-            'user_id' => $userID
-        ])->pluck('id');
+        $user = UserFactory::new()->create();
+        $bookmarkIDs = BookmarkFactory::new()->count(2)->for($user)->create()->pluck('id');
 
         FolderBookmark::create([
             'bookmark_id' => $bookmarkID = BookmarkFactory::new()->create()->id,
@@ -122,10 +113,7 @@ class DeleteBookmarkRepositoryTest extends TestCase
     public function testWillDecrementUserFavoritesCount(): void
     {
         $user = UserFactory::new()->create();
-
-        $bookmarkIDs = BookmarkFactory::new()->count(5)->create([
-            'user_id' => $user->id
-        ])->pluck('id');
+        $bookmarkIDs = BookmarkFactory::new()->count(5)->for($user)->create()->pluck('id');
 
         Favorite::query()->create([
             'bookmark_id' => $bookmarkIDs->random(),
@@ -151,10 +139,7 @@ class DeleteBookmarkRepositoryTest extends TestCase
     public function testWillNotDecrementUserFavoritesCounts(): void
     {
         $user = UserFactory::new()->create();
-
-        $bookmarkIDs = BookmarkFactory::new()->count(5)->create([
-            'user_id' => $user->id
-        ])->pluck('id');
+        $bookmarkIDs = BookmarkFactory::new()->count(5)->for($user)->create()->pluck('id');
 
         //Favorite last bookmark
         Favorite::query()->create([

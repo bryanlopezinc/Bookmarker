@@ -65,7 +65,7 @@ class Request2FACodeForLoginTest extends TestCase
 
     public function testSuccessResponse(): void
     {
-        $verificationCode = TwoFACode::generate()->code();
+        $verificationCode = TwoFACode::generate()->value();
         $user = UserFactory::new()->create();
 
         TwoFACode::useGenerator(fn () => $verificationCode);
@@ -79,7 +79,7 @@ class Request2FACodeForLoginTest extends TestCase
 
         Mail::assertQueued(function (TwoFACodeMail $mail) use ($user, $verificationCode) {
             $this->assertSame($user->email, $mail->to[0]['address']);
-            $this->assertSame($verificationCode, $mail->get2FACode()->code());
+            $this->assertSame($verificationCode, $mail->get2FACode()->value());
             return true;
         });
 

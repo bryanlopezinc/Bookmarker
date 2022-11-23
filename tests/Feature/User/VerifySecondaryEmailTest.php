@@ -197,7 +197,7 @@ class VerifySecondaryEmailTest extends TestCase
         $callback();
 
         Mail::assertQueued(function (TwoFACodeMail $mail) use (&$verificationCode) {
-            $verificationCode = $mail->get2FACode()->code();
+            $verificationCode = $mail->get2FACode()->value();
             return true;
         });
 

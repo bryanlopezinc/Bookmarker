@@ -13,7 +13,7 @@ trait Requests2FACode
 {
     private function get2FACode(string $username, string $password): int
     {
-        $code = TwoFACode::generate()->code();
+        $code = TwoFACode::generate()->value();
         TwoFACode::useGenerator(fn () => $code);
 
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
@@ -26,7 +26,7 @@ trait Requests2FACode
         app()->forgetInstance(\League\OAuth2\Server\ResourceServer::class);
 
         TwoFACode::useGenerator();
-        
+
         return $code;
     }
 }

@@ -49,14 +49,14 @@ final class TwoFACode
         return new self((int) $code);
     }
 
-    public function code(): int
+    public function value(): int
     {
         return $this->value;
     }
 
     public function toString(): string
     {
-        return (string) $this->code();
+        return (string) $this->value();
     }
 
     public function equals(TwoFACode $code): bool

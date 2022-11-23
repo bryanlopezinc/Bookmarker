@@ -21,7 +21,7 @@ final class TwoFACodeMail extends Mailable
     public function build(): self
     {
         return $this->view('emails.verificationCode', [
-            'code' => $this->twoFACode->code()
+            'code' => $this->twoFACode->value()
         ]);
     }
 }

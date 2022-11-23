@@ -36,10 +36,10 @@ class TwoFACodeTest extends TestCase
         $code = 11111;
         TwoFACode::useGenerator(fn () => $code);
 
-        $this->assertEquals($code, TwoFACode::generate()->code());
-        $this->assertEquals($code, TwoFACode::generate()->code());
-        $this->assertEquals($code, TwoFACode::generate()->code());
-        $this->assertEquals($code, TwoFACode::generate()->code());
+        $this->assertEquals($code, TwoFACode::generate()->value());
+        $this->assertEquals($code, TwoFACode::generate()->value());
+        $this->assertEquals($code, TwoFACode::generate()->value());
+        $this->assertEquals($code, TwoFACode::generate()->value());
 
         TwoFACode::useGenerator();
     }
@@ -49,13 +49,13 @@ class TwoFACodeTest extends TestCase
         $code = 11111;
         TwoFACode::useGenerator(fn () => $code);
 
-        $this->assertEquals($code, TwoFACode::generate()->code());
+        $this->assertEquals($code, TwoFACode::generate()->value());
 
         TwoFACode::useGenerator();
 
-        $this->assertNotEquals($code, TwoFACode::generate()->code());
-        $this->assertNotEquals($code, TwoFACode::generate()->code());
-        $this->assertNotEquals($code, TwoFACode::generate()->code());
+        $this->assertNotEquals($code, TwoFACode::generate()->value());
+        $this->assertNotEquals($code, TwoFACode::generate()->value());
+        $this->assertNotEquals($code, TwoFACode::generate()->value());
     }
 
     public function testCustomGeneratorMustReturnAValidValue(): void
@@ -64,7 +64,7 @@ class TwoFACodeTest extends TestCase
             TwoFACode::useGenerator(fn () => $code);
 
             try {
-                TwoFACode::generate()->code();
+                TwoFACode::generate()->value();
                 return false;
             } catch (Invalid2FACodeException) {
                 return true;
@@ -80,7 +80,7 @@ class TwoFACodeTest extends TestCase
 
     public function testEquals(): void
     {
-        $code = TwoFACode::generate()->code();
+        $code = TwoFACode::generate()->value();
 
         $this->assertTrue(
             (new TwoFACode($code))->equals(new TwoFACode($code))

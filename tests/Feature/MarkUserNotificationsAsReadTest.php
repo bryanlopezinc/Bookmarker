@@ -102,11 +102,11 @@ class MarkUserNotificationsAsReadTest extends TestCase
         $notRead = $notificationIDs->random();
 
         Passport::actingAs($user);
-        $this->readNotificationsResponse(['ids' => $notificationIDs->reject($notRead)->implode(',')])
-            ->assertOk();
+        $this->readNotificationsResponse(['ids' => $notificationIDs->reject($notRead)->implode(',')])->assertOk();
 
         DatabaseNotification::query()
             ->find($notificationIDs->all(), ['read_at', 'id'])
+            ->tap(fn (Collection $notifications) => $this->assertCount(3, $notifications))
             ->each(function (DatabaseNotification $notification) use ($notRead) {
                 if ($notification->id === $notRead) {
                     $this->assertNull($notification->read_at);
@@ -141,9 +141,10 @@ class MarkUserNotificationsAsReadTest extends TestCase
         Passport::actingAs($user);
         $this->readNotificationsResponse(['ids' => $userNotificationIDs->implode(',')])->assertOk();
 
-        DatabaseNotification::select('read_at')
+        DatabaseNotification::query()
             ->where('notifiable_id', $anotherUser->id)
-            ->get()
+            ->get(['read_at'])
+            ->tap(fn (Collection $notifications) => $this->assertCount(1, $notifications))
             ->each(function (DatabaseNotification $notification) {
                 $this->assertNull($notification->read_at);
             });

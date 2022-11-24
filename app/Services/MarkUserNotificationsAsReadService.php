@@ -32,7 +32,8 @@ final class MarkUserNotificationsAsReadService
                 }
             })
             ->each(function (Notification $notification) use ($authUserID) {
-                if (!$authUserID->equals($notification->notifiableID)) {
+                $notificationBelongsToUser = $authUserID->equals($notification->notifiableID);
+                if (!$notificationBelongsToUser) {
                     throw HttpException::notFound(['message' => 'notification not found']);
                 }
             })

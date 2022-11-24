@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories\Folder;
 
+use App\Models\BannedCollaborator;
 use App\Models\FolderAccess;
 use App\UAC;
 use App\Models\FolderPermission;
@@ -52,6 +53,22 @@ final class FolderPermissionsRepository
             ->where('folder_id', $folderID->value())
             ->where('user_id', $collaboratorID->value())
             ->delete();
+    }
+
+    public function banCollaborator(UserID $collaboratorID, FolderID $folderID): void
+    {
+        BannedCollaborator::query()->create([
+            'folder_id' => $folderID->value(),
+            'user_id' => $collaboratorID->value()
+        ]);
+    }
+
+    public function isBanned(UserID $collaboratorID, FolderID $folderID): bool
+    {
+        return BannedCollaborator::query()->where([
+            'folder_id' => $folderID->value(),
+            'user_id' => $collaboratorID->value()
+        ])->exists();
     }
 
     public function revoke(UserID $collaboratorID, FolderID $folderID, UAC $permissions): void

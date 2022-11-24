@@ -42,6 +42,7 @@ final class SendFolderCollaborationInviteService
         $this->ensureIsNotSendingInvitationSelf($inviteeEmail, $inviter);
         $this->ensureUserIsNotSendingInvitationToFolderOwner($folder, $invitee);
         $this->ensureInviteeIsNotAlreadyACollaborator($invitee, $folder);
+        $this->ensureIsNotSendingInviteToABannedCollaborator($invitee, $folder);
 
         $invitationMailSent = RateLimiter::attempt($this->key($inviter, $inviteeEmail), 1, $this->sendInvitationCallback(
             $folder,
@@ -143,6 +144,17 @@ final class SendFolderCollaborationInviteService
         if ($inviteeHasAnyAccessToFolder) {
             throw HttpException::conflict([
                 'message' => 'User already a collaborator'
+            ]);
+        }
+    }
+
+    private function ensureIsNotSendingInviteToABannedCollaborator(User $invitee, Folder $folder): void
+    {
+        $isBanned = $this->permissions->isBanned($invitee->id, $folder->folderID);
+
+        if ($isBanned) {
+            throw HttpException::forbidden([
+                'message' => 'User banned.'
             ]);
         }
     }

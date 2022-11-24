@@ -20,7 +20,7 @@ final class RemoveCollaboratorService
     ) {
     }
 
-    public function revokeUserAccess(ResourceID $folderID, UserID $collaboratorID): void
+    public function revokeUserAccess(ResourceID $folderID, UserID $collaboratorID, bool $banCollaborator): void
     {
         $folder = $this->folderRepository->find($folderID, FolderAttributes::only('id,user_id'));
 
@@ -31,6 +31,10 @@ final class RemoveCollaboratorService
         $this->ensureUserIsAnExistingCollaborator($collaboratorID, $folderID);
 
         $this->permissions->removeCollaborator($collaboratorID, $folderID);
+
+        if ($banCollaborator) {
+            $this->permissions->banCollaborator($collaboratorID, $folderID);
+        }
     }
 
     private function ensureIsNotRemovingSelf(UserID $collaboratorID): void

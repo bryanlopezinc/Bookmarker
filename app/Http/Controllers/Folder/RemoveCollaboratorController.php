@@ -11,18 +11,20 @@ use App\ValueObjects\UserID;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-final class DeleteCollaboratorController
+final class RemoveCollaboratorController
 {
     public function __invoke(Request $request, Service $service): JsonResponse
     {
         $request->validate([
             'user_id' => $rules = ['required', new ResourceIdRule],
-            'folder_id' => $rules
+            'folder_id' => $rules,
+            'ban' => ['sometimes', 'boolean']
         ]);
 
         $service->revokeUserAccess(
             ResourceID::fromRequest($request, 'folder_id'),
-            new UserID((int)$request->input('user_id'))
+            new UserID((int)$request->input('user_id')),
+            $request->boolean('ban')
         );
 
         return response()->json();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder;
 
+use App\Models\BannedCollaborator;
 use App\Models\FolderAccess;
 use Database\Factories\FolderAccessFactory;
 use Database\Factories\FolderFactory;
@@ -13,7 +14,7 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 
-class DeleteFolderCollaboratorTest extends TestCase
+class RemoveFolderCollaboratorTest extends TestCase
 {
     use WithFaker;
 
@@ -53,12 +54,15 @@ class DeleteFolderCollaboratorTest extends TestCase
             'folder_id' => 'bar'
         ])->assertUnprocessable()
             ->assertJsonValidationErrors(['user_id', 'folder_id']);
+
+        $this->deleteCollaboratorResponse(['ban' => 'foo'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['ban']);
     }
 
     public function testFolderMustExist(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
-
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->deleteCollaboratorResponse([
@@ -83,7 +87,6 @@ class DeleteFolderCollaboratorTest extends TestCase
     public function testUserMustBeAPresentCollaborator(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
-
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->deleteCollaboratorResponse([
@@ -98,7 +101,6 @@ class DeleteFolderCollaboratorTest extends TestCase
     public function testWhenUser_id_DoesNotBelongToARegisteredUser(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
-
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->deleteCollaboratorResponse([
@@ -113,13 +115,11 @@ class DeleteFolderCollaboratorTest extends TestCase
     public function testCannotRemoveSelf(): void
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
-
-        Passport::actingAs($user);
-
         $folder = FolderFactory::new()->for($user)->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
 
+        Passport::actingAs($user);
         $this->deleteCollaboratorResponse([
             'user_id' => $user->id,
             'folder_id' => $folder->id
@@ -155,18 +155,42 @@ class DeleteFolderCollaboratorTest extends TestCase
             'user_id' => $collaborator->id,
             'folder_id' => $folder->id
         ]);
+
+        $this->assertDatabaseMissing(BannedCollaborator::class, [
+            'user_id' => $collaborator->id,
+            'folder_id' => $folder->id
+        ]);
+    }
+
+    public function testWillRemoveAndBanCollaborator(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::times(2)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
+
+        Passport::actingAs($folderOwner);
+        $this->deleteCollaboratorResponse([
+            'user_id' => $collaborator->id,
+            'folder_id' => $folder->id,
+            'ban' => true
+        ])->assertOk();
+
+        $this->assertDatabaseHas(BannedCollaborator::class, [
+            'user_id' => $collaborator->id,
+            'folder_id' => $folder->id
+        ]);
     }
 
     public function testWillNotRemoveOtherCollaborators(): void
     {
         [$user, $collaborator, $anotherCollaborator] = UserFactory::times(3)->create();
-
-        Passport::actingAs($user);
         $folder = FolderFactory::new()->for($user)->create();
 
         FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
         FolderAccessFactory::new()->user($anotherCollaborator->id)->folder($folder->id)->create();
 
+        Passport::actingAs($user);
         $this->deleteCollaboratorResponse([
             'user_id' => $collaborator->id,
             'folder_id' => $folder->id

@@ -41,7 +41,7 @@ class CreateBookmarkTest extends TestCase
         $this->createBookmarkResponse()->assertJsonValidationErrorFor('url');
     }
 
-    public function testWillThrowValidationWhenAttributesAreInvalid(): void
+    public function testAttributesMustBeValid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 

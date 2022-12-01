@@ -13,7 +13,7 @@ use Illuminate\Contracts\Cache\Repository;
 
 final class FolderRepository implements FolderRepositoryInterface
 {
-    public function __construct(private FolderRepositoryInterface $repository, private Repository $cache)
+    public function __construct(private FolderRepositoryInterface $repository, private Repository $cache, private int $ttl)
     {
     }
 
@@ -36,7 +36,7 @@ final class FolderRepository implements FolderRepositoryInterface
         // the bookmarks_count attribute and will lead to errors.
         $folder = $this->repository->find($folderID);
 
-        $this->cache->put($key, $folder, now()->addHour());
+        $this->cache->put($key, $folder, $this->ttl);
 
         return $this->filter($folder, $attributes);
     }

@@ -6,7 +6,7 @@ namespace Tests\Unit\Jobs;
 
 use App\DataTransferObjects\ImportData;
 use App\Enums\ImportSource;
-use App\ImporterFactory;
+use App\Importers\Factory;
 use App\Jobs\ImportBookmarks;
 use App\Repositories\UserRepository;
 use App\ValueObjects\UserID;
@@ -26,12 +26,12 @@ class ImportBookmarksTest extends TestCase
                 ->andReturn(false);
         });
 
-        $this->mock(ImporterFactory::class, function (MockInterface $m) {
+        $this->mock(Factory::class, function (MockInterface $m) {
             $m->shouldReceive('getImporter')->never();
         });
 
         (new ImportBookmarks($importData))->handle(
-            app(ImporterFactory::class),
+            app(Factory::class),
             app(UserRepository::class)
         );
     }

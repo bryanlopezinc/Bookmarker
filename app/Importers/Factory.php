@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App;
+namespace App\Importers;
 
 use App\Enums\ImportSource;
 use App\Importers\ImporterInterface;
 use App\Importers;
 
-class ImporterFactory
+class Factory
 {
     public function getImporter(ImportSource $source): ImporterInterface
     {

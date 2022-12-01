@@ -26,8 +26,12 @@ class FolderRepositoryTest extends TestCase
         $cache->expects($this->once())->method('has')->willReturn(true);
         $cache->expects($this->once())->method('get')->willReturn(new Folder([]));
 
-        $folderRepository = new FolderRepository($repository, $cache);
-        $folderRepository->find(new ResourceID(2));
+        $this->repositoryInstance($repository, $cache)->find(new ResourceID(2));
+    }
+
+    private function repositoryInstance($repository, $cache): FolderRepository
+    {
+        return new FolderRepository($repository, $cache, 100);
     }
 
     public function testWillCacheFolderWhenFolderDoesNotExist(): void
@@ -45,12 +49,12 @@ class FolderRepositoryTest extends TestCase
                 $this->assertEquals($folderToCache, $folder);
                 return true;
             }),
-            $this->isType('object')
+            $this->isType('int')
         );
 
         $repository->expects($this->once())->method('find')->willReturn($folder);
 
-        $folderRepository = new FolderRepository($repository, $cache);
+        $folderRepository = $this->repositoryInstance($repository, $cache);
         $folderRepository->find(new ResourceID(2));
     }
 
@@ -64,9 +68,10 @@ class FolderRepositoryTest extends TestCase
         $cache->expects($this->once())->method('has')->willReturn(true);
         $cache->expects($this->once())->method('get')->willReturn($folder);
 
-        $folderRepository = new FolderRepository($repository, $cache);
-
-        $this->assertEquals($folderRepository->find(new ResourceID(2)), $folder);
+        $this->assertEquals(
+            $this->repositoryInstance($repository, $cache)->find(new ResourceID(2)),
+            $folder
+        );
     }
 
     public function test_will_return_all_attributes_when_folder_DoesNot_exist_in_cache(): void
@@ -79,9 +84,7 @@ class FolderRepositoryTest extends TestCase
         $cache->expects($this->once())->method('has')->willReturn(false);
         $repository->expects($this->once())->method('find')->willReturn($folder);
 
-        $folderRepository = new FolderRepository($repository, $cache);
-
-        $this->assertEquals($folderRepository->find(new ResourceID(2)), $folder);
+        $this->assertEquals($this->repositoryInstance($repository, $cache)->find(new ResourceID(2)), $folder);
     }
 
     public function test_will_return_only_requested_attributes_when_folder_exist_in_cache(): void
@@ -98,7 +101,7 @@ class FolderRepositoryTest extends TestCase
         $cache->expects($this->any())->method('has')->willReturn(true);
         $cache->expects($this->any())->method('get')->willReturn($folder);
 
-        $this->assertWillReturnOnlyRequestedAttributes(new FolderRepository($repository, $cache));
+        $this->assertWillReturnOnlyRequestedAttributes($this->repositoryInstance($repository, $cache));
     }
 
     public function test_will_return_only_requested_attributes_when_folder_DoesNotExist_in_cache(): void
@@ -115,7 +118,7 @@ class FolderRepositoryTest extends TestCase
         $cache->expects($this->any())->method('has')->willReturn(false);
         $repository->expects($this->any())->method('find')->willReturn($folder);
 
-        $this->assertWillReturnOnlyRequestedAttributes(new FolderRepository($repository, $cache));
+        $this->assertWillReturnOnlyRequestedAttributes($this->repositoryInstance($repository, $cache));
     }
 
     private function assertWillReturnOnlyRequestedAttributes(FolderRepository $repository): void

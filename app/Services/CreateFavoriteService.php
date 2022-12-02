@@ -16,10 +16,8 @@ use App\ValueObjects\UserID;
 
 final class CreateFavoriteService
 {
-    public function __construct(
-        private FavoriteRepository $repository,
-        private BookmarkRepository $bookmarkRepository
-    ) {
+    public function __construct(private FavoriteRepository $repository, private BookmarkRepository $bookmarkRepository)
+    {
     }
 
     public function create(ResourceIDsCollection $bookmarkIDs): void

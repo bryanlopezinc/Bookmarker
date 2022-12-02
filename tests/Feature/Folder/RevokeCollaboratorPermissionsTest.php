@@ -397,8 +397,11 @@ class RevokeCollaboratorPermissionsTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::times(3)->create();
 
         $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
+        
+        /** @var InviteTokensStore */
+        $cache = app(InviteTokensStore::class);
 
-        (new InviteTokensStore(app('cache')->store()))->store(
+        $cache->store(
             $token = Uuid::generate(),
             new UserID($folderOwner->id),
             new UserID($collaborator->id),

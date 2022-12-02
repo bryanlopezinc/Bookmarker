@@ -17,7 +17,7 @@ final class InviteTokensStore
     public const FOLDER_ID = 'folderID';
     public const PERMISSIONS = 'permission';
 
-    public function __construct(private Repository $repository)
+    public function __construct(private readonly Repository $repository, private readonly int $ttl)
     {
     }
 
@@ -35,7 +35,7 @@ final class InviteTokensStore
             self::PERMISSIONS => $permissions->serialize()
         ];
 
-        $this->repository->put($token->value, $data, now()->addDay());
+        $this->repository->put($token->value, $data, $this->ttl);
     }
 
     public function get(Uuid $token): array

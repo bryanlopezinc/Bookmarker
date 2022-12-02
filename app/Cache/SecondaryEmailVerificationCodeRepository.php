@@ -11,22 +11,18 @@ use Illuminate\Contracts\Cache\Repository;
 
 final class SecondaryEmailVerificationCodeRepository
 {
-    public function __construct(private Repository $store)
+    public function __construct(private readonly Repository $store, private readonly int $ttl)
     {
     }
 
-    public function put(
-        UserID $userID,
-        Email $email,
-        TwoFACode $code,
-        \DateTimeInterface|\DateInterval|int  $ttl
-    ): void {
+    public function put(UserID $userID, Email $email, TwoFACode $code): void
+    {
         $record = [];
 
         $record[] = $email;
         $record[] = $code;
 
-        $this->store->put($this->key($userID), $record, $ttl);
+        $this->store->put($this->key($userID), $record, $this->ttl);
     }
 
     public function has(UserID $userID): bool

@@ -34,11 +34,7 @@ final class Request2FACodeService
         $user = $this->getUser($request);
 
         $twoFACodeSent = RateLimiter::attempt($this->key($user), $maxRequestsPerMinute, function () use ($user) {
-            $this->user2FACodeRepository->put(
-                $user->id,
-                $twoFACode = TwoFACode::generate(),
-                now()->addMinutes(setting('VERIFICATION_CODE_EXPIRE'))
-            );
+            $this->user2FACodeRepository->put($user->id, $twoFACode = TwoFACode::generate());
 
             Mail::to($user->email->value)->queue(new TwoFACodeMail($twoFACode));
         });

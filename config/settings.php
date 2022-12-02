@@ -42,9 +42,6 @@ return [
     //The amount of time (in minutes) a refresh token should live
     'REFRESH_TOKEN_EXPIRE' => 20_160,
 
-    //The amount of time (in minutes) a verification should live
-    'VERIFICATION_CODE_EXPIRE' => 10,
-
     // frequency (in days) a bookmarks health should be checked.
     'HEALTH_CHECK_FREQUENCY' => 6,
 

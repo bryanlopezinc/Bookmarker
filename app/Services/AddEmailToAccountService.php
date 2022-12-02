@@ -16,10 +16,8 @@ use Illuminate\Support\Facades\Mail;
 
 final class AddEmailToAccountService
 {
-    public function __construct(
-        private UserRepository $userRepository,
-        private PendingVerifications $pendingVerifications
-    ) {
+    public function __construct(private UserRepository $userRepository, private PendingVerifications $pendingVerifications)
+    {
     }
 
     public function __invoke(UserID $userID, Email $secondaryEmail): void
@@ -28,12 +26,12 @@ final class AddEmailToAccountService
 
         $verificationCode = TwoFACode::generate();
 
-        $this->pendingVerifications->put($userID, $secondaryEmail, $verificationCode, now()->addMinutes(5));
+        $this->pendingVerifications->put($userID, $secondaryEmail, $verificationCode);
 
         Mail::to($secondaryEmail->value)->queue(new TwoFACodeMail($verificationCode));
     }
 
-    private function validateAction(UserID $userID, Email $email): void
+    private function validateAction(UserID $userID): void
     {
         $userSecondaryEmails = $this->userRepository->getUserSecondaryEmails($userID);
 

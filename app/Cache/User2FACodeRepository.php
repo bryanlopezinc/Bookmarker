@@ -10,13 +10,13 @@ use Illuminate\Contracts\Cache\Repository;
 
 final class User2FACodeRepository
 {
-    public function __construct(private readonly Repository $repository)
+    public function __construct(private readonly Repository $repository, private readonly int $ttl)
     {
     }
 
-    public function put(UserID $userID, TwoFACode $code, \DateTimeInterface|\DateInterval|int  $expireAfter): bool
+    public function put(UserID $userID, TwoFACode $code): bool
     {
-        return  $this->repository->put($this->key($userID), $code, $expireAfter);
+        return  $this->repository->put($this->key($userID), $code, $this->ttl);
     }
 
     public function has(UserID $userID): bool

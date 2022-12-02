@@ -16,7 +16,7 @@ final class JsonValidator
     {
         $validator = new Validator;
 
-        $validationData = json_decode(json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK | JSON_THROW_ON_ERROR));
+        $validationData = json_decode(json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES  | JSON_THROW_ON_ERROR));
 
         $validator->validate($validationData, json_decode($jsonSchema, flags: JSON_THROW_ON_ERROR));
 

@@ -1,27 +1,44 @@
 <?php
 
-namespace Tests\Unit\DataTransferObjects;
+namespace Tests\Unit;
 
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\DataTransferObjects\FolderSettings;
-use Exception;
+use Database\Factories\FolderFactory;
+use Illuminate\Database\QueryException;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Arr;
 use Tests\TestCase;
 
+/**
+ * Assert FolderSettings Object cannot accept invalid settings and invalid settings cannot be save to database.
+ */
 class FolderSettingsTest extends TestCase
 {
+    //migrate the latest jsonSchema
+    use LazilyRefreshDatabase;
+
+    private static array $default = [];
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        if (empty(static::$default)) {
+            static::$default = FolderSettings::default()->toArray();
+        }
+    }
+
     public function testValid(): void
     {
-        $this->expectNotToPerformAssertions();
-
-        FolderSettings::default();
+        $settings = FolderSettings::default();
+        $this->assertTrue($this->canBeSavedToDB($settings->toArray()));
     }
 
     public function test_settings_must_be_valid(): void
     {
-        $this->expectExceptionCode(1777);
-
-        new FolderSettings(['foo' => 'baz']);
+        $this->assertFalse($this->isValid($settings = ['foo' => 'baz']));
+        $this->assertFalse($this->canBeSavedToDB($settings));
     }
 
     public function test_cannot_have_additional_properties(): void
@@ -31,20 +48,21 @@ class FolderSettingsTest extends TestCase
             'notifications.newCollaborator',
             'notifications.collaboratorExit'
         ] as $setting) {
-            $passedValidation = true;
             $settings = FolderSettings::default()->toArray();
+            $message = "Failed asserting that exception was thrown for setting [$setting]";
+
+            $this->assertKeyIsDefinedInSettings($setting);
             Arr::set($settings, "$setting.foo", true);
 
-            try {
-                new FolderSettings($settings);
-            } catch (Exception $e) {
-                $passedValidation = false;
-                $this->assertEquals($e->getCode(), 1777);
-            }
+            $this->assertFalse($this->isValid($settings), $message);
+            $this->assertFalse($this->canBeSavedToDB($settings), $message);
+        }
+    }
 
-            if ($passedValidation) {
-                throw new Exception("Failed asserting that exception was thrown for setting [$setting]");
-            }
+    private function assertKeyIsDefinedInSettings(string $key): void
+    {
+        if (!Arr::has(static::$default, $key)) {
+            throw new \ErrorException("Undefined array key $key");
         }
     }
 
@@ -65,21 +83,13 @@ class FolderSettingsTest extends TestCase
             "notifications.collaboratorExit.onlyWhenCollaboratorHasWritePermission"
         ] as $setting) {
             $settings = FolderSettings::default()->toArray();
-            $passedValidation = true;
+            $message = "Failed asserting that exception was thrown for setting [$setting]";
 
-            $this->assertTrue(Arr::has($settings, $setting));
+            $this->assertKeyIsDefinedInSettings($setting);
             Arr::forget($settings, $setting);
 
-            try {
-                new FolderSettings($settings);
-            } catch (Exception $e) {
-                $passedValidation = false;
-                $this->assertEquals($e->getCode(), 1777);
-            }
-
-            if ($passedValidation) {
-                throw new Exception("Failed asserting that exception was thrown for setting [$setting]");
-            }
+            $this->assertFalse($this->isValid($settings), $message);
+            $this->assertFalse($this->canBeSavedToDB($settings), $message);
         }
 
         //assert covered all keys in settings
@@ -125,29 +135,20 @@ class FolderSettingsTest extends TestCase
 
         foreach ($data[$type] as $invalidType) {
             $settings = FolderSettings::default()->toArray();
-            $passedValidation = true;
+            $message = "Failed asserting that property [$property] only accepts $type type";
 
-            $this->assertTrue(Arr::has($settings, $property), "Failed asserting that settings has prop $property");
+            $this->assertKeyIsDefinedInSettings($property);
             Arr::set($settings, $property, $invalidType);
 
-            try {
-                new FolderSettings($settings);
-            } catch (Exception $e) {
-                $passedValidation = false;
-                $this->assertEquals($e->getCode(), 1777);
-            }
-
-            if ($passedValidation) {
-                throw new Exception("Failed asserting that property [$property] only accepts $type type");
-            }
+            $this->assertFalse($this->isValid($settings), $message);
+            $this->assertFalse($this->canBeSavedToDB($settings), $message);
         }
     }
 
     public function test_settings_cannot_be_empty(): void
     {
-        $this->expectExceptionCode(1777);
-
-        new FolderSettings([]);
+        $this->assertFalse($this->isValid([]));
+        $this->assertFalse($this->canBeSavedToDB([]));
     }
 
     public function test_new_collaborator_notification_settings_must_be_valid(): void
@@ -172,10 +173,37 @@ class FolderSettingsTest extends TestCase
 
     public function test_version_must_be_in_semver_format(): void
     {
-        $this->expectExceptionCode(1777);
+        $settings = FolderSettings::default()->toArray();
 
-        (new FolderSettingsBuilder())
-            ->version('major.2.beta')
-            ->build();
+        $this->assertKeyIsDefinedInSettings('version');
+        Arr::set($settings, 'version', 'major.2.beta');
+
+        $this->assertFalse($this->isValid($settings));
+        $this->assertFalse($this->canBeSavedToDB($settings));
+    }
+
+    private function isValid(array $data, int $errorCode = 1777): bool
+    {
+        $valid = true;
+
+        try {
+            new FolderSettings($data);
+        } catch (\Exception $e) {
+            $valid = false;
+            $this->assertEquals($errorCode, $e->getCode());
+        }
+
+        return $valid;
+    }
+
+    private function canBeSavedToDB(array $data): bool
+    {
+        try {
+            FolderFactory::new()->create(['settings' => $data]);
+            return true;
+        } catch (QueryException $e) {
+            $this->assertStringContainsString("Check constraint 'validate_folder_setting' is violated", $e->getMessage());
+            return false;
+        }
     }
 }

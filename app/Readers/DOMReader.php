@@ -8,12 +8,12 @@ use App\Exceptions\MalformedURLException;
 use App\ValueObjects\Url;
 use DOMXPath;
 
-final class DOMReader
+class DOMReader
 {
     private readonly DOMXPath $dOMXPath;
     private readonly Url $resolvedUrl;
 
-    public function __construct(string $source, Url $resolvedUrl)
+    public function loadHTML(string $source, Url $resolvedUrl): self
     {
         libxml_use_internal_errors(true);
 
@@ -22,6 +22,8 @@ final class DOMReader
 
         $this->dOMXPath = new DOMXPath($document);
         $this->resolvedUrl = $resolvedUrl;
+
+        return $this;
     }
 
     public function getPageDescription(): string|false

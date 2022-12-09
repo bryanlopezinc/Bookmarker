@@ -7,7 +7,7 @@ use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Models\FolderBookmarksCount;
 use Database\Factories\BookmarkFactory;
-use Database\Factories\FolderAccessFactory;
+use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -178,7 +178,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
 
         $this->addBookmarksToFolder($bookmarkIDs->implode(','), $folderID);
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($user->id)
             ->folder($folderID)
             ->removeBookmarksPermission()
@@ -203,7 +203,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
 
         $this->addBookmarksToFolder($bookmarkIDs->implode(','), $folderID);
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($user->id)
             ->folder($folderID)
             ->viewBookmarksPermission()
@@ -222,7 +222,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
         $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
-        $folderAccessFactory = FolderAccessFactory::new()->user($collaborator->id)->folder($folderID);
+        $folderAccessFactory = FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID);
 
         $folderAccessFactory->updateFolderPermission()->create();
         $folderAccessFactory->addBookmarksPermission()->create();
@@ -336,7 +336,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->removeBookmarksPermission()
@@ -380,7 +380,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
         Passport::actingAs($folderOwner);
         $this->addBookmarksToFolder($bookmarkIDs->implode(','), $folderID);
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folderID)
             ->removeBookmarksPermission()
@@ -414,7 +414,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
         Passport::actingAs($folderOwner);
         $this->addBookmarksToFolder($bookmarkIDs->implode(','), $folderID);
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folderID)
             ->removeBookmarksPermission()
@@ -443,7 +443,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
         Passport::actingAs($folderOwner);
         $this->addBookmarksToFolder($bookmarkIDs->implode(','), $folderID);
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folderID)
             ->removeBookmarksPermission()

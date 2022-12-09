@@ -6,7 +6,7 @@ use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Models\FolderPermission;
 use Database\Factories\BookmarkFactory;
-use Database\Factories\FolderAccessFactory;
+use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\AssertableJsonString;
@@ -154,23 +154,23 @@ class FetchFolderBookmarksTest extends TestCase
 
     public function testUserWithAnyPermissionCanViewBookmarks(): void
     {
-        $this->assertUserWithPermissionCanPerformAction(function (FolderAccessFactory $factory) {
+        $this->assertUserWithPermissionCanPerformAction(function (FolderCollaboratorPermissionFactory $factory) {
             return $factory->addBookmarksPermission();
         });
 
-        $this->assertUserWithPermissionCanPerformAction(function (FolderAccessFactory $factory) {
+        $this->assertUserWithPermissionCanPerformAction(function (FolderCollaboratorPermissionFactory $factory) {
             return $factory->viewBookmarksPermission();
         });
 
-        $this->assertUserWithPermissionCanPerformAction(function (FolderAccessFactory $factory) {
+        $this->assertUserWithPermissionCanPerformAction(function (FolderCollaboratorPermissionFactory $factory) {
             return $factory->removeBookmarksPermission();
         });
 
-        $this->assertUserWithPermissionCanPerformAction(function (FolderAccessFactory $factory) {
+        $this->assertUserWithPermissionCanPerformAction(function (FolderCollaboratorPermissionFactory $factory) {
             return $factory->inviteUser();
         });
 
-        $this->assertUserWithPermissionCanPerformAction(function (FolderAccessFactory $factory) {
+        $this->assertUserWithPermissionCanPerformAction(function (FolderCollaboratorPermissionFactory $factory) {
             return $factory->updateFolderPermission();
         });
     }
@@ -183,8 +183,8 @@ class FetchFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        /** @var FolderAccessFactory */
-        $factory = $permission(FolderAccessFactory::new()->user($user->id)->folder($folder->id));
+        /** @var FolderCollaboratorPermissionFactory */
+        $factory = $permission(FolderCollaboratorPermissionFactory::new()->user($user->id)->folder($folder->id));
 
         $factory = $factory->create();
 
@@ -262,7 +262,7 @@ class FetchFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->viewBookmarksPermission()
@@ -288,7 +288,7 @@ class FetchFolderBookmarksTest extends TestCase
 
         // ****************** user adds bookmarks to favorites and folder actions ****************
         Passport::actingAs($user);
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($user->id)
             ->folder($folder->id)
             ->addBookmarksPermission()
@@ -405,7 +405,7 @@ class FetchFolderBookmarksTest extends TestCase
             'folder' => $folder->id
         ])->assertCreated();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->create();
 
         Passport::actingAs($collaborator);
         $this->folderBookmarksResponse(['folder_id' => $folder->id])

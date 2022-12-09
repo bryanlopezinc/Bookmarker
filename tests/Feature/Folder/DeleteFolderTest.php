@@ -9,7 +9,7 @@ use App\Models\FolderBookmarksCount;
 use App\Models\UserBookmarksCount;
 use App\Models\UserFoldersCount;
 use Database\Factories\BookmarkFactory;
-use Database\Factories\FolderAccessFactory;
+use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -222,7 +222,7 @@ class DeleteFolderTest extends TestCase
         $collaboratorBookmarks = BookmarkFactory::new()->count(2)->for($collaborator)->create();
         $folderID = FolderFactory::new()->for($folderOwner)->create(['created_at' => now()])->id;
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->folder($folderID)
             ->user($collaborator->id)
             ->addBookmarksPermission()

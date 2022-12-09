@@ -13,14 +13,14 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $permission_id
  * @property \Carbon\Carbon $created_at
  */
-final class FolderAccess extends Model
+final class FolderCollaboratorPermission extends Model
 {
     public const UPDATED_AT = null;
-    
+
     /**
      * {@inheritdoc}
      */
-    protected $table = 'folders_access';
+    protected $table = 'folders_collaborators_permissions';
 
     /**
      * {@inheritdoc}

@@ -3,10 +3,10 @@
 namespace Tests\Feature\Folder;
 
 use App\Models\Folder;
-use App\Models\FolderAccess;
+use App\Models\FolderCollaboratorPermission;
 use App\Models\FolderPermission;
 use App\Models\User;
-use Database\Factories\FolderAccessFactory;
+use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Support\Collection;
@@ -268,7 +268,7 @@ class FetchFolderCollaboratorsTest extends TestCase
             $collaborators = collect([$collaborators]);
         }
 
-        FolderAccess::insert(
+        FolderCollaboratorPermission::insert(
             $collaborators->map(fn (User $collaborator) => [
                 'folder_id' => $folderID,
                 'user_id' => $collaborator->id,
@@ -283,13 +283,13 @@ class FetchFolderCollaboratorsTest extends TestCase
         [$folderOwner, $collaborator, $anotherCollaborator] = UserFactory::times(3)->create();
         $userFolderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($userFolderID)
             ->addBookmarksPermission()
             ->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($anotherCollaborator->id)
             ->folder($userFolderID)
             ->inviteUser()
@@ -341,12 +341,12 @@ class FetchFolderCollaboratorsTest extends TestCase
         [$folderOwner, $collaborator, $anotherCollaborator] = UserFactory::times(3)->create();
         $userFolderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($userFolderID)
             ->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($anotherCollaborator->id)
             ->folder($userFolderID)
             ->create();
@@ -368,13 +368,13 @@ class FetchFolderCollaboratorsTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::times(3)->create();
         $userFolderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($userFolderID)
             ->addBookmarksPermission()
             ->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($userFolderID)
             ->inviteUser()
@@ -401,13 +401,13 @@ class FetchFolderCollaboratorsTest extends TestCase
         $myFolder = FolderFactory::new()->for($me)->create()->id;
         $yourFolder = FolderFactory::new()->for($you)->create()->id;
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($myFolder)
             ->inviteUser()
             ->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($yourFolder)
             ->addBookmarksPermission()
@@ -437,7 +437,7 @@ class FetchFolderCollaboratorsTest extends TestCase
             ->tap(function (Collection $folders) {
                 $permissionIDs = FolderPermission::all(['id'])->pluck(['id']);
 
-                FolderAccess::insert(
+                FolderCollaboratorPermission::insert(
                     $folders->map(fn (Folder $folder) => [
                         'folder_id' => $folder->id,
                         'user_id' => UserFactory::new()->create()->id,

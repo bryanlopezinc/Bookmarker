@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Testing\TestResponse;
 use Database\Factories\FolderFactory;
 use App\Mail\FolderCollaborationInviteMail;
-use Database\Factories\FolderAccessFactory;
+use Database\Factories\FolderCollaboratorPermissionFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 
 class SendFolderCollaborationInviteTest extends TestCase
@@ -143,7 +143,7 @@ class SendFolderCollaborationInviteTest extends TestCase
 
         Passport::actingAs($user);
 
-        FolderAccessFactory::new()->user($invitee->id)->folder($folder->id)->create();
+        FolderCollaboratorPermissionFactory::new()->user($invitee->id)->folder($folder->id)->create();
 
         $this->sendInviteResponse([
             'email' => $invitee->email,
@@ -291,7 +291,7 @@ class SendFolderCollaborationInviteTest extends TestCase
 
         Passport::actingAs($user);
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($user->id)
             ->folder($folder->id)
             ->inviteUser()
@@ -307,7 +307,7 @@ class SendFolderCollaborationInviteTest extends TestCase
     {
         [$folderOwner, $collaborator, $invitee] = UserFactory::new()->count(3)->create();
         $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
-        $folderAccessFactory = FolderAccessFactory::new()->user($collaborator->id)->folder($folderID);
+        $folderAccessFactory = FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID);
 
         $folderAccessFactory->updateFolderPermission()->create();
         $folderAccessFactory->addBookmarksPermission()->create();
@@ -329,7 +329,7 @@ class SendFolderCollaborationInviteTest extends TestCase
 
         Passport::actingAs($user);
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($user->id)
             ->folder($folder->id)
             ->inviteUser()
@@ -352,7 +352,7 @@ class SendFolderCollaborationInviteTest extends TestCase
 
         Passport::actingAs($user);
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($user->id)
             ->folder($folder->id)
             ->inviteUser()
@@ -381,7 +381,7 @@ class SendFolderCollaborationInviteTest extends TestCase
 
         Passport::actingAs($user);
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($user->id)
             ->folder($folder->id)
             ->inviteUser()
@@ -443,7 +443,7 @@ class SendFolderCollaborationInviteTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->inviteUser()

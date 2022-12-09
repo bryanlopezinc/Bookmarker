@@ -3,7 +3,7 @@
 namespace Tests\Feature\Folder;
 
 use App\Models\Folder;
-use Database\Factories\FolderAccessFactory;
+use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\AssertableJsonString;
@@ -75,7 +75,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
     public function testWillFetchFolders(): void
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
-        $factory = FolderAccessFactory::new()->user($collaborator->id);
+        $factory = FolderCollaboratorPermissionFactory::new()->user($collaborator->id);
         $folders = FolderFactory::times(3)
             ->for($user)
             ->create()
@@ -147,7 +147,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
         $folder = FolderFactory::new()->for($user)->create();
-        $factory = FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id);
+        $factory = FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id);
 
         $factory->addBookmarksPermission()->create();
         $factory->updateFolderPermission()->create();
@@ -164,7 +164,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
     public function testWillReturnOnlyUserFolders(): void
     {
         [$user, $collaborator, $anotherUser] = UserFactory::times(3)->create();
-        $factory = FolderAccessFactory::new()->user($collaborator->id);
+        $factory = FolderCollaboratorPermissionFactory::new()->user($collaborator->id);
 
         $userFolder = FolderFactory::new()->for($user)->create();
         $anotherUserFolder = FolderFactory::new()->for($anotherUser)->create();
@@ -200,7 +200,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
         [$user, $collaborator] = UserFactory::times(2)->create();
         $userFolder = FolderFactory::new()->for($user)->create();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($userFolder->id)->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($userFolder->id)->create();
 
         Passport::actingAs($collaborator);
         $this->deleteJson(route('deleteUserAccount'), ['password' => 'password'])->assertOk();
@@ -214,7 +214,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
         [$user, $collaborator] = UserFactory::times(2)->create();
         $userFolder = FolderFactory::new()->for($user)->create();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($userFolder->id)->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($userFolder->id)->create();
 
         Passport::actingAs($user);
         $this->whereHasCollaboratorsResponse([

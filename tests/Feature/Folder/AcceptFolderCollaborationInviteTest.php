@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Tests\Feature\Folder;
 
 use App\Mail\FolderCollaborationInviteMail;
-use App\Models\FolderAccess;
+use App\Models\FolderCollaboratorPermission;
 use App\Models\FolderPermission as Permission;
 use App\Models\SecondaryEmail;
 use App\ValueObjects\Url;
-use Database\Factories\FolderAccessFactory;
+use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -112,7 +112,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
                 ]);
         });
 
-        $this->assertDatabaseMissing(FolderAccess::class, [
+        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
             'folder_id' => $folder->id,
             'user_id' => $invitee->id,
         ]);
@@ -201,7 +201,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         try {
             $this->acceptInviteResponse($parameters)->assertCreated();
 
-            $savedPermissions = FolderAccess::query()->where([
+            $savedPermissions = FolderCollaboratorPermission::query()->where([
                 'folder_id' => $folder->id,
                 'user_id' => $invitee->id,
             ])->get();
@@ -343,7 +343,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
                 'message' => 'The folder does not exists'
             ]);
 
-        $this->assertDatabaseMissing(FolderAccess::class, [
+        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
             'folder_id' => $folder->id,
             'user_id' => $invitee->id,
         ]);
@@ -374,7 +374,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
                 'message' => 'User not found'
             ]);;
 
-        $this->assertDatabaseMissing(FolderAccess::class, [
+        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
             'folder_id' => $folder->id,
             'user_id' => $invitee->id,
         ]);
@@ -404,7 +404,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
                 'message' => 'User not found'
             ]);;
 
-        $this->assertDatabaseMissing(FolderAccess::class, [
+        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
             'folder_id' => $folder->id,
             'user_id' => $invitee->id,
         ]);
@@ -459,7 +459,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->inviteUser()
@@ -493,7 +493,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             ->setting(fn (SettingsBuilder $b) => $b->disableNotifications())
             ->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->inviteUser()
@@ -548,7 +548,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             ->setting(fn (SettingsBuilder $b) => $b->disableNewCollaboratorNotification())
             ->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->inviteUser()
@@ -603,7 +603,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             ->setting(fn (SettingsBuilder $b) => $b->enableOnlyCollaboratorsInvitedByMeNotification())
             ->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->inviteUser()

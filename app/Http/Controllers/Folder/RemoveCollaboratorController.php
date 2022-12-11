@@ -11,7 +11,7 @@ use App\ValueObjects\UserID;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-final class DeleteCollaboratorController
+final class RemoveCollaboratorController
 {
     public function __invoke(Request $request, Service $service): JsonResponse
     {

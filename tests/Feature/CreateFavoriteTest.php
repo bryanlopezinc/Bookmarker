@@ -8,6 +8,7 @@ use App\Models\UserFavoritesCount;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
@@ -32,7 +33,7 @@ class CreateFavoriteTest extends TestCase
         $this->createFavoriteResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationWhenAttributesAreInvalid(): void
+    public function testAttributesMustBeValid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -53,7 +54,7 @@ class CreateFavoriteTest extends TestCase
             ]);
     }
 
-    public function testAttributesMustBeUnique(): void
+    public function testBookmarksMustBeUnique(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -89,16 +90,17 @@ class CreateFavoriteTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarks = BookmarkFactory::new()->count($amount = 5)->for($user)->create();
+        $bookmarks = BookmarkFactory::new()->count($amount = 5)->for($user)->create()->pluck('id');
 
-        $this->createFavoriteResponse(['bookmarks' => $bookmarks->pluck('id')->implode(',')])->assertCreated();
+        $this->createFavoriteResponse(['bookmarks' => $bookmarks->implode(',')])->assertCreated();
 
-        $bookmarks->each(function (Bookmark $bookmark) use ($user) {
-            $this->assertDatabaseHas(Favorite::class, [
-                'bookmark_id' => $bookmark->id,
-                'user_id' => $user->id
-            ]);
-        });
+        Favorite::query()
+            ->where('user_id', $user->id)
+            ->get()
+            ->tap(fn (Collection $collection) => $this->assertCount($amount, $collection))
+            ->each(function (Favorite $favorite) use ($user, $bookmarks) {
+                $this->assertTrue($bookmarks->contains($favorite->bookmark_id));
+            });
 
         $this->assertDatabaseHas(UserFavoritesCount::class, [
             'user_id' => $user->id,

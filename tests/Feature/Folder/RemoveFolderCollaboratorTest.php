@@ -13,7 +13,7 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 
-class DeleteFolderCollaboratorTest extends TestCase
+class RemoveFolderCollaboratorTest extends TestCase
 {
     use WithFaker;
 
@@ -114,12 +114,11 @@ class DeleteFolderCollaboratorTest extends TestCase
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
 
-        Passport::actingAs($user);
-
         $folder = FolderFactory::new()->for($user)->create();
 
         FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->create();
 
+        Passport::actingAs($user);
         $this->deleteCollaboratorResponse([
             'user_id' => $user->id,
             'folder_id' => $folder->id
@@ -162,12 +161,12 @@ class DeleteFolderCollaboratorTest extends TestCase
     {
         [$user, $collaborator, $anotherCollaborator] = UserFactory::times(3)->create();
 
-        Passport::actingAs($user);
         $folder = FolderFactory::new()->for($user)->create();
 
         FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->create();
         FolderCollaboratorPermissionFactory::new()->user($anotherCollaborator->id)->folder($folder->id)->create();
 
+        Passport::actingAs($user);
         $this->deleteCollaboratorResponse([
             'user_id' => $collaborator->id,
             'folder_id' => $folder->id

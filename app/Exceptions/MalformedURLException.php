@@ -12,4 +12,9 @@ final class MalformedURLException extends InvalidArgumentException
     {
         return new self("The given url [$url] is invalid");
     }
+
+    public static function invalidScheme(string $url, string $scheme): self
+    {
+        return new self("The given url scheme [$scheme] for url [$url] is invalid");
+    }
 }

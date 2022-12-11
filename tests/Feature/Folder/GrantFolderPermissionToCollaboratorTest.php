@@ -5,7 +5,7 @@ namespace Tests\Feature\Folder;
 use App\Repositories\Folder\FolderPermissionsRepository as Repository;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
-use Database\Factories\FolderAccessFactory;
+use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -78,7 +78,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->addBookmarksPermission()
@@ -117,7 +117,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->viewBookmarksPermission()
@@ -172,7 +172,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->addBookmarksPermission()
@@ -251,7 +251,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->addBookmarksPermission()

@@ -7,7 +7,7 @@ use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Models\FolderBookmarksCount;
 use Database\Factories\BookmarkFactory;
-use Database\Factories\FolderAccessFactory;
+use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -168,7 +168,7 @@ class AddBookmarksToFolderTest extends TestCase
         $bookmarks = BookmarkFactory::new()->count(3)->for($collaborator)->create()->pluck('id');
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
 
         Passport::actingAs($collaborator);
         $this->addBookmarksToFolderResponse([
@@ -195,7 +195,7 @@ class AddBookmarksToFolderTest extends TestCase
         $bookmarks = BookmarkFactory::new()->count(3)->for($user)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()->user($user->id)->folder($folder->id)->addBookmarksPermission()->create();
+        FolderCollaboratorPermissionFactory::new()->user($user->id)->folder($folder->id)->addBookmarksPermission()->create();
 
         $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmarks->pluck('id')->implode(','),
@@ -207,7 +207,7 @@ class AddBookmarksToFolderTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
-        $folderAccessFactory = FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id);
+        $folderAccessFactory = FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id);
         $collaboratorBookmarks = BookmarkFactory::new()->count(3)->for($collaborator)->create();
 
         $folderAccessFactory->updateFolderPermission()->create();
@@ -436,7 +436,7 @@ class AddBookmarksToFolderTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->addBookmarksPermission()
@@ -462,7 +462,7 @@ class AddBookmarksToFolderTest extends TestCase
             ->for($folderOwner)
             ->create();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
         Notification::fake();
 
         Passport::actingAs($collaborator);
@@ -483,7 +483,7 @@ class AddBookmarksToFolderTest extends TestCase
             ->for($folderOwner)
             ->create();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
         Notification::fake();
 
         Passport::actingAs($collaborator);

@@ -3,10 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Folder;
-use App\Models\FolderAccess;
+use App\Models\FolderCollaboratorPermission;
 use App\Models\FolderPermission;
 use App\Models\User;
-use Database\Factories\FolderAccessFactory;
+use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Support\Collection;
@@ -86,7 +86,7 @@ class FetchUserCollaborationsTest extends TestCase
                     ];
                 })->all();
 
-                FolderAccess::insert($records);
+                FolderCollaboratorPermission::insert($records);
             });
 
         Passport::actingAs($collaborator);
@@ -142,7 +142,7 @@ class FetchUserCollaborationsTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->create();
@@ -178,7 +178,7 @@ class FetchUserCollaborationsTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->create();
@@ -202,13 +202,13 @@ class FetchUserCollaborationsTest extends TestCase
         $collaborator = UserFactory::new()->create();
         $folders = FolderFactory::new()->count(2)->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folders->first()->id)
             ->addBookmarksPermission()
             ->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folders->last()->id)
             ->inviteUser()
@@ -232,13 +232,13 @@ class FetchUserCollaborationsTest extends TestCase
         [$collaborator, $anotherCollaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->addBookmarksPermission()
             ->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($anotherCollaborator->id)
             ->folder($folder->id)
             ->inviteUser()
@@ -260,7 +260,7 @@ class FetchUserCollaborationsTest extends TestCase
         $collaborator = UserFactory::new()->create();
         $folder = FolderFactory::new()->create();
 
-        $factory = FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id);
+        $factory = FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id);
         $factory->addBookmarksPermission()->create();
         $factory->inviteUser()->create();
 
@@ -280,7 +280,7 @@ class FetchUserCollaborationsTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->create();
@@ -305,7 +305,7 @@ class FetchUserCollaborationsTest extends TestCase
 
         $marksFolder = FolderFactory::new()->for($mark)->create();
         $jeffsFolder = FolderFactory::new()->for($jeff)->create();
-        $permission =  FolderAccessFactory::new()->user($collaborator->id);
+        $permission =  FolderCollaboratorPermissionFactory::new()->user($collaborator->id);
 
         $permission->folder($marksFolder->id)->create();
         $permission->folder($jeffsFolder->id)->create();
@@ -330,7 +330,7 @@ class FetchUserCollaborationsTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->create();
 
         Passport::actingAs($collaborator);
 

@@ -13,8 +13,13 @@ use Psr\Log\LoggerInterface;
 
 final class DefaultClient implements HttpClientInterface
 {
-    public function __construct(private LoggerInterface $logger)
+    private DOMReader $dOMReader;
+    private LoggerInterface $logger;
+
+    public function __construct(LoggerInterface $logger,  DOMReader $dOMReader = null)
     {
+        $this->logger = $logger;
+        $this->dOMReader = $dOMReader ?? new DOMReader;
     }
 
     public function fetchBookmarkPageData(Bookmark $bookmark): BookmarkMetaData|false
@@ -27,18 +32,18 @@ final class DefaultClient implements HttpClientInterface
             return $this->handleException($e->getPrevious(), $bookmark);
         }
 
-        if (!$response->successful()) {
+        if (!$response->successful() || !str_contains($response->header('content-type'), 'text/html')) {
             return $this->emptyResponse($bookmark);
         }
 
-        $DOMReader = new DOMReader($response->body(), $resolvedUrl = new Url($response->effectiveUri()));
+        $this->dOMReader->loadHTML($response->body(), $resolvedUrl = new Url($response->effectiveUri()));
 
         return BookmarkMetaData::fromArray([
-            'title' => $DOMReader->getPageTitle(),
-            'description' => $DOMReader->getPageDescription(),
-            'imageUrl' => $DOMReader->getPreviewImageUrl(),
-            'siteName' => $DOMReader->getSiteName(),
-            'canonicalUrl' => $DOMReader->getCanonicalUrl(),
+            'title' => $this->dOMReader->getPageTitle(),
+            'description' => $this->dOMReader->getPageDescription(),
+            'imageUrl' => $this->dOMReader->getPreviewImageUrl(),
+            'siteName' => $this->dOMReader->getSiteName(),
+            'canonicalUrl' => $this->dOMReader->getCanonicalUrl(),
             'resolvedUrl' => $resolvedUrl
         ]);
     }

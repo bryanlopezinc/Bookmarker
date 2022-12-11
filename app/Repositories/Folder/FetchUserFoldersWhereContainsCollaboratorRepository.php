@@ -25,11 +25,11 @@ final class FetchUserFoldersWhereContainsCollaboratorRepository
     {
         /** @var Paginator */
         $collaborations = Folder::onlyAttributes(new FolderAttributes())
-            ->join('folders_access', 'folders_access.folder_id', '=', 'folders.id')
-            ->where('folders_access.user_id', $collaboratorID->value())
+            ->join('folders_collaborators_permissions', 'folders_collaborators_permissions.folder_id', '=', 'folders.id')
+            ->where('folders_collaborators_permissions.user_id', $collaboratorID->value())
             ->where('folders.user_id', $userID->value())
-            ->whereNotIn('folders_access.user_id', DeletedUser::select('deleted_users.user_id'))
-            ->groupBy('folders_access.folder_id')
+            ->whereNotIn('folders_collaborators_permissions.user_id', DeletedUser::select('deleted_users.user_id'))
+            ->groupBy('folders_collaborators_permissions.folder_id')
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
 
         $folderCollaboratorPermissions = $this->getCollaboratorPermissions($collaborations->pluck('id')->all(), $collaboratorID);
@@ -47,7 +47,7 @@ final class FetchUserFoldersWhereContainsCollaboratorRepository
     private function getCollaboratorPermissions(array $folderIDs, UserID $collaborator): Collection
     {
         return FolderPermission::select('name', 'folder_id')
-            ->join('folders_access', 'folders_access.permission_id', '=', 'folders_permissions.id')
+            ->join('folders_collaborators_permissions', 'folders_collaborators_permissions.permission_id', '=', 'folders_permissions.id')
             ->where('user_id', $collaborator->value())
             ->whereIn('folder_id', $folderIDs)
             ->get()

@@ -47,15 +47,15 @@ final class Username
         $length = mb_strlen($this->value);
 
         if ($length > self::MAX_LENGTH) {
-            throw InvalidUsernameException::dueToLengthExceeded();
+            throw InvalidUsernameException::lengthExceeded();
         }
 
         if ($length < self::MIN_LENGTH) {
-            throw InvalidUsernameException::dueToNameTooShort();
+            throw InvalidUsernameException::nameTooShort();
         }
 
         if (!preg_match(self::REGEX, $this->value)) {
-            throw InvalidUsernameException::dueToInvalidCharacters();
+            throw InvalidUsernameException::InvalidCharacters();
         }
     }
 }

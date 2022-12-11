@@ -21,7 +21,6 @@ use App\Repositories\BookmarkRepository;
 use App\Repositories\UserRepository;
 use App\ValueObjects\BookmarkDescription;
 use App\ValueObjects\BookmarkTitle;
-use App\ValueObjects\Url;
 
 final class UpdateBookmarkWithHttpResponse implements ShouldQueue
 {
@@ -51,11 +50,6 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
 
         $builder = Builder::new()->id($bookmark->id->value())->resolvedAt(now());
 
-        if (!$this->canOpenUrl($bookmark->url)) {
-            $repository->update(new Data($builder->resolvedUrl($bookmark->url)->build()));
-            return;
-        }
-
         $data = $client->fetchBookmarkPageData($bookmark);
 
         if ($data === false) {
@@ -82,11 +76,6 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
     private function userRepository(): UserRepository
     {
         return app(UserRepository::class);
-    }
-
-    private function canOpenUrl(Url $url): bool
-    {
-        return $url->isHttp() || $url->isHttps();
     }
 
     private function setDescriptionAttribute(Builder &$builder, BookmarkMetaData $data, Bookmark $bookmark): void

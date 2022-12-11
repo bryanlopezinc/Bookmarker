@@ -7,6 +7,7 @@ namespace Tests\Unit\Readers;
 use Tests\TestCase;
 use App\Readers\DefaultClient;
 use App\DataTransferObjects\Builders\BookmarkBuilder;
+use App\Readers\DOMReader;
 use Illuminate\Support\Facades\Http;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Request;
@@ -85,6 +86,39 @@ class DefaultClientTest extends TestCase
         $url = $this->faker->url;
 
         Http::fake(fn () => Http::response(status: 500));
+
+        $response = $client->fetchBookmarkPageData(BookmarkBuilder::new()->url($url)->build());
+
+        $this->assertFalse($response->canonicalUrl);
+        $this->assertFalse($response->description);
+        $this->assertFalse($response->hostSiteName);
+        $this->assertFalse($response->thumbnailUrl);
+        $this->assertFalse($response->title);
+        $this->assertEquals($response->resolvedUrl->toString(), $url);
+    }
+
+    public function testWillReturnEmptyResponseWhenContentTypeIsNotHtml(): void
+    {
+        $reader = $this->getMockBuilder(DOMReader::class)->getMock();
+
+        $reader->expects($this->never())->method($this->anything());
+
+        $client = new DefaultClient($this->app['log'], $reader);
+        $url = $this->faker->url;
+        $body = <<<HTML
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta name="application-name" content="Xbox">
+                <meta property="og:description" content="foo">
+                <meta property="og:image" content="https://image.com/smike.png">
+                <meta property="og:title" content="title">
+                <meta property="og:url" content="https://www.rottentomatoes.com/m/thor_love_and_thunder">
+            </head>
+            </html>
+        HTML;
+
+        Http::fake(fn () => Http::response($body, headers: ['content-type' => 'application/json']));
 
         $response = $client->fetchBookmarkPageData(BookmarkBuilder::new()->url($url)->build());
 

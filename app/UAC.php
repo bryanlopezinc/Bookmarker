@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App;
 
 use App\Models\FolderPermission as Model;
+use Countable;
 use Illuminate\Http\Request;
 
 /**
  * Permission a user has to a folder resource.
  */
-final class UAC
+final class UAC implements Countable
 {
     private const VALID = [
         Model::VIEW_BOOKMARKS,
@@ -52,6 +53,21 @@ final class UAC
             'inviteUser' => Model::INVITE,
             'updateFolder' => Model::UPDATE_fOLDER
         ]);
+    }
+
+    public static function all(): self
+    {
+        return new self(self::VALID);
+    }
+
+    public function count(): int
+    {
+        return count($this->permissions);
+    }
+
+    public function hasAllPermissions(): bool
+    {
+        return count($this) === count((new self(self::VALID)));
     }
 
     /**

@@ -6,12 +6,12 @@ namespace Tests\Feature\Folder;
 
 use App\Cache\InviteTokensStore;
 use App\UAC;
-use App\Models\FolderAccess;
+use App\Models\FolderCollaboratorPermission;
 use App\Models\FolderPermission;
 use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 use Database\Factories\BookmarkFactory;
-use Database\Factories\FolderAccessFactory;
+use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
@@ -114,8 +114,8 @@ class RevokeCollaboratorPermissionsTest extends TestCase
 
         $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folderID)->create();
-        FolderAccessFactory::new()->user($anotherCollaborator->id)->folder($folderID)->addBookmarksPermission()->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID)->create();
+        FolderCollaboratorPermissionFactory::new()->user($anotherCollaborator->id)->folder($folderID)->addBookmarksPermission()->create();
 
         Passport::actingAs($collaborator);
 
@@ -131,7 +131,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             'permissions' => 'addBookmarks'
         ])->assertForbidden();
 
-        $this->assertDatabaseHas(FolderAccess::class, [
+        $this->assertDatabaseHas(FolderCollaboratorPermission::class, [
             'folder_id' => $folderID,
             'user_id' => $anotherCollaborator->id,
             'permission_id' => FolderPermission::query()->where('name', FolderPermission::ADD_BOOKMARKS)->sole()->id
@@ -178,7 +178,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->create();
 
         $this->revokePermissionsResponse([
             'user_id' => $user->id,
@@ -196,7 +196,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         Passport::actingAs($user);
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
 
         $this->revokePermissionsResponse([
             'user_id' => $collaborator->id,
@@ -215,7 +215,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
         $folderID = FolderFactory::new()->for($user)->create()->id;
         $collaboratorBookmarks = BookmarkFactory::new()->count(3)->for($collaborator)->create()->pluck('id');
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folderID)->addBookmarksPermission()->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID)->addBookmarksPermission()->create();
 
         //collaborator can add bookmarks
         Passport::actingAs($collaborator);
@@ -239,7 +239,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             'folder' => $folderID
         ])->assertForbidden();
 
-        $this->assertDatabaseMissing(FolderAccess::class, [
+        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
             'folder_id' => $folderID,
             'user_id' => $collaborator->id,
             'permission_id' => FolderPermission::query()->where('name', FolderPermission::ADD_BOOKMARKS)->sole()->id
@@ -251,7 +251,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
         $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folderID)->removeBookmarksPermission()->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID)->removeBookmarksPermission()->create();
 
         //collaborator can remove bookmarks
         Passport::actingAs($collaborator);
@@ -275,7 +275,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             'folder' => $folderID,
         ])->assertForbidden();
 
-        $this->assertDatabaseMissing(FolderAccess::class, [
+        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
             'folder_id' => $folderID,
             'user_id' => $collaborator->id,
             'permission_id' => FolderPermission::query()->where('name', FolderPermission::DELETE_BOOKMARKS)->sole()->id
@@ -287,7 +287,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
         $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folderID)->inviteUser()->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID)->inviteUser()->create();
 
         //collaborator can invite user
         Passport::actingAs($collaborator);
@@ -311,7 +311,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             'folder_id' => $folderID,
         ])->assertForbidden();
 
-        $this->assertDatabaseMissing(FolderAccess::class, [
+        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
             'folder_id' => $folderID,
             'user_id' => $collaborator->id,
             'permission_id' => FolderPermission::query()->where('name', FolderPermission::INVITE)->sole()->id
@@ -323,8 +323,8 @@ class RevokeCollaboratorPermissionsTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
         $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folderID)->inviteUser()->create();
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folderID)->addBookmarksPermission()->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID)->inviteUser()->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID)->addBookmarksPermission()->create();
 
         Passport::actingAs($folderOwner);
         $this->revokePermissionsResponse([
@@ -333,13 +333,13 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             'permissions' => 'inviteUser,addBookmarks'
         ])->assertOk();
 
-        $this->assertDatabaseMissing(FolderAccess::class, [
+        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
             'folder_id' => $folderID,
             'user_id' => $collaborator->id,
             'permission_id' => FolderPermission::query()->where('name', FolderPermission::ADD_BOOKMARKS)->sole()->id
         ]);
 
-        $this->assertDatabaseMissing(FolderAccess::class, [
+        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
             'folder_id' => $folderID,
             'user_id' => $collaborator->id,
             'permission_id' => FolderPermission::query()->where('name', FolderPermission::INVITE)->sole()->id
@@ -352,8 +352,8 @@ class RevokeCollaboratorPermissionsTest extends TestCase
 
         $folderID = FolderFactory::new()->for($user)->create()->id;
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folderID)->addBookmarksPermission()->create();
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folderID)->inviteUser()->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID)->addBookmarksPermission()->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID)->inviteUser()->create();
 
         Passport::actingAs($user);
         $this->revokePermissionsResponse([
@@ -362,7 +362,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             'permissions' => 'addBookmarks'
         ])->assertOk();
 
-        $this->assertDatabaseHas(FolderAccess::class, [
+        $this->assertDatabaseHas(FolderCollaboratorPermission::class, [
             'folder_id' => $folderID,
             'user_id' => $collaborator->id,
             'permission_id' => FolderPermission::query()->where('name', FolderPermission::INVITE)->sole()->id
@@ -375,8 +375,8 @@ class RevokeCollaboratorPermissionsTest extends TestCase
 
         $folderID = FolderFactory::new()->for($user)->create()->id;
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folderID)->addBookmarksPermission()->create();
-        FolderAccessFactory::new()->user($anotherCollaborator->id)->folder($folderID)->addBookmarksPermission()->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID)->addBookmarksPermission()->create();
+        FolderCollaboratorPermissionFactory::new()->user($anotherCollaborator->id)->folder($folderID)->addBookmarksPermission()->create();
 
         Passport::actingAs($user);
         $this->revokePermissionsResponse([
@@ -385,7 +385,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             'permissions' => 'addBookmarks'
         ])->assertOk();
 
-        $this->assertDatabaseHas(FolderAccess::class, [
+        $this->assertDatabaseHas(FolderCollaboratorPermission::class, [
             'folder_id' => $folderID,
             'user_id' => $anotherCollaborator->id,
             'permission_id' => FolderPermission::query()->where('name', FolderPermission::ADD_BOOKMARKS)->sole()->id
@@ -397,7 +397,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::times(3)->create();
 
         $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
-        
+
         /** @var InviteTokensStore */
         $cache = app(InviteTokensStore::class);
 

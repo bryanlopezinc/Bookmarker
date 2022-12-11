@@ -12,6 +12,8 @@ use App\Models\User;
 use App\PaginationData;
 use App\ValueObjects\ResourceID;
 use Closure;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 
@@ -20,16 +22,35 @@ final class FetchFolderCollaboratorsRepository
     /**
      * @return Paginator<FolderCollaborator>
      */
-    public function collaborators(ResourceID $folderID, PaginationData $pagination): Paginator
+    public function collaborators(ResourceID $folderID, PaginationData $pagination, UAC $filter = null): Paginator
+    {
+        $query = User::select(['users.id', 'firstname', 'lastname', 'folders_collaborators_permissions.user_id', new Expression('COUNT(*) AS total')])
+            ->join('folders_collaborators_permissions', 'folders_collaborators_permissions.user_id', '=', 'users.id')
+            ->where('folders_collaborators_permissions.folder_id', $folderID->value())
+            ->groupBy('folders_collaborators_permissions.user_id');
+
+        if ($filter === null) {
+            return $this->paginate($query, $folderID, $pagination);
+        }
+
+        $query->when(!$filter->hasAllPermissions(), function ($query) use ($filter) {
+            $query->whereIn('folders_collaborators_permissions.permission_id', FolderPermission::select('id')->whereIn('name', $filter->permissions));
+            $query->having('total', '=', $filter->count());
+        });
+
+        $query->when($filter->hasAllPermissions(), function ($query) {
+            $query->havingRaw('total = (SELECT COUNT(*) FROM folders_permissions WHERE name NOT IN(?))', [FolderPermission::VIEW_BOOKMARKS]);
+        });
+
+        return $this->paginate($query, $folderID, $pagination);
+    }
+
+    private function paginate(Builder $query, ResourceID $folderID, PaginationData $pagination): Paginator
     {
         /** @var Paginator */
-        $collaborators = User::select(['users.id', 'firstname', 'lastname', 'folders_access.user_id'])
-            ->join('folders_access', 'folders_access.user_id', '=', 'users.id')
-            ->where('folders_access.folder_id', $folderID->value())
-            ->groupBy('folders_access.user_id')
-            ->simplePaginate($pagination->perPage(), page: $pagination->page());
+        $collaborators = $query->simplePaginate($pagination->perPage(), page: $pagination->page());
 
-        $collaboratorsPermissions = $this->getCollaboratorsPermissions($collaborators->getCollection());
+        $collaboratorsPermissions = $this->getCollaboratorsPermissions($collaborators->getCollection(), $folderID);
 
         return $collaborators->setCollection(
             $collaborators->map(
@@ -38,10 +59,11 @@ final class FetchFolderCollaboratorsRepository
         );
     }
 
-    private function getCollaboratorsPermissions(Collection $collaborators): Collection
+    private function getCollaboratorsPermissions(Collection $collaborators, ResourceID $folderID): Collection
     {
         return FolderPermission::select('name', 'user_id')
-            ->join('folders_access', 'folders_access.permission_id', '=', 'folders_permissions.id')
+            ->join('folders_collaborators_permissions', 'folders_collaborators_permissions.permission_id', '=', 'folders_permissions.id')
+            ->where('folders_collaborators_permissions.folder_id', $folderID->value())
             ->whereIn('user_id', $collaborators->pluck('user_id'))
             ->get()
             ->map(fn (FolderPermission $model) => $model->toArray());

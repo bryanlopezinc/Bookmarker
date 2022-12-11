@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Folder;
 
-use App\Models\FolderAccess;
+use App\Models\FolderCollaboratorPermission;
 use Database\Factories\BookmarkFactory;
-use Database\Factories\FolderAccessFactory;
+use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -60,7 +60,7 @@ class LeaveFolderCollaborationTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->create();
 
         Passport::actingAs($collaborator);
 
@@ -68,7 +68,7 @@ class LeaveFolderCollaborationTest extends TestCase
             'folder_id' => $folder->id
         ])->assertOk();
 
-        $this->assertDatabaseMissing(FolderAccess::class, [
+        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
             'user_id' => $collaborator->id,
             'folder_id' => $folder->id
         ]);
@@ -80,20 +80,20 @@ class LeaveFolderCollaborationTest extends TestCase
         $marksFolder = FolderFactory::new()->for($mark)->create();
         $tonysFolder = FolderFactory::new()->for($tony)->create();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($marksFolder->id)->create();
-        FolderAccessFactory::new()->user($collaborator->id)->folder($tonysFolder->id)->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($marksFolder->id)->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($tonysFolder->id)->create();
 
         Passport::actingAs($collaborator);
         $this->leaveFolderCollaborationResponse([
             'folder_id' => $marksFolder->id
         ])->assertOk();
 
-        $this->assertDatabaseMissing(FolderAccess::class, [
+        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
             'user_id' => $collaborator->id,
             'folder_id' => $marksFolder->id
         ]);
 
-        $this->assertDatabaseHas(FolderAccess::class, [
+        $this->assertDatabaseHas(FolderCollaboratorPermission::class, [
             'user_id' => $collaborator->id,
             'folder_id' => $tonysFolder->id
         ]);
@@ -137,7 +137,7 @@ class LeaveFolderCollaborationTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
-        $factory = FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id);
+        $factory = FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id);
         $collaboratorBookmarks = BookmarkFactory::new()->count(2)->create();
 
         $factory->addBookmarksPermission()->create();
@@ -175,7 +175,7 @@ class LeaveFolderCollaborationTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->create();
 
         Passport::actingAs($collaborator);
 
@@ -193,7 +193,7 @@ class LeaveFolderCollaborationTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->create();
 
         Passport::actingAs($folderOwner);
         $this->getJson(route('fetchFolderCollaborators', [
@@ -218,7 +218,7 @@ class LeaveFolderCollaborationTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->create();
 
         Passport::actingAs($collaborator);
         $this->leaveFolderCollaborationResponse([
@@ -241,7 +241,7 @@ class LeaveFolderCollaborationTest extends TestCase
             ->setting(fn (SettingsBuilder $b) => $b->disableNotifications())
             ->create();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->create();
         Notification::fake();
 
         Passport::actingAs($collaborator);
@@ -258,7 +258,7 @@ class LeaveFolderCollaborationTest extends TestCase
             ->setting(fn (SettingsBuilder $b) => $b->disableNotifications())
             ->create();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
         Notification::fake();
 
         Passport::actingAs($collaborator);
@@ -275,7 +275,7 @@ class LeaveFolderCollaborationTest extends TestCase
             ->setting(fn (SettingsBuilder $b) => $b->disableCollaboratorExitNotification())
             ->create();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->create();
         Notification::fake();
 
         Passport::actingAs($collaborator);
@@ -292,7 +292,7 @@ class LeaveFolderCollaborationTest extends TestCase
             ->for($folderOwner)
             ->create();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
         Notification::fake();
 
         Passport::actingAs($collaborator);
@@ -309,7 +309,7 @@ class LeaveFolderCollaborationTest extends TestCase
             ->for($folderOwner)
             ->create();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->viewBookmarksPermission()->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->viewBookmarksPermission()->create();
         Notification::fake();
 
         Passport::actingAs($collaborator);
@@ -326,7 +326,7 @@ class LeaveFolderCollaborationTest extends TestCase
             ->for($folderOwner)
             ->create();
 
-        FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id)->removeBookmarksPermission()->create();
+        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->removeBookmarksPermission()->create();
         Notification::fake();
 
         Passport::actingAs($collaborator);

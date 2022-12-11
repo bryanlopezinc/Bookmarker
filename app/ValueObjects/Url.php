@@ -23,6 +23,10 @@ final class Url
 
         $this->parts = parse_url($url);
         $this->url = $url;
+
+        if (!$this->isHttp() && !$this->isHttps()) {
+            throw MalformedURLException::invalidScheme($url, $this->getScheme());
+        }
     }
 
     public static function isValid(mixed $url): bool
@@ -64,12 +68,12 @@ final class Url
         return $this->parts['scheme'] ?? '';
     }
 
-    public function isHttp(): bool
+    private function isHttp(): bool
     {
         return $this->getScheme() === 'http';
     }
 
-    public function isHttps(): bool
+    private function isHttps(): bool
     {
         return $this->getScheme() === 'https';
     }

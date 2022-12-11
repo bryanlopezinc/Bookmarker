@@ -12,9 +12,9 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Testing\TestResponse;
 use Database\Factories\FolderFactory;
 use App\Mail\FolderCollaborationInviteMail;
-use App\Models\BannedCollaborator;
-use Database\Factories\FolderAccessFactory;
+use Database\Factories\FolderCollaboratorPermissionFactory;
 use Illuminate\Foundation\Testing\WithFaker;
+use App\Models\BannedCollaborator;
 
 class SendFolderCollaborationInviteTest extends TestCase
 {
@@ -141,7 +141,9 @@ class SendFolderCollaborationInviteTest extends TestCase
         [$user, $invitee] = UserFactory::times(2)->create();
         $folder = FolderFactory::new()->for($user)->create();
 
-        FolderAccessFactory::new()->user($invitee->id)->folder($folder->id)->create();
+        Passport::actingAs($user);
+
+        FolderCollaboratorPermissionFactory::new()->user($invitee->id)->folder($folder->id)->create();
 
         Passport::actingAs($user);
         $this->sendInviteResponse([
@@ -283,12 +285,14 @@ class SendFolderCollaborationInviteTest extends TestCase
 
     public function testUserWithPermissionCanSendInvite(): void
     {
-        [$collaboratorWithInviteUserPermission, $invitee, $folderOwner] = UserFactory::times(3)->create();
+        [$collaboratorWithInviteUserPermission, $invitee, $user] = UserFactory::times(3)->create();
 
-        $folder = FolderFactory::new()->for($folderOwner)->create();
+        $folder = FolderFactory::new()->for($user)->create();
 
-        FolderAccessFactory::new()
-            ->user($collaboratorWithInviteUserPermission->id)
+        Passport::actingAs($user);
+
+        FolderCollaboratorPermissionFactory::new()
+            ->user($user->id)
             ->folder($folder->id)
             ->inviteUser()
             ->create();
@@ -304,7 +308,7 @@ class SendFolderCollaborationInviteTest extends TestCase
     {
         [$folderOwner, $collaborator, $invitee] = UserFactory::new()->count(3)->create();
         $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
-        $folderAccessFactory = FolderAccessFactory::new()->user($collaborator->id)->folder($folderID);
+        $folderAccessFactory = FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID);
 
         $folderAccessFactory->updateFolderPermission()->create();
         $folderAccessFactory->addBookmarksPermission()->create();
@@ -320,19 +324,21 @@ class SendFolderCollaborationInviteTest extends TestCase
 
     public function testUserWithPermissionCannotSendInviteToFolderOwner(): void
     {
-        [$collaboratorWithInviteUserPermission, $folderOwner] = UserFactory::times(2)->create();
+        [$collaboratorWithInviteUserPermission, $user] = UserFactory::times(2)->create();
 
-        $folder = FolderFactory::new()->for($folderOwner)->create();
+        $folder = FolderFactory::new()->for($user)->create();
 
-        FolderAccessFactory::new()
-            ->user($collaboratorWithInviteUserPermission->id)
+        Passport::actingAs($user);
+
+        FolderCollaboratorPermissionFactory::new()
+            ->user($user->id)
             ->folder($folder->id)
             ->inviteUser()
             ->create();
 
         Passport::actingAs($collaboratorWithInviteUserPermission);
         $this->sendInviteResponse([
-            'email' => $folderOwner->email,
+            'email' => $user->email,
             'folder_id' => $folder->id,
         ])->assertForbidden()
             ->assertExactJson([
@@ -342,19 +348,21 @@ class SendFolderCollaborationInviteTest extends TestCase
 
     public function testUserWithPermissionCannotSendInviteToFolderOwnerViaSecondaryEmail(): void
     {
-        [$collaboratorWithInviteUserPermission, $folderOwner] = UserFactory::times(2)->create();
+        [$collaboratorWithInviteUserPermission, $user] = UserFactory::times(2)->create();
 
-        $folder = FolderFactory::new()->for($folderOwner)->create();
+        $folder = FolderFactory::new()->for($user)->create();
 
-        FolderAccessFactory::new()
-            ->user($collaboratorWithInviteUserPermission->id)
+        Passport::actingAs($user);
+
+        FolderCollaboratorPermissionFactory::new()
+            ->user($user->id)
             ->folder($folder->id)
             ->inviteUser()
             ->create();
 
         SecondaryEmail::query()->create([
             'email' => $secondaryEmail = $this->faker->unique()->email,
-            'user_id' => $folderOwner->id,
+            'user_id' => $user->id,
             'verified_at' => now()
         ]);
 
@@ -370,12 +378,14 @@ class SendFolderCollaborationInviteTest extends TestCase
 
     public function testOnlyFolderOwnerCanSendInviteWithPermissions(): void
     {
-        [$collaboratorWithInviteUserPermission, $invitee, $folderOwner] = UserFactory::times(3)->create();
+        [$collaboratorWithInviteUserPermission, $invitee, $user] = UserFactory::times(3)->create();
 
-        $folder = FolderFactory::new()->for($folderOwner)->create();
+        $folder = FolderFactory::new()->for($user)->create();
 
-        FolderAccessFactory::new()
-            ->user($collaboratorWithInviteUserPermission->id)
+        Passport::actingAs($user);
+
+        FolderCollaboratorPermissionFactory::new()
+            ->user($user->id)
             ->folder($folder->id)
             ->inviteUser()
             ->create();
@@ -433,12 +443,12 @@ class SendFolderCollaborationInviteTest extends TestCase
 
     public function test_user_with_permission_cannot_send_invites_when_folder_owner_has_deleted_account(): void
     {
-        [$collaboratorWithInviteUserPermission, $invitee, $folderOwner] = UserFactory::times(3)->create();
+        [$collaborator, $invitee, $folderOwner] = UserFactory::times(3)->create();
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()
-            ->user($collaboratorWithInviteUserPermission->id)
+        FolderCollaboratorPermissionFactory::new()
+            ->user($collaborator->id)
             ->folder($folder->id)
             ->inviteUser()
             ->create();
@@ -446,7 +456,7 @@ class SendFolderCollaborationInviteTest extends TestCase
         Passport::actingAs($folderOwner);
         $this->deleteJson(route('deleteUserAccount'), ['password' => 'password'])->assertOk();
 
-        Passport::actingAs($collaboratorWithInviteUserPermission);
+        Passport::actingAs($collaborator);
         $this->sendInviteResponse([
             'email' => $invitee->email,
             'folder_id' => $folder->id,
@@ -459,7 +469,7 @@ class SendFolderCollaborationInviteTest extends TestCase
         [$collaboratorWithInviteUserPermission, $folderOwner] = UserFactory::times(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaboratorWithInviteUserPermission->id)
             ->folder($folder->id)
             ->inviteUser()
@@ -484,7 +494,7 @@ class SendFolderCollaborationInviteTest extends TestCase
             'verified_at' => now()
         ]);
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaboratorWithInviteUserPermission->id)
             ->folder($folder->id)
             ->inviteUser()
@@ -508,7 +518,7 @@ class SendFolderCollaborationInviteTest extends TestCase
             'user_id' => $invitee->id
         ]);
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaboratorWithInviteUserPermission->id)
             ->folder($folder->id)
             ->inviteUser()
@@ -557,7 +567,7 @@ class SendFolderCollaborationInviteTest extends TestCase
             'user_id' => $invitee->id
         ]);
 
-        FolderAccessFactory::new()->user($user->id)->folder($folder->id)->inviteUser()->create();
+        FolderCollaboratorPermissionFactory::new()->user($user->id)->folder($folder->id)->inviteUser()->create();
 
         Passport::actingAs($user);
         $this->sendInviteResponse([

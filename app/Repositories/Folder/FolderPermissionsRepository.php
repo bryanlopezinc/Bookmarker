@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories\Folder;
 
 use App\Models\BannedCollaborator;
-use App\Models\FolderAccess;
+use App\Models\FolderCollaboratorPermission;
 use App\UAC;
 use App\Models\FolderPermission;
 use App\ValueObjects\ResourceID as FolderID;
@@ -19,8 +19,8 @@ final class FolderPermissionsRepository
      */
     public function getUserAccessControls(UserID $userID, FolderID $folderID): UAC
     {
-        return FolderAccess::select('folders_permissions.name')
-            ->join('folders_permissions', 'folders_access.permission_id', '=', 'folders_permissions.id')
+        return FolderCollaboratorPermission::select('folders_permissions.name')
+            ->join('folders_permissions', 'folders_collaborators_permissions.permission_id', '=', 'folders_permissions.id')
             ->where('folder_id', $folderID->value())
             ->where('user_id', $userID->value())
             ->get()
@@ -43,13 +43,13 @@ final class FolderPermissionsRepository
                 'created_at' => $createdAt
             ])
             ->tap(function (Collection $records) {
-                FolderAccess::insert($records->all());
+            FolderCollaboratorPermission::insert($records->all());
             });
     }
 
     public function removeCollaborator(UserID $collaboratorID, FolderID $folderID): void
     {
-        FolderAccess::query()
+        FolderCollaboratorPermission::query()
             ->where('folder_id', $folderID->value())
             ->where('user_id', $collaboratorID->value())
             ->delete();
@@ -73,7 +73,7 @@ final class FolderPermissionsRepository
 
     public function revoke(UserID $collaboratorID, FolderID $folderID, UAC $permissions): void
     {
-        FolderAccess::query()
+        FolderCollaboratorPermission::query()
             ->where('folder_id', $folderID->value())
             ->where('user_id', $collaboratorID->value())
             ->whereIn('permission_id',  FolderPermission::select('id')->whereIn('name', $permissions->permissions))

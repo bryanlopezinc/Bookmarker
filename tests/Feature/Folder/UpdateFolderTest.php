@@ -6,7 +6,7 @@ use App\DataTransferObjects\Builders\FolderSettingsBuilder as SettingsBuilder;
 use App\Models\Folder;
 use App\Models\Tag;
 use App\Models\Taggable;
-use Database\Factories\FolderAccessFactory;
+use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
@@ -394,7 +394,7 @@ class UpdateFolderTest extends TestCase
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->updateFolderPermission()
@@ -412,7 +412,7 @@ class UpdateFolderTest extends TestCase
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
-        $factory = FolderAccessFactory::new()->user($collaborator->id)->folder($folder->id);
+        $factory = FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id);
 
         $factory->addBookmarksPermission()->create();
         $factory->removeBookmarksPermission()->create();
@@ -431,7 +431,7 @@ class UpdateFolderTest extends TestCase
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->updateFolderPermission()
@@ -462,7 +462,7 @@ class UpdateFolderTest extends TestCase
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->updateFolderPermission()
@@ -485,7 +485,7 @@ class UpdateFolderTest extends TestCase
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->updateFolderPermission()
@@ -546,7 +546,7 @@ class UpdateFolderTest extends TestCase
             ->setting(fn (SettingsBuilder $b) => $b->disableNotifications())
             ->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->updateFolderPermission()
@@ -572,7 +572,7 @@ class UpdateFolderTest extends TestCase
             ->setting(fn (SettingsBuilder $b) => $b->disableFolderUpdatedNotification())
             ->create();
 
-        FolderAccessFactory::new()
+        FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
             ->folder($folder->id)
             ->updateFolderPermission()

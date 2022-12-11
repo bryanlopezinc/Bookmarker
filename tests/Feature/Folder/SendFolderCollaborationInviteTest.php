@@ -292,7 +292,7 @@ class SendFolderCollaborationInviteTest extends TestCase
         Passport::actingAs($user);
 
         FolderCollaboratorPermissionFactory::new()
-            ->user($user->id)
+            ->user($collaboratorWithInviteUserPermission->id)
             ->folder($folder->id)
             ->inviteUser()
             ->create();
@@ -331,7 +331,7 @@ class SendFolderCollaborationInviteTest extends TestCase
         Passport::actingAs($user);
 
         FolderCollaboratorPermissionFactory::new()
-            ->user($user->id)
+            ->user($collaboratorWithInviteUserPermission->id)
             ->folder($folder->id)
             ->inviteUser()
             ->create();
@@ -355,7 +355,7 @@ class SendFolderCollaborationInviteTest extends TestCase
         Passport::actingAs($user);
 
         FolderCollaboratorPermissionFactory::new()
-            ->user($user->id)
+            ->user($collaboratorWithInviteUserPermission->id)
             ->folder($folder->id)
             ->inviteUser()
             ->create();
@@ -385,7 +385,7 @@ class SendFolderCollaborationInviteTest extends TestCase
         Passport::actingAs($user);
 
         FolderCollaboratorPermissionFactory::new()
-            ->user($user->id)
+            ->user($collaboratorWithInviteUserPermission->id)
             ->folder($folder->id)
             ->inviteUser()
             ->create();

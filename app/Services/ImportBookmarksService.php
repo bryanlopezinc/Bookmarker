@@ -25,11 +25,14 @@ final class ImportBookmarksService
         $requestID = Uuid::generate();
 
         foreach ($this->inputFileTypes() as $input) {
+            /** @var  \Illuminate\Http\UploadedFile*/
+            $file = $request->file($input);
+
             if (!array_key_exists($input, $validated)) {
                 continue;
             }
 
-            $this->filesystem->put($request->file($input)->getContent(), $userID, $requestID);
+            $this->filesystem->put($file->getContent(), $userID, $requestID);
 
             // Remove the file from the request data because
             // \Illuminate\Http\UploadedFile cannot be serialized

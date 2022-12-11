@@ -19,7 +19,7 @@ final class RegisterProviders extends ServiceProvider
     {
         collect(File::allFiles(__DIR__))
             ->map(fn (SplFileInfo $file) =>  __NAMESPACE__ . '\\' . $file->getFilenameWithoutExtension())
-            ->reject(__CLASS__)
+            ->filter(fn (string $provider) => $provider !== __CLASS__)
             ->each(fn (string $provider) => $this->app->register($provider));
     }
 }

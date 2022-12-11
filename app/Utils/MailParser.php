@@ -6,14 +6,15 @@ namespace App\Utils;
 
 use ZBateson\MailMimeParser\Message;
 use ZBateson\MailMimeParser\Header\AddressHeader;
+use ZBateson\MailMimeParser\IMessage;
 
 final class MailParser
 {
-    private readonly Message $message;
+    private readonly IMessage $message;
 
     public function __construct(string $mimeMessage)
     {
-        $this->message =  Message::from($mimeMessage, true);
+        $this->message = Message::from($mimeMessage, true);
     }
 
     public function from(): string

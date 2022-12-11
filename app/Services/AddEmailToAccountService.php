@@ -22,7 +22,7 @@ final class AddEmailToAccountService
 
     public function __invoke(UserID $userID, Email $secondaryEmail): void
     {
-        $this->validateAction($userID, $secondaryEmail);
+        $this->validateAction($userID);
 
         $verificationCode = TwoFACode::generate();
 

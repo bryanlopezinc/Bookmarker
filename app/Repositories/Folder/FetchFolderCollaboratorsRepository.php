@@ -35,7 +35,7 @@ final class FetchFolderCollaboratorsRepository
 
         $query->when(!$filter->hasAllPermissions(), function ($query) use ($filter) {
             $query->whereIn('folders_collaborators_permissions.permission_id', FolderPermission::select('id')->whereIn('name', $filter->permissions));
-            $query->having('total', '=', $filter->count());
+            $query->having('total', '=', $filter->count()); // @phpstan-ignore-line
         });
 
         $query->when($filter->hasAllPermissions(), function ($query) {

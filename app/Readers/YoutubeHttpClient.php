@@ -26,7 +26,10 @@ final class YoutubeHttpClient implements HttpClientInterface
             'part' => 'snippet',
             'fields' => 'items(snippet/title,snippet/description,snippet/thumbnails)'
         ])->onError(function (Response $response) {
-            $this->logger->error($response->toException()->getMessage());
+            $message = $response->toException()?->getMessage();
+
+            if ($message !== null)
+                $this->logger->error($message);
         });
 
         if (!$response->ok()) {
@@ -56,6 +59,7 @@ final class YoutubeHttpClient implements HttpClientInterface
 
     private function getVideoID(Url $url): string
     {
+        /** @var string[] */
         $parts = parse_url($url->toString());
 
         parse_str($parts['query'], $query);

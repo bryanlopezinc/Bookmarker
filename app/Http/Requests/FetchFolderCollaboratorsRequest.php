@@ -34,7 +34,7 @@ final class FetchFolderCollaboratorsRequest extends FormRequest
                 return;
             }
 
-            $filter = collect($this->input('permissions', []));
+            $filter = collect($this->input('permissions', [])); // @phpstan-ignore-line
 
             $filter->when($filter->contains('view_only') && $filter->count() > 1, function () use ($validator) {
                 $validator->errors()->add('permissions', 'Cannot request collaborator with only view permissions with any other permission');

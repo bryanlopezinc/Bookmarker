@@ -16,15 +16,20 @@ final class Url
     public function __construct(string|\Stringable $url)
     {
         $url = (string) $url;
+        $parts = parse_url($url);
 
         if (Validator::make(['value' => $url], ['value' => ['filled', 'url']])->fails()) {
             throw MalformedURLException::invalidFormat($url);
         }
 
-        $this->parts = parse_url($url);
-        $this->url = $url;
+        if ($parts === false) {
+            throw MalformedURLException::invalidFormat($url);
+        }
 
-        if (!$this->isHttp() && !$this->isHttps()) {
+        $this->parts = $parts;
+        $this->url = $url;
+        
+        if (!in_array($this->getScheme(), ['http', 'https'])) {
             throw MalformedURLException::invalidScheme($url, $this->getScheme());
         }
     }
@@ -66,16 +71,6 @@ final class Url
     private function getScheme(): string
     {
         return $this->parts['scheme'] ?? '';
-    }
-
-    private function isHttp(): bool
-    {
-        return $this->getScheme() === 'http';
-    }
-
-    private function isHttps(): bool
-    {
-        return $this->getScheme() === 'https';
     }
 
     public function toString(): string

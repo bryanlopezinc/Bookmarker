@@ -150,24 +150,34 @@ class DOMReaderTest extends TestCase
 
     public function test_will_return_false_If_og_Image_tag_is_invalid(): void
     {
-        $html = $this->html(<<<HTML
-                <meta property="og:image" content="<script> alert('hacked') </script>">
-        HTML);
+        foreach ([
+            "<script> alert('hacked') </script>",
+            "ldap://ds.example.com:389",
+        ] as $content) {
+            $html = $this->html(<<<HTML
+                <meta property="og:image" content="$content">
+            HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+            $this->reader->loadHTML($html, new Url($this->faker->url));
 
-        $this->assertFalse($this->reader->getPreviewImageUrl());
+            $this->assertFalse($this->reader->getPreviewImageUrl(), "failed asserting that $content is invalid");
+        }
     }
 
     public function test_will_return_false_If_twitter_Image_tag_is_invalid(): void
     {
-        $html = $this->html(<<<HTML
-                <meta name="twitter:image" content="<script> alert('hacked') </script>">
-        HTML);
+        foreach ([
+            "<script> alert('hacked') </script>",
+            "ldap://ds.example.com:389",
+        ] as $content) {
+            $html = $this->html(<<<HTML
+                <meta name="twitter:image" content="$content">
+            HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+            $this->reader->loadHTML($html, new Url($this->faker->url));
 
-        $this->assertFalse($this->reader->getPreviewImageUrl());
+            $this->assertFalse($this->reader->getPreviewImageUrl(), "failed asserting that $content is invalid");
+        }
     }
 
     public function test_will_first_read_og_title_tag(): void
@@ -203,7 +213,7 @@ class DOMReaderTest extends TestCase
 
         $html = $this->html(<<<HTML
                 <title>$title</title>
-                <meta name="twitter:title" content="Why are cryto gurus silent :-)">
+                <meta name="twitter:title" content="Why are crypto gurus silent :-)">
         HTML);
 
         $this->reader->loadHTML($html, new Url($this->faker->url));
@@ -332,6 +342,22 @@ class DOMReaderTest extends TestCase
         );
     }
 
+    public function test_will_return_false_when_canonical_tag_is_invalid(): void
+    {
+        foreach ([
+            "<script> alert('hacked') </script>",
+            "ldap://ds.example.com:389",
+        ] as $content) {
+            $html = $this->html(<<<HTML
+                <link rel="canonical" href="$content">
+            HTML);
+
+            $this->reader->loadHTML($html, new Url($this->faker->url));
+
+            $this->assertFalse($this->reader->getCanonicalUrl(), "failed asserting that $content is invalid");
+        }
+    }
+
     public function test_will_fallback_to_ogUrl_when_no_canonical_tag(): void
     {
         $url = 'https://www.foo.com/en/path/to/baz';
@@ -346,5 +372,21 @@ class DOMReaderTest extends TestCase
             $url,
             $this->reader->getCanonicalUrl()->toString()
         );
+    }
+
+    public function test_will_return_false_when_og_url_is_invalid(): void
+    {
+        foreach ([
+            "<script> alert('hacked') </script>",
+            "ldap://ds.example.com:389",
+        ] as $content) {
+            $html = $this->html(<<<HTML
+                <meta property="og:url" content="$content">
+            HTML);
+
+            $this->reader->loadHTML($html, new Url($this->faker->url));
+
+            $this->assertFalse($this->reader->getCanonicalUrl(), "failed asserting that $content is invalid");
+        }
     }
 }

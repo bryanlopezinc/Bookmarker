@@ -93,43 +93,6 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         $this->handleUpdateBookmarkJob($bookmark);
     }
 
-    public function test_will_not_make_http_requests_if_bookmark_url_is_not_http_protocol(): void
-    {
-        /** @var Bookmark */
-        $bookmark = BookmarkFactory::new()->make([
-            'id' => 3982,
-            'url' => 'payto://iban/DE75512108001245126199?amount=EUR:200.0&message=hello'
-        ]);
-
-        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
-            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
-        });
-
-        $this->mockClient(function (MockObject $mock) {
-            $mock->expects($this->never())->method('fetchBookmarkPageData');
-        });
-
-        $this->mockRepository(function (MockObject $mock) use ($bookmark) {
-            $mock->expects($this->once())
-                ->method('update')
-                ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
-                    $this->assertEquals($bookmark->url, $data->bookmark->resolvedUrl->toString());
-                    $this->assertTrue($data->hasResolvedAt());
-                    $this->assertTrue($data->bookmark->resolvedAt->isSameMinute());
-                    $this->assertFalse($data->hasCanonicalUrl());
-                    $this->assertFalse($data->hasCanonicalUrlHash());
-                    $this->assertFalse($data->hasDescription());
-                    $this->assertFalse($data->hasThumbnailUrl());
-                    $this->assertFalse($data->hasTitle());
-                    $this->assertTrue($data->hasResolvedUrl());
-
-                    return BookmarkBuilder::fromModel($bookmark)->build();
-                });
-        });
-
-        $this->handleUpdateBookmarkJob($bookmark);
-    }
-
     public function test_will_update_resolved_at_attribute_after_updates(): void
     {
         $bookmark = BookmarkFactory::new()->make(['id' => 5001]);

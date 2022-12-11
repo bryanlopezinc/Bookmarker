@@ -10,8 +10,8 @@ use DOMXPath;
 
 class DOMReader
 {
-    private readonly DOMXPath $dOMXPath;
-    private readonly Url $resolvedUrl;
+    private DOMXPath $dOMXPath;
+    private Url $resolvedUrl;
 
     public function loadHTML(string $source, Url $resolvedUrl): self
     {

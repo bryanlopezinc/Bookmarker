@@ -84,39 +84,4 @@ class HealthCheckerTest extends TestCase
             BookmarkBuilder::fromModel(BookmarkFactory::new()->make(['id' => 550]))->build()
         ]));
     }
-
-    public function testWillOnlyMakeRequestsIfBookmarkUrlIsHttp(): void
-    {
-        Http::fakeSequence()->dontFailWhenEmpty();
-
-        $repository = $this->getMockBuilder(BookmarksHealthRepositoryInterface::class)->getMock();
-
-        $bookmarks = BookmarkFactory::new()
-            ->count(3)
-            ->state(new Sequence(
-                ['id' => 40],
-                ['id' => 42, 'url' => 'payto://iban/DE75512108001245126199?amount=EUR:200.0&message=hello'],
-                ['id' => 43],
-            ))
-            ->make()
-            ->map(fn (Model $model) => BookmarkBuilder::fromModel($model)->build());
-
-        $repository->expects($this->once())
-            ->method('whereNotRecentlyChecked')
-            ->willReturn($bookmarks->map(fn (Bookmark $bookmark) => $bookmark->id)->pipeInto(ResourceIDsCollection::class));
-
-        $repository->expects($this->once())
-            ->method('update')
-            ->with($this->callback(function (array $data) {
-                /** @var HealthCheckResult[] $data */
-                foreach ($data as $healthCheckResult) {
-                    $this->assertNotEquals(42, $healthCheckResult->bookmarkID->value());
-                }
-                return true;
-            }));
-
-        (new HealthChecker($repository))->ping(new BookmarksCollection($bookmarks));
-
-        Http::assertSentCount(2);
-    }
 }

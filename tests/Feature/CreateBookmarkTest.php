@@ -104,12 +104,17 @@ class CreateBookmarkTest extends TestCase
             ]);
     }
 
-    public function testUrlMustNotBeHttp(): void
+    public function testUrlMustBeHttp(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        Passport::actingAs(UserFactory::new()->make());
 
-        $this->createBookmarkResponse(['url' => 'chrome://flags'])->assertCreated();
-        $this->createBookmarkResponse(['url' => 'sgn://social-network.example.com/?ident=bob'])->assertCreated();
+        $this->createBookmarkResponse(['url' => 'chrome://flags'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['url' => 'The url must be a valid url']);
+
+        $this->createBookmarkResponse(['url' => 'sgn://social-network.example.com/?ident=bob'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['url' => 'The url must be a valid url']);
     }
 
     public function testWillCreateBookmark(): void

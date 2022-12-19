@@ -16,8 +16,10 @@ use Illuminate\Support\Facades\Mail;
 
 final class AddEmailToAccountService
 {
-    public function __construct(private UserRepository $userRepository, private PendingVerifications $pendingVerifications)
-    {
+    public function __construct(
+        private UserRepository $userRepository,
+        private PendingVerifications $pendingVerifications
+    ) {
     }
 
     public function __invoke(UserID $userID, Email $secondaryEmail): void
@@ -47,7 +49,8 @@ final class AddEmailToAccountService
 
     /**
      * Secondary emails are verified one at a time since there is a limit on how many secondary emails a user can have
-     * therefore it makes no sense to allow a user add any amount of emails (and send out useless emails) only to return a "max email reached"
+     * therefore it makes no sense to allow a user add any amount of emails (and send out useless emails)
+     * only to return a "max email reached"
      * response when the user is trying to verify an email with a verification code.
      */
     private function ensureHasNoPendingVerification(UserID $userID): void

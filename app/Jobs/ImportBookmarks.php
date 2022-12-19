@@ -15,9 +15,9 @@ use Illuminate\Support\Facades\DB;
 
 final class ImportBookmarks implements ShouldQueue
 {
-    use Dispatchable,
-        InteractsWithQueue,
-        Queueable;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
 
     public function __construct(private ImportData $importData)
     {

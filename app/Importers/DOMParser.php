@@ -10,7 +10,7 @@ use Iterator;
 
 abstract class DOMParser implements Iterator
 {
-    protected  Generator $collection;
+    protected Generator $collection;
 
     protected function setCollection(string $html, string $XPathExpression): void
     {

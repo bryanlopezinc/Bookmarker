@@ -17,7 +17,7 @@ final class DatabaseNotificationData implements ArrayAccess
 
     public function __construct(public readonly array $data)
     {
-        (new JsonValidator)->validate($this->data, $this->getSchema());
+        (new JsonValidator())->validate($this->data, $this->getSchema());
     }
 
     private function getSchema(): string

@@ -48,7 +48,7 @@ final class FolderSettings
     private function ensureIsValid(): void
     {
         try {
-            (new JsonValidator)->validate($this->settings, $this->getSchema());
+            (new JsonValidator())->validate($this->settings, $this->getSchema());
         } catch (InvalidJsonException $e) {
             throw new Exception($e->getMessage(), 1777);
         }
@@ -75,17 +75,21 @@ final class FolderSettings
     {
         $errorMessages = [];
 
-        if ($this->get('notifications.newCollaborator') == [
-            'notify' => false,
-            'onlyCollaboratorsInvitedByMe' => true,
-        ]) {
+        if (
+            $this->get('notifications.newCollaborator') == [
+                'notify' => false,
+                'onlyCollaboratorsInvitedByMe' => true,
+            ]
+        ) {
             $errorMessages[] = "The newCollaborator settings combination is invalid";
         }
 
-        if ($this->get('notifications.collaboratorExit') == [
-            'notify' => false,
-            'onlyWhenCollaboratorHasWritePermission' => true,
-        ]) {
+        if (
+            $this->get('notifications.collaboratorExit') == [
+                'notify' => false,
+                'onlyWhenCollaboratorHasWritePermission' => true,
+            ]
+        ) {
             $errorMessages[] = "The collaboratorExit settings combination is invalid";
         }
 

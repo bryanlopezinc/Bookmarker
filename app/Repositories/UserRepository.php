@@ -60,8 +60,10 @@ class UserRepository
         return $result->sole();
     }
 
-    public function findByEmailOrSecondaryEmail(Email $email, UserAttributes $columns = new UserAttributes()): User|false
-    {
+    public function findByEmailOrSecondaryEmail(
+        Email $email,
+        UserAttributes $columns = new UserAttributes()
+    ): User|false {
         try {
             return UserBuilder::fromModel(
                 UserModel::WithQueryOptions($columns)

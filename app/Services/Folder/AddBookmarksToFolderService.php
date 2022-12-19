@@ -54,7 +54,7 @@ final class AddBookmarksToFolderService
     private function ensureUserHasPermissionToPerformAction(Folder $folder): void
     {
         try {
-            (new EnsureAuthorizedUserOwnsResource)($folder);
+            (new EnsureAuthorizedUserOwnsResource())($folder);
         } catch (SymfonyHttpException $e) {
             $canAddBookmarksToFolder = $this->permissions
                 ->getUserAccessControls(UserID::fromAuthUser(), $folder->folderID)
@@ -86,7 +86,7 @@ final class AddBookmarksToFolderService
             throw HttpException::notFound(['message' => 'The bookmarks does not exists']);
         }
 
-        $bookmarks->each(new EnsureAuthorizedUserOwnsResource);
+        $bookmarks->each(new EnsureAuthorizedUserOwnsResource());
     }
 
     private function ensureFolderDoesNotContainBookmarks(ResourceID $folderID, IDs $bookmarkIDs): void
@@ -110,6 +110,6 @@ final class AddBookmarksToFolderService
             return;
         }
 
-        (new NotificationRepository)->notify($folder->ownerID, $notification);
+        (new NotificationRepository())->notify($folder->ownerID, $notification);
     }
 }

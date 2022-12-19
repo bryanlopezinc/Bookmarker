@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class Favorite extends Model
 {
-    const UPDATED_AT = null;
+    public const UPDATED_AT = null;
 
     /**
      * {@inheritdoc}

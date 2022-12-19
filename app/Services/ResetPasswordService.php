@@ -30,7 +30,7 @@ final class ResetPasswordService
         });
 
         if ($response === PasswordBroker::INVALID_USER) {
-            throw new UserNotFoundHttpException;
+            throw new UserNotFoundHttpException();
         }
 
         if ($response === PasswordBroker::INVALID_TOKEN) {

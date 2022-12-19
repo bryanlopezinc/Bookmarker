@@ -19,8 +19,8 @@ final class FetchUserFoldersWhereContainsCollaboratorController
     {
         $request->validate([
             ...PaginationData::new()->asValidationRules(),
-            'collaborator_id' => ['required', new ResourceIdRule],
-            'fields' => ['sometimes', new UserCollaborationFieldsRule]
+            'collaborator_id' => ['required', new ResourceIdRule()],
+            'fields' => ['sometimes', new UserCollaborationFieldsRule()]
         ]);
 
         $result = $repository->get(

@@ -60,17 +60,17 @@ final class Request2FACodeService
         }
 
         if (!$user) {
-            throw $this->InvalidCredentialsException();
+            throw $this->invalidCredentialsException();
         }
 
         if (!app(Hasher::class)->check($request->input('password'), $user->password)) {
-            throw $this->InvalidCredentialsException();
+            throw $this->invalidCredentialsException();
         }
 
         return $user;
     }
 
-    private function InvalidCredentialsException(): HttpResponseException
+    private function invalidCredentialsException(): HttpResponseException
     {
         return new HttpResponseException(response()->json([
             'message' => 'Invalid Credentials'

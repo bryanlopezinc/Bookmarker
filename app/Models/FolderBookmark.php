@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class FolderBookmark extends Model
 {
-    const UPDATED_AT = null;
+    public const UPDATED_AT = null;
 
     /**
      * {@inheritdoc}

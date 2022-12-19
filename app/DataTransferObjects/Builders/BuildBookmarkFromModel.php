@@ -17,7 +17,9 @@ final class BuildBookmarkFromModel
         return (new BookmarkBuilder())
             ->when($keyExists('id'), fn (BookmarkBuilder $b) => $b->id($model->id))
             ->when($keyExists('description'), fn (BookmarkBuilder $b) => $b->description($model->description))
-            ->when($keyExists('description_set_by_user'), fn (BookmarkBuilder $b) => $b->descriptionWasSetByUser($model->getAttribute('description_set_by_user')))
+            ->when($keyExists('description_set_by_user'), function (BookmarkBuilder $b) use ($model) {
+                $b->descriptionWasSetByUser($model->getAttribute('description_set_by_user'));
+            })
             ->when($keyExists('title'), fn (BookmarkBuilder $b) => $b->title($model->title))
             ->when($keyExists('has_custom_title'), fn (BookmarkBuilder $b) => $b->hasCustomTitle($model->getAttribute('has_custom_title')))
             ->when($keyExists('url'), fn (BookmarkBuilder $b) => $b->url($model->url))
@@ -34,7 +36,9 @@ final class BuildBookmarkFromModel
             ->when($keyExists('resolved_url'), fn (BookmarkBuilder $b) => $b->canonicalUrl($model->resolved_url))
             ->when($keyExists('url_canonical'), fn (BookmarkBuilder $b) => $b->resolvedUrl($model->url_canonical))
             ->when($keyExists('resolved_at'), fn (BookmarkBuilder $b) => $b->resolvedAt($model->resolved_at))
-            ->when($keyExists('has_duplicates'), fn (BookmarkBuilder $b) => $b->hasDuplicates((bool) $model->has_duplicates));
+            ->when($keyExists('has_duplicates'), function (BookmarkBuilder $b) use ($model) {
+                $b->hasDuplicates((bool) $model->has_duplicates);
+            });
     }
 
     private function sourceBuilderCallback(Bookmark $bookmark): callable

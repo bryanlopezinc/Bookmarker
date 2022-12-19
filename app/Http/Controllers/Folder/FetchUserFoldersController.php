@@ -7,7 +7,7 @@ namespace App\Http\Controllers\Folder;
 use App\Enums\UserFoldersSortCriteria;
 use App\Http\Requests\FetchUserFoldersRequest;
 use App\Http\Resources\FilterFolderResource;
-use App\Http\Resources\PaginatedResourceCollection as ResourceCollection;;
+use App\Http\Resources\PaginatedResourceCollection as ResourceCollection;
 use App\PaginationData;
 use App\Repositories\Folder\UserFoldersRepository;
 use App\Rules\FolderFieldsRule;
@@ -19,7 +19,7 @@ final class FetchUserFoldersController
     {
         $request->validate([
             ...PaginationData::new()->asValidationRules(),
-            'fields' => ['sometimes', new FolderFieldsRule]
+            'fields' => ['sometimes', new FolderFieldsRule()]
         ]);
 
         $result = $repository->fetch(

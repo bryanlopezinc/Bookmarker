@@ -27,7 +27,7 @@ final class FetchUserBookmarksRepository
             ->leftJoin('favourites', 'favourites.bookmark_id', '=', 'bookmarks.id');
 
         if (!$filters->hasAnyFilter()) {
-            return $this->paginate($query->latest('bookmarks.id'),  $filters->pagination);
+            return $this->paginate($query->latest('bookmarks.id'), $filters->pagination);
         }
 
         if ($filters->wantsOnlyBookmarksFromParticularSource) {

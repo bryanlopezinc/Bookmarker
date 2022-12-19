@@ -18,7 +18,7 @@ final class RevokeFolderCollaboratorPermissionsController
     public function __invoke(Request $request, Service $service): JsonResponse
     {
         $request->validate([
-            'user_id' => $rules = ['required', new ResourceIdRule],
+            'user_id' => $rules = ['required', new ResourceIdRule()],
             'folder_id' => $rules,
             'permissions' => ['required', 'array', Rule::in([
                 'addBookmarks',

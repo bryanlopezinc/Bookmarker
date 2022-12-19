@@ -51,7 +51,8 @@ final class FetchFolderBookmarksRepository
             ->when(isset($options['userID']), function ($query) use ($options) {
                 $query->addSelect('favourites.bookmark_id as isFavourite')
                     ->leftJoin('favourites', function (JoinClause $join) use ($options) {
-                        $join->on('favourites.bookmark_id', '=', 'bookmarks.id')->where('favourites.user_id', $options['userID']->value());
+                        $join->on('favourites.bookmark_id', '=', 'bookmarks.id')
+                            ->where('favourites.user_id', $options['userID']->value());
                     });
             })
             ->simplePaginate($pagination->perPage(), [], page: $pagination->page());

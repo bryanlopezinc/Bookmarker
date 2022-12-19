@@ -17,7 +17,7 @@ final class FetchPublicFolderBookmarksController
     public function __invoke(Request $request, Service $service): PaginatedResourceCollection
     {
         $request->validate([
-            'folder_id' => ['required', new ResourceIdRule],
+            'folder_id' => ['required', new ResourceIdRule()],
             ...PaginationData::new()->asValidationRules()
         ]);
 

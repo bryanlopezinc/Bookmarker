@@ -18,7 +18,7 @@ final class DeleteBookmarkController
 
         $request->validate([
             'ids' => ['required', join(':', ['max', $maxBookmarks])],
-            'ids.*' => [new ResourceIdRule, 'distinct:strict']
+            'ids.*' => [new ResourceIdRule(), 'distinct:strict']
         ], ['max' => "cannot delete more than $maxBookmarks bookmarks in one request"]);
 
         $service->delete(ResourceIDsCollection::fromNativeTypes($request->input('ids')));

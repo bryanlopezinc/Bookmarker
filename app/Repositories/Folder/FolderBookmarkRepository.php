@@ -33,7 +33,10 @@ final class FolderBookmarkRepository
 
     private function incrementFolderBookmarksCount(ResourceID $folderID, int $amount): void
     {
-        $model = FolderBookmarksCount::query()->firstOrCreate(['folder_id' => $folderID->value()], ['count' => $amount]);
+        $model = FolderBookmarksCount::query()->firstOrCreate(
+            ['folder_id' => $folderID->value()],
+            ['count' => $amount]
+        );
 
         if (!$model->wasRecentlyCreated) {
             $model->increment('count', $amount);
@@ -52,7 +55,9 @@ final class FolderBookmarkRepository
      */
     public function remove(ResourceID $folderID, IDs $bookmarkIDs): int
     {
-        $deleted = FolderBookmarkModel::where('folder_id', $folderID->value())->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())->delete();
+        $deleted = FolderBookmarkModel::where('folder_id', $folderID->value())
+            ->whereIn('bookmark_id', $bookmarkIDs->asIntegers()->all())
+            ->delete();
 
         if ($deleted > 0) {
             $this->updateFolderTimeStamp($folderID);

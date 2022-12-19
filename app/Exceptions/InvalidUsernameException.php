@@ -18,8 +18,11 @@ final class InvalidUsernameException extends \DomainException
         return new self('username must be greater than ' . Username::MIN_LENGTH, 5001);
     }
 
-    public static function InvalidCharacters(): self
+    public static function invalidCharacters(): self
     {
-        return new self('username can only contain lower case characters, upper case characters, numbers and underscores', 5002);
+        return new self(
+            'username can only contain lower case characters, upper case characters, numbers and underscores',
+            5002
+        );
     }
 }

@@ -23,8 +23,12 @@ final class BookmarkResource extends JsonResource
                 'title' => $this->bookmark->title->safe(),
                 'web_page_link' => $this->bookmark->url->toString(),
                 'has_preview_image'  => $this->bookmark->hasThumbnailUrl,
-                'preview_image_url'  => $this->when($this->bookmark->hasThumbnailUrl, fn () => $this->bookmark->thumbnailUrl->toString()),
-                'description' => $this->when(!$this->bookmark->description->isEmpty(), fn () => $this->bookmark->description->safe()),
+                'preview_image_url'  => $this->when($this->bookmark->hasThumbnailUrl, function () {
+                    $this->bookmark->thumbnailUrl->toString();
+                }),
+                'description' => $this->when(!$this->bookmark->description->isEmpty(), function () {
+                    return $this->bookmark->description->safe();
+                }),
                 'has_description' => !$this->bookmark->description->isEmpty(),
                 'source' => new SourceResource($this->bookmark->source),
                 'tags' => $this->bookmark->tags->toStringCollection()->all(),

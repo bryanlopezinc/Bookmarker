@@ -18,8 +18,11 @@ use Psr\Http\Message\ServerRequestInterface;
 
 final class LoginController extends AccessTokenController
 {
-    public function __invoke(ServerRequestInterface $serverRequest, UserRepository $repository, LoginUserRequest $request): AccessTokenResource
-    {
+    public function __invoke(
+        ServerRequestInterface $serverRequest,
+        UserRepository $repository,
+        LoginUserRequest $request
+    ): AccessTokenResource {
         $token = $this->issueToken($serverRequest)->content();
 
         $user = $this->getUser($request, $repository);
@@ -27,7 +30,7 @@ final class LoginController extends AccessTokenController
         event(new LoginEvent(
             $user,
             $request->input('with_agent', null),
-            $request->has('with_ip') ? new IpAddress($request->input('with_ip',)) : null
+            $request->has('with_ip') ? new IpAddress($request->input('with_ip')) : null
         ));
 
         return new AccessTokenResource($user, $token);

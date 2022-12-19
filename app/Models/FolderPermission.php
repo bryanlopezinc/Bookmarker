@@ -18,7 +18,7 @@ final class FolderPermission extends Model
     public const ADD_BOOKMARKS = 'addBookmarks';
     public const DELETE_BOOKMARKS = 'deleteBookmarks';
     public const INVITE = 'inviteUser';
-    public const UPDATE_fOLDER = 'updateFolder';
+    public const UPDATE_FOLDER = 'updateFolder';
 
     public const UPDATED_AT = null;
 

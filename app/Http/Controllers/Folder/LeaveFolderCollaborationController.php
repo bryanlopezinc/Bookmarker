@@ -15,7 +15,7 @@ final class LeaveFolderCollaborationController
     public function __invoke(Request $request, Service $service): JsonResponse
     {
         $request->validate([
-            'folder_id' => ['required', new ResourceIdRule]
+            'folder_id' => ['required', new ResourceIdRule()]
         ]);
 
         $service->leave(ResourceID::fromRequest($request, 'folder_id'));

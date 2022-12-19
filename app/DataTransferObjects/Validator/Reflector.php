@@ -15,14 +15,15 @@ class Reflector
      *
      * @return array<AfterDTOSetUpHookInterface>
      */
-    public function getClassAttributesInstances(Object $object): array
+    public function getClassAttributesInstances(object $object): array
     {
         $attributes = collect([]);
         $reflection = new ReflectionClass($object);
 
         while ($reflection !== false) {
-
-            $attributes->push(...$reflection->getAttributes(AfterDTOSetUpHookInterface::class, ReflectionAttribute::IS_INSTANCEOF));
+            $attributes->push(
+                ...$reflection->getAttributes(AfterDTOSetUpHookInterface::class, ReflectionAttribute::IS_INSTANCEOF)
+            );
 
             $reflection = $reflection->getParentClass();
         }

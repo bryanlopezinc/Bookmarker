@@ -17,7 +17,7 @@ final class DeleteFolderTagsController
     public function __invoke(Request $request, Service $service): JsonResponse
     {
         $request->validate([
-            'id' => ['required', new ResourceIdRule],
+            'id' => ['required', new ResourceIdRule()],
             'tags' => ['required', 'filled', 'array'],
             'tags.*' => Tag::rules(),
         ]);

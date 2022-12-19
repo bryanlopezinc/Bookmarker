@@ -18,9 +18,18 @@ final class EnsureEmailHasBeenVerified implements UserRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function getUserEntityByUserCredentials($username, $password, $grantType, ClientEntityInterface $clientEntity)
-    {
-        $userEntity = $this->userRepository->getUserEntityByUserCredentials($username, $password, $grantType, $clientEntity);
+    public function getUserEntityByUserCredentials(
+        $username,
+        $password,
+        $grantType,
+        ClientEntityInterface $clientEntity
+    ) {
+        $userEntity = $this->userRepository->getUserEntityByUserCredentials(
+            $username,
+            $password,
+            $grantType,
+            $clientEntity
+        );
 
         if (!$userEntity) {
             return $userEntity;

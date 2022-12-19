@@ -18,7 +18,7 @@ final class UAC implements Countable
         Model::ADD_BOOKMARKS,
         Model::DELETE_BOOKMARKS,
         Model::INVITE,
-        Model::UPDATE_fOLDER
+        Model::UPDATE_FOLDER
     ];
 
     /**
@@ -51,7 +51,7 @@ final class UAC implements Countable
             'addBookmarks' => Model::ADD_BOOKMARKS,
             'removeBookmarks' => Model::DELETE_BOOKMARKS,
             'inviteUser' => Model::INVITE,
-            'updateFolder' => Model::UPDATE_fOLDER
+            'updateFolder' => Model::UPDATE_FOLDER
         ]);
     }
 
@@ -165,7 +165,7 @@ final class UAC implements Countable
 
     public function canUpdateFolder(): bool
     {
-        return $this->hasPermissionTo(Model::UPDATE_fOLDER);
+        return $this->hasPermissionTo(Model::UPDATE_FOLDER);
     }
 
     public function hasOnlyReadPermission(): bool

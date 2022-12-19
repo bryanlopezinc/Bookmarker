@@ -9,5 +9,5 @@ namespace App\Contracts;
  */
 interface AfterDTOSetUpHookInterface
 {
-    public function executeAfterSetUp(Object $dataTransferObject): void;
+    public function executeAfterSetUp(object $dataTransferObject): void;
 }

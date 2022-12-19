@@ -16,7 +16,7 @@ final class DeleteFavoriteController
     {
         $request->validate([
             'bookmarks' => ['required', 'array', join(':', ['max', setting('MAX_DELETE_FAVOURITES')])],
-            'bookmarks.*' => [new ResourceIdRule, 'distinct:strict'],
+            'bookmarks.*' => [new ResourceIdRule(), 'distinct:strict'],
         ]);
 
         $service(ResourceIDsCollection::fromNativeTypes($request->input('bookmarks')));

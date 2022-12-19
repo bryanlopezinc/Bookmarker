@@ -32,7 +32,7 @@ final class CreateFavoriteService
             throw HttpException::notFound(['message' => 'Bookmarks does not exists']);
         }
 
-        $bookmarks->each(new EnsureAuthorizedUserOwnsResource);
+        $bookmarks->each(new EnsureAuthorizedUserOwnsResource());
 
         if ($this->repository->contains($bookmarkIDs, $userId)) {
             throw HttpException::conflict(['message' => 'Bookmarks already exists in favorites']);

@@ -14,10 +14,10 @@ final class AddBookmarksToFolderRequest extends FormRequest
     {
         return [
             'bookmarks' => ['required', 'array', join(':', ['max', setting('MAX_POST_FOLDER_BOOKMARKS')])],
-            'bookmarks.*' => [new ResourceIdRule, 'distinct:strict'],
-            'folder' => ['required', new ResourceIdRule],
+            'bookmarks.*' => [new ResourceIdRule(), 'distinct:strict'],
+            'folder' => ['required', new ResourceIdRule()],
             'make_hidden' => ['nullable', 'array'],
-            'make_hidden.*' => [new ResourceIdRule, 'distinct:strict',]
+            'make_hidden.*' => [new ResourceIdRule(), 'distinct:strict',]
         ];
     }
 

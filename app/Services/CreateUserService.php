@@ -16,7 +16,7 @@ final class CreateUserService
     {
     }
 
-    public function FromRequest(CreateUserRequest $request): User
+    public function fromRequest(CreateUserRequest $request): User
     {
         $user = UserBuilder::new()
             ->email($request->validated('email'))

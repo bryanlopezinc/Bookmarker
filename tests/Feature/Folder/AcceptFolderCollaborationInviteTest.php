@@ -157,7 +157,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $this->assertWillAcceptInvite(['updateFolder'], function (Collection $savedPermissions) {
             $this->assertCount(2, $savedPermissions);
-            $this->assertTrue($savedPermissions->containsStrict(Permission::UPDATE_fOLDER));
+            $this->assertTrue($savedPermissions->containsStrict(Permission::UPDATE_FOLDER));
             $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
         });
 
@@ -173,7 +173,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $this->assertTrue($savedPermissions->containsStrict(Permission::DELETE_BOOKMARKS));
             $this->assertTrue($savedPermissions->containsStrict(Permission::ADD_BOOKMARKS));
             $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
-            $this->assertTrue($savedPermissions->containsStrict(Permission::UPDATE_fOLDER));
+            $this->assertTrue($savedPermissions->containsStrict(Permission::UPDATE_FOLDER));
             $this->assertTrue($savedPermissions->containsStrict(Permission::INVITE));
         });
     }

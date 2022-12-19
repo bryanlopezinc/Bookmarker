@@ -32,7 +32,10 @@ final class FilterFolderResource extends JsonResource
         $filteredResponse['attributes'] = [];
 
         foreach ($fields as $field) {
-            $value = Arr::get($fullResponse, "attributes.$field", fn () => throw new \Exception("Invalid value attributes.$field"));
+            $value = Arr::get($fullResponse, "attributes.$field", function () use ($field) {
+                throw new \Exception("Invalid value attributes. $field");
+            });
+
             Arr::set($filteredResponse, "attributes.$field", $value);
         }
 

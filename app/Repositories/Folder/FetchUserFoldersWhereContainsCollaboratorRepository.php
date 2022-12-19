@@ -32,11 +32,11 @@ final class FetchUserFoldersWhereContainsCollaboratorRepository
             ->groupBy('folders_collaborators_permissions.folder_id')
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
 
-        $folderCollaboratorPermissions = $this->getCollaboratorPermissions($collaborations->pluck('id')->all(), $collaboratorID);
+        $permissions = $this->getCollaboratorPermissions($collaborations->pluck('id')->all(), $collaboratorID);
 
         return $collaborations->setCollection(
             $collaborations->map(
-                $this->createCollaborationFn($folderCollaboratorPermissions)
+                $this->createCollaborationFn($permissions)
             )
         );
     }

@@ -26,7 +26,7 @@ final class DeleteBookmarksService
             return;
         }
 
-        $bookmarks->each(new EnsureAuthorizedUserOwnsResource);
+        $bookmarks->each(new EnsureAuthorizedUserOwnsResource());
 
         $this->deleteBookmarks->delete($bookmarkIds);
     }

@@ -24,7 +24,9 @@ use App\ValueObjects\BookmarkTitle;
 
 final class UpdateBookmarkWithHttpResponse implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
 
     public function __construct(private Bookmark $bookmark)
     {
@@ -34,7 +36,7 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
         HttpClientInterface $client,
         Repository $repository,
         UrlHasher $urlHasher,
-        BookmarkRepository $bookmarkRepository = new BookmarkRepository,
+        BookmarkRepository $bookmarkRepository = new BookmarkRepository(),
     ): void {
 
         /** @var Bookmark|null */

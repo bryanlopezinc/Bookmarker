@@ -31,7 +31,7 @@ final class FolderSettingsRule implements RuleContract, DataAwareRule
 
     public function __construct()
     {
-        $this->errors = new MessageBag;
+        $this->errors = new MessageBag();
     }
 
     public function setData($data)
@@ -56,14 +56,20 @@ final class FolderSettingsRule implements RuleContract, DataAwareRule
                     return;
                 }
 
-                if ($this->input('N-newCollaborator', false) === false && $this->input('N-onlyNewCollaboratorsByMe', false) === true) {
+                if (
+                    $this->input('N-newCollaborator', false) === false &&
+                    $this->input('N-onlyNewCollaboratorsByMe', false) === true
+                ) {
                     $validator->errors()->add(
                         $this->attribute,
                         'The settings N-onlyNewCollaboratorsByMe cannot be true when N-newCollaborator is false.'
                     );
                 }
 
-                if ($this->input('N-collaboratorExit', false) === false && $this->input('N-collaboratorExitOnlyHasWritePermission', false) === true) {
+                if (
+                    $this->input('N-collaboratorExit', false) === false &&
+                    $this->input('N-collaboratorExitOnlyHasWritePermission', false) === true
+                ) {
                     $validator->errors()->add(
                         $this->attribute,
                         'The settings N-collaboratorExitOnlyHasWritePermission cannot be true when N-collaboratorExit is false.'

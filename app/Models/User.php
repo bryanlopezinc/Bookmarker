@@ -25,7 +25,9 @@ use Illuminate\Database\Query\JoinClause;
  */
 final class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens;
+    use HasFactory;
+    use Notifiable;
 
     /**
      * {@inheritdoc}

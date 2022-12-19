@@ -34,7 +34,7 @@ class FolderFieldsRule implements RuleContract
 
     public function __construct()
     {
-        $this->errors = new MessageBag;
+        $this->errors = new MessageBag();
     }
 
     /**

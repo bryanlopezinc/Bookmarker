@@ -26,7 +26,7 @@ final class RevokeFolderCollaboratorPermissionsService
         $folder = $this->folderRepository->find($folderID, FolderAttributes::only('id,user_id'));
         $collaboratorsCurrentPermissions = $this->permissions->getUserAccessControls($collaboratorID, $folderID);
 
-        (new EnsureAuthorizedUserOwnsResource)($folder);
+        (new EnsureAuthorizedUserOwnsResource())($folder);
 
         $this->ensureIsNotPerformingActionOnSelf($collaboratorID);
 

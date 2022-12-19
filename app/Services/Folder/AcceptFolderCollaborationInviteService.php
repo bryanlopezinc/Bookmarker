@@ -40,7 +40,10 @@ final class AcceptFolderCollaborationInviteService
 
         $this->ensureUsersStillExist($invitationData);
 
-        $folder = $this->folderRepository->find(new ResourceID($invitationData[Payload::FOLDER_ID]), FolderAttributes::only('id,user_id,settings'));
+        $folder = $this->folderRepository->find(
+            new ResourceID($invitationData[Payload::FOLDER_ID]),
+            FolderAttributes::only('id,user_id,settings')
+        );
         $inviteeID = new UserID($invitationData[Payload::INVITEE_ID]);
 
         $this->ensureInvitationHasNotBeenAccepted($inviteeID, $folder);
@@ -85,7 +88,7 @@ final class AcceptFolderCollaborationInviteService
         );
 
         if ($users->count() !== 2) {
-            throw new UserNotFoundHttpException;
+            throw new UserNotFoundHttpException();
         }
     }
 
@@ -116,6 +119,6 @@ final class AcceptFolderCollaborationInviteService
             return;
         }
 
-        (new NotificationRepository)->notify($folder->ownerID, $notification);
+        (new NotificationRepository())->notify($folder->ownerID, $notification);
     }
 }

@@ -18,11 +18,11 @@ final class FetchFolderController extends Controller
     public function __invoke(Request $request, FolderRepositoryInterface $repository): FilterFolderResource
     {
         $request->validate([
-            'id' => ['required', new ResourceIdRule],
-            'fields' => ['sometimes', new FolderFieldsRule]
+            'id' => ['required', new ResourceIdRule()],
+            'fields' => ['sometimes', new FolderFieldsRule()]
         ]);
 
-        (new Policy)($folder = $repository->find(ResourceID::fromRequest($request)));
+        (new Policy())($folder = $repository->find(ResourceID::fromRequest($request)));
 
         return new FilterFolderResource($folder);
     }

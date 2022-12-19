@@ -13,7 +13,8 @@ use Illuminate\Bus\Queueable;
 
 final class CollaboratorExitNotification extends Notification implements ShouldQueue
 {
-    use Queueable, FormatDatabaseNotification;
+    use Queueable;
+    use FormatDatabaseNotification;
 
     public function __construct(private ResourceID $folderID, private UserID $collaboratorThatLeft)
     {

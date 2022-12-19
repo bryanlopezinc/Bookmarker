@@ -68,7 +68,9 @@ final class BookmarksAddedToFolderNotificationResource extends JsonResource impl
      */
     private function getBookmarks(): array
     {
-        return $this->repository->findBookmarksByIDs($this->notification->notificationData['bookmarks_added_to_folder']);
+        return $this->repository->findBookmarksByIDs(
+            $this->notification->notificationData['bookmarks_added_to_folder']
+        );
     }
 
     public function toJsonResource(): JsonResource

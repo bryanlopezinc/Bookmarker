@@ -173,7 +173,7 @@ class FetchFolderCollaboratorsTest extends TestCase
                     FolderPermission::ADD_BOOKMARKS,
                     FolderPermission::DELETE_BOOKMARKS,
                     FolderPermission::INVITE,
-                    FolderPermission::UPDATE_fOLDER,
+                    FolderPermission::UPDATE_FOLDER,
                 ];
 
                 $this->createUserFolderAccess($users, $folderID, $nameIDMap[$sequence[$index]]);

@@ -11,10 +11,10 @@ use App\ValueObjects\Uuid;
 final class ImportData
 {
     public function __construct(
-        private  Uuid $requestID,
-        private  ImportSource $importSource,
+        private Uuid $requestID,
+        private ImportSource $importSource,
         private UserID $userID,
-        private  array $data
+        private array $data
     ) {
     }
 

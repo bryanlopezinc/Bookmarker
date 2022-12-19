@@ -18,7 +18,7 @@ final class VerifyEmailNotification extends VerifyEmail
     {
         $components = $this->parseUrl(parent::verificationUrl($notifiable));
 
-        return (new Stringable((string)new VerifyEmailUrl))
+        return (new Stringable((string)new VerifyEmailUrl()))
             ->replace(':expires', $components['expires'])
             ->replace(':signature', $components['signature'])
             ->replace(':hash', $components['hash'])

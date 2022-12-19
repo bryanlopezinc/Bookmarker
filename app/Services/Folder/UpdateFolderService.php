@@ -55,7 +55,7 @@ final class UpdateFolderService
     private function ensureUserCanUpdateFolder(Folder $folder, Request $request): void
     {
         try {
-            (new EnsureAuthorizedUserOwnsResource)($folder);
+            (new EnsureAuthorizedUserOwnsResource())($folder);
         } catch (SymfonyHttpException $e) {
             $hasUpdateFolderPermission = $this->permissions
                 ->getUserAccessControls(UserID::fromAuthUser(), $folder->folderID)

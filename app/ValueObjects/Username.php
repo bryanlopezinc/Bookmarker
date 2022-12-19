@@ -34,7 +34,9 @@ final class Username
 
     public static function fromRequest(Request $request, string $key = 'username'): self
     {
-        return new self($request->input($key, fn () => throw new Exception('Could not retrieve username from request with key ' . $key)));
+        return new self($request->input($key, function () use ($key) {
+            throw new Exception('Could not retrieve username from request with key ' . $key);
+        }));
     }
 
     public static function fromString(string $value): self
@@ -55,7 +57,7 @@ final class Username
         }
 
         if (!preg_match(self::REGEX, $this->value)) {
-            throw InvalidUsernameException::InvalidCharacters();
+            throw InvalidUsernameException::invalidCharacters();
         }
     }
 }

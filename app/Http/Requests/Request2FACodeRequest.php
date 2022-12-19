@@ -12,7 +12,7 @@ final class Request2FACodeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'username' => ['required', 'filled', 'string', new UsernameOrEmailRule],
+            'username' => ['required', 'filled', 'string', new UsernameOrEmailRule()],
             'password' => ['required', 'filled']
         ];
     }

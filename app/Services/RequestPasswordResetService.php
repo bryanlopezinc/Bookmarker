@@ -24,7 +24,7 @@ final class RequestPasswordResetService
         });
 
         if ($status === PasswordBroker::INVALID_USER) {
-            throw new UserNotFoundHttpException;
+            throw new UserNotFoundHttpException();
         }
 
         if ($status === PasswordBroker::RESET_THROTTLED) {

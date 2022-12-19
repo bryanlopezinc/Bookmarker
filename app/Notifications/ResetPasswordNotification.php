@@ -16,7 +16,7 @@ final class ResetPasswordNotification extends ResetPassword implements ShouldQue
 
     protected function resetUrl($notifiable)
     {
-        return Str::of((string) new ResetPasswordUrl)
+        return Str::of((string) new ResetPasswordUrl())
             ->replace(':token', $this->token)
             ->replace(':email', $notifiable->getEmailForPasswordReset())
             ->toString();

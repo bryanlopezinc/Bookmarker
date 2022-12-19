@@ -17,7 +17,9 @@ use Illuminate\Queue\SerializesModels;
 
 final class PruneDeletedUsersData
 {
-    use Dispatchable, InteractsWithQueue, Queueable;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
 
     public function handle(): void
     {

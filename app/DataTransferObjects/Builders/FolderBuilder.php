@@ -23,14 +23,16 @@ final class FolderBuilder extends Builder
 
         $keyExists = fn (string $key) => array_key_exists($key, $attributes);
 
-        return (new self)
+        return (new self())
             ->when($keyExists('id'), fn (FolderBuilder $b) => $b->setID($folder->id))
             ->when($keyExists('user_id'), fn (FolderBuilder $b) => $b->setOwnerID($folder->user_id))
             ->when($keyExists('name'), fn (FolderBuilder $b) => $b->setName($folder->name))
             ->when($keyExists('description'), fn (FolderBuilder $b) => $b->setDescription($folder->description))
             ->when($keyExists('created_at'), fn (FolderBuilder $b) => $b->setCreatedAt($folder->created_at))
             ->when($keyExists('updated_at'), fn (FolderBuilder $b) => $b->setUpdatedAt($folder->updated_at))
-            ->when($keyExists('bookmarks_count'), fn (FolderBuilder $b) => $b->setBookmarksCount((int)$folder->bookmarks_count)) // @phpstan-ignore-line
+            ->when($keyExists('bookmarks_count'), function (FolderBuilder $b) use ($folder) {
+                $b->setBookmarksCount((int)$folder->bookmarks_count); // @phpstan-ignore-line
+            })
             ->when($keyExists('is_public'), fn (FolderBuilder $b) => $b->setIsPublic($folder->is_public))
             ->when($keyExists('tags'), fn (FolderBuilder $b) => $b->setTags($folder->getRelation('tags')->all()))
             ->when($keyExists('settings'), fn (FolderBuilder $b) => $b->setSettings($folder->settings));

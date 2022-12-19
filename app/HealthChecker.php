@@ -30,7 +30,9 @@ final class HealthChecker
         );
 
         collect($responses)
-            ->map(fn (Response $response, int $bookmarkID) => new HealthCheckResult(new ResourceID($bookmarkID), $response))
+            ->map(function (Response $response, int $bookmarkID) {
+                return new HealthCheckResult(new ResourceID($bookmarkID), $response);
+            })
             ->whenNotEmpty(fn (Collection $collection) => $this->repository->update($collection->all()));
     }
 

@@ -14,10 +14,14 @@ use Illuminate\Bus\Queueable;
 
 final class BookmarksAddedToFolderNotification extends Notification implements ShouldQueue
 {
-    use Queueable, FormatDatabaseNotification;
+    use Queueable;
+    use FormatDatabaseNotification;
 
-    public function __construct(private ResourceIDsCollection $bookmarks, private ResourceID $folderID, private UserID $collaboratorID)
-    {
+    public function __construct(
+        private ResourceIDsCollection $bookmarks,
+        private ResourceID $folderID,
+        private UserID $collaboratorID
+    ) {
         $this->afterCommit();
     }
 

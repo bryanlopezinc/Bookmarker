@@ -29,7 +29,7 @@ final class FetchFolderCollaboratorsService
     {
         $folder = $this->folderRepository->find($folderID, FolderAttributes::only('id,user_id'));
 
-        (new EnsureAuthorizedUserOwnsResource)($folder);
+        (new EnsureAuthorizedUserOwnsResource())($folder);
 
         return $this->repository->collaborators($folderID, $pagination, $filter);
     }

@@ -30,7 +30,7 @@ final class FolderCollaborationInviteMail extends Mailable
 
     public function inviteUrl(): string
     {
-        return Str::of((string)new AcceptInviteUrl)
+        return Str::of((string)new AcceptInviteUrl())
             ->replace(':invite_hash', $this->token->value)
             ->toString();
     }

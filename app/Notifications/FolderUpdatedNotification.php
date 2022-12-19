@@ -13,7 +13,8 @@ use Illuminate\Bus\Queueable;
 
 final class FolderUpdatedNotification extends Notification implements ShouldQueue
 {
-    use Queueable, FormatDatabaseNotification;
+    use Queueable;
+    use FormatDatabaseNotification;
 
     public function __construct(private Folder $original, private Folder $updated, private UserID $updatedBy)
     {

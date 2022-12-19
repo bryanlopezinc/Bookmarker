@@ -25,7 +25,7 @@ final class DeleteBookmarkTagsService
     {
         $bookmark = $this->bookmarksRepository->findById($bookmarkId, BookmarkAttributes::only('user_id,id,tags'));
 
-        (new EnsureAuthorizedUserOwnsResource)($bookmark);
+        (new EnsureAuthorizedUserOwnsResource())($bookmark);
 
         if (!$bookmark->tags->contains($tagsCollection)) {
             return;

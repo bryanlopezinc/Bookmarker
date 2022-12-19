@@ -24,7 +24,7 @@ final class HideFolderBookmarksService
     {
         $folder = $this->folderRepository->find($folderID, Attributes::only('id,user_id'));
 
-        (new EnsureAuthorizedUserOwnsResource)($folder);
+        (new EnsureAuthorizedUserOwnsResource())($folder);
 
         $this->ensureBookmarksExistsInFolder($folderID, $bookmarkIDs);
 

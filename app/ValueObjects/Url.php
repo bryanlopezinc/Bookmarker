@@ -28,7 +28,7 @@ final class Url
 
         $this->parts = $parts;
         $this->url = $url;
-        
+
         if (!in_array($this->getScheme(), ['http', 'https'])) {
             throw MalformedURLException::invalidScheme($url, $this->getScheme());
         }
@@ -63,7 +63,7 @@ final class Url
      *
      * @return array<string,mixed>
      */
-    public  function parseQuery(): array
+    public function parseQuery(): array
     {
         return QueryParameterBag::fromString($this->parts['query'] ?? '')->all();
     }

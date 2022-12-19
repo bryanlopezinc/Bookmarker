@@ -26,7 +26,7 @@ final class FetchDuplicateBookmarksService
     {
         $bookmark = $this->repository->findById($bookmarkID, BookmarkAttributes::only('url_canonical_hash,user_id,id'));
 
-        (new EnsureAuthorizedUserOwnsResource)($bookmark);
+        (new EnsureAuthorizedUserOwnsResource())($bookmark);
 
         return $this->repository->fetchPossibleDuplicates($bookmark, UserID::fromAuthUser(), $pagination);
     }

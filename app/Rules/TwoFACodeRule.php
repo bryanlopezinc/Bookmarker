@@ -30,7 +30,7 @@ final class TwoFACodeRule implements Rule, ValidatorAwareRule
     {
         try {
             if (!$this->validator->validateInteger($attribute, $value)) {
-                throw new Invalid2FACodeException;
+                throw new Invalid2FACodeException();
             }
 
             TwoFACode::fromString($value);

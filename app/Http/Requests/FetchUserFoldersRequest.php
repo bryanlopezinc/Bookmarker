@@ -13,7 +13,13 @@ final class FetchUserFoldersRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'sort' => ['nullable', 'string', 'filled', Rule::in(['oldest', 'newest', 'most_items', 'least_items', 'updated_recently'])],
+            'sort' => ['nullable', 'string', 'filled', Rule::in([
+                'oldest',
+                'newest',
+                'most_items',
+                'least_items',
+                'updated_recently'
+            ])],
             ...PaginationData::new()->asValidationRules()
         ];
     }

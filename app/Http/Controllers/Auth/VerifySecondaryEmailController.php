@@ -18,13 +18,13 @@ final class VerifySecondaryEmailController
     {
         $request->validate([
             'email' => ['required', 'email'],
-            'verification_code' => ['required', new TwoFACodeRule]
+            'verification_code' => ['required', new TwoFACodeRule()]
         ]);
 
         $service->verify(
             UserID::fromAuthUser(),
             new Email($request->input('email')),
-             TwoFACode::fromString($request->input('verification_code'))
+            TwoFACode::fromString($request->input('verification_code'))
         );
 
         return response()->json();

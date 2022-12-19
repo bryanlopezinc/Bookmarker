@@ -18,7 +18,10 @@ final class DeleteUserRepository
 
         $user->tokens()->chunkById(20, function (\Illuminate\Database\Eloquent\Collection $chunk) {
             $chunk->toQuery()->update(['revoked' => true]);
-            Passport::refreshToken()->whereIn('access_token_id', $chunk->pluck('id')->all())->update(['revoked' => true]);
+            Passport::refreshToken()->whereIn(
+                'access_token_id',
+                $chunk->pluck('id')->all()
+            )->update(['revoked' => true]);
         });
 
         //Store the user ID which is the foreign key for all user resources

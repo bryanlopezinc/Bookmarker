@@ -26,7 +26,7 @@ final class DetachFolderTagsService
     {
         $folder = $this->repository->find($folderID, FolderAttributes::only('user_id,id,tags'));
 
-        (new EnsureAuthorizedUserOwnsResource)($folder);
+        (new EnsureAuthorizedUserOwnsResource())($folder);
 
         if (!$folder->tags->contains($tagsCollection)) {
             return;

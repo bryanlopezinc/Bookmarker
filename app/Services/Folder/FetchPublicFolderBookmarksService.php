@@ -31,7 +31,9 @@ final class FetchPublicFolderBookmarksService
     {
         $folder = $this->folderRepository->find($folderID, Attributes::only('is_public'));
 
-        if (!$folder->isPublic) throw new FolderNotFoundHttpResponseException;
+        if (!$folder->isPublic) {
+            throw new FolderNotFoundHttpResponseException();
+        }
 
         $folderBookmarks = $this->folderBookmarksRepository->onlyPublicBookmarks($folderID, $pagination);
 

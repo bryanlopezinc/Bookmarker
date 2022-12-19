@@ -25,7 +25,9 @@ final class FolderResource extends JsonResource
                 'id' => $this->folder->folderID->value(),
                 'name' => $this->folder->name->safe(),
                 'has_description' => !$this->folder->description->isEmpty(),
-                'description' => $this->when(!$this->folder->description->isEmpty(), fn () => $this->folder->description->safe()),
+                'description' => $this->when(!$this->folder->description->isEmpty(), function () {
+                    return $this->folder->description->safe();
+                }),
                 'date_created' => $this->folder->createdAt->toDateTimeString(),
                 'last_updated' => $this->folder->updatedAt->toDateTimeString(),
                 'is_public' => $this->folder->isPublic,

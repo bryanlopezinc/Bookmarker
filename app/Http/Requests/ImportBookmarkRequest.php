@@ -47,7 +47,7 @@ final class ImportBookmarkRequest extends FormRequest
         $validatorClass = self::VALIDATORS[$this->input('source', 100)] ?? false;
 
         if ($validatorClass == false) {
-            return new Imports\EmptyValidator;
+            return new Imports\EmptyValidator();
         }
 
         return app($validatorClass);

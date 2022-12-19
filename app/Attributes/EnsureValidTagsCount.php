@@ -23,7 +23,7 @@ final class EnsureValidTagsCount implements AfterDTOSetUpHookInterface
     /**
      * @param DataTransferObject $resource
      */
-    public function executeAfterSetUp(Object $resource): void
+    public function executeAfterSetUp(object $resource): void
     {
         $maxTagsLength = setting($this->config);
 

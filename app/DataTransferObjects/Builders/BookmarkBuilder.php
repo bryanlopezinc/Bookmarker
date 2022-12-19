@@ -20,7 +20,7 @@ final class BookmarkBuilder extends Builder
 {
     public static function fromModel(Model $model): BookmarkBuilder
     {
-        return (new BuildBookmarkFromModel)($model);
+        return (new BuildBookmarkFromModel())($model);
     }
 
     public static function fromBookmark(Bookmark $bookmark): BookmarkBuilder
@@ -30,7 +30,7 @@ final class BookmarkBuilder extends Builder
 
     public static function new(): self
     {
-        return new self;
+        return new self();
     }
 
     public function id(int $id): self
@@ -171,17 +171,17 @@ final class BookmarkBuilder extends Builder
     public function resolvedAt(?Carbon $date): self
     {
         if ($date === null) {
-            $this->IsResolved(false);
+            $this->isResolved(false);
             return $this;
         }
 
-        $this->IsResolved(true);
+        $this->isResolved(true);
         $this->attributes['resolvedAt'] = $date;
 
         return $this;
     }
 
-    public function IsResolved(bool $IsResolved): self
+    public function isResolved(bool $IsResolved): self
     {
         $this->attributes['IsResolved'] = $IsResolved;
 

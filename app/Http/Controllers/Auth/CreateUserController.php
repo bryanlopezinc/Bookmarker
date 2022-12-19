@@ -14,7 +14,7 @@ final class CreateUserController
 {
     public function __invoke(CreateUserRequest $request, CreateUserService $service): JsonResponse
     {
-        event(new RegisteredEvent($service->FromRequest($request)));
+        event(new RegisteredEvent($service->fromRequest($request)));
 
         return response()->json(status: Response::HTTP_CREATED);
     }

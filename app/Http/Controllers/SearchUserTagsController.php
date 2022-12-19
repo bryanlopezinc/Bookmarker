@@ -18,7 +18,11 @@ final class SearchUserTagsController
             'tag' => Tag::rules(['required'])
         ]);
 
-        $data =  $tagsRepository->search($request->input('tag'), UserID::fromAuthUser(), setting('SEARCH_USER_TAGS_LIMIT'))
+        $data =  $tagsRepository->search(
+            $request->input('tag'),
+            UserID::fromAuthUser(),
+            setting('SEARCH_USER_TAGS_LIMIT')
+        )
             ->toStringCollection()
             ->map(fn (string $tag) => ['name' => $tag])
             ->all();

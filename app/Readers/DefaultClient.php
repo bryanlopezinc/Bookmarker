@@ -16,10 +16,10 @@ final class DefaultClient implements HttpClientInterface
     private DOMReader $dOMReader;
     private LoggerInterface $logger;
 
-    public function __construct(LoggerInterface $logger,  DOMReader $dOMReader = null)
+    public function __construct(LoggerInterface $logger, DOMReader $dOMReader = null)
     {
         $this->logger = $logger;
-        $this->dOMReader = $dOMReader ?? new DOMReader;
+        $this->dOMReader = $dOMReader ?? new DOMReader();
     }
 
     public function fetchBookmarkPageData(Bookmark $bookmark): BookmarkMetaData|false

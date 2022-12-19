@@ -19,7 +19,7 @@ final class DeleteBookmarksFromSourceController
     public function __invoke(Request $request, DeleteBookmarkRepository $repository): JsonResponse
     {
         $request->validate([
-            'source_id' => ['required', new ResourceIdRule]
+            'source_id' => ['required', new ResourceIdRule()]
         ]);
 
         $repository->fromSource(ResourceID::fromRequest($request, 'source_id'), UserID::fromAuthUser());

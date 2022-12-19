@@ -82,6 +82,7 @@ final class NotificationRepository
      */
     public function markAsRead(array $notificationIDs): void
     {
-        NotificationModel::whereIn('id', collect($notificationIDs)->map(fn (Uuid $id) => $id->value))->update(['read_at' => now()]);
+        NotificationModel::whereIn('id', collect($notificationIDs)->map(fn (Uuid $id) => $id->value))
+            ->update(['read_at' => now()]);
     }
 }

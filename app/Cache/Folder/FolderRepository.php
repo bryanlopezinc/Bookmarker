@@ -13,8 +13,11 @@ use Illuminate\Contracts\Cache\Repository;
 
 final class FolderRepository implements FolderRepositoryInterface
 {
-    public function __construct(private FolderRepositoryInterface $repository, private Repository $cache, private int $ttl)
-    {
+    public function __construct(
+        private FolderRepositoryInterface $repository,
+        private Repository $cache,
+        private int $ttl
+    ) {
     }
 
     /**

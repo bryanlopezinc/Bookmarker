@@ -24,7 +24,7 @@ final class RemoveCollaboratorService
     {
         $folder = $this->folderRepository->find($folderID, FolderAttributes::only('id,user_id'));
 
-        (new EnsureAuthorizedUserOwnsResource)($folder);
+        (new EnsureAuthorizedUserOwnsResource())($folder);
 
         $this->ensureIsNotRemovingSelf($collaboratorID);
 

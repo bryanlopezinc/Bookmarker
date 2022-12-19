@@ -18,7 +18,7 @@ use Carbon\Carbon;
 final class Folder extends DataTransferObject implements BelongsToUserInterface
 {
     use Constructor;
-    
+
     public readonly ResourceID $folderID;
     public readonly FolderName $name;
     public readonly UserID $ownerID;

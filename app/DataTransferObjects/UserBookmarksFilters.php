@@ -74,7 +74,10 @@ final class UserBookmarksFilters extends DataTransferObject
             'wantsBookmarksWithSpecificTags' => $hasTag = array_key_exists('tags', $request),
             'wantsOnlyBookmarksFromParticularSource' => $hasSourceID = array_key_exists('source_id', $request),
             'wantsUntaggedBookmarks' => $request['untagged'] ?? false,
-            'pagination' => new PaginationData($request['page'] ?? 1, $request['per_page'] ?? PaginationData::DEFAULT_PER_PAGE),
+            'pagination' => new PaginationData(
+                $request['page'] ?? 1,
+                $request['per_page'] ?? PaginationData::DEFAULT_PER_PAGE
+            ),
             'hasSortCriteria' => $hasSortCriteria = array_key_exists('sortBy', $request),
             'wantsBookmarksWithDeadLinks' => isset($request['dead_links']),
         ];

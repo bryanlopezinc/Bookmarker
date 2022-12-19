@@ -14,7 +14,8 @@ use Illuminate\Bus\Queueable;
 
 final class BookmarksRemovedFromFolderNotification extends Notification implements ShouldQueue
 {
-    use Queueable, FormatDatabaseNotification;
+    use Queueable;
+    use FormatDatabaseNotification;
 
     public function __construct(
         private ResourceIDsCollection $bookmarkIDs,

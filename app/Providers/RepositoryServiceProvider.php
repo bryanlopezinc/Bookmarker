@@ -31,7 +31,7 @@ class RepositoryServiceProvider extends ServiceProvider implements DeferrablePro
 
     private function bindBookmarksHealth(): void
     {
-        $concrete = new BookmarksHealthRepository;
+        $concrete = new BookmarksHealthRepository();
 
         $this->app->bind(BookmarksHealthRepositoryInterface::class, fn () => $concrete);
 
@@ -39,7 +39,9 @@ class RepositoryServiceProvider extends ServiceProvider implements DeferrablePro
         $this->app->addContextualBinding(
             HealthChecker::class,
             BookmarksHealthRepositoryInterface::class,
-            fn (Application $app) => $app->environment('testing') ? new TestBookmarksHealthRepository($concrete) : $concrete
+            function (Application $app) use ($concrete) {
+                return $app->environment('testing') ? new TestBookmarksHealthRepository($concrete) : $concrete;
+            }
         );
     }
 

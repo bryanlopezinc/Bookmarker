@@ -23,7 +23,11 @@ final class BookmarksHealthRepository implements BookmarksHealthRepositoryInterf
         /** @var \Illuminate\Database\Eloquent\Collection */
         $bookmarksHealths = BookmarkHealth::whereIn('bookmark_id', $bookmarkIDs)->get(['bookmark_id', 'last_checked']);
 
-        $notCheckedRecently = $bookmarksHealths->where('last_checked', '<=', now()->subDays(setting('HEALTH_CHECK_FREQUENCY')));
+        $notCheckedRecently = $bookmarksHealths->where(
+            'last_checked',
+            '<=',
+            now()->subDays(setting('HEALTH_CHECK_FREQUENCY'))
+        );
 
         //The bookmarkIDs that does not exists in the database.
         $missingRecords = $bookmarkIDs->diff($bookmarksHealths->pluck('bookmark_id'));

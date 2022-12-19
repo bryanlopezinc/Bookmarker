@@ -19,7 +19,7 @@ final class CheckDataTransferObjectForDefaultProperties implements AfterDTOSetUp
 
     private ReflectionClass $reflection;
 
-    public function executeAfterSetUp(Object $object): void
+    public function executeAfterSetUp(object $object): void
     {
         if (array_key_exists($object::class, static::$checked)) {
             return;
@@ -36,9 +36,9 @@ final class CheckDataTransferObjectForDefaultProperties implements AfterDTOSetUp
     {
         $callback = fn (ReflectionProperty $property): bool => $property->hasDefaultValue();
 
-        $objectHasPropertyWithDefaultValue = collect($this->reflection->getProperties())->filter($callback)->isNotEmpty();
+        $hasPropertyWithDefaultValue = collect($this->reflection->getProperties())->filter($callback)->isNotEmpty();
 
-        if ($objectHasPropertyWithDefaultValue) {
+        if ($hasPropertyWithDefaultValue) {
             throw new \Exception(
                 sprintf('%s property/ies cannot have a default values', $this->reflection->getName()),
                 5000

@@ -40,7 +40,7 @@ final class Bookmark extends DataTransferObject implements BelongsToUserInterfac
     public readonly HashedUrl $canonicalUrlHash;
     public readonly Url $resolvedUrl;
     public readonly Carbon $resolvedAt;
-    public readonly bool  $IsResolved;
+    public readonly bool $IsResolved;
     public readonly bool $hasDuplicates;
 
     public function getOwnerID(): UserID

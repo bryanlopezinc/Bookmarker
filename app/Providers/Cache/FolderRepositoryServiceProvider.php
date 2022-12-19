@@ -16,7 +16,10 @@ class FolderRepositoryServiceProvider extends ServiceProvider implements Deferra
      */
     public function boot()
     {
-        $this->app->instance(CacheRepository::class, new CacheRepository(new FolderRepository, app('cache')->store(), 3600));
+        $this->app->instance(
+            CacheRepository::class,
+            new CacheRepository(new FolderRepository(), app('cache')->store(), 3600)
+        );
     }
 
     public function provides()

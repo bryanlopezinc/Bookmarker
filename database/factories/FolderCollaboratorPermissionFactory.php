@@ -83,7 +83,7 @@ final class FolderCollaboratorPermissionFactory extends Factory
     public function updateFolderPermission(): self
     {
         return $this->state([
-            'permission_id' => static::$permissionTypes->where('name', FolderPermission::UPDATE_fOLDER)->sole()->id
+            'permission_id' => static::$permissionTypes->where('name', FolderPermission::UPDATE_FOLDER)->sole()->id
         ]);
     }
 }

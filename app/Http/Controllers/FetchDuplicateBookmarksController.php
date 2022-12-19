@@ -17,7 +17,7 @@ final class FetchDuplicateBookmarksController
     public function __invoke(Request $request, Service $service): ResourceCollection
     {
         $request->validate([
-            'id' => ['required', new ResourceIdRule],
+            'id' => ['required', new ResourceIdRule()],
             ...PaginationData::new()->asValidationRules(),
         ]);
 

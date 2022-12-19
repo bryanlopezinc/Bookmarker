@@ -15,7 +15,7 @@ final class SourceBuilder extends Builder
 {
     public static function new(): self
     {
-        return new self;
+        return new self();
     }
 
     public static function fromModel(Model $model): self
@@ -24,11 +24,13 @@ final class SourceBuilder extends Builder
 
         $keyExists = fn (string $key) => array_key_exists($key, $attributes);
 
-        return (new self)
+        return (new self())
             ->when($keyExists('id'), fn (SourceBuilder $sb) => $sb->id($model['id']))
             ->when($keyExists('host'), fn (SourceBuilder $sb) => $sb->domainName($model['host']))
             ->when($keyExists('name'), fn (SourceBuilder $sb) => $sb->name($model['name']))
-            ->when($keyExists('name_updated_at'), fn (SourceBuilder $sb) => $sb->nameUpdatedAt((string)$model['name_updated_at']));
+            ->when($keyExists('name_updated_at'), function (SourceBuilder $sb) use ($model) {
+                $sb->nameUpdatedAt((string)$model['name_updated_at']);
+            });
     }
 
     public function id(int $id): self

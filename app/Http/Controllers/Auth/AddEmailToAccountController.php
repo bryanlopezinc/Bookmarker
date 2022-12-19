@@ -18,7 +18,13 @@ final class AddEmailToAccountController
     public function __invoke(Request $request, Service $service): JsonResponse
     {
         $request->validate([
-            'email' => ['bail', 'required', 'email', Rule::unique(User::class, 'email'), Rule::unique(SecondaryEmail::class, 'email')]
+            'email' => [
+                'bail',
+                'required',
+                'email',
+                Rule::unique(User::class, 'email'),
+                Rule::unique(SecondaryEmail::class, 'email')
+            ]
         ]);
 
         $service(UserID::fromAuthUser(), new Email($request->input('email')));

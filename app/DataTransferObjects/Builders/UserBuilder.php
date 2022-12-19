@@ -17,7 +17,7 @@ final class UserBuilder extends Builder
 {
     public static function new(): self
     {
-        return new self;
+        return new self();
     }
 
     public static function fromModel(Model $model): self
@@ -26,7 +26,7 @@ final class UserBuilder extends Builder
 
         $keyExists = fn (string $key) => array_key_exists($key, $attributes);
 
-        return (new self)
+        return (new self())
             ->when($keyExists('id'), fn (self $sb) => $sb->id($model['id']))
             ->when($keyExists('username'), fn (self $sb) => $sb->username($model['username']))
             ->when($keyExists('firstname'), fn (self $sb) => $sb->firstName($model['firstname']))

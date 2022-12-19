@@ -15,7 +15,9 @@ use Illuminate\Queue\SerializesModels;
 
 final class CleanDeletedUsersTable
 {
-    use Dispatchable, InteractsWithQueue, Queueable;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
 
     public function handle(): void
     {

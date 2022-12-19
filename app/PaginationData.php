@@ -23,7 +23,7 @@ final class PaginationData
 
     public static function new(): self
     {
-        return new self;
+        return new self();
     }
 
     public static function fromRequest(Request $request, string $page = 'page', string $perPage = 'per_page'): self

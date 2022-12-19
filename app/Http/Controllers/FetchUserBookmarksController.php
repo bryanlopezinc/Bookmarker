@@ -20,7 +20,8 @@ final class FetchUserBookmarksController
     {
         $result = $repository->fetch(UserID::fromAuthUser(), UserBookmarksFilters::fromRequest($request));
 
-        $result->appends('per_page', $request->validated('per_page', PaginationData::DEFAULT_PER_PAGE))->withQueryString();
+        $result->appends('per_page', $request->validated('per_page', PaginationData::DEFAULT_PER_PAGE))
+            ->withQueryString();
 
         dispatch(new CheckBookmarksHealth(new BookmarksCollection($result->getCollection())));
 

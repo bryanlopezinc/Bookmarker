@@ -15,7 +15,7 @@ final class DeleteFolderController
     public function __invoke(Request $request, DeleteFolderService $service): JsonResponse
     {
         $request->validate([
-            'folder' => ['required', new ResourceIdRule],
+            'folder' => ['required', new ResourceIdRule()],
             'delete_bookmarks' => ['nullable', 'boolean']
         ]);
 

@@ -21,12 +21,14 @@ class BookmarkRepository
     /**
      * @throws BookmarkNotFoundException
      */
-    public function findById(ResourceID $bookmarkId, BookmarkAttributes $onlyAttributes = new BookmarkAttributes()): Bookmark
-    {
+    public function findById(
+        ResourceID $bookmarkId,
+        BookmarkAttributes $onlyAttributes = new BookmarkAttributes()
+    ): Bookmark {
         $result = $this->findManyById($bookmarkId->toCollection(), $onlyAttributes);
 
         if ($result->isEmpty()) {
-            throw new BookmarkNotFoundException;
+            throw new BookmarkNotFoundException();
         }
 
         return $result->sole();
@@ -58,7 +60,7 @@ class BookmarkRepository
     public function fetchPossibleDuplicates(Bookmark $bookmark, UserID $userID, PaginationData $pagination): Paginator
     {
         /** @var Paginator */
-        $result = Model::WithQueryOptions(new BookmarkAttributes)
+        $result = Model::WithQueryOptions(new BookmarkAttributes())
             ->addSelect('favourites.bookmark_id as isFavourite')
             ->join('favourites', 'favourites.bookmark_id', '=', 'bookmarks.id', 'left outer')
             ->where('url_canonical_hash', $bookmark->canonicalUrlHash->value)

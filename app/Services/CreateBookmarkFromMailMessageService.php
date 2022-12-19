@@ -30,12 +30,12 @@ final class CreateBookmarkFromMailMessageService
         );
 
         if ($user === false) {
-            Mail::to($email->value)->queue(new EmailNotRegisteredMail);
+            Mail::to($email->value)->queue(new EmailNotRegisteredMail());
             return;
         }
 
         if (!$user->hasVerifiedEmail) {
-            Mail::to($email->value)->queue(new EmailNotVerifiedMail);
+            Mail::to($email->value)->queue(new EmailNotVerifiedMail());
             return;
         }
 

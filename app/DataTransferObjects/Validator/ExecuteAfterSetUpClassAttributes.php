@@ -15,7 +15,7 @@ final class ExecuteAfterSetUpClassAttributes
      */
     private static array $cache = [];
 
-    public function __construct(private Object $object, private Reflector $reflector = new Reflector)
+    public function __construct(private object $object, private Reflector $reflector = new Reflector())
     {
         $this->cacheClassAttributes();
     }

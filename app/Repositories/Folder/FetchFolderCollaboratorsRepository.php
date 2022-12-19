@@ -24,7 +24,13 @@ final class FetchFolderCollaboratorsRepository
      */
     public function collaborators(ResourceID $folderID, PaginationData $pagination, UAC $filter = null): Paginator
     {
-        $query = User::select(['users.id', 'firstname', 'lastname', 'folders_collaborators_permissions.user_id', new Expression('COUNT(*) AS total')])
+        $query = User::select([
+            'users.id',
+            'firstname',
+            'lastname',
+            'folders_collaborators_permissions.user_id',
+            new Expression('COUNT(*) AS total')
+        ])
             ->join('folders_collaborators_permissions', 'folders_collaborators_permissions.user_id', '=', 'users.id')
             ->where('folders_collaborators_permissions.folder_id', $folderID->value())
             ->groupBy('folders_collaborators_permissions.user_id');
@@ -34,12 +40,18 @@ final class FetchFolderCollaboratorsRepository
         }
 
         $query->when(!$filter->hasAllPermissions(), function ($query) use ($filter) {
-            $query->whereIn('folders_collaborators_permissions.permission_id', FolderPermission::select('id')->whereIn('name', $filter->permissions));
+            $query->whereIn(
+                'folders_collaborators_permissions.permission_id',
+                FolderPermission::select('id')->whereIn('name', $filter->permissions)
+            );
             $query->having('total', '=', $filter->count()); // @phpstan-ignore-line
         });
 
         $query->when($filter->hasAllPermissions(), function ($query) {
-            $query->havingRaw('total = (SELECT COUNT(*) FROM folders_permissions WHERE name NOT IN(?))', [FolderPermission::VIEW_BOOKMARKS]);
+            $query->havingRaw(
+                'total = (SELECT COUNT(*) FROM folders_permissions WHERE name NOT IN(?))',
+                [FolderPermission::VIEW_BOOKMARKS]
+            );
         });
 
         return $this->paginate($query, $folderID, $pagination);

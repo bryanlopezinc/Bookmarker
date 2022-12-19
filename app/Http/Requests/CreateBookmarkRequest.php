@@ -14,7 +14,7 @@ final class CreateBookmarkRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'url' => ['required', new UrlRule],
+            'url' => ['required', new UrlRule()],
             'description' => ['nullable', 'max:200', 'filled'],
             'tags' => ['nullable', 'filled', join(':', ['max', setting('MAX_BOOKMARKS_TAGS')])],
             'tags.*' => Tag::rules(['distinct:strict']),

@@ -18,7 +18,7 @@ final class FetchUserCollaborationsController
     {
         $request->validate([
             ...PaginationData::new()->asValidationRules(),
-            'fields' => ['sometimes', new UserCollaborationFieldsRule]
+            'fields' => ['sometimes', new UserCollaborationFieldsRule()]
         ]);
 
         $result = $repository->get(

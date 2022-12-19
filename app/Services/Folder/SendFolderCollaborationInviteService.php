@@ -59,7 +59,7 @@ final class SendFolderCollaborationInviteService
     private function ensureUserHasPermissionToPerformAction(Folder $folder, User $inviter, Request $request): void
     {
         try {
-            (new EnsureAuthorizedUserOwnsResource)($folder);
+            (new EnsureAuthorizedUserOwnsResource())($folder);
         } catch (SymfonyHttpException $e) {
             $canInviteUser = $this->permissions->getUserAccessControls($inviter->id, $folder->folderID)->canInviteUser();
 
@@ -95,7 +95,7 @@ final class SendFolderCollaborationInviteService
         );
 
         if ($invitee === false) {
-            throw new UserNotFoundHttpException;
+            throw new UserNotFoundHttpException();
         }
 
         return $invitee;

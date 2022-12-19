@@ -27,9 +27,9 @@ final class CreateBookmarkService
             'url' => new Url($request->validated('url')),
             'createdOn' => (string)now(),
             'userID' => UserID::fromAuthUser(),
-            'tags' => $request->validated('tags', new MissingValue),
-            'title' => $request->validated('title', new MissingValue),
-            'description' =>  $request->input('description', new MissingValue),
+            'tags' => $request->validated('tags', new MissingValue()),
+            'title' => $request->validated('title', new MissingValue()),
+            'description' =>  $request->input('description', new MissingValue()),
             'descriptionSetByUser' => $request->has('description'),
             'hasCustomTitle' => $request->has('title'),
         ];
@@ -83,7 +83,7 @@ final class CreateBookmarkService
             ->tags($attributes->get('tags', []))
             ->bookmarkedOn($attributes->get('createdOn'))
             ->canonicalUrl($url)
-            ->canonicalUrlHash((new UrlHasher)->hashUrl($url))
+            ->canonicalUrlHash((new UrlHasher())->hashUrl($url))
             ->resolvedUrl($url)
             ->build();
 

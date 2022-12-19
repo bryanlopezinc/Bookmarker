@@ -26,7 +26,7 @@ final class GrantPermissionsToCollaboratorService
         $folder = $this->folderRepository->find($folderID, FolderAttributes::only('id,user_id'));
         $collaboratorCurrentPermissions = $this->permissions->getUserAccessControls($collaboratorID, $folderID);
 
-        (new Policy)($folder);
+        (new Policy())($folder);
 
         $this->ensureIsNotGrantingPermissionsToSelf($collaboratorID);
 

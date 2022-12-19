@@ -37,7 +37,10 @@ final class FavoriteRepository
 
     private function incrementFavoritesCount(UserID $userId, int $amount = 1): void
     {
-        $favoritesCount = UserFavoritesCount::query()->firstOrCreate(['user_id' => $userId->value()], ['count' => $amount]);
+        $favoritesCount = UserFavoritesCount::query()->firstOrCreate(
+            ['user_id' => $userId->value()],
+            ['count' => $amount]
+        );
 
         if (!$favoritesCount->wasRecentlyCreated) {
             $favoritesCount->increment('count', $amount);

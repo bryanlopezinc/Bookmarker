@@ -31,7 +31,8 @@ final class TagsCollection extends BaseCollection
      */
     public static function make(iterable $tags): self
     {
-        $tags = collect($tags)->map(function (string|Tag|HasTagValueInterface $tag) { // @phpstan-ignore-line
+         // @phpstan-ignore-next-line
+        $tags = collect($tags)->map(function (string|Tag|HasTagValueInterface $tag) {
             if (is_string($tag)) {
                 $tag = new Tag($tag);
             }

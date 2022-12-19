@@ -21,7 +21,7 @@ final class Importer implements ImporterInterface
     public function __construct(
         private CreateBookmarkService $createBookmark,
         private Filesystem $filesystem,
-        private DOMParserInterface $parser = new DOMParser
+        private DOMParserInterface $parser = new DOMParser()
     ) {
     }
 
@@ -40,6 +40,11 @@ final class Importer implements ImporterInterface
 
     private function saveBookmark(array $requestData, UserID $userID, Bookmark $chromeBookmark): void
     {
+        $createdOn = $this->resolveImportTimestamp(
+            $requestData['use_timestamp'] ?? true,
+            $chromeBookmark->timestamp
+        );
+
         try {
             $url = new Url($chromeBookmark->url);
         } catch (MalformedURLException) {
@@ -48,7 +53,7 @@ final class Importer implements ImporterInterface
 
         $this->createBookmark->fromArray([
             'url' => $url,
-            'createdOn' => $this->resolveImportTimestamp($requestData['use_timestamp'] ?? true, $chromeBookmark->timestamp),
+            'createdOn' => $createdOn,
             'userID' => $userID,
             'tags' => $requestData['tags'] ?? []
         ]);

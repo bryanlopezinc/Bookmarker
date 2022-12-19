@@ -31,7 +31,7 @@ final class CreateFolderRequest extends FormRequest
 
         if ($this->routeIs('updateFolder')) {
             $rules['name'] = [Rule::requiredIf(!$this->hasAny('description', 'is_public', 'tags')), ...$rules['name']];
-            $rules['folder'] = ['required', new ResourceIdRule];
+            $rules['folder'] = ['required', new ResourceIdRule()];
             $rules['password'] = ['sometimes', 'filled', 'string'];
         }
 

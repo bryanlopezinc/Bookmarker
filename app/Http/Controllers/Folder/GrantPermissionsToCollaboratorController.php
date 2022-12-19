@@ -18,7 +18,7 @@ final class GrantPermissionsToCollaboratorController
     public function __invoke(Request $request, Service $service): JsonResponse
     {
         $request->validate([
-            'user_id' => $idRules = ['required', new ResourceIdRule],
+            'user_id' => $idRules = ['required', new ResourceIdRule()],
             'folder_id' => $idRules,
             'permissions' => ['required', 'array', Rule::in([
                 'addBookmarks',

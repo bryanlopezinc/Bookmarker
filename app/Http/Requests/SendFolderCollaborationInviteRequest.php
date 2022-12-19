@@ -17,7 +17,7 @@ final class SendFolderCollaborationInviteRequest extends FormRequest
     {
         return [
             'email' => ['required', 'email'],
-            'folder_id' => ['required', new ResourceIdRule],
+            'folder_id' => ['required', new ResourceIdRule()],
             'permissions' => ['sometimes', 'array', Rule::in([
                 '*',
                 'addBookmarks',
@@ -47,7 +47,10 @@ final class SendFolderCollaborationInviteRequest extends FormRequest
             }
 
             if (count($permissions) > 1) {
-                $validator->errors()->add('permissions', 'The permissions field cannot contain any other value with the * wildcard.');
+                $validator->errors()->add(
+                    'permissions',
+                    'The permissions field cannot contain any other value with the * wildcard.'
+                );
             }
         });
     }

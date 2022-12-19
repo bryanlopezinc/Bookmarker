@@ -14,8 +14,10 @@ use Illuminate\Http\Response;
 
 final class VerifySecondaryEmailService
 {
-    public function __construct(private UserRepository $userRepository, private PendingVerifications $pendingVerifications)
-    {
+    public function __construct(
+        private UserRepository $userRepository,
+        private PendingVerifications $pendingVerifications
+    ) {
     }
 
     public function verify(UserID $userID, Email $secondaryEmail, TwoFACode $twoFACode): void
@@ -28,7 +30,10 @@ final class VerifySecondaryEmailService
         $unVerifiedEmailAddedByUser = $verificationData->email;
         $twoFACodeGeneratedOnBehalfOfUser = $verificationData->twoFACode;
 
-        if (!$twoFACodeGeneratedOnBehalfOfUser->equals($twoFACode) || !$unVerifiedEmailAddedByUser->equals($secondaryEmail)) {
+        if (
+            !$twoFACodeGeneratedOnBehalfOfUser->equals($twoFACode) ||
+            !$unVerifiedEmailAddedByUser->equals($secondaryEmail)
+        ) {
             $this->throwNoPendingVerificationException();
         }
 

@@ -18,8 +18,11 @@ final class UserFoldersRepository
     /**
      * @return Paginator<Folder>
      */
-    public function fetch(UserID $userID, PaginationData $pagination, SortCriteria $sortCriteria = SortCriteria::NEWEST): Paginator
-    {
+    public function fetch(
+        UserID $userID,
+        PaginationData $pagination,
+        SortCriteria $sortCriteria = SortCriteria::NEWEST
+    ): Paginator {
         $query = Model::onlyAttributes(new FolderAttributes())
             ->where('user_id', $userID->value())
             ->with('tags', fn ($builder) => $builder->where('tags.created_by', $userID->value()));
@@ -44,7 +47,10 @@ final class UserFoldersRepository
             SortCriteria::NEWEST => $query->latest('folders.id'),
             SortCriteria::OLDEST => $query->oldest('folders.id'),
             SortCriteria::RECENTLY_UPDATED => $query->latest('folders.updated_at'),
-            SortCriteria::MOST_ITEMS => $query->orderByDesc('bookmarks_count'), // bookmarks_count is alias from  folder bookmarks count query in App\Models\Folder
+
+            // bookmarks_count is alias from  folder bookmarks count query in App\Models\Folder
+            SortCriteria::MOST_ITEMS => $query->orderByDesc('bookmarks_count'),
+
             SortCriteria::LEAST_ITEMS => $query->orderBy('bookmarks_count'),
         };
     }

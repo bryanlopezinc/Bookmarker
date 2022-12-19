@@ -28,8 +28,9 @@ final class YoutubeHttpClient implements HttpClientInterface
         ])->onError(function (Response $response) {
             $message = $response->toException()?->getMessage();
 
-            if ($message !== null)
+            if ($message !== null) {
                 $this->logger->error($message);
+            }
         });
 
         if (!$response->ok()) {

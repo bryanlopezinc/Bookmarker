@@ -47,7 +47,7 @@ final class RemoveBookmarksFromFolderService
     private function ensureUserCanPerformAction(Folder $folder): void
     {
         try {
-            (new EnsureAuthorizedUserOwnsResource)($folder);
+            (new EnsureAuthorizedUserOwnsResource())($folder);
         } catch (SymfonyHttpException $e) {
             $canRemoveBookmarks = $this->permissions
                 ->getUserAccessControls(UserID::fromAuthUser(), $folder->folderID)

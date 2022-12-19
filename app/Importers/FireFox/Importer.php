@@ -15,12 +15,13 @@ use Illuminate\Contracts\Filesystem\FileNotFoundException;
 
 final class Importer implements ImporterInterface
 {
-    use ResolveImportTimestamp, ResolveBookmarkTags;
+    use ResolveImportTimestamp;
+    use ResolveBookmarkTags;
 
     public function __construct(
         private CreateBookmarkService $createBookmark,
         private Filesystem $filesystem,
-        private DOMParserInterface $parser = new DOMParser
+        private DOMParserInterface $parser = new DOMParser()
     ) {
     }
 

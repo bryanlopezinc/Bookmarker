@@ -43,7 +43,7 @@ final class FolderPermissionsRepository
                 'created_at' => $createdAt
             ])
             ->tap(function (Collection $records) {
-            FolderCollaboratorPermission::insert($records->all());
+                FolderCollaboratorPermission::insert($records->all());
             });
     }
 
@@ -76,7 +76,7 @@ final class FolderPermissionsRepository
         FolderCollaboratorPermission::query()
             ->where('folder_id', $folderID->value())
             ->where('user_id', $collaboratorID->value())
-            ->whereIn('permission_id',  FolderPermission::select('id')->whereIn('name', $permissions->permissions))
+            ->whereIn('permission_id', FolderPermission::select('id')->whereIn('name', $permissions->permissions))
             ->delete();
     }
 }

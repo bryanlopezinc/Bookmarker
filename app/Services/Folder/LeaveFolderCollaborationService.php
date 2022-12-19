@@ -27,7 +27,10 @@ final class LeaveFolderCollaborationService
     public function leave(ResourceID $folderID): void
     {
         $folder = $this->folderRepository->find($folderID, FolderAttributes::only('id,user_id,settings'));
-        $collaboratorPermissions = $this->permissionsRepository->getUserAccessControls($collaboratorID = UserID::fromAuthUser(), $folderID);
+        $collaboratorPermissions = $this->permissionsRepository->getUserAccessControls(
+            $collaboratorID = UserID::fromAuthUser(),
+            $folderID
+        );
 
         $this->ensureCollaboratorDoesNotOwnFolder($collaboratorID, $folder);
 
@@ -63,7 +66,8 @@ final class LeaveFolderCollaborationService
         if (
             $folderNotificationSettings->notificationsAreDisabled() ||
             $folderNotificationSettings->collaboratorExitNotificationIsDisabled() ||
-            ($collaboratorPermissions->hasOnlyReadPermission() && $folderNotificationSettings->onlyCollaboratorWithWritePermissionNotificationIsEnabled())
+            ($collaboratorPermissions->hasOnlyReadPermission() &&
+                $folderNotificationSettings->onlyCollaboratorWithWritePermissionNotificationIsEnabled())
         ) {
             return;
         }

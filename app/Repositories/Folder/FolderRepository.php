@@ -36,7 +36,7 @@ final class FolderRepository implements FolderRepositoryInterface
 
             return FolderBuilder::fromModel($model)->build();
         } catch (ModelNotFoundException) {
-            throw new FolderNotFoundHttpResponseException;
+            throw new FolderNotFoundHttpResponseException();
         }
     }
 
@@ -51,6 +51,6 @@ final class FolderRepository implements FolderRepositoryInterface
             'is_public' => $newAttributes->isPublic
         ]);
 
-        (new TagRepository)->attach($newAttributes->tags, $folder);
+        (new TagRepository())->attach($newAttributes->tags, $folder);
     }
 }

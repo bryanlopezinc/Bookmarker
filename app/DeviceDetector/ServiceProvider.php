@@ -14,7 +14,7 @@ class ServiceProvider extends Provider implements DeferrableProvider
      */
     public function boot()
     {
-        $this->app->bind(DeviceDetectorInterface::class, fn () => new DeviceDetector);
+        $this->app->bind(DeviceDetectorInterface::class, fn () => new DeviceDetector());
     }
 
     public function provides(): array

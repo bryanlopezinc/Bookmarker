@@ -12,7 +12,9 @@ final class BookmarkDescription
 
     public function __construct(public readonly ?string $value)
     {
-        if (is_null($value)) return;
+        if (is_null($value)) {
+            return;
+        }
 
         if (mb_strlen($value) > self::MAX_LENGTH) {
             throw new \LengthException('Bookmark description cannot be greater ' . self::MAX_LENGTH);

@@ -36,7 +36,7 @@ final class DeleteFolderService
     {
         $folder = $this->folderRepository->find($folderID, Attributes::only('id,user_id'));
 
-        (new EnsureAuthorizedUserOwnsResource)($folder);
+        (new EnsureAuthorizedUserOwnsResource())($folder);
 
         if ($recursive) {
             $this->deleteFolderRepository->deleteRecursive($folder);

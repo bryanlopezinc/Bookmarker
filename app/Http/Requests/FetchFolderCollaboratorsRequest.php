@@ -14,8 +14,12 @@ final class FetchFolderCollaboratorsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'folder_id' => ['required', new ResourceIdRule],
-            'permissions' => ['sometimes', 'array', 'in:view_only,addBookmarks,removeBookmarks,inviteUser,updateFolder'],
+            'folder_id' => ['required', new ResourceIdRule()],
+            'permissions' => [
+                'sometimes',
+                'array',
+                'in:view_only,addBookmarks,removeBookmarks,inviteUser,updateFolder'
+            ],
             'permissions.*' => ['distinct:strict', 'filled'],
             ...PaginationData::new()->asValidationRules()
         ];
@@ -37,7 +41,10 @@ final class FetchFolderCollaboratorsRequest extends FormRequest
             $filter = collect($this->input('permissions', [])); // @phpstan-ignore-line
 
             $filter->when($filter->contains('view_only') && $filter->count() > 1, function () use ($validator) {
-                $validator->errors()->add('permissions', 'Cannot request collaborator with only view permissions with any other permission');
+                $validator->errors()->add(
+                    'permissions',
+                    'Cannot request collaborator with only view permissions with any other permission'
+                );
             });
         });
     }

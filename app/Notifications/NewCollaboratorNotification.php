@@ -13,7 +13,8 @@ use Illuminate\Bus\Queueable;
 
 final class NewCollaboratorNotification extends Notification implements ShouldQueue
 {
-    use Queueable, FormatDatabaseNotification;
+    use Queueable;
+    use FormatDatabaseNotification;
 
     public function __construct(
         private UserID $newCollaboratorID,
@@ -40,7 +41,7 @@ final class NewCollaboratorNotification extends Notification implements ShouldQu
     public function toDatabase($notifiable): array
     {
         return $this->formatNotificationData([
-            'N-type'=> $this->databaseType(),
+            'N-type' => $this->databaseType(),
             'added_by_collaborator' => $this->addedByCollaboratorID->value(),
             'added_to_folder' => $this->folderID->value(),
             'new_collaborator_id' => $this->newCollaboratorID->value()

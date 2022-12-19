@@ -51,7 +51,7 @@ final class FetchFolderBookmarksService
     private function ensureUserCanViewFolderBookmarks(UserID $userID, Folder $folder): void
     {
         try {
-            (new EnsureAuthorizedUserOwnsResource)($folder);
+            (new EnsureAuthorizedUserOwnsResource())($folder);
         } catch (HttpException $e) {
             $userHasAnyAccessToFolder = $this->permissions->getUserAccessControls($userID, $folder->folderID)->isNotEmpty();
 

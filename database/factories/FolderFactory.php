@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\DataTransferObjects\Builders\FolderSettingsBuilder;
-use App\DataTransferObjects\FolderSettings;
+use App\Enums\FolderVisibility;
 use App\Models\Folder;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -21,29 +20,15 @@ final class FolderFactory extends Factory
     public function definition()
     {
         return [
-            'name' => $this->faker->word,
+            'name'        => $this->faker->word,
             'description' => $this->faker->sentence,
-            'user_id' => UserFactory::new(),
-            'is_public' => false,
-            'settings' => FolderSettings::default()->toArray()
+            'user_id'     => UserFactory::new(),
+            'visibility'  => (string) FolderVisibility::PUBLIC->value,
         ];
     }
 
-    public function public(): self
+    public function private(): self
     {
-        return $this->state(['is_public' => true]);
-    }
-
-    /**
-     * @param \Closure(FolderSettingsBuilder):FolderSettingsBuilder $setting
-     */
-    public function setting(\Closure $setting): self
-    {
-        return $this->state(function (array $data) use ($setting) {
-            $setting($builder = new FolderSettingsBuilder($data['settings']));
-            return [
-                'settings' => $builder->build()->toArray()
-            ];
-        });
+        return $this->state(['visibility' => (string) FolderVisibility::PRIVATE->value]);
     }
 }

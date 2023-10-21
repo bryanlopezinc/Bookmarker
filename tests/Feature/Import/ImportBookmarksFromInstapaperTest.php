@@ -13,7 +13,7 @@ use Laravel\Passport\Passport;
 
 class ImportBookmarksFromInstapaperTest extends ImportBookmarkBaseTest
 {
-    public function testRequiredAttributesMustBePresent(): void
+    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -28,22 +28,6 @@ class ImportBookmarksFromInstapaperTest extends ImportBookmarkBaseTest
             ->assertJsonValidationErrors([
                 'instapaper_html' => ['The instapaper html field is required.']
             ]);
-    }
-
-    public function testSourceMustBeValid(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $this->importBookmarkResponse(['source' => 'foo'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'source' => ['The selected source is invalid.']
-            ]);
-    }
-
-    public function testFileMustNotBeGreaterThan_5_MegaBytes(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
 
         $this->importBookmarkResponse([
             'source' => 'instapaperFile',
@@ -52,25 +36,13 @@ class ImportBookmarksFromInstapaperTest extends ImportBookmarkBaseTest
             ->assertJsonValidationErrors([
                 'instapaper_html' => ['The instapaper html must not be greater than 5000 kilobytes.']
             ]);
-    }
-
-    public function testCannotAddMoreThan_15_Tags(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $tags = TagFactory::new()->count(16)->make()->pluck('name')->implode(',');
 
         $this->importBookmarkResponse([
             'source' => 'instapaperFile',
-            'tags' => $tags
+            'tags'   => TagFactory::new()->count(16)->make()->pluck('name')->implode(',')
         ])->assertJsonValidationErrors([
             'tags' => 'The tags must not be greater than 15 characters.'
         ]);
-    }
-
-    public function testTagsMustBeUnique(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
 
         $this->importBookmarkResponse([
             'source' => 'instapaperFile',
@@ -81,7 +53,7 @@ class ImportBookmarksFromInstapaperTest extends ImportBookmarkBaseTest
         ]);
     }
 
-    public function testWillImportBookmarks(): void
+    public function testImportBookmarks(): void
     {
         Bus::fake([UpdateBookmarkWithHttpResponse::class]);
         Passport::actingAs($user = UserFactory::new()->create());

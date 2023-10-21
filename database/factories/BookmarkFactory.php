@@ -23,18 +23,18 @@ final class BookmarkFactory extends Factory
         $hasher = new UrlHasher;
 
         return [
-            'title' => $url = $this->faker->url(),
-            'has_custom_title' => false,
-            'url'  => $url,
-            'description' => $this->faker->sentence,
+            'title'                   => $url = $this->faker->url(),
+            'has_custom_title'        => false,
+            'url'                     => $url,
+            'description'             => $this->faker->sentence,
             'description_set_by_user' => false,
-            'preview_image_url' => $this->faker->url,
-            'source_id' => SourceFactory::new()->create()->id,
-            'user_id' => UserFactory::new(),
-            'url_canonical' => $url,
-            'url_canonical_hash' => (string) $hasher->hashUrl(new Url($url)),
-            'resolved_url' => $url,
-            'resolved_at' => null
+            'preview_image_url'       => $this->faker->url,
+            'source_id'               => SourceFactory::new()->create()->id,
+            'user_id'                 => UserFactory::new(),
+            'url_canonical'           => $url,
+            'url_canonical_hash'      => $hasher->hashUrl(new Url($url)),
+            'resolved_url'            => $url,
+            'resolved_at'             => null
         ];
     }
 }

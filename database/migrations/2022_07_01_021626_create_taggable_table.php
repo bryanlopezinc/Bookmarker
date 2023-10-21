@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -17,22 +16,9 @@ return new class extends Migration
         Schema::create('taggables', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tag_id')->constrained('tags');
-            $table->foreignId('taggable_id');
-            $table->unsignedTinyInteger('taggable_type');
-            $table->unique(['tag_id', 'taggable_id', 'taggable_type']);
+            $table->foreignId('taggable_id')->index('taggable_index');
+            $table->unique(['tag_id', 'taggable_id']);
         });
-
-        DB::unprepared(<<<SQL
-            CREATE TRIGGER delete_bookmark_tag_record_on_bookmark_delete
-            BEFORE DELETE ON bookmarks FOR EACH ROW
-            DELETE FROM taggables t  WHERE t.taggable_id = OLD.id AND t.taggable_type = 4
-        SQL);
-
-        DB::unprepared(<<<SQL
-            CREATE TRIGGER delete_folder_tag_record_on_folder_delete
-            BEFORE DELETE ON folders FOR EACH ROW
-            DELETE FROM taggables t  WHERE t.taggable_id = OLD.id AND t.taggable_type = 5
-        SQL);
     }
 
     /**

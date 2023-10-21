@@ -3,12 +3,8 @@
 namespace App\Providers;
 
 use App\Contracts\BookmarksHealthRepositoryInterface;
-use App\Contracts\CreateBookmarkRepositoryInterface;
-use App\Contracts\UpdateBookmarkRepositoryInterface;
 use App\HealthChecker;
 use App\Repositories\BookmarksHealthRepository;
-use App\Repositories\CreateBookmarkRepository;
-use App\Repositories\UpdateBookmarkRepository;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Foundation\Application;
@@ -23,9 +19,6 @@ class RepositoryServiceProvider extends ServiceProvider implements DeferrablePro
      */
     public function boot()
     {
-        $this->app->bind(CreateBookmarkRepositoryInterface::class, fn () => app(CreateBookmarkRepository::class));
-        $this->app->bind(UpdateBookmarkRepositoryInterface::class, fn () => app(UpdateBookmarkRepository::class));
-
         $this->bindBookmarksHealth();
     }
 
@@ -48,8 +41,6 @@ class RepositoryServiceProvider extends ServiceProvider implements DeferrablePro
     public function provides()
     {
         return [
-            CreateBookmarkRepositoryInterface::class,
-            UpdateBookmarkRepositoryInterface::class,
             BookmarksHealthRepositoryInterface::class,
             HealthChecker::class
         ];

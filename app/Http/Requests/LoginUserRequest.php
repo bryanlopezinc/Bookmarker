@@ -15,10 +15,10 @@ final class LoginUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'username' => ['required', 'filled', 'string', new UsernameOrEmailRule()],
-            'password' => ['required'],
-            'with_ip' => ['ip', 'sometimes', 'filled'],
-            'with_agent' => ['sometimes', 'filled'],
+            'username'    => ['required', 'filled', 'string', new UsernameOrEmailRule()],
+            'password'    => ['required'],
+            'with_ip'     => ['ip', 'sometimes', 'filled'],
+            'with_agent'  => ['sometimes', 'filled'],
             'two_fa_code' => ['required', 'string', 'filled']
         ];
     }

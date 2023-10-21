@@ -58,7 +58,7 @@ class SaveBookFromMailTest extends TestCase
         $this->assertDatabaseHas(Bookmark::class, ['user_id' => $user->id]);
     }
 
-    public function testCanSaveBookmarkFromSecondaryEmail(): void
+    public function testSaveBookmarkFromSecondaryEmail(): void
     {
         Bus::fake(UpdateBookmarkWithHttpResponse::class);
 
@@ -94,7 +94,9 @@ class SaveBookFromMailTest extends TestCase
             ->replace('{url}', $this->faker->url)
             ->toString();
 
-        $this->createBookmarkResponse($data)->assertOk();
+        $this->createBookmarkResponse($data)
+            ->assertNotFound()
+            ->assertExactJson(['message' => 'UserNotFound']);
 
         Mail::assertQueued(EmailNotRegisteredMail::class);
     }

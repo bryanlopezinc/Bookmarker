@@ -3,10 +3,9 @@
 namespace Tests\Feature\Folder;
 
 use App\DataTransferObjects\FolderSettings;
+use App\DataTransferObjects\FolderSettings as FS;
+use App\Enums\FolderVisibility;
 use App\Models\Folder;
-use App\Models\Taggable;
-use App\Models\UserFoldersCount;
-use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
@@ -19,6 +18,10 @@ class CreateFolderTest extends TestCase
 
     protected function createFolderResponse(array $data = []): TestResponse
     {
+        if (array_key_exists('settings', $data)) {
+            $data['settings'] = json_encode($data['settings']);
+        }
+
         return $this->postJson(route('createFolder'), $data);
     }
 
@@ -27,45 +30,26 @@ class CreateFolderTest extends TestCase
         $this->assertRouteIsAccessibleViaPath('v1/folders', 'createFolder');
     }
 
-    public function testUnAuthorizedUserCannotAccessRoute(): void
+    public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
         $this->createFolderResponse()->assertUnauthorized();
     }
 
-    public function testRequiredAttributesMustBePresent(): void
+    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->createFolderResponse()->assertJsonValidationErrors(['name']);
-    }
-
-    public function testFolderNameMustNotBeEmpty(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $this->createFolderResponse([
-            'name' => ' ',
-        ])->assertJsonValidationErrors(['name']);
-    }
-
-    public function testFolderNameCannotBeGreaterThan_50(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->createFolderResponse()
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['name']);
 
         $this->createFolderResponse(['name' => str_repeat('f', 51)])
-            ->assertJsonValidationErrors([
-                'name' => 'The name must not be greater than 50 characters.'
-            ]);
-    }
-
-    public function testFolderDescriptionCannotBeGreaterThan_150(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['name' => 'The name must not be greater than 50 characters.']);
 
         $this->createFolderResponse(['description' => str_repeat('f', 151)])
-            ->assertJsonValidationErrors([
-                'description' => 'The description must not be greater than 150 characters.'
-            ]);
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['description' => 'The description must not be greater than 150 characters.']);
     }
 
     public function testCreateFolder(): void
@@ -73,7 +57,7 @@ class CreateFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         $this->createFolderResponse([
-            'name' => $name = $this->faker->word,
+            'name'        => $name = $this->faker->word,
             'description' => $description = $this->faker->sentence
         ])->assertCreated();
 
@@ -82,30 +66,16 @@ class CreateFolderTest extends TestCase
 
         $this->assertEquals($name, $folder->name);
         $this->assertEquals($description, $folder->description);
-        $this->assertFalse($folder->is_public);
+        $this->assertTrue(FolderVisibility::from($folder->visibility)->isPublic());
         $this->assertTrue($folder->created_at->isSameMinute());
         $this->assertTrue($folder->updated_at->isSameMinute());
-        $this->assertEquals($folder->settings, FolderSettings::default()->toArray());
-
-        $this->assertDatabaseHas(UserFoldersCount::class, [
-            'user_id' => $user->id,
-            'count' => 1,
-            'type' => UserFoldersCount::TYPE
-        ]);
-
-        $this->assertDatabaseMissing(Taggable::class, [
-            'taggable_id' => $folder->id,
-            'taggable_type' => Taggable::FOLDER_TYPE
-        ]);
     }
 
-    public function testCanCreateFolderWithoutDescription(): void
+    public function testCreateFolderWithoutDescription(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->createFolderResponse([
-            'name' => $this->faker->word,
-        ])->assertCreated();
+        $this->createFolderResponse(['name' => $this->faker->word])->assertCreated();
 
         /** @var Folder */
         $folder = Folder::query()->where('user_id', $user->id)->sole();
@@ -118,295 +88,187 @@ class CreateFolderTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         $this->createFolderResponse([
-            'name' => $this->faker->word,
-            'is_public' => true
+            'name'       => $this->faker->word,
+            'visibility' => 'public'
         ])->assertCreated();
 
-        $this->assertDatabaseHas(Folder::class, [
-            'user_id' => $user->id,
-            'is_public' => true
-        ]);
+        /** @var Folder */
+        $folder = Folder::where('user_id', $user->id)->first();
+
+        $this->assertTrue(FolderVisibility::from($folder->visibility)->isPublic());
     }
 
-    public function testFolderTagsMustBeUnique(): void
+    public function testCreatePrivateFolder(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        Passport::actingAs($user = UserFactory::new()->create());
 
         $this->createFolderResponse([
-            'name' => $this->faker->word,
-            'tags' => 'howTo,howTo,stackOverflow'
-        ])->assertJsonValidationErrors([
-            "tags.0" => [
-                "The tags.0 field has a duplicate value."
+            'name'       => $this->faker->word,
+            'visibility' => 'private'
+        ])->assertCreated();
+
+        /** @var Folder */
+        $folder = Folder::where('user_id', $user->id)->first();
+
+        $this->assertTrue(FolderVisibility::from($folder->visibility)->isPrivate());
+    }
+
+    public function testCreateFolderWithNotifications(): void
+    {
+        $this->assertCreateWithNotifications(['enable_notifications' => false], function (FS $s) {
+            return $s->notificationsAreDisabled();
+        });
+
+        $this->assertCreateWithNotifications(['enable_notifications' => true], function (FS $s) {
+            return $s->notificationsAreEnabled();
+        });
+
+        $this->assertCreateWithNotifications(['notify_on_new_collaborator' => false], function (FS $s) {
+            return $s->newCollaboratorNotificationIsDisabled();
+        });
+
+        $this->assertCreateWithNotifications(['notify_on_new_collaborator' => true], function (FS $s) {
+            return $s->newCollaboratorNotificationIsEnabled();
+        });
+
+        $this->assertCreateWithNotifications(['notify_on_update' => false], function (FS $s) {
+            return $s->folderUpdatedNotificationIsDisabled();
+        });
+
+        $this->assertCreateWithNotifications(['notify_on_update' => true], function (FS $s) {
+            return $s->folderUpdatedNotificationIsEnabled();
+        });
+
+        $this->assertCreateWithNotifications(['notify_on_new_bookmark' => false], function (FS $s) {
+            return $s->newBookmarksNotificationIsDisabled();
+        });
+
+        $this->assertCreateWithNotifications(['notify_on_new_bookmark' => true], function (FS $s) {
+            return $s->newBookmarksNotificationIsEnabled();
+        });
+
+        $this->assertCreateWithNotifications(['notify_on_bookmark_delete' => false], function (FS $s) {
+            return $s->bookmarksRemovedNotificationIsDisabled();
+        });
+
+        $this->assertCreateWithNotifications(['notify_on_bookmark_delete' => true], function (FS $s) {
+            return $s->bookmarksRemovedNotificationIsEnabled();
+        });
+
+        $this->assertCreateWithNotifications(['notify_on_collaborator_exit' => false], function (FS $s) {
+            return $s->collaboratorExitNotificationIsDisabled();
+        });
+
+        $this->assertCreateWithNotifications(['notify_on_collaborator_exit' => true], function (FS $s) {
+            return $s->collaboratorExitNotificationIsEnabled();
+        });
+
+        $this->assertCreateWithNotifications(['notify_on_new_collaborator_by_user' => false], function (FS $s) {
+            return $s->onlyCollaboratorsInvitedByMeNotificationIsDisabled();
+        });
+
+        $this->assertCreateWithNotifications(['notify_on_new_collaborator_by_user' => true], function (FS $s) {
+            return $s->onlyCollaboratorsInvitedByMeNotificationIsEnabled();
+        });
+
+        $this->assertCreateWithNotifications(['notify_on_collaborator_exit_with_write' => false], function (FS $s) {
+            return !$s->onlyCollaboratorWithWritePermissionNotificationIsEnabled();
+        });
+
+        $this->assertCreateWithNotifications(['notify_on_collaborator_exit_with_write' => true], function (FS $s) {
+            return $s->onlyCollaboratorWithWritePermissionNotificationIsEnabled();
+        });
+
+        $this->assertCreateWithNotifications(
+            [
+                'notify_on_new_collaborator'  => false,
+                'notify_on_update'            => false,
+                'notify_on_collaborator_exit' => false
             ],
-            "tags.1" => [
-                "The tags.1 field has a duplicate value."
-            ]
-        ]);
+            function (FS $s) {
+                return $s->newCollaboratorNotificationIsDisabled() &&
+                    $s->folderUpdatedNotificationIsDisabled() &&
+                    $s->collaboratorExitNotificationIsDisabled();
+            }
+        );
     }
 
-    public function testFolderTagsCannotBeGreaterThan_15(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $this->createFolderResponse([
-            'name' => $this->faker->word,
-            'tags' => TagFactory::new()->count(16)->make()->pluck('name')->implode(',')
-        ])->assertJsonValidationErrors([
-            "tags" => ['The tags must not be greater than 15 characters.']
-        ]);
-    }
-
-    public function testCanCreateFolderWithTags(): void
+    private function assertCreateWithNotifications(array $settings, \Closure $assertion): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
         $this->createFolderResponse([
-            'name' => $this->faker->word,
-            'description' => $this->faker->sentence,
-            'tags' => TagFactory::new()->count(15)->make()->pluck('name')->implode(',')
+            'name'     => $this->faker->word,
+            'settings' => $settings
         ])->assertCreated();
 
-        $this->assertDatabaseHas(Taggable::class, [
-            'taggable_id' => Folder::query()->where('user_id', $user->id)->sole('id')->id,
-            'taggable_type' => Taggable::FOLDER_TYPE,
-        ]);
+        $settings = $this->fetchUserFolderSettings($user->id);
+
+        $this->assertTrue(
+            $assertion($settings),
+        );
     }
 
-    public function testCanDisableNotifications(): void
+    private function fetchUserFolderSettings(int $userId): FolderSettings
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $settings = Folder::onlyAttributes()
+            ->where('user_id', $userId)
+            ->first()
+            ->settings;
 
-        $this->createFolderResponse([
-            'name' => $this->faker->word,
-            'settings' => ['N-enable' => false]
-        ])->assertCreated();
-
-        $settings = Folder::query()->where('user_id', $user->id)->sole()->settings;
-
-        $this->assertFalse($settings['notifications']['enabled']);
+        return FolderSettings::fromQuery($settings);
     }
 
-    public function testCanDisableNewCollaboratorNotifications(): void
-    {
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        $this->createFolderResponse([
-            'name' => $this->faker->word,
-            'settings' => ['N-newCollaborator' => false]
-        ])->assertCreated();
-
-        $settings = Folder::query()->where('user_id', $user->id)->sole()->settings;
-
-        $this->assertFalse($settings['notifications']['newCollaborator']['notify']);
-    }
-
-    public function testCanDisableFolderUpdatedNotification(): void
-    {
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        $this->createFolderResponse([
-            'name' => $this->faker->word,
-            'settings' => ['N-updated' => false]
-        ])->assertCreated();
-
-        $settings = Folder::query()->where('user_id', $user->id)->sole()->settings;
-
-        $this->assertFalse($settings['notifications']['updated']);
-    }
-
-    public function testCanDisableBookmarkAddedNotification(): void
-    {
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        $this->createFolderResponse([
-            'name' => $this->faker->word,
-            'settings' => ['N-newBookmarks' => false]
-        ])->assertCreated();
-
-        $settings = Folder::query()->where('user_id', $user->id)->sole()->settings;
-
-        $this->assertFalse($settings['notifications']['bookmarksAdded']);
-    }
-
-    public function testCanDisableBookmarkRemovedNotification(): void
-    {
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        $this->createFolderResponse([
-            'name' => $this->faker->word,
-            'settings' => ['N-bookmarkDelete' => false]
-        ])->assertCreated();
-
-        $settings = Folder::query()->where('user_id', $user->id)->sole()->settings;
-
-        $this->assertFalse($settings['notifications']['bookmarksRemoved']);
-    }
-
-    public function testCanDisableCollaboratorExitNotification(): void
-    {
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        $this->createFolderResponse([
-            'name' => $this->faker->word,
-            'settings' => ['N-collaboratorExit' => false]
-        ])->assertCreated();
-
-        $settings = Folder::query()->where('user_id', $user->id)->sole()->settings;
-
-        $this->assertFalse($settings['notifications']['collaboratorExit']['notify']);
-    }
-
-    public function testCanEnable_onlyCollaboratorsInvitedByMe_Notification(): void
-    {
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        $this->createFolderResponse([
-            'name' => $this->faker->word,
-            'settings' => ['N-onlyNewCollaboratorsByMe' => false]
-        ])->assertCreated();
-
-        $settings = Folder::query()->where('user_id', $user->id)->sole()->settings;
-
-        $this->assertFalse($settings['notifications']['newCollaborator']['onlyCollaboratorsInvitedByMe']);
-    }
-
-    public function testCanEnable_collaboratorExitOnlyHasWritePermission_Notification(): void
-    {
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        $this->createFolderResponse([
-            'name' => $this->faker->word,
-            'settings' => ['N-collaboratorExitOnlyHasWritePermission' => false]
-        ])->assertCreated();
-
-        $settings = Folder::query()->where('user_id', $user->id)->sole()->settings;
-
-        $this->assertFalse($settings['notifications']['collaboratorExit']['onlyWhenCollaboratorHasWritePermission']);
-    }
-
-    public function testCanHaveMultipleSettings(): void
-    {
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        $this->createFolderResponse([
-            'name' => $this->faker->word,
-            'settings' => [
-                'N-newCollaborator' => false,
-                'N-updated' => false,
-                'N-collaboratorExit' => false
-            ]
-        ])->assertCreated();
-
-        $settings = Folder::query()->where('user_id', $user->id)->sole()->settings;
-
-        $this->assertFalse($settings['notifications']['collaboratorExit']['notify']);
-        $this->assertFalse($settings['notifications']['updated']);
-        $this->assertFalse($settings['notifications']['newCollaborator']['notify']);
-    }
-
-    public function testFolderSettingsMustBeValid(): void
+    public function testWillReturnUnprocessableWhenFolderSettingsIsInValid(): void
     {
         Passport::actingAs(UserFactory::new()->make());
 
-        //Assert settings must be an array
         $this->createFolderResponse(['settings' => 'foo'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'settings' => ['The settings must be an array.']
-            ]);
+            ->assertJsonValidationErrors(['settings']);
 
         //Assert settings cannot be empty
-        $this->createFolderResponse(['settings' => []])
+        $this->createFolderResponse(['settings' => '{}'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'settings' => ['The settings field must have a value.']
-            ]);
+            ->assertJsonValidationErrors(['settings']);
 
         //Assert settings must have a valid value and settings.N-enable must be a boolean
         $this->createFolderResponse([
-            'settings' => [
-                'foo' => false,
-                'N-enable' => 'foo',
-            ]
+            'settings' => ['N-enable' => 'foo']
         ])->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'settings' => [
-                    "The settings.N-enable field must be true or false.",
-                    "The selected settings.foo is invalid."
-                ]
-            ]);
+            ->assertJsonValidationErrors(['settings']);;
 
         //Assert all values must be a boolean.
         $this->createFolderResponse([
             'settings' => [
-                'N-newCollaborator' => 'foo',
-                'N-onlyNewCollaboratorsByMe' => 'foo',
-                'N-updated' => 'foo',
-                'N-newBookmarks' => 'foo',
-                'N-bookmarkDelete' => 'foo',
-                'N-collaboratorExit' => 'foo',
-                'N-collaboratorExitOnlyHasWritePermission' => 'foo'
+                'notify_on_new_collaborator'               => 'foo',
+                'notify_on_new_collaborator_by_user'       => 'foo',
+                'notify_on_update'                         => 'foo',
+                'notify_on_new_bookmark'                   => 'foo',
+                'notify_on_bookmark_delete'                => 'foo',
+                'notify_on_collaborator_exit'              => 'foo',
+                'N-notify_on_collaborator_exit_with_write' => 'foo'
             ]
         ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['settings' => [
-                "The settings.N-newCollaborator field must be true or false.",
-                "The settings.N-onlyNewCollaboratorsByMe field must be true or false.",
-                "The settings.N-updated field must be true or false.",
-                "The settings.N-newBookmarks field must be true or false.",
-                "The settings.N-bookmarkDelete field must be true or false.",
-                "The settings.N-collaboratorExit field must be true or false.",
-                "The settings.N-collaboratorExitOnlyHasWritePermission field must be true or false."
-            ]]);
-
-        //Assert other values should not be present when notification is disabled.
-        $this->createFolderResponse([
-            'settings' => [
-                'N-enable' => false,
-                'N-newCollaborator' => true,
-                'N-onlyNewCollaboratorsByMe' => false,
-                'N-updated' => true,
-                'N-newBookmarks' => true,
-                'N-bookmarkDelete' => true,
-                'N-collaboratorExit' => true,
-                'N-collaboratorExitOnlyHasWritePermission' => true
-            ]
-        ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['settings' => [
-                "The settings.N-newCollaborator field is prohibited.",
-                "The settings.N-onlyNewCollaboratorsByMe field is prohibited.",
-                "The settings.N-updated field is prohibited.",
-                "The settings.N-newBookmarks field is prohibited.",
-                "The settings.N-bookmarkDelete field is prohibited.",
-                "The settings.N-collaboratorExit field is prohibited.",
-                "The settings.N-collaboratorExitOnlyHasWritePermission field is prohibited."
-            ]]);
+            ->assertJsonValidationErrors(['settings']);
 
         //Assert N-onlyNewCollaboratorsByMe setting cannot be true when N-newCollaborator value is false.
         $this->createFolderResponse([
             'name' => $this->faker->word,
             'settings' => [
-                'N-enable' => true,
-                'N-newCollaborator' => false,
-                'N-onlyNewCollaboratorsByMe' => true,
+                'notify_on_new_collaborator'        => false,
+                'notify_on_new_collaborator_by_user' => true,
             ]
         ])->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'settings' => [
-                    "The settings N-onlyNewCollaboratorsByMe cannot be true when N-newCollaborator is false.",
-                ]
-            ]);
+            ->assertJsonValidationErrors(['settings']);
 
         //Assert N-collaboratorExitOnlyHasWritePermission setting cannot be true when N-collaboratorExit value is false.
         $this->createFolderResponse([
             'settings' => [
-                'N-enable' => true,
-                'N-collaboratorExit' => false,
-                'N-collaboratorExitOnlyHasWritePermission' => true
+                'notify_on_collaborator_exit' => false,
+                'notify_on_collaborator_exit_with_write' => true
             ]
         ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['settings' => [
-                "The settings N-collaboratorExitOnlyHasWritePermission cannot be true when N-collaboratorExit is false.",
-            ]]);
+            ->assertJsonValidationErrors(['settings']);
     }
 }

@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
-use App\Collections\ResourceIDsCollection;
 use App\Enums\NotificationType;
-use App\ValueObjects\ResourceID;
-use App\ValueObjects\UserID;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Bus\Queueable;
@@ -18,9 +15,9 @@ final class BookmarksAddedToFolderNotification extends Notification implements S
     use FormatDatabaseNotification;
 
     public function __construct(
-        private ResourceIDsCollection $bookmarks,
-        private ResourceID $folderID,
-        private UserID $collaboratorID
+        private array $bookmarkIds,
+        private int $folderId,
+        private int $userId
     ) {
         $this->afterCommit();
     }
@@ -37,15 +34,15 @@ final class BookmarksAddedToFolderNotification extends Notification implements S
     }
 
     /**
-     * @param  mixed  $notifiable
+     * @param mixed $notifiable
      */
     public function toDatabase($notifiable): array
     {
         return $this->formatNotificationData([
-            'N-type' => $this->databaseType(),
-            'bookmarks_added_to_folder' => $this->bookmarks->asIntegers()->all(),
-            'added_to_folder' => $this->folderID->value(),
-            'added_by' => $this->collaboratorID->value()
+            'N-type'                    => $this->databaseType(),
+            'bookmarks_added_to_folder' => $this->bookmarkIds,
+            'added_to_folder'           => $this->folderId,
+            'added_by'                  => $this->userId
         ]);
     }
 

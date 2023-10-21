@@ -10,8 +10,6 @@ use App\Importers\ResolveImportTimestamp;
 use App\Importers\ImporterInterface;
 use App\Services\CreateBookmarkService;
 use App\ValueObjects\Url;
-use App\ValueObjects\UserID;
-use App\ValueObjects\Uuid;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 
 final class Importer implements ImporterInterface
@@ -25,7 +23,7 @@ final class Importer implements ImporterInterface
     ) {
     }
 
-    public function import(UserID $userID, Uuid $requestID, array $requestData): void
+    public function import(int $userID, string $requestID, array $requestData): void
     {
         if (!$this->filesystem->exists($userID, $requestID)) {
             throw new FileNotFoundException();
@@ -38,7 +36,7 @@ final class Importer implements ImporterInterface
         $this->filesystem->delete($userID, $requestID);
     }
 
-    private function saveBookmark(array $requestData, UserID $userID, Bookmark $chromeBookmark): void
+    private function saveBookmark(array $requestData, int $userID, Bookmark $chromeBookmark): void
     {
         $createdOn = $this->resolveImportTimestamp(
             $requestData['use_timestamp'] ?? true,
@@ -52,10 +50,10 @@ final class Importer implements ImporterInterface
         }
 
         $this->createBookmark->fromArray([
-            'url' => $url,
+            'url'       => $url,
             'createdOn' => $createdOn,
-            'userID' => $userID,
-            'tags' => $requestData['tags'] ?? []
+            'userID'    => $userID,
+            'tags'      => $requestData['tags'] ?? []
         ]);
     }
 }

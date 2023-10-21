@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Readers;
 
+use App\Models\Bookmark;
 use Tests\TestCase;
 use App\Readers\DefaultClient;
-use App\DataTransferObjects\Builders\BookmarkBuilder;
 use App\Readers\DOMReader;
 use Illuminate\Support\Facades\Http;
 use GuzzleHttp\Exception\ConnectException;
@@ -18,10 +18,12 @@ class DefaultClientTest extends TestCase
 {
     use WithFaker;
 
-    public function testCannotResolveHost(): void
+    public function testWhenHostCannotBeResolved(): void
     {
+        $bookmark = new Bookmark();
+        $bookmark->url = $url = $this->faker->url;
+
         $client = new DefaultClient($this->app['log']);
-        $url = $this->faker->url;
 
         Http::fake(fn () => throw new ConnectException(
             '',
@@ -29,7 +31,7 @@ class DefaultClientTest extends TestCase
             handlerContext: ['errno' => \CURLE_COULDNT_RESOLVE_HOST]
         ));
 
-        $response = $client->fetchBookmarkPageData(BookmarkBuilder::new()->url($url)->build());
+        $response = $client->fetchBookmarkPageData($bookmark);
 
         $this->assertFalse($response->canonicalUrl);
         $this->assertFalse($response->description);
@@ -39,10 +41,12 @@ class DefaultClientTest extends TestCase
         $this->assertEquals($response->resolvedUrl->toString(), $url);
     }
 
-    public function testOperationTimeout(): void
+    public function testWhenOperationTimedOuted(): void
     {
+        $bookmark = new Bookmark();
+        $bookmark->url = $url = $this->faker->url;
+
         $client = new DefaultClient($this->app['log']);
-        $url = $this->faker->url;
 
         Http::fake(fn () => throw new ConnectException(
             '',
@@ -51,12 +55,15 @@ class DefaultClientTest extends TestCase
         ));
 
         $this->assertFalse(
-            $client->fetchBookmarkPageData(BookmarkBuilder::new()->url($url)->build())
+            $client->fetchBookmarkPageData($bookmark)
         );
     }
 
     public function testWillLogCurlErrors(): void
     {
+        $bookmark = new Bookmark();
+        $bookmark->url = $url = $this->faker->url;
+
         $logger = $this->getMockBuilder(LoggerInterface::class)->getMock();
 
         $logger->expects($this->once())
@@ -67,7 +74,6 @@ class DefaultClientTest extends TestCase
             });
 
         $client = new DefaultClient($logger);
-        $url = $this->faker->url;
 
         Http::fake(fn () => throw new ConnectException(
             'The URL you passed to libcurl used a protocol that this libcurl does not support.',
@@ -76,18 +82,20 @@ class DefaultClientTest extends TestCase
         ));
 
         $this->assertFalse(
-            $client->fetchBookmarkPageData(BookmarkBuilder::new()->url($url)->build())
+            $client->fetchBookmarkPageData($bookmark)
         );
     }
 
-    public function testResponseNotSuccessful(): void
+    public function testWhenResponseWasNotSuccessful(): void
     {
+        $bookmark = new Bookmark();
+        $bookmark->url = $url = $this->faker->url;
+
         $client = new DefaultClient($this->app['log']);
-        $url = $this->faker->url;
 
         Http::fake(fn () => Http::response(status: 500));
 
-        $response = $client->fetchBookmarkPageData(BookmarkBuilder::new()->url($url)->build());
+        $response = $client->fetchBookmarkPageData($bookmark);
 
         $this->assertFalse($response->canonicalUrl);
         $this->assertFalse($response->description);
@@ -99,12 +107,15 @@ class DefaultClientTest extends TestCase
 
     public function testWillReturnEmptyResponseWhenContentTypeIsNotHtml(): void
     {
+        $bookmark = new Bookmark();
+        $bookmark->url = $url = $this->faker->url;
+
         $reader = $this->getMockBuilder(DOMReader::class)->getMock();
 
         $reader->expects($this->never())->method($this->anything());
 
         $client = new DefaultClient($this->app['log'], $reader);
-        $url = $this->faker->url;
+
         $body = <<<HTML
             <!DOCTYPE html>
             <html lang="en">
@@ -120,7 +131,7 @@ class DefaultClientTest extends TestCase
 
         Http::fake(fn () => Http::response($body, headers: ['content-type' => 'application/json']));
 
-        $response = $client->fetchBookmarkPageData(BookmarkBuilder::new()->url($url)->build());
+        $response = $client->fetchBookmarkPageData($bookmark);
 
         $this->assertFalse($response->canonicalUrl);
         $this->assertFalse($response->description);

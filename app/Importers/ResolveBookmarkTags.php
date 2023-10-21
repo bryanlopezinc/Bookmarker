@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Importers;
 
 use App\Exceptions\InvalidTagException;
-use App\ValueObjects\Tag;
+use App\Rules\TagRule;
 
 trait ResolveBookmarkTags
 {
@@ -17,7 +17,7 @@ trait ResolveBookmarkTags
             return $tags;
         }
 
-        if (count($bookmarkTags) > setting('MAX_BOOKMARKS_TAGS')) {
+        if (count($bookmarkTags) > 15) {
             return $tags;
         }
 
@@ -39,8 +39,7 @@ trait ResolveBookmarkTags
     private function tagIsCompatible(string $tag): bool
     {
         try {
-            new Tag($tag);
-            return true;
+            return (new TagRule)->passes('', $tag);
         } catch (InvalidTagException) {
             return false;
         }

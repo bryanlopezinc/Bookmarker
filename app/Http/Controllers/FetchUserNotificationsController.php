@@ -20,7 +20,7 @@ final class FetchUserNotificationsController
         ]);
 
         return new PaginatedResourceCollection(
-            $repository->unread(UserID::fromAuthUser(), PaginationData::fromRequest($request)),
+            $repository->unread(UserID::fromAuthUser()->value(), PaginationData::fromRequest($request)),
             NotificationResource::class
         );
     }

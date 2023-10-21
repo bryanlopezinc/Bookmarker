@@ -19,7 +19,7 @@ final class Favorite extends Model
     /**
      * {@inheritdoc}
      */
-    protected $table = 'favourites';
+    protected $table = 'favorites';
 
     /**
      * {@inheritdoc}

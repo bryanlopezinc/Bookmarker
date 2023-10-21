@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Importers\Chrome;
 
-use App\Contracts\CreateBookmarkRepositoryInterface;
-use App\DataTransferObjects\Bookmark;
 use App\Importers\Chrome\Importer as Importer;
 use App\Importers\Chrome\DOMParserInterface;
 use App\Jobs\UpdateBookmarkWithHttpResponse;
+use App\Services\CreateBookmarkService;
+use App\ValueObjects\Url;
 use App\ValueObjects\UserID;
-use App\ValueObjects\Uuid;
 use ArrayIterator;
+use Carbon\Carbon;
 use Closure;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -24,11 +24,11 @@ class ImporterTest extends TestCase
 {
     use WithFaker, MockFilesystem;
 
-    public function testWillThrowExceptionIfFileDoesNotExists(): void
+    public function testWillThrowExceptionWhenFileDoesNotExists(): void
     {
         $this->expectException(FileNotFoundException::class);
 
-        $this->getImporter()->import(new UserID(21), Uuid::generate(), []);
+        $this->getImporter()->import(21, $this->faker->uuid, []);
     }
 
     protected function getImporter(): Importer
@@ -50,7 +50,7 @@ class ImporterTest extends TestCase
 
         $this->swap(DOMParserInterface::class, $DOMParser);
 
-        $this->getImporter()->import(new UserID(21), Uuid::generate(), []);
+        $this->getImporter()->import(21, $this->faker->uuid, []);
     }
 
     public function testWillAttachTagsToBookmarks(): void
@@ -66,7 +66,7 @@ class ImporterTest extends TestCase
             <TITLE>Bookmarks</TITLE>
             <H1>Bookmarks</H1>
             <DL>
-                    <DT><A HREF=$url ADD_DATE="1505762363">htaccess - Ultimate Apache .htaccess file Guide</A>
+             <DT><A HREF=$url ADD_DATE="1505762363">htaccess - Ultimate Apache .htaccess file Guide</A>
             </DL>
         HTML;
 
@@ -75,25 +75,25 @@ class ImporterTest extends TestCase
             $mock->expects($this->once())->method('get')->willReturn($html);
         });
 
-        $this->mockRepository(function (MockObject $repository) use ($tag) {
+        $this->mockServiceClass(function (MockObject $repository) use ($tag) {
             $repository->expects($this->once())
-                ->method('create')
-                ->willReturnCallback(function (Bookmark $bookmark) use ($tag) {
-                    $this->assertEquals($bookmark->tags->toStringCollection()->sole(), $tag);
+                ->method('fromArray')
+                ->willReturnCallback(function (array $bookmark) use ($tag) {
+                    $this->assertEquals($bookmark['tags'], [$tag]);
                     return $bookmark;
                 });
         });
 
-        $this->getImporter()->import(new UserID(21), Uuid::generate(), ['tags' => [$tag]]);
+        $this->getImporter()->import(21, $this->faker->uuid, ['tags' => [$tag]]);
     }
 
-    private function mockRepository(Closure $mock): void
+    private function mockServiceClass(Closure $mock): void
     {
-        $repository = $this->getMockBuilder(CreateBookmarkRepositoryInterface::class)->getMock();
+        $service = $this->getMockBuilder(CreateBookmarkService::class)->getMock();
 
-        $mock($repository);
+        $mock($service);
 
-        $this->swap(CreateBookmarkRepositoryInterface::class, $repository);
+        $this->swap(CreateBookmarkService::class, $service);
     }
 
     public function testWillUseChromeBookmarkDateByDefault(): void
@@ -106,7 +106,7 @@ class ImporterTest extends TestCase
             <TITLE>Bookmarks</TITLE>
             <H1>Bookmarks</H1>
             <DL>
-                    <DT><A HREF='https://laravel.com/docs/9.x/requests#files' ADD_DATE="1505762363">htaccess - Ultimate Apache .htaccess file Guide</A>
+             <DT><A HREF='https://laravel.com/docs/9.x/requests#files' ADD_DATE="1505762363">htaccess - Ultimate Apache .htaccess file Guide</A>
             </DL>
         HTML;
 
@@ -115,16 +115,16 @@ class ImporterTest extends TestCase
             $mock->expects($this->once())->method('get')->willReturn($html);
         });
 
-        $this->mockRepository(function (MockObject $repository) {
+        $this->mockServiceClass(function (MockObject $repository) {
             $repository->expects($this->exactly(1))
-                ->method('create')
-                ->willReturnCallback(function (Bookmark $bookmark) {
-                    $this->assertEquals($bookmark->timeCreated->year, 2017);
+                ->method('fromArray')
+                ->willReturnCallback(function (array $bookmark) {
+                    $this->assertEquals(Carbon::parse($bookmark['createdOn'])->year, 2017);
                     return $bookmark;
                 });
         });
 
-        $this->getImporter()->import(new UserID(21), Uuid::generate(), []);
+        $this->getImporter()->import(21, $this->faker->uuid, []);
     }
 
     public function testWillNotUseChromeBookmarkDateWhenIndicated(): void
@@ -137,7 +137,7 @@ class ImporterTest extends TestCase
             <TITLE>Bookmarks</TITLE>
             <H1>Bookmarks</H1>
             <DL>
-                    <DT><A HREF='https://laravel.com/docs/9.x/requests#files' ADD_DATE="1505762363">htaccess - Ultimate Apache .htaccess file Guide</A>
+                <DT><A HREF='https://laravel.com/docs/9.x/requests#files' ADD_DATE="1505762363">htaccess - Ultimate Apache .htaccess file Guide</A>
             </DL>
         HTML;
 
@@ -146,16 +146,16 @@ class ImporterTest extends TestCase
             $mock->expects($this->once())->method('get')->willReturn($html);
         });
 
-        $this->mockRepository(function (MockObject $repository) {
+        $this->mockServiceClass(function (MockObject $repository) {
             $repository->expects($this->exactly(1))
-                ->method('create')
-                ->willReturnCallback(function (Bookmark $bookmark) {
-                    $this->assertTrue($bookmark->timeCreated->isToday());
+                ->method('fromArray')
+                ->willReturnCallback(function (array $bookmark) {
+                    $this->assertTrue(Carbon::parse($bookmark['createdOn'])->isToday());
                     return $bookmark;
                 });
         });
 
-        $this->getImporter()->import(new UserID(21), Uuid::generate(), ['use_timestamp' => false]);
+        $this->getImporter()->import(21, $this->faker->uuid, ['use_timestamp' => false]);
     }
 
     public function testWillUseDefaultDateWhenDateIsInvalid(): void
@@ -168,7 +168,7 @@ class ImporterTest extends TestCase
             <TITLE>Bookmarks</TITLE>
             <H1>Bookmarks</H1>
             <DL>
-                    <DT><A HREF='https://laravel.com/docs/9.x/requests#files' ADD_DATE="3030303003303030303030303030303030303003">htaccess - Ultimate</A>
+             <DT><A HREF='https://laravel.com/docs/9.x/requests#files' ADD_DATE="3030303003303030303030303030303030303003">htaccess - Ultimate</A>
             </DL>
         HTML;
 
@@ -177,16 +177,16 @@ class ImporterTest extends TestCase
             $mock->expects($this->once())->method('get')->willReturn($html);
         });
 
-        $this->mockRepository(function (MockObject $repository) {
+        $this->mockServiceClass(function (MockObject $repository) {
             $repository->expects($this->once())
-                ->method('create')
-                ->willReturnCallback(function (Bookmark $bookmark) {
-                    $this->assertTrue($bookmark->timeCreated->isToday());
+                ->method('fromArray')
+                ->willReturnCallback(function (array $bookmark) {
+                    $this->assertTrue(Carbon::parse($bookmark['createdOn'])->isToday());
                     return $bookmark;
                 });
         });
 
-        $this->getImporter()->import(new UserID(21), Uuid::generate(), []);
+        $this->getImporter()->import(21, $this->faker->uuid, []);
     }
 
     public function testWillNotSaveBookmarkIfUrlIsInvalid(): void
@@ -197,7 +197,7 @@ class ImporterTest extends TestCase
             <TITLE>Bookmarks</TITLE>
             <H1>Bookmarks</H1>
             <DL>
-                    <DT><A HREF="<sricpt>alert('crsf')</script>" ADD_DATE="1505762363">htaccess - Ultimate</A>
+             <DT><A HREF="<script>alert('hacked')</script>" ADD_DATE="1505762363">htaccess - Ultimate</A>
             </DL>
         HTML;
 
@@ -206,11 +206,11 @@ class ImporterTest extends TestCase
             $mock->expects($this->once())->method('get')->willReturn($html);
         });
 
-        $this->mockRepository(function (MockObject $repository) {
-            $repository->expects($this->never())->method('create');
+        $this->mockServiceClass(function (MockObject $repository) {
+            $repository->expects($this->never())->method('fromArray');
         });
 
-        $this->getImporter()->import(new UserID(21), Uuid::generate(), []);
+        $this->getImporter()->import(21, $this->faker->uuid, []);
     }
 
     public function testWillStoreBookmarks(): void
@@ -224,18 +224,18 @@ class ImporterTest extends TestCase
             );
         });
 
-        $this->mockRepository(function (MockObject $repository) {
-            $repository->expects($this->exactly(111))->method('create')->willReturn(new Bookmark([]));
+        $this->mockServiceClass(function (MockObject $repository) {
+            $repository->expects($this->exactly(111))->method('fromArray');
         });
 
-        $this->getImporter()->import(new UserID(21), Uuid::generate(), []);
+        $this->getImporter()->import(21, $this->faker->uuid, []);
     }
 
     public function testWillSaveCorrectData(): void
     {
         Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
-        $userID = new UserID(5430);
+        $userID = 5430;
 
         $html = <<<HTML
             <!DOCTYPE NETSCAPE-Bookmark-file-1>
@@ -252,24 +252,21 @@ class ImporterTest extends TestCase
             $mock->expects($this->once())->method('get')->willReturn($html);
         });
 
-        $this->mockRepository(function (MockObject $repository) use ($userID) {
+        $this->mockServiceClass(function (MockObject $repository) use ($userID) {
             $repository->expects($this->exactly(1))
-                ->method('create')
-                ->willReturnCallback(function (Bookmark $bookmark) use ($userID) {
-                    $this->assertEquals("https://www.askapache.com/htaccess/", $bookmark->url->toString());
-                    $this->assertEquals(1505762363, $bookmark->timeCreated->timestamp);
-                    $this->assertTrue($bookmark->description->isEmpty());
-                    $this->assertFalse($bookmark->descriptionWasSetByUser);
-                    $this->assertEquals('askapache.com', $bookmark->source->domainName->value);
-                    $this->assertFalse($bookmark->hasCustomTitle);
-                    $this->assertFalse($bookmark->hasThumbnailUrl);
-                    $this->assertTrue($bookmark->ownerId->equals($userID));
-                    $this->assertFalse($bookmark->hasThumbnailUrl);
-                    $this->assertTrue($bookmark->tags->isEmpty());
+                ->method('fromArray')
+                ->willReturnCallback(function (array $bookmark) use ($userID) {
+                    $this->assertEquals($bookmark, [
+                        'url'       => new Url('https://www.askapache.com/htaccess/'),
+                        'tags'      => [],
+                        'createdOn' => '2017-09-18 19:19:23',
+                        'userID'    => $userID,
+                    ]);
+
                     return $bookmark;
                 });
         });
 
-        $this->getImporter()->import($userID, Uuid::generate(), []);
+        $this->getImporter()->import($userID, $this->faker->uuid, []);
     }
 }

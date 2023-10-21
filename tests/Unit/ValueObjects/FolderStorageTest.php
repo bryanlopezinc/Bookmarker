@@ -16,21 +16,21 @@ class FolderStorageTest extends TestCase
         (new FolderStorage(201));
     }
 
-    public function testTotalMustBeUnsigned(): void
+    public function testWillThrowExceptionWhenTotalIsUnsigned(): void
     {
         $this->expectException(\InvalidArgumentException::class);
 
         (new FolderStorage(-50));
     }
 
-    public function testSpaceAvailable(): void
+    public function testSpaceAvailableMethod(): void
     {
         $this->assertEquals(1, (new FolderStorage(199))->spaceAvailable());
         $this->assertEquals(50, (new FolderStorage(150))->spaceAvailable());
         $this->assertEquals(0, (new FolderStorage(200))->spaceAvailable());
     }
 
-    public function testIsFull(): void
+    public function testIsFullMethod(): void
     {
         $this->assertFalse((new FolderStorage(150))->isFull());
         $this->assertFalse((new FolderStorage(0))->isFull());
@@ -38,7 +38,7 @@ class FolderStorageTest extends TestCase
         $this->assertTrue((new FolderStorage(200))->isFull());
     }
 
-    public function testCanContain(): void
+    public function testCanContainMethod(): void
     {
         $this->assertTrue((new FolderStorage(150))->canContain([]));
         $this->assertTrue((new FolderStorage(150))->canContain(range(1, 50)));
@@ -46,7 +46,7 @@ class FolderStorageTest extends TestCase
         $this->assertFalse((new FolderStorage(FolderStorage::MAX_ITEMS))->canContain([]));
     }
 
-    public function testPercentageUsed(): void
+    public function testPercentageUsedMethod(): void
     {
         $this->assertEquals(0, (new FolderStorage(0))->percentageUsed());
         $this->assertEquals(0, (new FolderStorage(1))->percentageUsed());

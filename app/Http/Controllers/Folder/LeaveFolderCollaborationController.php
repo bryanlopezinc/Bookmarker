@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Folder;
 
 use App\Rules\ResourceIdRule;
 use App\Services\Folder\LeaveFolderCollaborationService as Service;
-use App\ValueObjects\ResourceID;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,7 +17,7 @@ final class LeaveFolderCollaborationController
             'folder_id' => ['required', new ResourceIdRule()]
         ]);
 
-        $service->leave(ResourceID::fromRequest($request, 'folder_id'));
+        $service->leave($request->integer('folder_id'));
 
         return response()->json();
     }

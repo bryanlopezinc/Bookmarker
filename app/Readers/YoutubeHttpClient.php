@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Readers;
 
+use App\Models\Bookmark;
 use App\ValueObjects\Url;
-use App\DataTransferObjects\Bookmark;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Psr\Log\LoggerInterface;
@@ -21,9 +21,9 @@ final class YoutubeHttpClient implements HttpClientInterface
     public function fetchBookmarkPageData(Bookmark $bookmark): BookmarkMetaData|false
     {
         $response = Http::get('https://www.googleapis.com/youtube/v3/videos', [
-            'id' => $this->getVideoID($bookmark->url),
-            'key' => $this->getGoogleApiKey(),
-            'part' => 'snippet',
+            'id'     => $this->getVideoID($bookmark->url),
+            'key'    => $this->getGoogleApiKey(),
+            'part'   => 'snippet',
             'fields' => 'items(snippet/title,snippet/description,snippet/thumbnails)'
         ])->onError(function (Response $response) {
             $message = $response->toException()?->getMessage();
@@ -38,12 +38,12 @@ final class YoutubeHttpClient implements HttpClientInterface
         }
 
         return BookmarkMetaData::fromArray([
-            'title' => $response->json('items.0.snippet.title'),
-            'description' => $response->json('items.0.snippet.description'),
-            'imageUrl' => new Url($response->json('items.0.snippet.thumbnails.medium.url')),
-            'siteName' => self::SITE_NAME,
-            'canonicalUrl' => $bookmark->canonicalUrl,
-            'resolvedUrl' => $bookmark->resolvedUrl
+            'title'        => $response->json('items.0.snippet.title'),
+            'description'  => $response->json('items.0.snippet.description'),
+            'imageUrl'     => new Url($response->json('items.0.snippet.thumbnails.medium.url')),
+            'siteName'     => self::SITE_NAME,
+            'canonicalUrl' => new Url($bookmark->url_canonical),
+            'resolvedUrl'  => new Url($bookmark->resolved_url)
         ]);
     }
 
@@ -58,10 +58,10 @@ final class YoutubeHttpClient implements HttpClientInterface
         return $apiKey;
     }
 
-    private function getVideoID(Url $url): string
+    private function getVideoID(string $url): string
     {
         /** @var string[] */
-        $parts = parse_url($url->toString());
+        $parts = parse_url($url);
 
         parse_str($parts['query'], $query);
 

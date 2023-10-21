@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\DataTransferObjects\User;
+use App\Models\User;
 use App\Exceptions\InvalidUsernameException;
-use App\QueryColumns\UserAttributes;
 use App\Repositories\UserRepository;
 use App\Cache\User2FACodeRepository;
+use App\Exceptions\UserNotFoundException;
 use App\Http\Requests\Request2FACodeRequest as Request;
 use App\Mail\TwoFACodeMail;
-use App\ValueObjects\{Email, TwoFACode, Username};
+use App\ValueObjects\{TwoFACode, Username};
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
@@ -24,6 +24,7 @@ final class Request2FACodeService
     public function __construct(
         private readonly User2FACodeRepository $user2FACodeRepository,
         private readonly UserRepository $userRepository,
+        private Hasher $hasher
     ) {
     }
 
@@ -33,10 +34,14 @@ final class Request2FACodeService
 
         $user = $this->getUser($request);
 
+        if (!$this->hasher->check($request->input('password'), $user->password)) {
+            throw $this->invalidCredentialsException();
+        }
+
         $twoFACodeSent = RateLimiter::attempt($this->key($user), $maxRequestsPerMinute, function () use ($user) {
             $this->user2FACodeRepository->put($user->id, $twoFACode = TwoFACode::generate());
 
-            Mail::to($user->email->value)->queue(new TwoFACodeMail($twoFACode));
+            Mail::to($user->email)->queue(new TwoFACodeMail($twoFACode));
         });
 
         if (!$twoFACodeSent) {
@@ -46,34 +51,29 @@ final class Request2FACodeService
 
     private function key(User $user): string
     {
-        return 'sent2fa::' . $user->id->value();
+        return 'sent2fa::' . $user->id;
     }
 
     private function getUser(Request $request): User
     {
-        $attributes = UserAttributes::only('id,password,email');
+        $attributes = ['id', 'password', 'email'];
 
         try {
-            $user = $this->userRepository->findByUsername(Username::fromRequest($request), $attributes);
+            return $this->userRepository->findByUsername(Username::fromRequest($request)->value, $attributes);
         } catch (InvalidUsernameException) {
-            $user = $this->userRepository->findByEmail(new Email($request->validated('username')), $attributes);
-        }
-
-        if (!$user) {
+            return $this->userRepository->findByEmail($request->validated('username'), $attributes);
+        } catch (UserNotFoundException) {
             throw $this->invalidCredentialsException();
         }
-
-        if (!app(Hasher::class)->check($request->input('password'), $user->password)) {
-            throw $this->invalidCredentialsException();
-        }
-
-        return $user;
     }
 
     private function invalidCredentialsException(): HttpResponseException
     {
-        return new HttpResponseException(response()->json([
-            'message' => 'Invalid Credentials'
-        ], Response::HTTP_UNAUTHORIZED));
+        return new HttpResponseException(
+            response()->json(
+                ['message' => 'InvalidCredentials'],
+                Response::HTTP_UNAUTHORIZED
+            )
+        );
     }
 }

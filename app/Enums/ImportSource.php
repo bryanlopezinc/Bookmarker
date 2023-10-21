@@ -17,11 +17,11 @@ enum ImportSource
     public static function fromRequest(ImportBookmarkRequest $request): self
     {
         return match ($request->validated('source')) {
-            $request::CHROME => self::CHROME,
-            $request::POCKET => self::POCKET,
-            $request::SAFARI => self::SAFARI,
-            $request::INSTAPAPER=> self::INSTAPAPER,
-            $request::FIREFOX => self::FIREFOX
+            $request::CHROME     => self::CHROME,
+            $request::POCKET     => self::POCKET,
+            $request::SAFARI     => self::SAFARI,
+            $request::INSTAPAPER => self::INSTAPAPER,
+            $request::FIREFOX    => self::FIREFOX
         };
     }
 }

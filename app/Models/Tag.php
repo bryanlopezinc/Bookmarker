@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Contracts\HasTagValueInterface;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -13,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $name
  * @property \Carbon\Carbon $created_at
  */
-final class Tag extends Model implements HasTagValueInterface
+final class Tag extends Model
 {
     public const UPDATED_AT = null;
 
@@ -21,9 +20,4 @@ final class Tag extends Model implements HasTagValueInterface
      * {@inheritdoc}
      */
     protected $guarded = [];
-
-    public function getTagValue(): string
-    {
-        return $this->name;
-    }
 }

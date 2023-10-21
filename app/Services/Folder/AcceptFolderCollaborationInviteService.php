@@ -5,68 +5,67 @@ declare(strict_types=1);
 namespace App\Services\Folder;
 
 use App\Cache\InviteTokensStore;
-use App\Collections\ResourceIDsCollection as IDs;
-use App\Contracts\FolderRepositoryInterface;
-use App\DataTransferObjects\Folder;
 use App\Exceptions\HttpException;
-use App\Exceptions\UserNotFoundHttpException;
 use App\UAC;
 use App\Repositories\Folder\FolderPermissionsRepository;
-use App\Repositories\UserRepository;
-use App\QueryColumns\FolderAttributes;
-use App\ValueObjects\ResourceID;
-use App\ValueObjects\UserID;
 use Illuminate\Http\Request;
 use App\Cache\InviteTokensStore as Payload;
+use App\DataTransferObjects\FolderSettings;
+use App\Exceptions\UserNotFoundException;
+use App\Models\Folder;
+use App\Models\FolderPermission;
+use App\Models\User;
 use App\Notifications\NewCollaboratorNotification as Notification;
-use App\Repositories\NotificationRepository;
-use App\ValueObjects\Uuid;
 
 final class AcceptFolderCollaborationInviteService
 {
     public function __construct(
-        private FolderRepositoryInterface $folderRepository,
-        private UserRepository $userRepository,
         private FolderPermissionsRepository $permissions,
         private InviteTokensStore $inviteTokensStore,
+        private FetchFolderService $folderRepository
     ) {
     }
 
-    public function accept(Request $request): void
+    public function fromRequest(Request $request): void
     {
-        $invitationData = $this->inviteTokensStore->get(new Uuid($request->input('invite_hash')));
+        $token = $request->input('invite_hash');
+        $payload = $this->inviteTokensStore->get($token);
 
-        $this->ensureInvitationTokenIsValid($invitationData);
+        [$inviterId, $inviteeId, $folderId] = [
+            $payload[Payload::INVITER_ID] ?? null,
+            $payload[Payload::INVITEE_ID] ?? null,
+            $payload[Payload::FOLDER_ID]  ?? null,
+        ];
 
-        $this->ensureUsersStillExist($invitationData);
+        $this->ensureInvitationTokenIsValid($payload);
 
-        $folder = $this->folderRepository->find(
-            new ResourceID($invitationData[Payload::FOLDER_ID]),
-            FolderAttributes::only('id,user_id,settings')
-        );
-        $inviteeID = new UserID($invitationData[Payload::INVITEE_ID]);
+        $this->ensureUsersStillExist($inviterId, $inviteeId);
 
-        $this->ensureInvitationHasNotBeenAccepted($inviteeID, $folder);
+        $folder = $this->folderRepository->find($folderId, ['id', 'user_id', 'settings']);
 
-        $this->permissions->create($inviteeID, $folder->folderID, $this->extractPermissions($invitationData));
+        $this->ensureInvitationHasNotBeenAccepted($inviteeId, $folderId);
 
-        $this->notifyFolderOwner(new UserID($invitationData[Payload::INVITER_ID]), $inviteeID, $folder);
+        $this->permissions->create($inviteeId, $folder->id, $this->extractPermissions($payload));
+
+        $this->inviteTokensStore->forget($token);
+
+        $this->notifyFolderOwner($inviterId, $inviteeId, $folder);
     }
 
     private function ensureInvitationTokenIsValid(array $data): void
     {
         if (empty($data)) {
-            throw HttpException::notFound([
-                'message' => 'Invitation not found or expired'
-            ]);
+            throw HttpException::notFound(['message' => 'InvitationNotFoundOrExpired']);
         }
     }
 
-    private function extractPermissions(array $invitationData): UAC
+    private function extractPermissions(array $payload): UAC
     {
-        $defaultPermissions = UAC::fromArray(['read']);
+        $assignedPermissions = $payload[Payload::PERMISSIONS];
 
-        $permissionsSetByFolderOwner = UAC::fromUnSerialized($invitationData[Payload::PERMISSIONS]);
+        $defaultPermissions = new UAC([FolderPermission::VIEW_BOOKMARKS]);
+
+        $permissionsSetByFolderOwner = new UAC($assignedPermissions);
 
         if ($permissionsSetByFolderOwner->isEmpty()) {
             return $defaultPermissions;
@@ -80,45 +79,42 @@ final class AcceptFolderCollaborationInviteService
         );
     }
 
-    private function ensureUsersStillExist(array $payload): void
+    private function ensureUsersStillExist(int $inviterId, int $inviteeId): void
     {
-        $users = $this->userRepository->findManyByIDs(
-            IDs::fromNativeTypes([$payload[Payload::INVITER_ID], $payload[Payload::INVITEE_ID]]),
-            \App\QueryColumns\UserAttributes::only('id')
-        );
+        $users = User::query()
+            ->select('id')
+            ->whereIntegerInRaw('id', func_get_args())
+            ->get();
 
         if ($users->count() !== 2) {
-            throw new UserNotFoundHttpException();
+            throw new UserNotFoundException();
         }
     }
 
-    private function ensureInvitationHasNotBeenAccepted(UserID $inviteeID, Folder $folder): void
+    private function ensureInvitationHasNotBeenAccepted(int $inviteeId, int $folderId): void
     {
-        $isAlreadyACollaborator = $this->permissions->getUserAccessControls($inviteeID, $folder->folderID)->isNotEmpty();
+        $access = $this->permissions->getUserAccessControls($inviteeId, $folderId);
 
-        if ($isAlreadyACollaborator) {
-            throw HttpException::conflict([
-                'message' => 'Invitation already accepted'
-            ]);
+        if ($access->isNotEmpty()) {
+            throw HttpException::conflict(['message' => 'Invitation already accepted']);
         }
     }
 
-    private function notifyFolderOwner(UserID $inviterID, UserID $inviteeID, Folder $folder): void
+    private function notifyFolderOwner(int $inviterId, int $inviteeId, Folder $folder,): void
     {
-        $wasInvitedByFolderOwner = $folder->ownerID->equals($inviterID);
-        $wasNotInvitedByFolderOwner = !$wasInvitedByFolderOwner;
-        $notification = new Notification($inviteeID, $folder->folderID, $inviterID);
+        $wasInvitedByFolderOwner = $folder->user_id === $inviterId;
 
-        $shouldNotSendNotification = count(array_filter([
-            ($folder->settings->notificationsAreDisabled() || $folder->settings->newCollaboratorNotificationIsDisabled()),
-            ($wasNotInvitedByFolderOwner && $folder->settings->onlyCollaboratorsInvitedByMeNotificationIsEnabled()),
-            ($wasInvitedByFolderOwner && $folder->settings->onlyCollaboratorsInvitedByMeNotificationIsDisabled())
-        ])) > 0;
+        $folderSettings = FolderSettings::fromQuery($folder->settings);
 
-        if ($shouldNotSendNotification) {
+        if (($folderSettings->notificationsAreDisabled() || $folderSettings->newCollaboratorNotificationIsDisabled()) ||
+            (!$wasInvitedByFolderOwner && $folderSettings->onlyCollaboratorsInvitedByMeNotificationIsEnabled()) ||
+            ($wasInvitedByFolderOwner && $folderSettings->onlyCollaboratorsInvitedByMeNotificationIsDisabled())
+        ) {
             return;
         }
 
-        (new NotificationRepository())->notify($folder->ownerID, $notification);
+        (new User(['id' => $folder->user_id]))->notify(
+            new Notification($inviteeId, $folder->id, $inviterId)
+        );
     }
 }

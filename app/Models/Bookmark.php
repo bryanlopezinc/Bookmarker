@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Contracts\TaggableInterface;
-use App\Enums\TaggableType;
-use App\QueryColumns\BookmarkAttributes;
-use App\ValueObjects\ResourceID;
-use App\ValueObjects\UserID;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Collection;
 
 /**
  * @property int $id
@@ -22,18 +21,26 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
  * @property bool $description_set_by_user
  * @property string $url
  * @property string|null $preview_image_url
- * @property int $user_id foreign key to \App\Models\User
- * @property int $source_id foreign key to \App\Models\Source
+ * @property int $user_id
+ * @property int $source_id
  * @property string $url_canonical
  * @property string $url_canonical_hash
  * @property string $resolved_url
- *  @property \Carbon\Carbon|null $resolved_at
+ * @property Source $source
+ * @property EloquentCollection<Tag> $tags
+ * @property bool $isHealthy
+ * @property bool $isUserFavorite
+ * @property bool $hasDuplicates
+ * @property \Carbon\Carbon|null $resolved_at
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
- * @method static Builder WithQueryOptions(BookmarkAttributes $queryOptions)
+ * @method static Builder|QueryBuilder WithQueryOptions(array $attributes = [])
  */
-final class Bookmark extends Model implements TaggableInterface
+final class Bookmark extends Model
 {
+    public const DESCRIPTION_MAX_LENGTH = 200;
+    public const TITLE_MAX_LENGTH       = 100;
+
     /**
      * {@inheritdoc}
      */
@@ -48,11 +55,37 @@ final class Bookmark extends Model implements TaggableInterface
      * {@inheritdoc}
      */
     protected $casts = [
-        'has_custom_title' => 'bool',
+        'has_custom_title'        => 'bool',
         'description_set_by_user' => 'bool',
-        'is_healthy' => 'bool',
-        'resolved_at' => 'datetime'
+        'hasDuplicates'           => 'bool',
+        'resolved_at'             => 'datetime',
+        'created_at'              => 'datetime',
+        'updated_at'              => 'datetime'
     ];
+
+    public function getSourceAttribute(): Source
+    {
+        if ($this->relationLoaded('source')) {
+            return $this->relations['source'];
+        }
+
+        $model = new Source(
+            json_decode($this->attributes['source'], true, JSON_THROW_ON_ERROR)
+        );
+
+        $this->setRelation('source', $model);
+
+        return $model;
+    }
+
+    public function getIsHealthyAttribute(?int $value): ?bool
+    {
+        if (!array_key_exists('isHealthy', $this->attributes)) {
+            return $value;
+        }
+
+        return $value === null ? true : boolval($value);
+    }
 
     public function user(): BelongsTo
     {
@@ -61,8 +94,7 @@ final class Bookmark extends Model implements TaggableInterface
 
     public function tags(): HasManyThrough
     {
-        return $this->hasManyThrough(Tag::class, Taggable::class, 'taggable_id', 'id', 'id', 'tag_id')
-            ->where('taggable_type', Taggable::BOOKMARK_TYPE);
+        return $this->hasManyThrough(Tag::class, Taggable::class, 'taggable_id', 'id', 'id', 'tag_id');
     }
 
     public function source(): BelongsTo
@@ -70,28 +102,15 @@ final class Bookmark extends Model implements TaggableInterface
         return $this->belongsTo(Source::class, 'source_id', 'id');
     }
 
-    public function taggableID(): ResourceID
-    {
-        return new ResourceID($this->id);
-    }
-
-    public function taggableType(): TaggableType
-    {
-        return TaggableType::BOOKMARK;
-    }
-
-    public function taggedBy(): UserID
-    {
-        return new UserID($this->user_id);
-    }
-
     /**
      * @param Builder $builder
      *
      * @return Builder
      */
-    public function scopeWithQueryOptions($builder, BookmarkAttributes $columns)
+    public function scopeWithQueryOptions($builder, array $columns = [])
     {
+        $columns = collect($columns)->mapWithKeys(fn (string $col) => [$col => $col]);
+
         $builder->addSelect($this->getQualifiedKeyName());
 
         if ($columns->isEmpty()) {
@@ -99,7 +118,9 @@ final class Bookmark extends Model implements TaggableInterface
         }
 
         if (!$columns->isEmpty()) {
-            $builder->addSelect($this->qualifyColumns($columns->except(['tags', 'source'])));
+            $builder->addSelect(
+                $this->qualifyColumns($columns->except(['tags', 'source'])->all())
+            );
         }
 
         $this->parseTagsRelationQuery($builder, $columns);
@@ -115,7 +136,7 @@ final class Bookmark extends Model implements TaggableInterface
      *
      * @return Builder
      */
-    protected function parseTagsRelationQuery(&$builder, BookmarkAttributes $options)
+    protected function parseTagsRelationQuery(&$builder, Collection $options)
     {
         $wantsTags = $options->has('tags') ?: $options->isEmpty();
 
@@ -131,7 +152,7 @@ final class Bookmark extends Model implements TaggableInterface
      *
      * @return Builder
      */
-    protected function parseSourceRelationQuery(&$builder, BookmarkAttributes $options)
+    protected function parseSourceRelationQuery(&$builder, Collection $options)
     {
         $wantsSiteRelation = $options->has('source') ?: $options->isEmpty();
 
@@ -139,7 +160,11 @@ final class Bookmark extends Model implements TaggableInterface
             return $builder;
         }
 
-        return $builder->with('source');
+        return $builder->addSelect([
+            'source' => Source::query()
+                ->select(DB::raw("JSON_OBJECT('host', host, 'name', name, 'id', id)"))
+                ->whereRaw("id = {$this->qualifyColumn('source_id')}"),
+        ]);
     }
 
     /**
@@ -147,7 +172,7 @@ final class Bookmark extends Model implements TaggableInterface
      *
      * @return Builder
      */
-    protected function parseHealthCheckQuery(&$builder, BookmarkAttributes $options)
+    protected function parseHealthCheckQuery(&$builder, Collection $options)
     {
         $condition = $options->has('is_dead_link') ?: $options->isEmpty();
 
@@ -155,8 +180,11 @@ final class Bookmark extends Model implements TaggableInterface
             return $builder;
         }
 
-        return $builder->addSelect('bookmarks_health.is_healthy')
-            ->join('bookmarks_health', 'bookmarks.id', '=', 'bookmarks_health.bookmark_id', 'left outer');
+        return $builder->addSelect([
+            'isHealthy' => BookmarkHealth::query()
+                ->select('is_healthy')
+                ->whereRaw("bookmark_id = {$this->qualifyColumn('id')}")
+        ]);
     }
 
     /**
@@ -164,7 +192,7 @@ final class Bookmark extends Model implements TaggableInterface
      *
      * @return Builder
      */
-    protected function parseHasDuplicatesQuery(&$builder, BookmarkAttributes $options)
+    protected function parseHasDuplicatesQuery(&$builder, Collection $options)
     {
         $condition = $options->has('has_duplicates') ?: $options->isEmpty();
 
@@ -181,6 +209,6 @@ final class Bookmark extends Model implements TaggableInterface
                     AND bookmarks.id != b.id)
         SQL;
 
-        return $builder->selectSub($query, 'has_duplicates');
+        return $builder->selectSub($query, 'hasDuplicates');
     }
 }

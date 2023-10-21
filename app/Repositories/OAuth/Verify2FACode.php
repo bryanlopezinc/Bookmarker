@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Repositories\OAuth;
 
 use App\Cache\User2FACodeRepository;
-use App\ValueObjects\UserID;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Repositories\UserRepositoryInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
@@ -36,7 +35,7 @@ final class Verify2FACode implements UserRepositoryInterface
             return $user;
         };
 
-        $userID = new UserID($user->getIdentifier());
+        $userID = $user->getIdentifier();
 
         if (!$this->user2FACodeRepository->has($userID)) {
             $this->throwException();
@@ -51,7 +50,7 @@ final class Verify2FACode implements UserRepositoryInterface
         return $user;
     }
 
-    private function twoFACodeMatches(TwoFACode $code, UserID $userID): bool
+    private function twoFACodeMatches(TwoFACode $code, int $userID): bool
     {
         return $this->user2FACodeRepository->get($userID)->equals($code);
     }

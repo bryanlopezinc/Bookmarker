@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Readers;
 
-use App\DataTransferObjects\Bookmark;
+use App\Models\Bookmark;
 use App\ValueObjects\Url;
 
 final class Factory implements HttpClientInterface
@@ -18,8 +18,8 @@ final class Factory implements HttpClientInterface
         return (new DefaultClient(app('log')))->fetchBookmarkPageData($bookmark);
     }
 
-    private function isLinkToYoutubeVideo(Url $url): bool
+    private function isLinkToYoutubeVideo(string $url): bool
     {
-        return str_starts_with($url->toString(), 'https://www.youtube.com/watch');
+        return str_starts_with($url, 'https://www.youtube.com/watch');
     }
 }

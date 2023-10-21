@@ -4,20 +4,21 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
-use App\DataTransferObjects\Folder;
 use App\Enums\NotificationType;
-use App\ValueObjects\UserID;
+use App\Models\Folder;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Bus\Queueable;
 
-final class FolderUpdatedNotification extends Notification implements ShouldQueue
+final class FolderUpdatedNotification extends Notification //implements ShouldQueue
 {
     use Queueable;
     use FormatDatabaseNotification;
 
-    public function __construct(private Folder $original, private Folder $updated, private UserID $updatedBy)
-    {
+    public function __construct(
+        private Folder $folder,
+        private int $updatedBy
+    ) {
         $this->afterCommit();
     }
 
@@ -38,30 +39,23 @@ final class FolderUpdatedNotification extends Notification implements ShouldQueu
     public function toDatabase($notifiable): array
     {
         return $this->formatNotificationData([
-            'N-type' => $this->databaseType(),
-            'updated_by' => $this->updatedBy->value(),
-            'folder_updated' => $this->original->folderID->value(),
-            'changes' => $this->getChanges()
+            'N-type'         => $this->databaseType(),
+            'updated_by'     => $this->updatedBy,
+            'folder_updated' => $this->folder->id,
+            'changes'        => $this->getChanges()
         ]);
     }
 
     private function getChanges(): array
     {
-        $initialTags = $this->original->tags->toStringCollection();
-        $updatedTags = $this->updated->tags->toStringCollection();
-
         $changes = [
             'name' => [
-                'from' => $this->original->name->safe(),
-                'to' => $this->updated->name->safe()
+                'from' => $this->folder->getOriginal('name'),
+                'to'   => $this->folder->getDirty()['name'] ?? $this->folder->name
             ],
             'description' => [
-                'from' => $this->original->description->safe(),
-                'to' => $this->updated->description->safe()
-            ],
-            'tags' => [
-                'from' => $initialTags->implode(','),
-                'to' => $initialTags == $updatedTags ? $initialTags->implode(',') : $initialTags->merge($updatedTags)->implode(',')
+                'from' => $this->folder->getOriginal('description'),
+                'to'   => $this->folder->getDirty()['description'] ?? $this->folder->description
             ]
         ];
 

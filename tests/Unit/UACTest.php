@@ -8,21 +8,21 @@ use App\Models\FolderPermission as Model;
 
 class UACTest extends TestCase
 {
-    public function testPermissionsMustBeValid(): void
+    public function testWillThrowExceptionWhenPermissionsAreInvalid(): void
     {
         $this->expectExceptionCode(1600);
 
         new UAC(['foo']);
     }
 
-    public function testPermissionsMustBeUnique(): void
+    public function testWillThrowExceptionWhenPermissionsContainsDuplicateValues(): void
     {
         $this->expectExceptionCode(1601);
 
         new UAC([Model::VIEW_BOOKMARKS, Model::VIEW_BOOKMARKS]);
     }
 
-    public function testContainsAll(): void
+    public function testContainsAllMethod(): void
     {
         $uac = new UAC([Model::VIEW_BOOKMARKS]);
         $this->assertFalse($uac->containsAll(new UAC([Model::INVITE, Model::ADD_BOOKMARKS])));
@@ -35,7 +35,7 @@ class UACTest extends TestCase
         $this->assertFalse((new UAC([]))->containsAll(new UAC([Model::VIEW_BOOKMARKS])));
     }
 
-    public function testContainsAny(): void
+    public function testContainsAnyMethod(): void
     {
         $uac = new UAC([Model::VIEW_BOOKMARKS]);
         $this->assertFalse($uac->containsAny(new UAC([Model::INVITE, Model::ADD_BOOKMARKS])));
@@ -47,7 +47,7 @@ class UACTest extends TestCase
         $this->assertFalse((new UAC([Model::VIEW_BOOKMARKS]))->containsAny(new UAC([])));
     }
 
-    public function testCanAddBookmarks(): void
+    public function testCanAddBookmarksMethod(): void
     {
         $uac = new UAC([Model::VIEW_BOOKMARKS]);
         $this->assertFalse($uac->canAddBookmarks());
@@ -56,7 +56,7 @@ class UACTest extends TestCase
         $this->assertTrue((new UAC([Model::VIEW_BOOKMARKS, Model::ADD_BOOKMARKS]))->canAddBookmarks());
     }
 
-    public function testCanRemoveBookmarks(): void
+    public function testCanRemoveBookmarksMethod(): void
     {
         $uac = new UAC([Model::VIEW_BOOKMARKS]);
         $this->assertFalse($uac->canRemoveBookmarks());
@@ -65,7 +65,7 @@ class UACTest extends TestCase
         $this->assertTrue((new UAC([Model::DELETE_BOOKMARKS, Model::ADD_BOOKMARKS]))->canRemoveBookmarks());
     }
 
-    public function testCanInviteUser(): void
+    public function testCanInviteUserMethod(): void
     {
         $uac = new UAC([Model::VIEW_BOOKMARKS]);
         $this->assertFalse($uac->canInviteUser());
@@ -74,7 +74,7 @@ class UACTest extends TestCase
         $this->assertTrue((new UAC([Model::DELETE_BOOKMARKS, Model::INVITE]))->canInviteUser());
     }
 
-    public function testIsEmpty(): void
+    public function testIsEmptyMethod(): void
     {
         $uac = new UAC([]);
         $this->assertTrue($uac->isEmpty());
@@ -83,7 +83,7 @@ class UACTest extends TestCase
         $this->assertFalse($uac->isEmpty());
     }
 
-    public function testIsNotEmpty(): void
+    public function testIsNotEmptyMethod(): void
     {
         $uac = new UAC([]);
         $this->assertFalse($uac->isNotEmpty());

@@ -5,20 +5,18 @@ declare(strict_types=1);
 namespace App\DataTransferObjects;
 
 use App\Enums\ImportSource;
-use App\ValueObjects\UserID;
-use App\ValueObjects\Uuid;
 
 final class ImportData
 {
     public function __construct(
-        private Uuid $requestID,
+        private string $requestID,
         private ImportSource $importSource,
-        private UserID $userID,
+        private int $userID,
         private array $data
     ) {
     }
 
-    public function userID(): UserID
+    public function userID(): int
     {
         return $this->userID;
     }
@@ -33,7 +31,7 @@ final class ImportData
         return $this->importSource;
     }
 
-    public function requestID(): Uuid
+    public function requestID(): string
     {
         return $this->requestID;
     }

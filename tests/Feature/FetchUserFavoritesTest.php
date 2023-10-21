@@ -2,9 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Bookmark;
+use App\Repositories\FavoriteRepository;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
-use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
@@ -13,9 +14,9 @@ use Tests\Traits\WillCheckBookmarksHealth;
 
 class FetchUserFavoritesTest extends TestCase
 {
-    use AssertsBookmarkJson, WillCheckBookmarksHealth;
+    use AssertsBookmarkJson, WillCheckBookmarksHealth, AssertValidPaginationData;
 
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function fetchUserFavoritesResponse(array $parameters = []): TestResponse
     {
         return $this->getJson(route('fetchUserFavorites', $parameters));
     }
@@ -25,67 +26,33 @@ class FetchUserFavoritesTest extends TestCase
         $this->assertRouteIsAccessibleViaPath('v1/users/favorites', 'fetchUserFavorites');
     }
 
-    public function testUnAuthorizedUserCannotAccessRoute(): void
+    public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->fetchUserFavoritesResponse()->assertUnauthorized();
     }
 
-    public function testWillReturnValidationErrorsWhenPaginationDataIsInvalid(): void
+    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->getTestResponse(['page' => -1])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'page' => ['The page must be at least 1.']
-            ]);
-
-        $this->getTestResponse(['page' => 2001])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'page' => ['The page must not be greater than 2000.']
-            ]);
-
-        $this->getTestResponse(['per_page' => 14])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'per_page' => ['The per page must be at least 15.']
-            ]);;
-
-        $this->getTestResponse(['per_page' => 40])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'per_page' => ['The per page must not be greater than 39.']
-            ]);
+        $this->assertValidPaginationData($this, 'fetchUserFavorites');
     }
 
-    public function testWillFetchUserFavorites(): void
+    public function testFetchUserFavorites(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->getTestResponse()->assertOk()->assertJsonCount(0, 'data');
+        $this->fetchUserFavoritesResponse()->assertOk()->assertJsonCount(0, 'data');
 
-        $bookmarks = BookmarkFactory::new()->count(5)->for($user)->create([
-            'title' => '<h1>did you forget something?</h1>',
-            'description' => 'And <h1>spoof!</h1>'
-        ]);
+        $bookmark = BookmarkFactory::new()->for($user)->create();
 
-        $this->postJson(route('createFavorite'), ['bookmarks' => (string) $bookmarks->pluck('id')->implode(',')])->assertCreated();
+        (new FavoriteRepository)->create($bookmark->id, $user->id);
 
-        $response = $this->getTestResponse()
+        $response = $this->fetchUserFavoritesResponse()
             ->assertOk()
-            ->assertJsonCount(5, 'data')
-            ->assertJson(function (AssertableJson $json) {
-                $json->etc()
-                    ->fromArray($json->toArray()['data'])
-                    ->each(function (AssertableJson $json) {
-                        //Assert sanitized attributes was sent to client.
-                        $json->where('attributes.title', '&lt;h1&gt;did you forget something?&lt;/h1&gt;');
-                        $json->where('attributes.description', 'And &lt;h1&gt;spoof!&lt;/h1&gt;');
-                        $json->where('attributes.is_user_favorite', true)->etc();
-                    })
-                    ->etc();
-            })
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.attributes.id', $bookmark->id)
+            ->assertJsonPath('data.0.attributes.is_user_favorite', true)
             ->assertJsonStructure([
                 "links" => [
                     "first",
@@ -102,16 +69,44 @@ class FetchUserFavoritesTest extends TestCase
         $this->assertBookmarkJson($response->json('data.0'));
     }
 
+    public function testWillSortByLatest(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        /** @var Bookmark[] */
+        $bookmarks = BookmarkFactory::new()->count(3)->for($user)->create();
+
+        (new FavoriteRepository)->create($bookmarks[2]->id, $user->id);
+        (new FavoriteRepository)->create($bookmarks[0]->id, $user->id);
+        (new FavoriteRepository)->create($bookmarks[1]->id, $user->id);
+
+        $this->fetchUserFavoritesResponse()
+            ->assertOk()
+            ->assertJsonCount(3, 'data')
+            ->assertJsonPath('data.0.attributes.id', $bookmarks[1]->id)
+            ->assertJsonPath('data.1.attributes.id', $bookmarks[0]->id)
+            ->assertJsonPath('data.2.attributes.id', $bookmarks[2]->id);
+    }
+
     public function testWillCheckBookmarksHealth(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
         $bookmarks = BookmarkFactory::new()->count(5)->for($user)->create();
 
-        $this->postJson(route('createFavorite'), ['bookmarks' => (string) $bookmarks->pluck('id')->implode(',')])->assertCreated();
+        (new FavoriteRepository)->createMany($bookmarks->pluck('id')->all(), $user->id);
 
-        $this->getTestResponse()->assertOk();
+        $this->fetchUserFavoritesResponse()->assertOk();
 
         $this->assertBookmarksHealthWillBeChecked($bookmarks->pluck('id')->all());
+    }
+
+    public function testWillReturnEmptyResponseWhenUserHasNoFavorites(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->fetchUserFavoritesResponse()
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
     }
 }

@@ -4,32 +4,31 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Rules\TagRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 final class ImportBookmarkRequest extends FormRequest
 {
     /** import sources */
-    public const CHROME = 'chromeExportFile';
-    public const POCKET = 'pocketExportFile';
-    public const SAFARI = 'safariExportFile';
+    public const CHROME     = 'chromeExportFile';
+    public const POCKET     = 'pocketExportFile';
+    public const SAFARI     = 'safariExportFile';
     public const INSTAPAPER = 'instapaperFile';
-    public const FIREFOX = 'firefoxFile';
-
-    /**
-     * @var array<string,string>
-     */
-    private const VALIDATORS = [
-        self::CHROME => Imports\ChromeImportRequestValidator::class,
-        self::POCKET => Imports\PocketImportRequestValidator::class,
-        self::SAFARI => Imports\SafariImportRequestValidator::class,
-        self::INSTAPAPER => Imports\InstapaperRequestValidator::class,
-        self::FIREFOX => Imports\FireFoxImportRequestValidator::class,
-    ];
+    public const FIREFOX    = 'firefoxFile';
 
     public function rules(): array
     {
-        return array_merge($this->getSourceValidator()->rules(), [
+        $rules = match ($this->input('source')) {
+            self::CHROME     => $this->chromeImportRules(),
+            self::POCKET     => $this->pocketImportRules(),
+            self::SAFARI     => $this->safariImportRules(),
+            self::INSTAPAPER => $this->paperImportRules(),
+            self::FIREFOX    => $this->fireFoxImportRules(),
+            default          => []
+        };
+
+        return array_merge($rules, [
             'source' => [
                 'required', 'string', 'filled', Rule::in([
                     self::CHROME,
@@ -42,29 +41,53 @@ final class ImportBookmarkRequest extends FormRequest
         ]);
     }
 
-    private function getSourceValidator(): Imports\RequestValidatorInterface
+    private function fireFoxImportRules(): array
     {
-        $validatorClass = self::VALIDATORS[$this->input('source', 100)] ?? false;
-
-        if ($validatorClass == false) {
-            return new Imports\EmptyValidator();
-        }
-
-        return app($validatorClass);
+        return [
+            'use_timestamp'       => ['nullable', 'bool'],
+            'ignore_tags'         => ['nullable', 'bool'],
+            'firefox_export_file' => ['required', 'file', 'mimes:html', join(':', ['max', setting('MAX_POCKET_FILE_SIZE')])],
+        ];
     }
 
-    /**
-     * Configure the validator instance.
-     *
-     * @param  \Illuminate\Validation\Validator  $validator
-     * @return void
-     */
-    public function withValidator($validator)
+    private function paperImportRules(): array
     {
-        $requestValidator = $this->getSourceValidator();
+        return [
+            'instapaper_html' => [
+                'required', 'file',
+                'mimes:html',
+                join(':', ['max', setting('MAX_SAFARI_FILE_SIZE')])
+            ],
+            'tags' => ['nullable', 'max:15'],
+            'tags.*' => ['distinct:strict', new TagRule],
+        ];
+    }
 
-        if ($requestValidator instanceof Imports\AfterValidationInterface) {
-            $requestValidator->withValidator($validator);
-        }
+    private function safariImportRules(): array
+    {
+        return [
+            'safari_html' => ['required', 'file', 'mimes:html', join(':', ['max', setting('MAX_SAFARI_FILE_SIZE')])],
+            'tags'        => ['nullable', 'max:15'],
+            'tags.*'      => ['distinct:strict', new TagRule],
+        ];
+    }
+
+    private function chromeImportRules(): array
+    {
+        return [
+            'use_timestamp' => ['nullable', 'bool'],
+            'html'          => ['required', 'file', 'mimes:html', join(':', ['max', setting('MAX_CHROME_FILE_SIZE')])],
+            'tags'          => ['nullable', 'max:15'],
+            'tags.*'        => ['distinct:strict', new TagRule],
+        ];
+    }
+
+    private function pocketImportRules(): array
+    {
+        return [
+            'use_timestamp'      => ['nullable', 'bool'],
+            'ignore_tags'        => ['nullable', 'bool'],
+            'pocket_export_file' => ['required', 'file', 'mimes:html', join(':', ['max', setting('MAX_POCKET_FILE_SIZE')])],
+        ];
     }
 }

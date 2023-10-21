@@ -13,7 +13,7 @@ final class Request extends FormRequest
     {
         return [
             'email' => ['required', 'string', 'filled'],
-            'rkv' => ['required', 'string']
+            'rkv'   => ['required', 'string']
         ];
     }
 

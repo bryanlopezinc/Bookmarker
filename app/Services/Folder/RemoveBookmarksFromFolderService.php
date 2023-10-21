@@ -4,82 +4,105 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
-use App\Collections\ResourceIDsCollection;
-use App\Contracts\FolderRepositoryInterface;
-use App\DataTransferObjects\Folder;
-use App\Events\FolderModifiedEvent;
-use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\ValueObjects\ResourceID;
+use App\DataTransferObjects\FolderSettings;
+use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
-use App\QueryColumns\FolderAttributes as Attributes;
-use App\Repositories\Folder\FolderBookmarkRepository;
+use App\Models\Bookmark;
+use App\Models\Folder;
+use App\Models\FolderBookmark;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\ValueObjects\UserID;
-use Symfony\Component\HttpKernel\Exception\HttpException as SymfonyHttpException;
 use App\Notifications\BookmarksRemovedFromFolderNotification as Notification;
 use App\Repositories\NotificationRepository;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class RemoveBookmarksFromFolderService
 {
     public function __construct(
-        private FolderRepositoryInterface $repository,
-        private FolderBookmarkRepository $folderBookmarks,
+        private FetchFolderService $repository,
         private FolderPermissionsRepository $permissions,
         private NotificationRepository $notifications
     ) {
     }
 
-    public function remove(ResourceIDsCollection $bookmarkIDs, ResourceID $folderID): void
+    public function remove(array $bookmarkIDs, int $folderID): void
     {
-        $folder = $this->repository->find($folderID, Attributes::only('id,user_id,settings'));
+        $authUserId = UserID::fromAuthUser()->value();
 
-        $this->ensureUserCanPerformAction($folder);
+        $folder = $this->repository->find($folderID, ['id', 'user_id', 'settings', 'updated_at']);
 
-        $this->ensureBookmarksExistsInFolder($folderID, $bookmarkIDs);
+        $folderBookmarks = FolderBookmark::query()
+            ->where('folder_id', $folder->id)
+            ->whereIntegerInRaw('bookmark_id', $bookmarkIDs)
+            ->whereExists(function (&$query) {
+                $query = Bookmark::query()
+                    ->whereRaw('id = folders_bookmarks.bookmark_id')
+                    ->getQuery();
+            })
+            ->get();
 
-        $this->folderBookmarks->remove($folderID, $bookmarkIDs);
+        $this->ensureUserCanPerformAction($folder, $authUserId);
 
-        event(new FolderModifiedEvent($folderID));
+        $this->ensureBookmarksExistsInFolder($bookmarkIDs, $folderBookmarks);
 
-        $this->notifyFolderOwner($bookmarkIDs, $folder);
+        $this->delete($folderBookmarks, $folder);
+
+        $this->notifyFolderOwner($bookmarkIDs, $folder, $authUserId);
     }
 
-    private function ensureUserCanPerformAction(Folder $folder): void
+    private function delete(Collection $folderBookmarks, Folder $folder): void
+    {
+        $deleted = $folderBookmarks->toQuery()->delete();
+
+        if ($deleted > 0) {
+            $folder->updated_at = now();
+
+            $folder->save();
+        }
+    }
+
+    private function ensureUserCanPerformAction(Folder $folder, int $authUserId): void
     {
         try {
-            (new EnsureAuthorizedUserOwnsResource())($folder);
-        } catch (SymfonyHttpException $e) {
-            $canRemoveBookmarks = $this->permissions
-                ->getUserAccessControls(UserID::fromAuthUser(), $folder->folderID)
-                ->canRemoveBookmarks();
+            FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
+        } catch (FolderNotFoundException $e) {
+            $accessControls = $this->permissions->getUserAccessControls($authUserId, $folder->id);
 
-            if (!$canRemoveBookmarks) {
+            if ($accessControls->isEmpty()) {
                 throw $e;
+            }
+
+            if (!$accessControls->canRemoveBookmarks()) {
+                throw new HttpResponseException(
+                    response()->json(['message' => 'NoRemoveBookmarksPermission'], 403)
+                );
             }
         }
     }
 
-    private function ensureBookmarksExistsInFolder(ResourceID $folderID, ResourceIDsCollection $bookmarkIDs): void
+    private function ensureBookmarksExistsInFolder(array $bookmarkIds, Collection $folderBookmarks): void
     {
-        if (!$this->folderBookmarks->containsAll($bookmarkIDs, $folderID)) {
-            throw HttpException::notFound(['message' => "Bookmarks does not exists in folder"]);
+        if ($folderBookmarks->count() !== count($bookmarkIds)) {
+            throw HttpException::notFound(['message' => 'BookmarkNotFound']);
         }
     }
 
-    private function notifyFolderOwner(ResourceIDsCollection $bookmarkIDs, Folder $folder): void
+    private function notifyFolderOwner(array $bookmarkIDs, Folder $folder, int $authUserId): void
     {
-        $collaboratorID = UserID::fromAuthUser();
-        $bookmarksWereRemovedByFolderOwner = $collaboratorID->equals($folder->ownerID);
-        $notification = new Notification($bookmarkIDs, $folder->folderID, $collaboratorID);
+        $folderSettings = FolderSettings::fromQuery($folder->settings);
 
         if (
-            $bookmarksWereRemovedByFolderOwner ||
-            $folder->settings->notificationsAreDisabled()  ||
-            $folder->settings->bookmarksRemovedNotificationIsDisabled()
+            $authUserId === $folder->user_id ||
+            $folderSettings->notificationsAreDisabled()  ||
+            $folderSettings->bookmarksRemovedNotificationIsDisabled()
         ) {
             return;
         }
 
-        $this->notifications->notify($folder->ownerID, $notification);
+        $this->notifications->notify(
+            $folder->user_id,
+            new Notification($bookmarkIDs, $folder->id, $authUserId)
+        );
     }
 }

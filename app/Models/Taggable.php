@@ -14,9 +14,6 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class Taggable extends Model
 {
-    public const BOOKMARK_TYPE = 4;
-    public const FOLDER_TYPE = 5;
-
     /**
      * {@inheritdoc}
      */

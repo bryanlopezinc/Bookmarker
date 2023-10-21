@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
-use App\DataTransferObjects\User;
+use App\Models\User;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 final class UserResource extends JsonResource
@@ -22,13 +22,13 @@ final class UserResource extends JsonResource
         return [
             'type' => 'user',
             'attributes'      => [
-                'firstname'  => $this->user->firstName->value,
-                'lastname'   => $this->user->lastName->value,
-                'username'   => $this->user->username->value,
-                'bookmarks_count' => $this->user->bookmarksCount->value,
-                'favorites_count' => $this->user->favoritesCount->value,
-                'folders_count' => $this->user->foldersCount->value,
-                'has_verified_email' => $this->user->hasVerifiedEmail
+                'first_name'         => $this->user->first_name,
+                'last_name'          => $this->user->last_name,
+                'username'           => $this->user->username,
+                'bookmarks_count'    => $this->user->bookmarks_count,
+                'favorites_count'    => $this->user->favorites_count,
+                'folders_count'      => $this->user->folders_count,
+                'has_verified_email' => $this->user->email_verified_at !== null
             ]
         ];
     }

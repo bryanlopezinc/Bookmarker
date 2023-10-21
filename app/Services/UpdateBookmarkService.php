@@ -4,58 +4,84 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Collections\BookmarksCollection;
-use App\DataTransferObjects\Builders\BookmarkBuilder;
+use App\Exceptions\BookmarkNotFoundException;
 use Illuminate\Http\Response;
-use App\Http\Requests\UpdateBookmarkRequest;
+use App\Http\Requests\CreateOrUpdateBookmarkRequest as Request;
 use App\Repositories\BookmarkRepository;
-use App\Repositories\UpdateBookmarkRepository as Repository;
-use App\DataTransferObjects\UpdateBookmarkData;
 use App\Exceptions\HttpException;
 use App\Jobs\CheckBookmarksHealth;
-use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\QueryColumns\BookmarkAttributes;
+use App\Models\Bookmark;
+use App\Models\Tag;
+use App\Repositories\TagRepository;
 
 final class UpdateBookmarkService
 {
-    public function __construct(private Repository $repository, private BookmarkRepository $bookmarksRepository)
-    {
+    public function __construct(
+        private BookmarkRepository $bookmarksRepository,
+        private TagRepository $tagRepository
+    ) {
     }
 
-    public function fromRequest(UpdateBookmarkRequest $request): void
+    public function fromRequest(Request $request): void
     {
-        $newAttributes = $this->buildUpdateData($request);
         $bookmark = $this->bookmarksRepository->findById(
-            $newAttributes->bookmark->id,
-            BookmarkAttributes::only('user_id,tags,url,id')
+            $request->integer('id'),
+            ['user_id', 'tags', 'url', 'id']
         );
 
-        $canAddMoreTagsToBookmark = $bookmark->tags->count() + $newAttributes->bookmark->tags->count() <= setting('MAX_BOOKMARKS_TAGS');
+        BookmarkNotFoundException::throwIfDoesNotBelongToAuthUser($bookmark);
 
-        (new EnsureAuthorizedUserOwnsResource())($bookmark);
+        $this->ensureMaxBookmarkTagsIsNotExceeded($request, $bookmark);
 
-        if (!$canAddMoreTagsToBookmark) {
-            throw new HttpException(['message' => 'Cannot add more tags to bookmark'], Response::HTTP_BAD_REQUEST);
-        }
+        $this->ensureTagsWillBeUnique($request, $bookmark);
 
-        if ($bookmark->tags->contains($newAttributes->bookmark->tags)) {
-            throw HttpException::conflict(['message' => 'Duplicate tags']);
-        }
+        $this->performUpdate($request, $bookmark);
 
-        $this->repository->update($newAttributes);
-
-        dispatch(new CheckBookmarksHealth(new BookmarksCollection([$bookmark])));
+        dispatch(new CheckBookmarksHealth([$bookmark]));
     }
 
-    private function buildUpdateData(UpdateBookmarkRequest $request): UpdateBookmarkData
+    private function ensureTagsWillBeUnique(Request $request, Bookmark $bookmark): void
     {
-        $bookmark =  BookmarkBuilder::new()
-            ->id((int)$request->validated('id'))
-            ->tags($request->validated('tags', []))
-            ->when($request->has('title'), fn (BookmarkBuilder $b) => $b->title($request->validated('title')))
-            ->when($request->has('description'), fn (BookmarkBuilder $b) => $b->description($request->validated('description')))
-            ->build();
+        $tags = $request->collect('tags');
 
-        return new UpdateBookmarkData($bookmark);
+        if ($tags->isEmpty()) {
+            return;
+        }
+
+        $hasDuplicates = $bookmark->tags
+            ->toBase()
+            ->map(fn (Tag $tag) => $tag->name)
+            ->intersect($tags)
+            ->isNotEmpty();
+
+        if ($hasDuplicates) {
+            throw HttpException::conflict(['message' => 'DuplicateTags']);
+        }
+    }
+
+    private function ensureMaxBookmarkTagsIsNotExceeded(Request $request, Bookmark $bookmark): void
+    {
+        if ($bookmark->tags->count() + $request->collect('tags')->count() > 15) {
+            throw new HttpException(['message' => 'MaxBookmarkTagsLengthExceeded'], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+    private function performUpdate(Request $request, Bookmark $bookmark): void
+    {
+        $request->whenHas('title', function (string $value) use ($bookmark) {
+            $bookmark->title = $value;
+            $bookmark->has_custom_title = true;
+        });
+
+        $request->whenHas('description', function (string $value) use ($bookmark) {
+            $bookmark->description = $value;
+            $bookmark->description_set_by_user = true;
+        });
+
+        $request->whenHas('tags', function (array $tags) use ($bookmark) {
+            $this->tagRepository->attach($tags, $bookmark);
+        });
+
+        $bookmark->save();
     }
 }

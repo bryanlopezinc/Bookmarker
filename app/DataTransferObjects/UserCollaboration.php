@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects;
 
+use App\Models\Folder;
 use App\UAC;
 
 final class UserCollaboration

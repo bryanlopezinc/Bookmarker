@@ -33,7 +33,8 @@ final class TwoFACodeRule implements Rule, ValidatorAwareRule
                 throw new Invalid2FACodeException();
             }
 
-            TwoFACode::fromString($value);
+            TwoFACode::fromString(strval($value));
+            
             return true;
         } catch (Invalid2FACodeException) {
             return false;

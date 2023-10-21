@@ -9,8 +9,6 @@ use App\Http\Resources\PaginatedResourceCollection;
 use App\PaginationData;
 use App\Rules\ResourceIdRule;
 use App\Services\Folder\FetchFolderBookmarksService;
-use App\ValueObjects\ResourceID;
-use App\ValueObjects\UserID;
 use Illuminate\Http\Request;
 
 final class FetchFolderBookmarksController
@@ -23,12 +21,10 @@ final class FetchFolderBookmarksController
         ]);
 
         $result = $service->fetch(
-            ResourceID::fromRequest($request, 'folder_id'),
+            $request->integer('folder_id'),
             PaginationData::fromRequest($request),
-            UserID::fromAuthUser()
+            auth('api')->id()
         );
-
-        $result->appends('per_page', $request->input('per_page', PaginationData::DEFAULT_PER_PAGE))->withQueryString();
 
         return new PaginatedResourceCollection($result, FolderBookmarkResource::class);
     }

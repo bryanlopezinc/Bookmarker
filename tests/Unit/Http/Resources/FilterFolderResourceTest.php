@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Http\Resources;
 
-use App\Collections\TagsCollection;
-use App\DataTransferObjects\Builders\FolderBuilder;
 use App\Http\Resources\FilterFolderResource;
+use App\Models\Folder;
 use Tests\TestCase;
 use Database\Factories\FolderFactory;
 use Illuminate\Testing\AssertableJsonString;
@@ -16,7 +15,7 @@ class FilterFolderResourceTest extends TestCase
     public function testWillReturnAllAttributesWhenNoFieldsAreRequested(): void
     {
         $this->assertWillReturnPartialResource('', function (AssertableJsonString $json) {
-            $json->assertCount(11, 'data.attributes')
+            $json->assertCount(8, 'data.attributes')
                 ->assertStructure([
                     "data" => [
                         "type",
@@ -27,10 +26,7 @@ class FilterFolderResourceTest extends TestCase
                             "has_description",
                             "date_created",
                             "last_updated",
-                            "is_public",
-                            'tags',
-                            'has_tags',
-                            'tags_count',
+                            "visibility",
                             'storage' => [
                                 'items_count',
                                 'capacity',
@@ -53,10 +49,7 @@ class FilterFolderResourceTest extends TestCase
             "has_description",
             "date_created",
             "last_updated",
-            "is_public",
-            'tags',
-            'has_tags',
-            'tags_count',
+            "visibility",
         ] as $field) {
             $this->assertWillReturnPartialResource($field, function (AssertableJsonString $json) use ($field) {
                 $json->assertCount(1, 'data.attributes')
@@ -160,12 +153,12 @@ class FilterFolderResourceTest extends TestCase
             $request->merge(['fields' => explode(',', $fields)]);
         }
 
-        $folder = FolderBuilder::fromModel(FolderFactory::new()->make(['id' => 200]))
-            ->setTags(TagsCollection::make([]))
-            ->setBookmarksCount(2)
-            ->setCreatedAt(now())
-            ->setUpdatedAt(now())
-            ->build();
+        /** @var Folder */
+        $folder = FolderFactory::new()->make(['id' => 200]);
+        $folder->tags = collect();
+        $folder->bookmarksCount = 2;
+        $folder->created_at = now();
+        $folder->updated_at = now();
 
         $response = (new FilterFolderResource($folder))->toResponse($request)->content();
 

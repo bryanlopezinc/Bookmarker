@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Events;
 
-use App\DataTransferObjects\User;
+use App\Models\User;
 
 abstract class EmailVerificationEvent
 {

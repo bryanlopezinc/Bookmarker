@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\DataTransferObjects\ImportData;
 use App\Importers\Factory;
+use App\Models\User;
 use App\Repositories\UserRepository;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -23,9 +24,9 @@ final class ImportBookmarks implements ShouldQueue
     {
     }
 
-    public function handle(Factory $factory, UserRepository $repository): void
+    public function handle(Factory $factory): void
     {
-        if ($repository->findByID($this->importData->userID()) === false) {
+        if (!User::query()->whereKey($this->importData->userID())->exists()) {
             return;
         }
 

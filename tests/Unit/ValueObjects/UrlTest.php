@@ -20,20 +20,20 @@ class UrlTest extends TestCase
         new Url('foo');
     }
 
-    public function testGetHostName(): void
+    public function testGetHostMethod(): void
     {
         $url = new Url('https://laravel.com/docs/9.x/encryption');
 
         $this->assertEquals('laravel.com', $url->getHost());
     }
 
-    public function testGetPath(): void
+    public function testGetPathMethod(): void
     {
         $this->assertEquals('/docs/9.x/encryption', (new Url('https://laravel.com/docs/9.x/encryption'))->getPath());
         $this->assertEquals('/', (new Url('https://laravel.com'))->getPath());
     }
 
-    public function testParseQuery(): void
+    public function testParseQueryMethod(): void
     {
         $this->assertEquals([], (new Url('https://laravel.com/docs/9.x/encryption?'))->parseQuery());
         $this->assertEquals([], (new Url('https://laravel.com/docs/9.x/encryption'))->parseQuery());
@@ -49,14 +49,14 @@ class UrlTest extends TestCase
         $this->assertEquals($expected, $url->parseQuery());
     }
 
-    public function testUrlMustBeAbsolute(): void
+    public function testWillThrowExceptionWhenUrlIsNotAbsolute(): void
     {
         $this->expectException(MalformedURLException::class);
 
         new Url('/docs/9.x/encryption');
     }
 
-    public function testUrlMustBeHttpOrHttps(): void
+    public function testWillThrowExceptionWhenUrlIsNotHttpOrHttpsScheme(): void
     {
         foreach ([
             ' ',

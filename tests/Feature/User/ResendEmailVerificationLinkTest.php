@@ -34,27 +34,24 @@ class ResendEmailVerificationLinkTest extends TestCase
         $this->resendVerificationLinkResponse()->assertUnauthorized();
     }
 
-    public function testEmailMustBeRegistered(): void
+    public function testWillReturnNotFoundWhenEmailDoesNotExists(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->resendVerificationLinkResponse([
-            'email' => UserFactory::new()->make()->email
-        ])->assertNotFound();
+        $this->resendVerificationLinkResponse(['email' => UserFactory::new()->make()->email])->assertNotFound();
     }
 
-    public function testEmailMustBeUnverified(): void
+    public function testWhenEmailIsAlreadyVerified(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         $this->resendVerificationLinkResponse([
             'email' => UserFactory::new()->create()->email
-        ])->assertOk()->assertJson([
-            'message' => 'Email already verified'
-        ]);
+        ])->assertOk()
+            ->assertJson(['message' => 'EmailAlreadyVerified']);
     }
 
-    public function testWillResendLink(): void
+    public function testResendLink(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
@@ -64,9 +61,7 @@ class ResendEmailVerificationLinkTest extends TestCase
 
         Notification::fake();
 
-        $this->resendVerificationLinkResponse([
-            'email' => $user->email
-        ])->assertOk();
+        $this->resendVerificationLinkResponse(['email' => $user->email])->assertOk();
 
         Notification::assertSentTo($user, VerifyEmailNotification::class, function (VerifyEmailNotification $notification) use ($user) {
             static::$verificationUrl =  $notification->toMail($user)->actionUrl;
@@ -76,7 +71,7 @@ class ResendEmailVerificationLinkTest extends TestCase
     }
 
     /**
-     * @depends testWillResendLink
+     * @depends testResendLink
      */
     public function testCanVerifyEmailWithParameters(): void
     {
@@ -96,7 +91,7 @@ class ResendEmailVerificationLinkTest extends TestCase
         $this->assertTrue(User::whereKey($components['id'])->sole()->email_verified_at->isToday());
     }
 
-    public function testCanOnlyMake_6_RequestsPerMinute(): void
+    public function testWillThrottleRequestWhenUserMakesMoreThan_6_RequestsPerMinute(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
@@ -108,8 +103,6 @@ class ResendEmailVerificationLinkTest extends TestCase
             ])->assertOk();
         }
 
-        $this->resendVerificationLinkResponse([
-            'email' => $user->email
-        ])->assertStatus(429);
+        $this->resendVerificationLinkResponse(['email' => $user->email])->assertStatus(429);
     }
 }

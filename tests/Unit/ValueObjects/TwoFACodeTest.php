@@ -10,28 +10,28 @@ use Tests\TestCase;
 
 class TwoFACodeTest extends TestCase
 {
-    public function testCodeCannotBeANegativeNumber(): void
+    public function testWillThrowExceptionWhenCodeIsANegativeNumber(): void
     {
         $this->expectException(Invalid2FACodeException::class);
 
         new TwoFACode(-1234);
     }
 
-    public function testCodeCannotBeGreaterThan_5(): void
+    public function testWillThrowExceptionWhenCodeIsGreaterThan_5(): void
     {
         $this->expectException(Invalid2FACodeException::class);
 
         new TwoFACode(412344);
     }
 
-    public function testCodeCannotBeLessThan_5(): void
+    public function testWillThrowExceptionWhenCodeIsLessThan_5(): void
     {
         $this->expectException(Invalid2FACodeException::class);
 
         new TwoFACode(4123);
     }
 
-    public function testCanGenerateCodeWithCustomGenerator(): void
+    public function testWillGenerateCodeWithCustomGenerator(): void
     {
         $code = 11111;
         TwoFACode::useGenerator(fn () => $code);
@@ -58,7 +58,7 @@ class TwoFACodeTest extends TestCase
         $this->assertNotEquals($code, TwoFACode::generate()->value());
     }
 
-    public function testCustomGeneratorMustReturnAValidValue(): void
+    public function testWillThrowExceptionWhenCustomGeneratorReturnsAnInValidValue(): void
     {
         $isInvalid = function (int $code): bool {
             TwoFACode::useGenerator(fn () => $code);
@@ -78,7 +78,7 @@ class TwoFACodeTest extends TestCase
         TwoFACode::useGenerator();
     }
 
-    public function testEquals(): void
+    public function testEqualsMethod(): void
     {
         $code = TwoFACode::generate()->value();
 

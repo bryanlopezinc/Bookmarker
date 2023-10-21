@@ -10,15 +10,15 @@ final class DeviceDetector implements DeviceDetectorInterface
 {
     public function fromUserAgent(string $userAgent): Device
     {
-        $device = new  Agent(userAgent: $userAgent);
+        $device = new Agent(userAgent: $userAgent);
 
         $deviceName = $this->getDeviceName($device);
 
         return match ($device->deviceType()) {
-            'phone'    => new Device(DeviceType::MOBILE, $deviceName),
-            'tablet'     => new Device(DeviceType::TABLET, $deviceName),
+            'phone'   => new Device(DeviceType::MOBILE, $deviceName),
+            'tablet'  => new Device(DeviceType::TABLET, $deviceName),
             'desktop' => new Device(DeviceType::PC, $deviceName),
-            default     => new Device(DeviceType::UNKNOWN, $deviceName)
+            default   => new Device(DeviceType::UNKNOWN, $deviceName)
         };
     }
 

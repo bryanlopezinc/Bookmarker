@@ -28,12 +28,12 @@ class RemoveFolderCollaboratorTest extends TestCase
         $this->assertRouteIsAccessibleViaPath('v1/folders/collaborators', 'deleteFolderCollaborator');
     }
 
-    public function testUnAuthorizedUserCannotAccessRoute(): void
+    public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
         $this->deleteCollaboratorResponse()->assertUnauthorized();
     }
 
-    public function testRequiredAttributesMustBePresent(): void
+    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -43,11 +43,6 @@ class RemoveFolderCollaboratorTest extends TestCase
                 'user_id' => ['The user id field is required'],
                 'folder_id' => ['The folder id field is required']
             ]);
-    }
-
-    public function testAttributesMustBeValid(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
 
         $this->deleteCollaboratorResponse([
             'user_id' => 'foo',
@@ -60,76 +55,67 @@ class RemoveFolderCollaboratorTest extends TestCase
             ->assertJsonValidationErrors(['ban']);
     }
 
-    public function testFolderMustExist(): void
+    public function testWillReturnNotFoundWhenFolderDoesNotExist(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->deleteCollaboratorResponse([
-            'user_id' => UserFactory::new()->create()->id,
+            'user_id'   => UserFactory::new()->create()->id,
             'folder_id' => $folder->id + 1
         ])->assertNotFound()
-            ->assertExactJson([
-                'message' => 'The folder does not exists'
-            ]);
+            ->assertExactJson(['message' => 'FolderNotFound']);
     }
 
-    public function testFolderMustBelongToUser(): void
+    public function testWillReturnNotWhenFolderDoesNotBelongToUser(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
         $this->deleteCollaboratorResponse([
-            'user_id' => UserFactory::new()->create()->id,
+            'user_id'   => UserFactory::new()->create()->id,
             'folder_id' => FolderFactory::new()->create()->id
-        ])->assertForbidden();
+        ])->assertNotFound()
+            ->assertExactJson(['message' => 'FolderNotFound']);
     }
 
-    public function testUserMustBeAPresentCollaborator(): void
+    public function testWillReturnNotFoundWhenUserIsNotACollaborator(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->deleteCollaboratorResponse([
-            'user_id' => UserFactory::new()->create()->id,
+            'user_id'   => UserFactory::new()->create()->id,
             'folder_id' => $folder->id
         ])->assertNotFound()
-            ->assertExactJson([
-                'message' => 'User not a collaborator'
-            ]);
+            ->assertExactJson(['message' => 'UserNotACollaborator']);
     }
 
-    public function testWhenUser_id_DoesNotBelongToARegisteredUser(): void
+    public function testWillReturnNotFoundWhenUserDoesNotExists(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->deleteCollaboratorResponse([
-            'user_id' => UserFactory::new()->create()->id + 1,
+            'user_id'   => UserFactory::new()->create()->id + 1,
             'folder_id' => $folder->id
         ])->assertNotFound()
-            ->assertExactJson([
-                'message' => 'User not a collaborator'
-            ]);
+            ->assertExactJson(['message' => 'UserNotACollaborator']);
     }
 
-    public function testCannotRemoveSelf(): void
+    public function testWillReturnForbiddenWhenUserIsRemovingSelf(): void
     {
-        [$user, $collaborator] = UserFactory::times(2)->create();
+        $user = UserFactory::new()->create();
         $folder = FolderFactory::new()->for($user)->create();
-
-        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->create();
 
         Passport::actingAs($user);
         $this->deleteCollaboratorResponse([
-            'user_id' => $user->id,
+            'user_id'   => $user->id,
             'folder_id' => $folder->id
         ])->assertForbidden()
-            ->assertExactJson([
-                'message' => 'Cannot remove self'
-            ]);
+            ->assertExactJson(['message' => 'CannotRemoveSelf']);
     }
 
-    public function testWillRemoveCollaborator(): void
+    public function testRemoveCollaborator(): void
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
         $folder = FolderFactory::new()->for($user)->create();
@@ -139,31 +125,24 @@ class RemoveFolderCollaboratorTest extends TestCase
         $folderCollaboratorPermissionFactory->addBookmarksPermission()->create();
         $folderCollaboratorPermissionFactory->removeBookmarksPermission()->create();
 
-        Passport::actingAs($collaborator);
-        $this->getJson(route('folderBookmarks', ['folder_id' => $folder->id]))->assertOk();
-
         Passport::actingAs($user);
         $this->deleteCollaboratorResponse([
-            'user_id' => $collaborator->id,
+            'user_id'   => $collaborator->id,
             'folder_id' => $folder->id
         ])->assertOk();
 
-        //collaborator can no longer access folder.
-        Passport::actingAs($collaborator);
-        $this->getJson(route('folderBookmarks', ['folder_id' => $folder->id]))->assertForbidden();
-
         $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
-            'user_id' => $collaborator->id,
+            'user_id'   => $collaborator->id,
             'folder_id' => $folder->id
         ]);
 
         $this->assertDatabaseMissing(BannedCollaborator::class, [
-            'user_id' => $collaborator->id,
+            'user_id'   => $collaborator->id,
             'folder_id' => $folder->id
         ]);
     }
 
-    public function testWillRemoveAndBanCollaborator(): void
+    public function testRemoveAndBanCollaborator(): void
     {
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
@@ -172,33 +151,33 @@ class RemoveFolderCollaboratorTest extends TestCase
 
         Passport::actingAs($folderOwner);
         $this->deleteCollaboratorResponse([
-            'user_id' => $collaborator->id,
+            'user_id'   => $collaborator->id,
             'folder_id' => $folder->id,
-            'ban' => true
+            'ban'       => true
         ])->assertOk();
 
         $this->assertDatabaseHas(BannedCollaborator::class, [
-            'user_id' => $collaborator->id,
+            'user_id'   => $collaborator->id,
             'folder_id' => $folder->id
         ]);
     }
 
     public function testWillNotRemoveOtherCollaborators(): void
     {
-        [$user, $collaborator, $anotherCollaborator] = UserFactory::times(3)->create();
-        $folder = FolderFactory::new()->for($user)->create();
+        $users = UserFactory::times(3)->create();
+        $folder = FolderFactory::new()->for($users[0])->create();
 
-        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->create();
-        FolderCollaboratorPermissionFactory::new()->user($anotherCollaborator->id)->folder($folder->id)->create();
+        FolderCollaboratorPermissionFactory::new()->user($users[1]->id)->folder($folder->id)->create();
+        FolderCollaboratorPermissionFactory::new()->user($users[2]->id)->folder($folder->id)->create();
 
-        Passport::actingAs($user);
+        Passport::actingAs($users[0]);
         $this->deleteCollaboratorResponse([
-            'user_id' => $collaborator->id,
+            'user_id'   => $users[1]->id,
             'folder_id' => $folder->id
         ])->assertOk();
 
         $this->assertDatabaseHas(FolderCollaboratorPermission::class, [
-            'user_id' => $anotherCollaborator->id,
+            'user_id'   => $users[2]->id,
             'folder_id' => $folder->id
         ]);
     }

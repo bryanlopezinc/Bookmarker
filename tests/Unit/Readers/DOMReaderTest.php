@@ -32,7 +32,7 @@ class DOMReaderTest extends TestCase
         $this->assertFalse($this->reader->getCanonicalUrl());
     }
 
-    public function test_will_first_attempt_to_read_og_description_tag(): void
+    public function testWillReadOpenGraphDescriptionTagBeforeOtherDescriptionTags(): void
     {
         $description = implode(' ', $this->faker->sentences());
 
@@ -77,7 +77,7 @@ class DOMReaderTest extends TestCase
         return $html;
     }
 
-    public function test_will_read_description_meta_tag_If_og_description_tag_is_not_found(): void
+    public function test_will_read_description_meta_tag_when_og_description_tag_is_not_present(): void
     {
         $description = $this->faker->sentence;
 
@@ -102,7 +102,7 @@ class DOMReaderTest extends TestCase
         $this->assertFalse($this->reader->getPageDescription());
     }
 
-    public function test_will_read_twitter_tag_If_no_description_tags_are_present(): void
+    public function test_will_read_twitter_tag_when_no_description_tags_are_present(): void
     {
         $description = $this->faker->sentence;
 
@@ -115,7 +115,7 @@ class DOMReaderTest extends TestCase
         $this->assertEquals($description, $this->reader->getPageDescription());
     }
 
-    public function test_will_return_false_twitter_description_tag_is_blank(): void
+    public function test_will_return_false_when_twitter_description_tag_is_blank(): void
     {
         $html = $this->html(<<<HTML
                 <meta name="twitter:description" content="  ">
@@ -137,7 +137,7 @@ class DOMReaderTest extends TestCase
         $this->assertEquals('https://image.com/smike.png', $this->reader->getPreviewImageUrl()->toString());
     }
 
-    public function test_will_read_twitter_Image_tag_if_og_image_tag_is_missing(): void
+    public function test_will_read_twitter_Image_tag_when_og_image_tag_is_missing(): void
     {
         $html = $this->html(<<<HTML
                 <meta name="twitter:image" content="https://twitter.png">
@@ -148,7 +148,7 @@ class DOMReaderTest extends TestCase
         $this->assertEquals('https://twitter.png', $this->reader->getPreviewImageUrl()->toString());
     }
 
-    public function test_will_return_false_If_og_Image_tag_is_invalid(): void
+    public function test_will_return_false_when_og_Image_tag_is_invalid(): void
     {
         foreach ([
             "<script> alert('hacked') </script>",
@@ -164,7 +164,7 @@ class DOMReaderTest extends TestCase
         }
     }
 
-    public function test_will_return_false_If_twitter_Image_tag_is_invalid(): void
+    public function test_will_return_false_when_twitter_Image_tag_is_invalid(): void
     {
         foreach ([
             "<script> alert('hacked') </script>",
@@ -207,7 +207,7 @@ class DOMReaderTest extends TestCase
         $this->assertFalse($this->reader->getPageTitle());
     }
 
-    public function test_will_read_title_tag_if_og_title_tag_Is_absent(): void
+    public function test_will_read_title_tag_when_og_title_tag_Is_absent(): void
     {
         $title = $this->faker->title;
 
@@ -232,7 +232,7 @@ class DOMReaderTest extends TestCase
         $this->assertFalse($this->reader->getPageTitle());
     }
 
-    public function test_will_read_twitter_tag_if_no_title_tags_are_found(): void
+    public function test_will_read_twitter_tag_when_no_title_tags_are_found(): void
     {
         $title = $this->faker->title;
 
@@ -302,7 +302,7 @@ class DOMReaderTest extends TestCase
         $this->assertEquals('Xbox', $this->reader->getSiteName());
     }
 
-    public function test_will_read_og_site_name_If_no_application_name_tag(): void
+    public function test_will_read_og_site_name_when_no_application_name_tag(): void
     {
         $html = $this->html(<<<HTML
                 <meta property="og:site_name" content="PlayStation">
@@ -314,7 +314,7 @@ class DOMReaderTest extends TestCase
         $this->assertEquals('PlayStation', $this->reader->getSiteName());
     }
 
-    public function test_will_read_twitter_tag_If_no_application_name_tags_are_found(): void
+    public function test_will_read_twitter_tag_when_no_application_name_tags_are_found(): void
     {
         $html = $this->html(<<<HTML
                 <meta name="twitter:site" content="@RickRoss">

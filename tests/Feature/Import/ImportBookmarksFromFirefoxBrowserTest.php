@@ -12,7 +12,7 @@ use Laravel\Passport\Passport;
 
 class ImportBookmarksFromFirefoxBrowserTest extends ImportBookmarkBaseTest
 {
-    public function testRequiredAttributesMustBePresent(): void
+    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -21,33 +21,23 @@ class ImportBookmarksFromFirefoxBrowserTest extends ImportBookmarkBaseTest
             ->assertJsonValidationErrors([
                 'source' => ['The source field is required.']
             ]);
-    }
-
-    public function testSourceMustBeValid(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
 
         $this->importBookmarkResponse(['source' => 'foo'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'source' => ['The selected source is invalid.']
-            ]);
-    }
-
-    public function testFileMustNotBeGreaterThan_5_MegaBytes(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors([
+            'source' => ['The selected source is invalid.']
+        ]);
 
         $this->importBookmarkResponse([
             'source' => 'firefoxFile',
             'firefox_export_file' => UploadedFile::fake()->create('file.html', 5001),
         ])->assertUnprocessable()
             ->assertJsonValidationErrors([
-            'firefox_export_file' => ['The firefox export file must not be greater than 5000 kilobytes.']
+                'firefox_export_file' => ['The firefox export file must not be greater than 5000 kilobytes.']
             ]);
     }
 
-    public function testWillImportBookmarks(): void
+    public function testImportBookmarks(): void
     {
         Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 

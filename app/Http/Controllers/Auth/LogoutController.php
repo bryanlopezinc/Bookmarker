@@ -12,7 +12,7 @@ final class LogoutController
     public function __invoke(Request $request): JsonResponse
     {
         //The auth middleware ensures a user always returned
-         // @phpstan-ignore-next-line
+        // @phpstan-ignore-next-line
         $request->user('api')->token()->revoke();
 
         return response()->json();

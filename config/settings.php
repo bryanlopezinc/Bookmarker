@@ -30,12 +30,6 @@ return [
     //The maximum number of result that can be returned from a user tag search request.
     'SEARCH_USER_TAGS_LIMIT' => 50,
 
-    //The maximum number of tags a bookmark can have
-    'MAX_BOOKMARKS_TAGS' => 15,
-
-    //The maximum number of tags a folder can have
-    'MAX_FOLDER_TAGS' => 15,
-
     //The amount of time (in minutes) an access token should live
     'ACCESS_TOKEN_EXPIRE' => 60,
 
@@ -65,8 +59,8 @@ return [
     //The url should contain placeholders for the 'invite_hash', 'signature', and 'expires' parameters.
     'ACCEPT_INVITE_URL' => env('ACCEPT_INVITE_URL'),
 
-    'FIRSTNAME_MAX_LENGTH' => 100,
-    'LASTNAME_MAX_LENGTH' => 100,
+    'FIRST_NAME_MAX_LENGTH' => 100,
+    'LAST_NAME_MAX_LENGTH' => 100,
 
     //max size (in Kb) for the chrome import file.
     'MAX_CHROME_FILE_SIZE' => 5000,

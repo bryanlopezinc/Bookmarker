@@ -29,47 +29,37 @@ class CreateBookmarkTest extends TestCase
         $this->assertRouteIsAccessibleViaPath('v1/bookmarks', 'createBookmark');
     }
 
-    public function testUnAuthorizedUserCannotAccessRoute(): void
+    public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
         $this->createBookmarkResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationWhenRequiredAttributesAreMissing(): void
+    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->createBookmarkResponse()->assertJsonValidationErrorFor('url');
-    }
+        $this->createBookmarkResponse()
+            ->assertUnprocessable()
+            ->assertJsonValidationErrorFor('url');
 
-    public function testAttributesMustBeValid(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->createBookmarkResponse(['url' => 'foo bar'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrorFor('url');
 
-        $valid = [
-            'url' => $this->faker->url
-        ];
+        $this->createBookmarkResponse(['tags' => ['foo', 'bar']])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrorFor('tags');
 
-        $this->createBookmarkResponse(['url' => 'foo bar'])->assertJsonValidationErrorFor('url');
-        $this->createBookmarkResponse(['tags' => ['foo', 'bar'], ...$valid])->assertJsonValidationErrorFor('tags');
-        $this->createBookmarkResponse(['tags' => 'foo,bar,foobarzawqwe234urklslss,', ...$valid])->assertJsonValidationErrorFor('tags.2');
-        $this->createBookmarkResponse(['title' => ' ', ...$valid])->assertJsonValidationErrorFor('title');
-    }
+        $this->createBookmarkResponse(['tags' => 'foo,bar,fooBarFooBarFoodFooBarA', 'url' => $this->faker->url])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrorFor('tags.2');
 
-    public function testCannotAddMoreThan15Tags(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $tags = TagFactory::new()->count(16)->make()->pluck('name')->implode(',');
-
-        $this->createBookmarkResponse(['url' => $this->faker->url, 'tags' => $tags])
-            ->assertJsonValidationErrors([
-                'tags' => 'The tags must not be greater than 15 characters.'
-            ]);
-    }
-
-    public function testTagsMustBeUnique(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->createBookmarkResponse([
+            'url'  => $this->faker->url,
+            'tags' => TagFactory::new()->count(16)->make()->pluck('name')->implode(',')
+        ])->assertJsonValidationErrors([
+            'tags' => 'The tags must not have more than 15 items.'
+        ]);
 
         $this->createBookmarkResponse([
             'url' => $this->faker->url,
@@ -82,29 +72,21 @@ class CreateBookmarkTest extends TestCase
                 "The tags.1 field has a duplicate value."
             ]
         ]);
-    }
-
-    public function testBookmarkDescriptionCannotExceed_200(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
 
         $this->createBookmarkResponse(['url' => $this->faker->url, 'description' => str_repeat('a', 201)])
+            ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'description' => 'The description must not be greater than 200 characters.'
             ]);
-    }
-
-    public function testBookmarkTitleCannotExceed_100(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
 
         $this->createBookmarkResponse(['url' => $this->faker->url, 'title' => str_repeat('a', 101)])
+            ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'title' => 'The title must not be greater than 100 characters.'
             ]);
     }
 
-    public function testUrlMustBeHttp(): void
+    public function testWillReturnUnprocessableWenUrlIsNotHttp(): void
     {
         Passport::actingAs(UserFactory::new()->make());
 
@@ -135,12 +117,6 @@ class CreateBookmarkTest extends TestCase
         $this->assertNull($bookmark->description);
         $this->assertFalse($bookmark->has_custom_title);
         $this->assertFalse($bookmark->description_set_by_user);
-
-        $this->assertDatabaseHas(UserBookmarksCount::class, [
-            'user_id' => $user->id,
-            'count'   => 1,
-            'type' => UserBookmarksCount::TYPE
-        ]);
     }
 
     public function testCreateBookmarkWithTitle(): void
@@ -194,8 +170,7 @@ class CreateBookmarkTest extends TestCase
         ])->assertCreated();
 
         $this->assertDatabaseHas(Taggable::class, [
-            'taggable_id'   => Bookmark::query()->where('user_id', $user->id)->sole('id')->id,
-            'taggable_type' => Taggable::BOOKMARK_TYPE
+            'taggable_id' => Bookmark::query()->where('user_id', $user->id)->sole('id')->id,
         ]);
     }
 

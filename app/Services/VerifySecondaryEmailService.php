@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Repositories\UserRepository;
-use App\Cache\SecondaryEmailVerificationCodeRepository as PendingVerifications;
+use App\Cache\EmailVerificationCodeRepository as PendingVerifications;
 use App\Exceptions\HttpException;
-use App\ValueObjects\Email;
-use App\ValueObjects\UserID;
+use App\Models\SecondaryEmail;
 use App\ValueObjects\TwoFACode;
 use Illuminate\Http\Response;
 
@@ -20,34 +19,35 @@ final class VerifySecondaryEmailService
     ) {
     }
 
-    public function verify(UserID $userID, Email $secondaryEmail, TwoFACode $twoFACode): void
+    public function verify(int $authUserId, string $secondaryEmail, TwoFACode $twoFACode): void
     {
-        if (!$this->pendingVerifications->has($userID)) {
+        if (!$this->pendingVerifications->has($authUserId)) {
             $this->throwNoPendingVerificationException();
         }
 
-        $verificationData = $this->pendingVerifications->get($userID);
-        $unVerifiedEmailAddedByUser = $verificationData->email;
-        $twoFACodeGeneratedOnBehalfOfUser = $verificationData->twoFACode;
+        $verificationData = $this->pendingVerifications->get($authUserId);
 
         if (
-            !$twoFACodeGeneratedOnBehalfOfUser->equals($twoFACode) ||
-            !$unVerifiedEmailAddedByUser->equals($secondaryEmail)
+            !$verificationData->twoFACode->equals($twoFACode) ||
+            $verificationData->email !== $secondaryEmail
         ) {
             $this->throwNoPendingVerificationException();
         }
 
-        if ($this->userRepository->secondaryEmailExists($secondaryEmail)) {
-            throw HttpException::forbidden(['message' => 'Email already exists']);
+        $record = SecondaryEmail::query()->firstOrCreate(['email' => $secondaryEmail], [
+            'user_id'     => $authUserId,
+            'verified_at' => now()
+        ]);
+
+        if (!$record->wasRecentlyCreated) {
+            throw HttpException::forbidden(['message' => 'EmailAlreadyExists']);
         }
 
-        $this->userRepository->addSecondaryEmail($secondaryEmail, $userID);
-
-        $this->pendingVerifications->forget($userID);
+        $this->pendingVerifications->forget($authUserId);
     }
 
     public function throwNoPendingVerificationException(): void
     {
-        throw new HttpException(['message' => 'Verification code invalid or expired'], Response::HTTP_BAD_REQUEST);
+        throw new HttpException(['message' => 'VerificationCodeInvalidOrExpired'], Response::HTTP_BAD_REQUEST);
     }
 }

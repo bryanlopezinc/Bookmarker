@@ -10,7 +10,7 @@ use App\Importers\Filesystem;
 use App\Importers\ImporterInterface;
 use App\Importers\ResolveBookmarkTags;
 use App\Services\CreateBookmarkService;
-use App\ValueObjects\{Url, UserID, Uuid};
+use App\ValueObjects\Url;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 
 final class Importer implements ImporterInterface
@@ -25,7 +25,7 @@ final class Importer implements ImporterInterface
     ) {
     }
 
-    public function import(UserID $userID, Uuid $requestID, array $requestData): void
+    public function import(int $userID, string $requestID, array $requestData): void
     {
         if (!$this->filesystem->exists($userID, $requestID)) {
             throw new FileNotFoundException();
@@ -38,7 +38,7 @@ final class Importer implements ImporterInterface
         $this->filesystem->delete($userID, $requestID);
     }
 
-    private function saveBookmark(array $requestData, UserID $userID, Bookmark $bookmark): void
+    private function saveBookmark(array $requestData, int $userID, Bookmark $bookmark): void
     {
         try {
             $url = new Url($bookmark->url);

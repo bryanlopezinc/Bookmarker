@@ -2,7 +2,7 @@
 
 namespace App\Providers\Cache;
 
-use App\Cache\SecondaryEmailVerificationCodeRepository;
+use App\Cache\EmailVerificationCodeRepository;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 
@@ -15,13 +15,13 @@ class SecondaryEmailVerificationCodeRepositoryServiceProvider extends ServicePro
      */
     public function boot()
     {
-        $this->app->bind(SecondaryEmailVerificationCodeRepository::class, function ($app) {
-            return new SecondaryEmailVerificationCodeRepository($app['cache']->store(), 300);
+        $this->app->bind(EmailVerificationCodeRepository::class, function ($app) {
+            return new EmailVerificationCodeRepository($app['cache']->store(), 300);
         });
     }
 
     public function provides(): array
     {
-        return [SecondaryEmailVerificationCodeRepository::class];
+        return [EmailVerificationCodeRepository::class];
     }
 }

@@ -11,9 +11,7 @@ class ExplodeStringTest extends TestCase
 {
     public function testWillConvertAttributes(): void
     {
-        $request = request()->merge([
-            'foo' => 'bar,baz,far'
-        ]);
+        $request = request()->merge(['foo' => 'bar,baz,far']);
 
         (new ExplodeString)->handle($request, function () {
         }, 'foo');
@@ -21,7 +19,7 @@ class ExplodeStringTest extends TestCase
         $this->assertEquals(['bar', 'baz', 'far'], request('foo'));
     }
 
-    public function testAttributeMustBeAString(): void
+    public function testWillThrowExceptionWhenAttributeIsNotAString(): void
     {
         $this->expectExceptionMessage('The foo must be a string.');
 

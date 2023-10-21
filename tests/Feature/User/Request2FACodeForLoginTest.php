@@ -43,27 +43,29 @@ class Request2FACodeForLoginTest extends TestCase
             ->assertJsonValidationErrors(['username', 'password']);
     }
 
-    public function testWillReturnErrorResponseWhenUserDoesNotExists(): void
+    public function testWillReturnUnauthorizedResponseWhenUserDoesNotExists(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         $this->twoFARequestResponse([
             'username'  => UserFactory::randomUsername(),
             'password' => 'password',
-        ])->assertUnauthorized();
+        ])->assertUnauthorized()
+            ->assertExactJson(['message' => 'InvalidCredentials']);
     }
 
-    public function testWillReturnErrorResponseWhenUserPasswordDoesNotMatch(): void
+    public function testWillReturnUnauthorizedResponseWhenUserPasswordDoesNotMatch(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         $this->twoFARequestResponse([
             'username'  => UserFactory::new()->create()->username,
             'password' => 'wrong-password',
-        ])->assertUnauthorized();
+        ])->assertUnauthorized()
+            ->assertExactJson(['message' => 'InvalidCredentials']);
     }
 
-    public function testSuccessResponse(): void
+    public function testRequestCodeWithUserName(): void
     {
         $verificationCode = TwoFACode::generate()->value();
         $user = UserFactory::new()->create();
@@ -100,7 +102,7 @@ class Request2FACodeForLoginTest extends TestCase
         ])->assertOk();
     }
 
-    public function testWillReturnErrorResponseWhenRequestIsSentMoreThanOnceInAMinute(): void
+    public function testWillReturnTooManyRequestsErrorResponseWhenRequestIsSentMoreThanOnceInAMinute(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 

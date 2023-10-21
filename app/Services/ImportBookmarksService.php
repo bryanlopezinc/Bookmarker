@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\DataTransferObjects\ImportData;
 use App\Enums\ImportSource;
-use App\Http\Requests\ImportBookmarkRequest;
+use Illuminate\Support\Str;
+use App\ValueObjects\UserID;
 use App\Importers\Filesystem;
 use App\Jobs\ImportBookmarks;
-use App\ValueObjects\UserID;
-use App\ValueObjects\Uuid;
+use Illuminate\Http\UploadedFile;
+use App\DataTransferObjects\ImportData;
+use App\Http\Requests\ImportBookmarkRequest;
 
 final class ImportBookmarksService
 {
@@ -20,44 +21,28 @@ final class ImportBookmarksService
 
     public function fromRequest(ImportBookmarkRequest $request): void
     {
-        $validated = $request->validated();
-        $userID = UserID::fromAuthUser();
-        $requestID = Uuid::generate();
+        $userID = UserID::fromAuthUser()->value();
+        
+        $requestID = Str::uuid()->toString();
 
-        foreach ($this->inputFileTypes() as $input) {
-            /** @var  \Illuminate\Http\UploadedFile*/
-            $file = $request->file($input);
+        /** @var UploadedFile*/
+        $file = match ($request->input('source')) {
+            $request::CHROME     => $request->file('html'),
+            $request::POCKET     => $request->file('pocket_export_file'),
+            $request::SAFARI     => $request->file('safari_html'),
+            $request::INSTAPAPER => $request->file('instapaper_html'),
+            $request::FIREFOX    => $request->file('firefox_export_file'),
+        };
 
-            if (!array_key_exists($input, $validated)) {
-                continue;
-            }
+        $this->filesystem->put($file->getContent(), $userID, $requestID);
 
-            $this->filesystem->put($file->getContent(), $userID, $requestID);
-
-            // Remove the file from the request data because
-            // \Illuminate\Http\UploadedFile cannot be serialized
-            // and will throw an exception when trying to queue ImportBookmarks job.
-            unset($validated[$input]);
-        }
+        // Remove the file from the request data because
+        // \Illuminate\Http\UploadedFile cannot be serialized
+        // and will throw an exception when trying to queue ImportBookmarks job.
+        $validated = collect($request->validated())->reject(fn ($value) => $value instanceof UploadedFile)->all();
 
         dispatch(new ImportBookmarks(
             new ImportData($requestID, ImportSource::fromRequest($request), $userID, $validated)
         ));
-    }
-
-    /**
-     * Get the request inputs that are file type.
-     *
-     * @return array<string>
-     */
-    private function inputFileTypes(): array
-    {
-        return [
-            'html',
-            'pocket_export_file',
-            'safari_html',
-            'instapaper_html',
-            'firefox_export_file'
-        ];
     }
 }

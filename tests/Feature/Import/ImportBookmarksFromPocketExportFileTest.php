@@ -12,7 +12,7 @@ use Laravel\Passport\Passport;
 
 class ImportBookmarksFromPocketExportFileTest extends ImportBookmarkBaseTest
 {
-    public function testRequiredAttributesMustBePresent(): void
+    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -21,25 +21,9 @@ class ImportBookmarksFromPocketExportFileTest extends ImportBookmarkBaseTest
             ->assertJsonValidationErrors([
                 'source' => ['The source field is required.']
             ]);
-    }
-
-    public function testSourceMustBeValid(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $this->importBookmarkResponse(['source' => 'foo'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'source' => ['The selected source is invalid.']
-            ]);
-    }
-
-    public function testFileMustNotBeGreaterThan_5_MegaBytes(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
 
         $this->importBookmarkResponse([
-            'source' => 'pocketExportFile',
+            'source'             => 'pocketExportFile',
             'pocket_export_file' => UploadedFile::fake()->create('file.html', 5001),
         ])->assertUnprocessable()
             ->assertJsonValidationErrors([

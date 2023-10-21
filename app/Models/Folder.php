@@ -4,28 +4,26 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Contracts\TaggableInterface;
-use App\Enums\TaggableType;
-use App\QueryColumns\FolderAttributes;
-use App\ValueObjects\ResourceID;
-use App\ValueObjects\UserID;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @property int $id
  * @property string|null $description
  * @property string $name
  * @property array $settings
- * @property bool $is_public
- * @property int $user_id foreign key to \App\Models\User
+ * @property int $visibility
+ * @property int $user_id
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
- * @method static Builder onlyAttributes(FolderAttributes $attributes)
+ * @property int bookmarksCount
+ * @method static Builder|QueryBuilder onlyAttributes(array $attributes = [])
  */
-final class Folder extends Model implements TaggableInterface
+final class Folder extends Model
 {
     /**
      * {@inheritdoc}
@@ -41,8 +39,8 @@ final class Folder extends Model implements TaggableInterface
      * {@inheritdoc}
      */
     protected $casts = [
-        'is_public' => 'bool',
-        'settings' => 'array'
+        'visibility' => 'int',
+        'settings'   => 'array',
     ];
 
     public function user(): BelongsTo
@@ -50,44 +48,28 @@ final class Folder extends Model implements TaggableInterface
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-    public function taggableID(): ResourceID
-    {
-        return new ResourceID($this->id);
-    }
-
-    public function taggableType(): TaggableType
-    {
-        return TaggableType::FOLDER;
-    }
-
-    public function taggedBy(): UserID
-    {
-        return new UserID($this->user_id);
-    }
-
-    public function tags(): HasManyThrough
-    {
-        return $this->hasManyThrough(Tag::class, Taggable::class, 'taggable_id', 'id', 'id', 'tag_id')
-            ->where('taggable_type', Taggable::FOLDER_TYPE);
-    }
-
     /**
      * @param \Illuminate\Database\Eloquent\Builder $builder
      *
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function scopeOnlyAttributes($builder, FolderAttributes $attributes)
+    public function scopeOnlyAttributes($builder, array $attributes = [])
     {
+        $attributes = collect($attributes)->mapWithKeys(fn (string $col) => [$col => $col]);
+
         if ($attributes->isEmpty()) {
             $builder->addSelect('folders.*');
         }
 
         if (!$attributes->isEmpty()) {
-            $builder->addSelect($this->qualifyColumns($attributes->except(['bookmarks_count', 'tags'])));
+            $builder->addSelect(
+                $this->qualifyColumns($attributes->except(['bookmarks_count', 'settings'])->all())
+            );
         }
 
         $this->parseBookmarksCountRelationQuery($builder, $attributes);
-        $this->parseTagsRelationQuery($builder, $attributes);
+
+        $this->parseSettingsQuery($builder, $attributes);
 
         return $builder;
     }
@@ -97,7 +79,7 @@ final class Folder extends Model implements TaggableInterface
      *
      * @return Builder
      */
-    protected function parseBookmarksCountRelationQuery(&$builder, FolderAttributes $attributes)
+    protected function parseBookmarksCountRelationQuery(&$builder, Collection $attributes)
     {
         $wantsBookmarksCount = $attributes->has('bookmarks_count') ?: $attributes->isEmpty();
 
@@ -105,8 +87,12 @@ final class Folder extends Model implements TaggableInterface
             return $builder;
         }
 
-        return $builder->addSelect('fbc.count as bookmarks_count')
-            ->leftJoin('folders_bookmarks_count as fbc', 'folders.id', '=', 'fbc.folder_id');
+        return $builder
+            ->addSelect([
+                'bookmarksCount' => FolderBookmark::query()
+                    ->selectRaw("COUNT(*)")
+                    ->whereRaw("folder_id = {$this->qualifyColumn('id')}")
+            ]);
     }
 
     /**
@@ -114,14 +100,19 @@ final class Folder extends Model implements TaggableInterface
      *
      * @return Builder
      */
-    protected function parseTagsRelationQuery(&$builder, FolderAttributes $attributes)
+    protected function parseSettingsQuery(&$builder, Collection $attributes)
     {
-        $wantsTags = $attributes->has('tags') ?: $attributes->isEmpty();
+        $wantsSettings = $attributes->has('settings') ?: $attributes->isEmpty();
 
-        if (!$wantsTags) {
+        if (!$wantsSettings) {
             return $builder;
         }
 
-        return $builder->with('tags');
+        return $builder
+            ->addSelect([
+                'settings' => FolderSetting::query()
+                    ->select(DB::raw("ifNULL(JSON_ARRAYAGG(JSON_OBJECT('key', `key`, 'value', `value`)), '{}')"))
+                    ->whereRaw("folder_id = {$this->qualifyColumn('id')}")
+            ]);
     }
 }

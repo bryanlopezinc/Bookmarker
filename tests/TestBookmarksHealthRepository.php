@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests;
 
-use App\Collections\ResourceIDsCollection;
 use App\Contracts\BookmarksHealthRepositoryInterface;
 
 final class TestBookmarksHealthRepository implements BookmarksHealthRepositoryInterface
@@ -29,14 +28,17 @@ final class TestBookmarksHealthRepository implements BookmarksHealthRepositoryIn
         return array_keys(static::$requestedBookmarkIDs);
     }
 
-    public function whereNotRecentlyChecked(ResourceIDsCollection $bookmarkIDs): ResourceIDsCollection
+    /**
+     * {@inheritdoc}
+     */
+    public function whereNotRecentlyChecked(array $bookmarkIDs): array
     {
-        $this->baseRepository
-            ->whereNotRecentlyChecked($bookmarkIDs)
-            ->asIntegers()
+        $whereNotRecentlyChecked = $this->baseRepository->whereNotRecentlyChecked($bookmarkIDs);
+
+        collect($whereNotRecentlyChecked)
             ->each(fn (int $bookmarkID) => static::$requestedBookmarkIDs[$bookmarkID] = true);
 
-        return new ResourceIDsCollection([]);
+        return [];
     }
 
     public function update(array $records): void

@@ -8,7 +8,6 @@ use App\Models\BannedCollaborator;
 use App\Models\FolderCollaboratorPermission;
 use App\UAC;
 use App\Models\FolderPermission;
-use App\ValueObjects\ResourceID as FolderID;
 use App\ValueObjects\UserID;
 use Illuminate\Support\Collection;
 
@@ -17,18 +16,18 @@ final class FolderPermissionsRepository
     /**
      * Get the Permissions a user has to a folder.
      */
-    public function getUserAccessControls(UserID $userID, FolderID $folderID): UAC
+    public function getUserAccessControls(int $userID, int $folderID): UAC
     {
         return FolderCollaboratorPermission::select('folders_permissions.name')
             ->join('folders_permissions', 'folders_collaborators_permissions.permission_id', '=', 'folders_permissions.id')
-            ->where('folder_id', $folderID->value())
-            ->where('user_id', $userID->value())
+            ->where('folder_id', $folderID)
+            ->where('user_id', $userID)
             ->get()
             ->pluck('name')
             ->pipe(fn (Collection $permissionNames) => new UAC($permissionNames->all()));
     }
 
-    public function create(UserID $userID, FolderID $folderID, UAC $folderPermissions): void
+    public function create(int $userID, int $folderID, UAC $folderPermissions): void
     {
         $createdAt = now();
 
@@ -37,46 +36,21 @@ final class FolderPermissionsRepository
             ->get()
             ->pluck('id')
             ->map(fn (int $permissionID) => [
-                'folder_id' => $folderID->value(),
-                'user_id' => $userID->value(),
+                'folder_id'     => $folderID,
+                'user_id'       => $userID,
                 'permission_id' => $permissionID,
-                'created_at' => $createdAt
+                'created_at'    => $createdAt
             ])
             ->tap(function (Collection $records) {
                 FolderCollaboratorPermission::insert($records->all());
             });
     }
 
-    public function removeCollaborator(UserID $collaboratorID, FolderID $folderID): void
+    public function removeCollaborator(int $collaboratorID, int $folderID): void
     {
         FolderCollaboratorPermission::query()
-            ->where('folder_id', $folderID->value())
-            ->where('user_id', $collaboratorID->value())
-            ->delete();
-    }
-
-    public function banCollaborator(UserID $collaboratorID, FolderID $folderID): void
-    {
-        BannedCollaborator::query()->create([
-            'folder_id' => $folderID->value(),
-            'user_id' => $collaboratorID->value()
-        ]);
-    }
-
-    public function isBanned(UserID $collaboratorID, FolderID $folderID): bool
-    {
-        return BannedCollaborator::query()->where([
-            'folder_id' => $folderID->value(),
-            'user_id' => $collaboratorID->value()
-        ])->exists();
-    }
-
-    public function revoke(UserID $collaboratorID, FolderID $folderID, UAC $permissions): void
-    {
-        FolderCollaboratorPermission::query()
-            ->where('folder_id', $folderID->value())
-            ->where('user_id', $collaboratorID->value())
-            ->whereIn('permission_id', FolderPermission::select('id')->whereIn('name', $permissions->permissions))
+            ->where('folder_id', $folderID)
+            ->where('user_id', $collaboratorID)
             ->delete();
     }
 }

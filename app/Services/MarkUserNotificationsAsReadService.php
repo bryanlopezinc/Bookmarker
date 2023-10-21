@@ -5,40 +5,32 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Exceptions\HttpException;
-use App\Repositories\NotificationRepository;
 use App\ValueObjects\UserID;
-use App\ValueObjects\Uuid;
-use App\DataTransferObjects\DatabaseNotification as Notification;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Notifications\DatabaseNotification as Notification;
 
 final class MarkUserNotificationsAsReadService
 {
-    public function __construct(private NotificationRepository $repository)
-    {
-    }
-
     /**
-     * @param array<Uuid> $notificationIDs
+     * @param array<string> $notificationIDs
      */
-    public function markAsRead(array $notificationIDs): void
+    public function markAsRead(array $uuids): void
     {
-        $authUserID = UserID::fromAuthUser();
+        $authUserID = UserID::fromAuthUser()->value();
 
-        collect($this->repository->findManyByIDs($notificationIDs))
-            ->tap(function (Collection $notifications) use ($notificationIDs) {
-                $allNotificationsExist = $notifications->count() === count($notificationIDs);
-                if (!$allNotificationsExist) {
-                    throw HttpException::notFound(['message' => 'notification not found']);
+        Notification::query()
+            ->find($uuids, ['read_at', 'notifiable_id', 'id', 'type', 'data'])
+            ->tap(function (Collection $notifications) use ($uuids) {
+                if ($notifications->count() !== count($uuids)) {
+                    throw HttpException::notFound(['message' => 'NotificationNotFound']);
                 }
             })
             ->each(function (Notification $notification) use ($authUserID) {
-                $notificationBelongsToUser = $authUserID->equals($notification->notifiableID);
-                if (!$notificationBelongsToUser) {
-                    throw HttpException::notFound(['message' => 'notification not found']);
+                if ($authUserID !== $notification->notifiable_id) {
+                    throw HttpException::notFound(['message' => 'NotificationNotFound']);
                 }
             })
-            ->filter(fn (Notification $notification) => $notification->isUnread)
-            ->map(fn (Notification $notification) => $notification->id)
-            ->whenNotEmpty(fn (Collection $notificationIDs) => $this->repository->markAsRead($notificationIDs->all()));
+            ->filter(fn (Notification $notification) => $notification->read_at === null)
+            ->whenNotEmpty(fn (Collection $notifications) => $notifications->toQuery()->update(['read_at' => now()]));
     }
 }

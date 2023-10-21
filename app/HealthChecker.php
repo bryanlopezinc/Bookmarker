@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace App;
 
-use App\Collections\BookmarksCollection;
 use App\Contracts\BookmarksHealthRepositoryInterface;
-use App\DataTransferObjects\Bookmark;
-use App\ValueObjects\ResourceID;
+use App\Models\Bookmark;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Collection;
@@ -19,19 +17,28 @@ final class HealthChecker
     {
     }
 
-    public function ping(BookmarksCollection $bookmarks): void
+    /**
+     * @param iterable<Bookmark>
+     */
+    public function ping(iterable $bookmarks): void
     {
-        if ($bookmarks->isEmpty()) {
+        $bookmarks = collect($bookmarks);
+
+        $bookmarkIds = collect($bookmarks->all())->pluck('id');
+
+        if ($bookmarkIds->isEmpty()) {
             return;
         }
 
+        $unChecked = $this->repository->whereNotRecentlyChecked($bookmarkIds->all());
+
         $responses = $this->makeRequests(
-            $bookmarks->filterByIDs($this->repository->whereNotRecentlyChecked($bookmarks->ids()))
+            $bookmarks->filter(fn (Bookmark $bookmark) => in_array($bookmark->id, $unChecked))->all()
         );
 
         collect($responses)
             ->map(function (Response $response, int $bookmarkID) {
-                return new HealthCheckResult(new ResourceID($bookmarkID), $response);
+                return new HealthCheckResult($bookmarkID, $response);
             })
             ->whenNotEmpty(fn (Collection $collection) => $this->repository->update($collection->all()));
     }
@@ -39,13 +46,13 @@ final class HealthChecker
     /**
      * @return array<int,Response> Each key in the array is the bookmarkID and value the corresponding http response.
      */
-    private function makeRequests(BookmarksCollection $bookmarks): array
+    private function makeRequests(array $bookmarks): array
     {
         return Http::pool(function (Pool $pool) use ($bookmarks) {
             return collect($bookmarks)->map(function (Bookmark $bookmark) use ($pool) {
-                return $pool->as((string)$bookmark->id->value())
+                return $pool->as((string)$bookmark->id)
                     ->accept('text/html')
-                    ->get($bookmark->url->toString());
+                    ->get($bookmark->url);
             })->all();
         });
     }

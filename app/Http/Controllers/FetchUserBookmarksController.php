@@ -4,26 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Collections\BookmarksCollection;
-use App\DataTransferObjects\UserBookmarksFilters;
-use App\Http\Requests\FetchUserBookmarksRequest;
+use App\Http\Requests\FetchUserBookmarksRequest as Request;
 use App\Http\Resources\BookmarkResource;
 use App\Http\Resources\PaginatedResourceCollection;
 use App\Jobs\CheckBookmarksHealth;
-use App\PaginationData;
-use App\Repositories\FetchUserBookmarksRepository as Repository;
-use App\ValueObjects\UserID;
+use App\Services\FetchUserBookmarksService as Service;
 
 final class FetchUserBookmarksController
 {
-    public function __invoke(FetchUserBookmarksRequest $request, Repository $repository): PaginatedResourceCollection
+    public function __invoke(Request $request, Service $service): PaginatedResourceCollection
     {
-        $result = $repository->fetch(UserID::fromAuthUser(), UserBookmarksFilters::fromRequest($request));
+        $result = $service->fromRequest($request);
 
-        $result->appends('per_page', $request->validated('per_page', PaginationData::DEFAULT_PER_PAGE))
-            ->withQueryString();
-
-        dispatch(new CheckBookmarksHealth(new BookmarksCollection($result->getCollection())));
+        dispatch(new CheckBookmarksHealth($result->getCollection()));
 
         return new PaginatedResourceCollection($result, BookmarkResource::class);
     }

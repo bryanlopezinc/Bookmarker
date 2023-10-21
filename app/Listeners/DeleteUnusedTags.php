@@ -14,8 +14,7 @@ final class DeleteUnusedTags //implements ShouldQueue
     public function handle(TagsDetachedEvent $event): void
     {
         Tag::select('id')
-            ->where('created_by', $event->userID->value())
-            ->whereIn('name', $event->tags->toStringCollection())
+            ->whereIn('name', $event->tags)
             ->whereNotIn('id', Taggable::select('tag_id'))
             ->delete();
     }

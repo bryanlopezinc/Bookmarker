@@ -4,15 +4,11 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Collections\ResourceIDsCollection as IDs;
+use App\Enums\NotificationType;
 use Illuminate\Support\Collection;
-use App\DataTransferObjects\{Bookmark, DatabaseNotification, User, Folder};
-use App\DataTransferObjects\Builders\FolderBuilder;
-use App\Models\Folder as FolderModel;
-use App\QueryColumns\BookmarkAttributes;
-use App\QueryColumns\FolderAttributes;
-use App\QueryColumns\UserAttributes;
-use Illuminate\Support\Arr;
+use App\Models\{Folder, Bookmark, User};
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Retrieve all the resource ids stored in the notification from the database
@@ -21,22 +17,11 @@ use Illuminate\Support\Arr;
 class FetchNotificationResourcesRepository
 {
     /**
-     * The resource ids from all the notification data.
-     *
-     * @var array<string,int[]>
-     */
-    private array $resourceIDs = [
-        'folderIDs' => [],
-        'bookmarkIDs' => [],
-        'userIDs' => []
-    ];
-
-    /**
      * The key names in the notification data array used to store user ids.
      *
      * @var array<string>
      */
-    private array $userIDKeys = [
+    private const USER_ID_KEYS = [
         'added_by_collaborator',
         'removed_by',
         'new_collaborator_id',
@@ -50,7 +35,7 @@ class FetchNotificationResourcesRepository
      *
      * @var array<string>
      */
-    private array $folderIDKeys = [
+    private const FOLDER_ID_KEYS = [
         'added_to_folder',
         'removed_from_folder',
         'exited_from_folder',
@@ -62,106 +47,114 @@ class FetchNotificationResourcesRepository
      *
      * @var array<string>
      */
-    private array $bookmarkIDKeys = [
+    private const BOOKMARK_ID_KEYS = [
         'bookmarks_added_to_folder',
         'bookmarks_removed',
     ];
 
     /**
-     * The folders retrieved from database.
+     * The notification resources retrieved from database.
      *
-     * @var array<int,Folder>
+     * @var array<string,array>
      */
-    private array $folders = [];
+    private array $notificationResources = [
+        'bookmarks' => [],
+        'users'     => [],
+        'folders'   => []
+    ];
 
     /**
-     * The bookmarks retrieved from database.
-     *
-     * @var array<int,Bookmark>
+     * The notifications collection
      */
-    private array $bookmarks = [];
-
-    /**
-     * The users retrieved from database.
-     *
-     * @var array<int,User>
-     */
-    private array $users = [];
+    private Collection $notifications;
 
     /**
      * @param Collection<DatabaseNotification> $notifications
      */
     public function __construct(Collection $notifications)
     {
+        $this->notifications = $notifications;
+
         if ($notifications->isEmpty()) {
             return;
         }
 
-        $this->extractResourceIDsFromNotifications($notifications);
-        $this->fetchResourcesByIDs();
+        $this->setNotificationResources();
     }
 
-    private function extractResourceIDsFromNotifications(Collection $notifications): void
+    private function setNotificationResources(): void
     {
-        $notifications->each(function (DatabaseNotification $notification) {
-            $data = $notification->notificationData->data;
+        $query = DB::query();
 
-            $this->setResourceIDs('userIDs', Arr::only($data, $this->userIDKeys));
-            $this->setResourceIDs('folderIDs', Arr::only($data, $this->folderIDKeys));
-            $this->setResourceIDs('bookmarkIDs', Arr::only($data, $this->bookmarkIDKeys));
-        });
+        $query->columns = [];
+
+        if (!empty($bookmarkIds = $this->extractIds('bookmarks'))) {
+            $query->addSelect([
+                'bookmarks' => Bookmark::query()
+                    ->select(DB::raw("JSON_ARRAYAGG(JSON_OBJECT('title', title, 'id', id))"))
+                    ->whereIntegerInRaw('id', $bookmarkIds)
+            ]);
+        }
+
+        if (!empty($userIds = $this->extractIds('users'))) {
+            $query->addSelect([
+                'users' => User::query()
+                    ->select(DB::raw("JSON_ARRAYAGG(JSON_OBJECT('id', id, 'first_name', first_name, 'last_name', last_name))"))
+                    ->whereIntegerInRaw('id', $userIds)
+            ]);
+        }
+
+        if (!empty($folderIds = $this->extractIds('folders'))) {
+            $query->addSelect([
+                'folders' => Folder::query()
+                    ->select(DB::raw("JSON_ARRAYAGG(JSON_OBJECT('name', name, 'id', id))"))
+                    ->whereIntegerInRaw('id', $folderIds)
+            ]);
+        }
+
+        collect($query->get()->first())
+            ->mapWithKeys(fn (?string $json, string $key) => [$key => json_decode($json ?? '{}', true)])
+            ->mapWithKeys(function (array $data, string $key) {
+                $model = match ($key) {
+                    'bookmarks' => Bookmark::class,
+                    'users'     => User::class,
+                    'folders'   => Folder::class
+                };
+
+                return [$key => collect($data)->mapInto($model)->all()];
+            })
+            ->each(fn (array $data, string $key) => $this->notificationResources[$key] = $data);
     }
 
-    private function fetchResourcesByIDs(): void
+    private function extractIds(string $type): array
     {
-        collect($this->resourceIDs['bookmarkIDs'])
-            ->unique()
-            ->whenNotEmpty(function (Collection $bookmarkIDs) {
-                /** @var BookmarkRepository */
-                $repository = app(BookmarkRepository::class);
+        return $this->notifications
+            ->pluck('data')
+            ->map(function (array $notificationData) use ($type) {
+                $keys = match ($type) {
+                    'users'     => self::USER_ID_KEYS,
+                    'folders'   => self::FOLDER_ID_KEYS,
+                    'bookmarks' => self::BOOKMARK_ID_KEYS,
+                };
 
-                $repository->findManyById(IDs::fromNativeTypes($bookmarkIDs), BookmarkAttributes::only('title,id'))
-                    ->each(fn (Bookmark $bookmark) => $this->bookmarks[$bookmark->id->value()] = $bookmark);
-            });
-
-        collect($this->resourceIDs['userIDs'])
-            ->unique()
-            ->whenNotEmpty(function (Collection $userIDs) {
-                /** @var UserRepository */
-                $repository = app(UserRepository::class);
-
-                $repository->findManyByIDs(IDs::fromNativeTypes($userIDs), UserAttributes::only('id,firstname,lastname'))
-                    ->each(fn (User $user) => $this->users[$user->id->value()] = $user);
-            });
-
-        collect($this->resourceIDs['folderIDs'])
-            ->unique()
-            ->whenNotEmpty(function (Collection $folderIDs) {
-                return FolderModel::onlyAttributes(FolderAttributes::only('id,name'))
-                    ->find($folderIDs)
-                    ->map(fn (FolderModel $folder) => FolderBuilder::fromModel($folder)->build())
-                    ->each(fn (Folder $folder) => $this->folders[$folder->folderID->value()] = $folder);
-            });
-    }
-
-    private function setResourceIDs(string $type, array $ids): void
-    {
-        collect($ids)
+                return collect($notificationData)->only($keys)->flatten()->unique()->all();
+            })
             ->flatten()
-            ->values()
-            ->whenNotEmpty(function (Collection $ids) use ($type) {
-                $this->resourceIDs[$type] = array_merge($this->resourceIDs[$type], $ids->all());
-            });
+            ->all();
     }
 
     public function findFolderByID(int $id): ?Folder
     {
-        return $this->folders[$id] ?? null;
+        return collect($this->notificationResources['folders'])
+            ->filter(fn (Folder $folder) => $folder->id === $id)
+            ->first();
     }
 
     public function findUserByID(int $id): ?User
     {
-        return $this->users[$id] ?? null;
+        return collect($this->notificationResources['users'])
+            ->filter(fn (User $user) => $user->id === $id)
+            ->first();
     }
 
     /**
@@ -170,6 +163,8 @@ class FetchNotificationResourcesRepository
      */
     public function findBookmarksByIDs(array $ids): array
     {
-        return array_intersect_key($this->bookmarks, array_flip($ids));
+        return collect($this->notificationResources['bookmarks'])
+            ->filter(fn (Bookmark $bookmark) => in_array($bookmark->id, $ids, true))
+            ->all();
     }
 }

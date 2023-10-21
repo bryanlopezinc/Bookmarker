@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Notifications;
 
-use App\DataTransferObjects\Folder;
-use App\Contracts\TransformsNotificationInterface;
-use App\DataTransferObjects\DatabaseNotification;
-use App\DataTransferObjects\User;
-use App\Repositories\FetchNotificationResourcesRepository as Repository;
+use App\DataTransferObjects\Notifications\CollaboratorExit;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-final class CollaboratorExitNotificationResource extends JsonResource implements TransformsNotificationInterface
+final class CollaboratorExitNotificationResource extends JsonResource
 {
-    public function __construct(private DatabaseNotification $notification, private Repository $repository)
+    public function __construct(private CollaboratorExit $notification)
     {
     }
 
@@ -22,39 +18,24 @@ final class CollaboratorExitNotificationResource extends JsonResource implements
      */
     public function toArray($request)
     {
-        $collaboratorThatLeft = $this->getCollaborator();
-        $folder = $this->getFolder();
+        $collaboratorThatLeft = $this->notification->collaborator;
+        $folder = $this->notification->folder;
 
         return [
-            'type' => 'CollaboratorExitNotification',
+            'type'       => 'CollaboratorExitNotification',
             'attributes' => [
-                'id' => $this->notification->id->value,
+                'id'                  => $this->notification->uuid,
                 'collaborator_exists' => $collaboratorThatLeft !== null,
-                'folder_exists' => $folder !== null,
-                'collaborator' => $this->when($collaboratorThatLeft !== null, fn () => [
-                    'first_name' => $collaboratorThatLeft->firstName->value, // @phpstan-ignore-line
-                    'last_name' => $collaboratorThatLeft->lastName->value // @phpstan-ignore-line
+                'folder_exists'       => $folder !== null,
+                'collaborator'        => $this->when($collaboratorThatLeft !== null, fn () => [
+                    'first_name' => $collaboratorThatLeft->first_name, // @phpstan-ignore-line
+                    'last_name' => $collaboratorThatLeft->last_name // @phpstan-ignore-line
                 ]),
                 'folder' => $this->when($folder !== null, fn () => [
-                    'name' => $folder->name->safe(), // @phpstan-ignore-line
-                    'id' => $folder->folderID->value() // @phpstan-ignore-line
+                    'name' => $folder->name, // @phpstan-ignore-line
+                    'id'   => $folder->id // @phpstan-ignore-line
                 ]),
             ]
         ];
-    }
-
-    private function getCollaborator(): ?User
-    {
-        return $this->repository->findUserByID($this->notification->notificationData['exited_by']);
-    }
-
-    private function getFolder(): ?Folder
-    {
-        return $this->repository->findFolderByID($this->notification->notificationData['exited_from_folder']);
-    }
-
-    public function toJsonResource(): JsonResource
-    {
-        return $this;
     }
 }

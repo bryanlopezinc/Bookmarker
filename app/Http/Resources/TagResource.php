@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
-use App\ValueObjects\Tag;
+use App\Models\Tag;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 final class TagResource extends JsonResource
@@ -19,7 +19,7 @@ final class TagResource extends JsonResource
         return [
             'type' => 'tag',
             'attributes'  => [
-                'name' => $this->tag->value,
+                'name' => $this->tag->name,
             ]
         ];
     }

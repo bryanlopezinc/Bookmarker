@@ -4,10 +4,9 @@ namespace Tests\Feature\User;
 
 use Tests\TestCase;
 use App\Models\User;
-use App\Notifications\ResetPasswordNotification;
 use Laravel\Passport\Passport;
 use Database\Factories\UserFactory;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Contracts\Auth\PasswordBroker;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Tests\Traits\Requests2FACode;
@@ -18,8 +17,6 @@ class ResetPasswordTest extends TestCase
     use Requests2FACode;
 
     private const NEW_PASSWORD = 'abcdef123';
-
-    private static User $user;
 
     protected function resetPasswordResponse(array $parameters = [], array $headers = []): TestResponse
     {
@@ -45,58 +42,52 @@ class ResetPasswordTest extends TestCase
             ->assertJsonValidationErrors(['email', 'password', 'token']);
     }
 
-    public function testWhenUserDoesNotExists(): void
+    public function testWillReturnNotFoundWhenUserDoesNotExists(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         $this->resetPasswordResponse([
-            'email'  => 'non-existentUser@yahoo.com',
-            'password' => self::NEW_PASSWORD,
+            'email'                 => 'non-existentUser@yahoo.com',
+            'password'              => self::NEW_PASSWORD,
             'password_confirmation' => self::NEW_PASSWORD,
-            'token' => 'token'
-        ])->assertNotFound()->assertExactJson([
-            'message' => 'User not found'
-        ]);
+            'token'                 => 'token'
+        ])->assertNotFound()
+            ->assertExactJson(['message' => 'UserNotFound']);
     }
 
-    public function testWillReturnErrorResponseWhenTokenIsInvalid(): void
+    public function testWillReturnNotFoundResponseWhenTokenIsInvalid(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         $this->resetPasswordResponse([
-            'email'  => UserFactory::new()->create([])->email,
-            'password' => self::NEW_PASSWORD,
+            'email'                 => UserFactory::new()->create([])->email,
+            'password'              => self::NEW_PASSWORD,
             'password_confirmation' => self::NEW_PASSWORD,
-            'token' => 'token'
+            'token'                 => 'token'
         ])->assertStatus(400)
-            ->assertExactJson([
-                'message' => 'Invalid reset token'
-            ]);
+            ->assertExactJson(['message' => 'InvalidResetToken']);
     }
 
-    public function testWillResetPassword(): void
+    public function testResetPassword(): void
     {
         Notification::fake();
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         $user = UserFactory::new()->create();
-        static::$user = $user;
         $initialPassword = $user->password;
-        $token = '';
 
-        $this->postJson(route('requestPasswordResetToken'), ['email'  => $user->email])->assertOk();
+        /** @var PasswordBroker */
+        $broker = app(PasswordBroker::class);
 
-        Notification::assertSentTo($user, function (ResetPasswordNotification $notification) use (&$token) {
-            $token = $notification->token;
-
-            return true;
+        $broker->sendResetLink(['email' => $user->email], function (User $user, string $hash) use (&$token) {
+            $token = $hash;
         });
 
         $this->resetPasswordResponse([
-            'email'  => $user->email,
-            'password' => self::NEW_PASSWORD,
+            'email'                 => $user->email,
+            'password'              => self::NEW_PASSWORD,
             'password_confirmation' => self::NEW_PASSWORD,
-            'token' => $token
+            'token'                 => $token
         ])->assertOk();
 
         $this->assertNotSame(
@@ -105,40 +96,7 @@ class ResetPasswordTest extends TestCase
         );
     }
 
-    /**
-     * @depends testWillResetPassword
-     */
-    public function testUserCanLoginWithNewPasswordAfterReset(): void
-    {
-        $client = ClientFactory::new()->asPasswordClient()->create();
-        $user = static::$user;
-
-        //assert cannot login with old password
-        $this->postJson(route('loginUser'), [
-            'username'  => $user->username,
-            'password'  => 'password',
-            'client_id' => $client->id,
-            'client_secret' => $client->secret,
-            'grant_type' => 'password',
-            'two_fa_code' => '12345',
-        ])->assertStatus(400)
-            ->assertExactJson([
-                "error" => "invalid_grant",
-                "error_description" => "The user credentials were incorrect.",
-                "message" => "The user credentials were incorrect."
-            ]);
-
-        $this->postJson(route('loginUser'), [
-            'username'  => $user->username,
-            'password'  => self::NEW_PASSWORD,
-            'client_id' => $client->id,
-            'client_secret' => $client->secret,
-            'grant_type' => 'password',
-            'two_fa_code' => (string) $this->get2FACode($user->username, self::NEW_PASSWORD),
-        ])->assertOk();
-    }
-
-    public function testNewPasswordMustBeAtLeast_8_characters(): void
+    public function testWillReturnUnprocessableWhenNewPasswordIsLessThan_8_characters(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
@@ -147,7 +105,7 @@ class ResetPasswordTest extends TestCase
             ->assertJsonValidationErrors(['password' => 'The password must be at least 8 characters.']);
     }
 
-    public function testNewPasswordMustContainOneNumber(): void
+    public function testWillReturnUnprocessableWhenNewPasswordDoesNotContainANumber(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 

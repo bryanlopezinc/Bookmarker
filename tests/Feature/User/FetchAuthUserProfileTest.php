@@ -20,7 +20,7 @@ class FetchAuthUserProfileTest extends TestCase
         $this->assertRouteIsAccessibleViaPath('v1/users/me', 'authUserProfile');
     }
 
-    public function testUnAuthorizedUserCannotAccessRoute(): void
+    public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
         $this->getUserProfileResponse()->assertUnauthorized();
     }
@@ -34,8 +34,8 @@ class FetchAuthUserProfileTest extends TestCase
             ->assertJsonCount(1)
             ->assertJsonCount(7, 'data.attributes')
             ->assertJson(function (AssertableJson $json) use ($user) {
-                $json->where('data.attributes.firstname', $user->firstname);
-                $json->where('data.attributes.lastname', $user->lastname);
+                $json->where('data.attributes.first_name', $user->first_name);
+                $json->where('data.attributes.last_name', $user->last_name);
                 $json->where('data.attributes.username', $user->username);
                 $json->where('data.attributes.bookmarks_count', 0);
                 $json->where('data.attributes.favorites_count', 0);
@@ -47,8 +47,8 @@ class FetchAuthUserProfileTest extends TestCase
                 'data' => [
                     'type',
                     'attributes' => [
-                        'firstname',
-                        'lastname',
+                        'first_name',
+                        'last_name',
                         'username',
                         'bookmarks_count',
                         'favorites_count',
@@ -56,6 +56,6 @@ class FetchAuthUserProfileTest extends TestCase
                         'has_verified_email',
                     ],
                 ]
-            ]);;
+            ]);
     }
 }

@@ -6,9 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\PaginatedResourceCollection;
 use App\Http\Resources\SourceResource;
+use App\Models\Source;
 use App\PaginationData;
-use App\Repositories\FetchUserBookmarksSourcesRepository as Repository;
-use App\ValueObjects\UserID;
 use Illuminate\Http\Request;
 
 /**
@@ -16,15 +15,20 @@ use Illuminate\Http\Request;
  */
 final class FetchUserBookmarksSourcesController
 {
-    public function __invoke(Request $request, Repository $repository): PaginatedResourceCollection
+    public function __invoke(Request $request): PaginatedResourceCollection
     {
         $request->validate(
-            PaginationData::new()->maxPerPage(setting('PER_PAGE_BOOKMARKS_SOURCES'))->asValidationRules()
+            PaginationData::new()->maxPerPage(50)->asValidationRules()
         );
 
-        return new PaginatedResourceCollection(
-            $repository->get(UserID::fromAuthUser(), PaginationData::fromRequest($request)),
-            SourceResource::class
-        );
+        $pagination = PaginationData::fromRequest($request);
+
+        $sources = Source::select('bookmarks_sources.id', 'host', 'name')
+            ->join('bookmarks', 'bookmarks_sources.id', '=', 'bookmarks.source_id')
+            ->groupBy('bookmarks_sources.id')
+            ->where('user_id', auth('api')->id())
+            ->simplePaginate($pagination->perPage(), page: $pagination->page());
+
+        return new PaginatedResourceCollection($sources, SourceResource::class);
     }
 }

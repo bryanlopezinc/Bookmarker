@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Exceptions\MalformedURLException;
+use App\Exceptions\UserNotFoundException;
 use App\Mail\EmailNotRegisteredMail;
 use App\Mail\EmailNotVerifiedMail;
 use App\Utils\MailParser;
-use App\QueryColumns\UserAttributes;
 use App\Repositories\UserRepository;
-use App\ValueObjects\Email;
 use App\ValueObjects\Url;
 use Illuminate\Support\Facades\Mail;
 
@@ -24,26 +23,27 @@ final class CreateBookmarkFromMailMessageService
     {
         $message = new MailParser($mimeMessage);
 
-        $user = $this->userRepository->findByEmailOrSecondaryEmail(
-            $email = new Email($message->from()),
-            UserAttributes::only('id,email_verified_at')
-        );
+        try {
+            $user = $this->userRepository->findByEmailOrSecondaryEmail(
+                $email = $message->from(),
+                ['id', 'email_verified_at']
+            );
+        } catch (UserNotFoundException $e) {
+            Mail::to($email)->queue(new EmailNotRegisteredMail());
 
-        if ($user === false) {
-            Mail::to($email->value)->queue(new EmailNotRegisteredMail());
-            return;
+            throw $e;
         }
 
-        if (!$user->hasVerifiedEmail) {
-            Mail::to($email->value)->queue(new EmailNotVerifiedMail());
+        if (!$user->email_verified_at) {
+            Mail::to($email)->queue(new EmailNotVerifiedMail());
             return;
         }
 
         try {
             $this->service->fromArray([
-                'url' => new Url(trim((string)$message->getTextContent())),
+                'url'       => new Url(trim((string)$message->getTextContent())),
                 'createdOn' => (string) now(),
-                'userID' => $user->id
+                'userID'    => $user->id
             ]);
         } catch (MalformedURLException) {
         }

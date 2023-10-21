@@ -4,22 +4,19 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
-use App\Contracts\FolderRepositoryInterface;
-use App\Events\FolderModifiedEvent;
-use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\Repositories\Folder\DeleteFolderRepository;
-use App\ValueObjects\ResourceID;
-use App\QueryColumns\FolderAttributes as Attributes;
+use App\Exceptions\FolderNotFoundException;
+use App\Models\Bookmark;
+use App\Models\Folder;
+use App\Models\FolderBookmark;
+use Illuminate\Support\Collection;
 
 final class DeleteFolderService
 {
-    public function __construct(
-        private DeleteFolderRepository $deleteFolderRepository,
-        private FolderRepositoryInterface $folderRepository
-    ) {
+    public function __construct(private FetchFolderService $folderRepository)
+    {
     }
 
-    public function delete(ResourceID $folderID): void
+    public function delete(int $folderID): void
     {
         $this->deleteFolder($folderID);
     }
@@ -27,23 +24,34 @@ final class DeleteFolderService
     /**
      * Delete a folder and all of its bookmarks
      */
-    public function deleteRecursive(ResourceID $folderID): void
+    public function deleteRecursive(int $folderID): void
     {
         $this->deleteFolder($folderID, true);
     }
 
-    private function deleteFolder(ResourceID $folderID, bool $recursive = false): void
+    private function deleteFolder(int $folderID, bool $recursive = false): void
     {
-        $folder = $this->folderRepository->find($folderID, Attributes::only('id,user_id'));
+        $folder = $this->folderRepository->find($folderID, ['id', 'user_id']);
 
-        (new EnsureAuthorizedUserOwnsResource())($folder);
+        FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 
-        if ($recursive) {
-            $this->deleteFolderRepository->deleteRecursive($folder);
-        } else {
-            $this->deleteFolderRepository->delete($folder);
-        }
+        $this->performDelete($folder, $recursive);
+    }
 
-        event(new FolderModifiedEvent($folderID));
+    private function performDelete(Folder $folder, bool $deleteBookmarks = false): bool
+    {
+        FolderBookmark::query()
+            ->where('folder_id', $folder->id)
+            ->chunkById(100, function (Collection $chunk) use ($deleteBookmarks, $folder) {
+                if ($deleteBookmarks) {
+                    Bookmark::where('user_id', $folder->user_id)
+                        ->whereIn('id', $chunk->pluck('bookmark_id'))
+                        ->delete();
+                }
+
+                $chunk->toQuery()->delete();
+            });
+
+        return (bool) Folder::query()->whereKey($folder->id)->delete();
     }
 }

@@ -4,42 +4,47 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Collections\BookmarksCollection;
-use App\Collections\ResourceIDsCollection;
+use App\Exceptions\BookmarkNotFoundException;
 use App\Exceptions\HttpException;
 use App\Jobs\CheckBookmarksHealth;
-use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\QueryColumns\BookmarkAttributes;
+use App\Models\Bookmark;
 use App\Repositories\FavoriteRepository;
 use App\Repositories\BookmarkRepository;
 use App\ValueObjects\UserID;
 
 final class CreateFavoriteService
 {
-    public function __construct(private FavoriteRepository $repository, private BookmarkRepository $bookmarkRepository)
-    {
+    public function __construct(
+        private FavoriteRepository $repository,
+        private BookmarkRepository $bookmarkRepository
+    ) {
     }
 
-    public function create(ResourceIDsCollection $bookmarkIDs): void
+    /**
+     * @param array<int>
+     */
+    public function create(array $bookmarkIDs): void
     {
         $userId = UserID::fromAuthUser();
 
-        $bookmarks = $this->bookmarkRepository->findManyById($bookmarkIDs, BookmarkAttributes::only('user_id,id,url'));
+        $bookmarks = $this->bookmarkRepository->findManyById($bookmarkIDs, ['user_id', 'id', 'url']);
 
-        $allBookmarksExists = $bookmarkIDs->count() === $bookmarks->count();
+        $allBookmarksExists = count($bookmarkIDs) === $bookmarks->count();
 
         if (!$allBookmarksExists) {
-            throw HttpException::notFound(['message' => 'Bookmarks does not exists']);
+            throw new BookmarkNotFoundException;
         }
 
-        $bookmarks->each(new EnsureAuthorizedUserOwnsResource());
+        $bookmarks->each(function (Bookmark $bookmark) {
+            BookmarkNotFoundException::throwIfDoesNotBelongToAuthUser($bookmark);
+        });
 
-        if ($this->repository->contains($bookmarkIDs, $userId)) {
-            throw HttpException::conflict(['message' => 'Bookmarks already exists in favorites']);
+        if ($this->repository->contains($bookmarkIDs, $userId->value())) {
+            throw HttpException::conflict(['message' => 'BookmarksAlreadyExists']);
         }
 
-        $this->repository->createMany($bookmarkIDs, $userId);
+        $this->repository->createMany($bookmarkIDs, $userId->value());
 
-        dispatch(new CheckBookmarksHealth(new BookmarksCollection($bookmarks)));
+        dispatch(new CheckBookmarksHealth($bookmarks));
     }
 }

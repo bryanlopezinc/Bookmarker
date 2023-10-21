@@ -183,7 +183,6 @@ return [
         App\Providers\ImportersFilesystemServiceProvider::class,
         App\Providers\RepositoryServiceProvider::class,
         App\Providers\Cache\RegisterProviders::class,
-        App\Providers\FolderRepositoryServiceProvider::class
     ],
 
     /*

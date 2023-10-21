@@ -4,23 +4,21 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Exceptions\BookmarkNotFoundException;
+use App\Exceptions\UserNotFoundException;
+use App\Models\Source;
+use App\Models\Bookmark;
+use App\Utils\UrlHasher;
+use Illuminate\Support\Str;
 use Illuminate\Bus\Queueable;
+use App\Readers\BookmarkMetaData;
 use App\Readers\HttpClientInterface;
-use App\DataTransferObjects\Bookmark;
+use App\Repositories\UserRepository;
+use App\Repositories\BookmarkRepository;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
-use App\Contracts\UpdateBookmarkRepositoryInterface as Repository;
-use App\Utils\UrlHasher;
-use App\DataTransferObjects\Builders\BookmarkBuilder as Builder;
-use App\DataTransferObjects\UpdateBookmarkData as Data;
-use App\Models\Source;
-use App\Readers\BookmarkMetaData;
-use App\Repositories\BookmarkRepository;
-use App\Repositories\UserRepository;
-use App\ValueObjects\BookmarkDescription;
-use App\ValueObjects\BookmarkTitle;
 
 final class UpdateBookmarkWithHttpResponse implements ShouldQueue
 {
@@ -34,23 +32,19 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
 
     public function handle(
         HttpClientInterface $client,
-        Repository $repository,
         UrlHasher $urlHasher,
         BookmarkRepository $bookmarkRepository = new BookmarkRepository(),
     ): void {
 
-        /** @var Bookmark|null */
-        $bookmark = $bookmarkRepository->findManyById($this->bookmark->id->toCollection())->first();
+        try {
+            $bookmark = $bookmarkRepository->findById($this->bookmark->id);
 
-        if ($bookmark === null) {
+            $this->userRepository()->findByID($bookmark->user_id);
+        } catch (UserNotFoundException | BookmarkNotFoundException) {
             return;
         }
 
-        if ($this->userRepository()->findByID($bookmark->getOwnerID()) === false) {
-            return;
-        }
-
-        $builder = Builder::new()->id($bookmark->id->value())->resolvedAt(now());
+        $bookmark->resolved_at = now();
 
         $data = $client->fetchBookmarkPageData($bookmark);
 
@@ -58,21 +52,22 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
             return;
         }
 
-        $builder->resolvedUrl($data->resolvedUrl);
+        $bookmark->resolved_url = $data->resolvedUrl->toString();
 
         if ($data->thumbnailUrl !== false) {
-            $builder->thumbnailUrl($data->thumbnailUrl->toString());
+            $bookmark->preview_image_url = $data->thumbnailUrl->toString();
         }
 
         if ($data->canonicalUrl !== false) {
-            $builder->canonicalUrl($data->canonicalUrl)->canonicalUrlHash($urlHasher->hashUrl($data->canonicalUrl));
+            $bookmark->url_canonical = $data->canonicalUrl->toString();
+            $bookmark->url_canonical_hash = $urlHasher->hashUrl($data->canonicalUrl);
         }
 
-        $this->setDescriptionAttribute($builder, $data, $bookmark);
-        $this->seTittleAttributes($builder, $data, $bookmark);
+        $this->setDescriptionAttribute($data, $bookmark);
+        $this->seTittleAttributes($data, $bookmark);
         $this->updateSiteName($data, $bookmark);
 
-        $repository->update(new Data($builder->build()));
+        $bookmark->save();
     }
 
     private function userRepository(): UserRepository
@@ -80,25 +75,27 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
         return app(UserRepository::class);
     }
 
-    private function setDescriptionAttribute(Builder &$builder, BookmarkMetaData $data, Bookmark $bookmark): void
+    private function setDescriptionAttribute(BookmarkMetaData $data, Bookmark &$bookmark): void
     {
-        if ($bookmark->descriptionWasSetByUser || $data->description === false) {
+        if ($bookmark->description_set_by_user || $data->description === false) {
             return;
         }
 
-        $builder->description(BookmarkDescription::limit($data->description)->value);
+        //subtract 3 from MAX_LENGTH to accommodate the 'end' (...) value
+        $bookmark->description = Str::limit($data->description, $bookmark::DESCRIPTION_MAX_LENGTH - 3);
     }
 
-    private function seTittleAttributes(Builder &$builder, BookmarkMetaData $data, Bookmark $bookmark): void
+    private function seTittleAttributes(BookmarkMetaData $data, Bookmark &$bookmark): void
     {
-        if ($bookmark->hasCustomTitle || $data->title === false) {
+        if ($bookmark->has_custom_title || $data->title === false) {
             return;
         }
 
-        $builder->title(BookmarkTitle::limit($data->title)->value);
+        //subtract 3 from MAX_LENGTH to accommodate the 'end' (...) value
+        $bookmark->title = Str::limit($data->title, $bookmark::TITLE_MAX_LENGTH - 3);
     }
 
-    private function updateSiteName(BookmarkMetaData $data, Bookmark $bookmark): void
+    private function updateSiteName(BookmarkMetaData $data, Bookmark &$bookmark): void
     {
         $siteName = $data->hostSiteName;
 
@@ -107,11 +104,11 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
         }
 
         /** @var Source */
-        $source = Source::query()->where('id', $bookmark->source->id->value())->first(['name', 'id', 'host']);
+        $source = Source::query()->where('id', $bookmark->source_id)->first(['name', 'id', 'host']);
 
-        if (!$bookmark->source->nameHasBeenUpdated) {
+        if ($bookmark->source->name_updated_at === null) {
             $source->update([
-                'name' => $siteName,
+                'name'            => $siteName,
                 'name_updated_at' => now()
             ]);
         }

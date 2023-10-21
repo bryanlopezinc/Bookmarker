@@ -8,31 +8,27 @@ use App\DataTransferObjects\ImportData;
 use App\Enums\ImportSource;
 use App\Importers\Factory;
 use App\Jobs\ImportBookmarks;
-use App\Repositories\UserRepository;
-use App\ValueObjects\UserID;
-use App\ValueObjects\Uuid;
+use Database\Factories\UserFactory;
+use Illuminate\Foundation\Testing\WithFaker;
 use Mockery\MockInterface;
 use Tests\TestCase;
 
 class ImportBookmarksTest extends TestCase
 {
-    public function test_will_not_import_bookmarks_if_user_has_deleted_account(): void
-    {
-        $importData = new ImportData(Uuid::generate(), ImportSource::CHROME, new UserID(33), []);
+    use WithFaker;
 
-        $this->mock(UserRepository::class, function (MockInterface $m) {
-            $m->shouldReceive('findByID')
-                ->once()
-                ->andReturn(false);
-        });
+    public function test_will_not_import_bookmarks_when_user_has_deleted_account(): void
+    {
+        $user = UserFactory::new()->create();
+
+        $importData = new ImportData($this->faker->uuid, ImportSource::CHROME, $user->id, []);
+
+        $user->delete();
 
         $this->mock(Factory::class, function (MockInterface $m) {
             $m->shouldReceive('getImporter')->never();
         });
 
-        (new ImportBookmarks($importData))->handle(
-            app(Factory::class),
-            app(UserRepository::class)
-        );
+        (new ImportBookmarks($importData))->handle(app(Factory::class));
     }
 }

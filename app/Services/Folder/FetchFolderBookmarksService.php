@@ -4,27 +4,24 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
-use App\Collections\BookmarksCollection;
-use App\Contracts\FolderRepositoryInterface;
-use App\DataTransferObjects\Folder;
 use App\DataTransferObjects\FolderBookmark;
+use App\Enums\FolderBookmarkVisibility;
+use App\Enums\FolderVisibility;
+use App\Exceptions\FolderNotFoundException;
 use App\Jobs\CheckBookmarksHealth;
+use App\Models\Bookmark;
+use App\Models\Favorite;
+use App\Models\Folder;
+use App\Models\FolderBookmark as FolderBookmarkModel;
 use App\PaginationData;
-use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\Repositories\Folder\FetchFolderBookmarksRepository;
-use App\ValueObjects\ResourceID;
-use App\ValueObjects\UserID;
 use Illuminate\Pagination\Paginator;
-use App\QueryColumns\FolderAttributes as Attributes;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use Illuminate\Support\Collection;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 
 final class FetchFolderBookmarksService
 {
     public function __construct(
-        private FetchFolderBookmarksRepository $folderBookmarksRepository,
-        private FolderRepositoryInterface $folderRepository,
+        private FetchFolderService $folderRepository,
         private FolderPermissionsRepository $permissions
     ) {
     }
@@ -32,32 +29,90 @@ final class FetchFolderBookmarksService
     /**
      * @return Paginator<FolderBookmark>
      */
-    public function fetch(ResourceID $folderID, PaginationData $pagination, UserID $userID): Paginator
+    public function fetch(int $folderId, PaginationData $pagination, ?int $authUserId): Paginator
     {
-        $folder = $this->folderRepository->find($folderID, Attributes::only('id,user_id'));
+        $folder = $this->folderRepository->find($folderId, ['id', 'user_id', 'visibility']);
 
-        $this->ensureUserCanViewFolderBookmarks($userID, $folder);
+        $fetchOnlyPublicBookmarks = (!$authUserId || $folder->user_id !== $authUserId);
 
-        $folderBookmarks = $this->folderBookmarksRepository->bookmarks($folderID, $pagination, $userID);
+        $this->ensureUserCanViewFolderBookmarks($authUserId, $folder);
+
+        $folderBookmarks = $this->getBookmarks(
+            $folderId,
+            $fetchOnlyPublicBookmarks,
+            $authUserId,
+            $pagination
+        );
 
         $folderBookmarks
             ->getCollection()
             ->map(fn (FolderBookmark $folderBookmark) => $folderBookmark->bookmark)
-            ->tap(fn (Collection $bookmarks) => dispatch(new CheckBookmarksHealth(new BookmarksCollection($bookmarks))));
+            ->tap(fn (Collection $bookmarks) => dispatch(new CheckBookmarksHealth($bookmarks)));
 
         return $folderBookmarks;
     }
 
-    private function ensureUserCanViewFolderBookmarks(UserID $userID, Folder $folder): void
+    private function ensureUserCanViewFolderBookmarks(?int $authUserId, Folder $folder): void
     {
-        try {
-            (new EnsureAuthorizedUserOwnsResource())($folder);
-        } catch (HttpException $e) {
-            $userHasAnyAccessToFolder = $this->permissions->getUserAccessControls($userID, $folder->folderID)->isNotEmpty();
+        if ($authUserId) {
+            try {
+                FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
+            } catch (FolderNotFoundException $e) {
+                if ($this->permissions->getUserAccessControls($authUserId, $folder->id)->isEmpty()) {
+                    throw $e;
+                }
 
-            if (!$userHasAnyAccessToFolder) {
-                throw $e;
+                return;
             }
         }
+
+        if (FolderVisibility::from($folder->visibility)->isPrivate()) {
+            throw new FolderNotFoundException();
+        }
+    }
+
+    /**
+     * @return Paginator<FolderBookmark>
+     */
+    private function getBookmarks(int $folderId, bool $onlyPublic, ?int $authUserId, PaginationData $pagination): Paginator
+    {
+        $model = new Bookmark();
+        $fbm = new FolderBookmarkModel(); // FolderBookmarkModel
+
+        /** @var Paginator */
+        $result = Bookmark::WithQueryOptions()
+            ->join($fbm->getTable(), $fbm->qualifyColumn('bookmark_id'), '=', $model->getQualifiedKeyName())
+            ->when($onlyPublic, fn ($query) => $query->where('visibility', FolderBookmarkVisibility::PUBLIC->value))
+            ->when(!$onlyPublic, fn ($query) => $query->addSelect(['visibility']))
+            ->when($authUserId, function ($query) use ($model, $authUserId) {
+                $query->addSelect([
+                    'isUserFavorite' => Favorite::query()
+                        ->select('id')
+                        ->where('user_id', $authUserId)
+                        ->whereRaw("bookmark_id = {$model->qualifyColumn('id')}")
+                ]);
+            })
+            ->where('folder_id', $folderId)
+            ->latest($fbm->getQualifiedKeyName())
+            ->simplePaginate($pagination->perPage(), [], page: $pagination->page());
+
+        $result->setCollection(
+            $result->getCollection()->map($this->buildFolderBookmarkObject($onlyPublic))
+        );
+
+        return $result;
+    }
+
+    private function buildFolderBookmarkObject(bool $onlyPublic): \Closure
+    {
+        return function (Bookmark $model) use ($onlyPublic) {
+            $model->isUserFavorite = is_int($model->isUserFavorite);
+
+            if ($onlyPublic) {
+                $model->visibility = FolderBookmarkVisibility::PUBLIC->value;
+            }
+
+            return new FolderBookmark($model, FolderBookmarkVisibility::from($model->visibility));
+        };
     }
 }

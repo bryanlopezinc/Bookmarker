@@ -2,8 +2,7 @@
 
 namespace App\Console;
 
-use App\Jobs\CleanDeletedUsersTable;
-use App\Jobs\PruneDeletedUsersData;
+use App\Jobs\DeleteOrphanRecords;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -19,8 +18,7 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('passport:purge')->daily();
         $schedule->command('auth:clear-resets')->daily();
-        $schedule->job(PruneDeletedUsersData::class)->hourly();
-        $schedule->job(CleanDeletedUsersTable::class)->everyTwoHours();
+        $schedule->job(DeleteOrphanRecords::class)->daily();
     }
 
     /**

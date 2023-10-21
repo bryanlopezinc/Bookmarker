@@ -4,31 +4,31 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
-use App\Contracts\FolderRepositoryInterface;
-use App\DataTransferObjects\Folder;
+use App\DataTransferObjects\FolderSettings;
+use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
+use App\Models\Folder;
 use App\Notifications\CollaboratorExitNotification;
-use App\QueryColumns\FolderAttributes;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\Repositories\NotificationRepository;
 use App\UAC;
-use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
 
 final class LeaveFolderCollaborationService
 {
     public function __construct(
-        private FolderRepositoryInterface $folderRepository,
+        private FetchFolderService $folderRepository,
         private FolderPermissionsRepository $permissionsRepository,
         private NotificationRepository $notifications
     ) {
     }
 
-    public function leave(ResourceID $folderID): void
+    public function leave(int $folderID): void
     {
-        $folder = $this->folderRepository->find($folderID, FolderAttributes::only('id,user_id,settings'));
+        $folder = $this->folderRepository->find($folderID, ['id', 'user_id', 'settings']);
+
         $collaboratorPermissions = $this->permissionsRepository->getUserAccessControls(
-            $collaboratorID = UserID::fromAuthUser(),
+            $collaboratorID = UserID::fromAuthUser()->value(),
             $folderID
         );
 
@@ -44,24 +44,22 @@ final class LeaveFolderCollaborationService
     private function ensureCollaboratorHasAccessToFolder(UAC $folderUAC): void
     {
         if ($folderUAC->isEmpty()) {
-            throw HttpException::notFound([
-                'message' => 'User not a collaborator'
-            ]);
+            throw new FolderNotFoundException();
         }
     }
 
-    private function ensureCollaboratorDoesNotOwnFolder(UserID $collaboratorID, Folder $folder): void
+    private function ensureCollaboratorDoesNotOwnFolder(int $collaboratorID, Folder $folder): void
     {
-        if ($collaboratorID->equals($folder->ownerID)) {
+        if ($collaboratorID === $folder->user_id) {
             throw HttpException::forbidden([
-                'message' => 'Cannot exit from own folder'
+                'message' => 'CannotExitOwnFolder'
             ]);
         }
     }
 
-    private function notifyFolderOwner(UserID $collaboratorThatLeft, Folder $folder, UAC $collaboratorPermissions): void
+    private function notifyFolderOwner(int $collaborator, Folder $folder, UAC $collaboratorPermissions): void
     {
-        $folderNotificationSettings = $folder->settings;
+        $folderNotificationSettings = FolderSettings::fromQuery($folder->settings);
 
         if (
             $folderNotificationSettings->notificationsAreDisabled() ||
@@ -73,8 +71,8 @@ final class LeaveFolderCollaborationService
         }
 
         $this->notifications->notify(
-            $folder->ownerID,
-            new CollaboratorExitNotification($folder->folderID, $collaboratorThatLeft)
+            $folder->user_id,
+            new CollaboratorExitNotification($folder->id, $collaborator)
         );
     }
 }

@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace App\Events;
 
-use App\Collections\TagsCollection;
-use App\ValueObjects\UserID;
+use LogicException;
 
 final class TagsDetachedEvent
 {
-    public function __construct(public readonly TagsCollection $tags, public readonly UserID $userID)
+    /**
+     * @param array<string>
+     */
+    public function __construct(public readonly array $tags)
     {
+        if (empty($tags)) {
+            throw new LogicException('Tags cannot be empty');
+        }
     }
 }

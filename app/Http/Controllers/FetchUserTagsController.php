@@ -15,10 +15,10 @@ final class FetchUserTagsController
 {
     public function __invoke(Request $request, TagRepository $repository): PaginatedResourceCollection
     {
-        $request->validate(PaginationData::new()->maxPerPage(setting('PER_PAGE_USER_TAGS'))->asValidationRules());
+        $request->validate(PaginationData::new()->maxPerPage(50)->asValidationRules());
 
         return new PaginatedResourceCollection(
-            $repository->getUserTags(UserID::fromAuthUser(), PaginationData::fromRequest($request)),
+            $repository->getUserTags(UserID::fromAuthUser()->value(), PaginationData::fromRequest($request)),
             TagResource::class
         );
     }

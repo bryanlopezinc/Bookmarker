@@ -14,11 +14,11 @@ use Illuminate\Database\Eloquent\Model;
 final class FolderPermission extends Model
 {
     /** @see \Database\Seeders\FolderPermissionsSeeder */
-    public const VIEW_BOOKMARKS = 'viewBookmarks';
-    public const ADD_BOOKMARKS = 'addBookmarks';
+    public const VIEW_BOOKMARKS   = 'viewBookmarks';
+    public const ADD_BOOKMARKS    = 'addBookmarks';
     public const DELETE_BOOKMARKS = 'deleteBookmarks';
-    public const INVITE = 'inviteUser';
-    public const UPDATE_FOLDER = 'updateFolder';
+    public const INVITE           = 'inviteUser';
+    public const UPDATE_FOLDER    = 'updateFolder';
 
     public const UPDATED_AT = null;
 

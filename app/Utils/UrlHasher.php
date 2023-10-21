@@ -11,10 +11,8 @@ class UrlHasher
 {
     private const ALGO = 'xxh3';
 
-    public function hashUrl(Url $url): HashedUrl
+    public function hashUrl(Url $url): string
     {
-        return new HashedUrl(
-            hash(self::ALGO, $url->toString())
-        );
+        return hash(self::ALGO, $url->toString());
     }
 }

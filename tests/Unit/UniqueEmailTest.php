@@ -9,7 +9,7 @@ use Illuminate\Database\QueryException;
 
 class UniqueEmailTest extends TestCase
 {
-    public function testNewUserEmailMustNotExistInSecondaryEmailsTable(): void
+    public function testWillThrowExceptionWhenNewUserEmailExistInSecondaryEmailsTable(): void
     {
         $userWasCreatedSuccessfully = true;
         $secondaryEmail = UserFactory::new()->make()->email;
@@ -30,7 +30,7 @@ class UniqueEmailTest extends TestCase
         $this->assertFalse($userWasCreatedSuccessfully);
     }
 
-    public function testNewSecondaryEmailMustNotExistInUsersTable(): void
+    public function testWillThrowExceptionWhenNewSecondaryEmailExistInUsersTable(): void
     {
         $emailWasCreatedSuccessfully = true;
         $newUserEmail = UserFactory::new()->create()->email;

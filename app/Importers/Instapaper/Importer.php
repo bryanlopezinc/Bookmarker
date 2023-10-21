@@ -9,8 +9,6 @@ use App\Importers\Filesystem;
 use App\Importers\ImporterInterface;
 use App\Services\CreateBookmarkService;
 use App\ValueObjects\Url;
-use App\ValueObjects\UserID;
-use App\ValueObjects\Uuid;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 
 final class Importer implements ImporterInterface
@@ -22,7 +20,7 @@ final class Importer implements ImporterInterface
     ) {
     }
 
-    public function import(UserID $userID, Uuid $requestID, array $requestData): void
+    public function import(int $userID, string $requestID, array $requestData): void
     {
         if (!$this->filesystem->exists($userID, $requestID)) {
             throw new FileNotFoundException();
@@ -35,7 +33,7 @@ final class Importer implements ImporterInterface
         $this->filesystem->delete($userID, $requestID);
     }
 
-    private function saveBookmark(array $requestData, UserID $userID, Bookmark $instapaperBookmark): void
+    private function saveBookmark(array $requestData, int $userID, Bookmark $instapaperBookmark): void
     {
         try {
             $url = new Url($instapaperBookmark->url);
@@ -44,10 +42,10 @@ final class Importer implements ImporterInterface
         }
 
         $this->createBookmark->fromArray([
-            'url' => $url,
+            'url'       => $url,
             'createdOn' => (string) now(),
-            'userID' => $userID,
-            'tags' => $requestData['tags'] ?? []
+            'userID'    => $userID,
+            'tags'      => $requestData['tags'] ?? []
         ]);
     }
 }

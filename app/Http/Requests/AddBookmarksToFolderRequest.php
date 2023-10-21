@@ -13,10 +13,10 @@ final class AddBookmarksToFolderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'bookmarks' => ['required', 'array', join(':', ['max', setting('MAX_POST_FOLDER_BOOKMARKS')])],
-            'bookmarks.*' => [new ResourceIdRule(), 'distinct:strict'],
-            'folder' => ['required', new ResourceIdRule()],
-            'make_hidden' => ['nullable', 'array'],
+            'bookmarks'     => ['required', 'array', 'max:50'],
+            'bookmarks.*'   => [new ResourceIdRule(), 'distinct:strict'],
+            'folder'        => ['required', new ResourceIdRule()],
+            'make_hidden'   => ['nullable', 'array'],
             'make_hidden.*' => [new ResourceIdRule(), 'distinct:strict',]
         ];
     }
@@ -38,7 +38,7 @@ final class AddBookmarksToFolderRequest extends FormRequest
 
             foreach ($this->input('make_hidden', []) as $key => $id) {
                 if (!in_array($id, $bookmarkIDs, true)) {
-                    $validator->errors()->add('make_hidden.' . $key, "'BookmarkId $id does not exist in bookmarks.'");
+                    $validator->errors()->add('make_hidden.' . $key, "BookmarkId $id does not exist in bookmarks.");
                 }
             }
         });

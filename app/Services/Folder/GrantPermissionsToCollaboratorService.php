@@ -4,63 +4,57 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
-use App\Contracts\FolderRepositoryInterface;
+use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
-use App\Policies\EnsureAuthorizedUserOwnsResource as Policy;
-use App\QueryColumns\FolderAttributes;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\UAC;
-use App\ValueObjects\ResourceID as FolderID;
 use App\ValueObjects\UserID;
 
 final class GrantPermissionsToCollaboratorService
 {
     public function __construct(
-        private FolderRepositoryInterface $folderRepository,
+        private FetchFolderService $folderRepository,
         private FolderPermissionsRepository $permissions
     ) {
     }
 
-    public function grant(UserID $collaboratorID, FolderID $folderID, UAC $permissions): void
+    public function grant(int $collaboratorId, int $folderId, UAC $permissions): void
     {
-        $folder = $this->folderRepository->find($folderID, FolderAttributes::only('id,user_id'));
-        $collaboratorCurrentPermissions = $this->permissions->getUserAccessControls($collaboratorID, $folderID);
+        $folder = $this->folderRepository->find($folderId, ['id', 'user_id']);
 
-        (new Policy())($folder);
+        $currentPermissions = $this->permissions->getUserAccessControls($collaboratorId, $folderId);
 
-        $this->ensureIsNotGrantingPermissionsToSelf($collaboratorID);
+        FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 
-        $this->ensureUserIsCurrentlyACollaborator($collaboratorCurrentPermissions);
+        $this->ensureIsNotGrantingPermissionsToSelf($collaboratorId, UserID::fromAuthUser()->value());
 
-        $this->ensureCollaboratorDoesNotHavePermissions($collaboratorCurrentPermissions, $permissions);
+        $this->ensureUserIsCurrentlyACollaborator($currentPermissions);
 
-        $this->permissions->create($collaboratorID, $folderID, $permissions);
+        $this->ensureCollaboratorDoesNotHavePermissions($currentPermissions, $permissions);
+
+        $this->permissions->create($collaboratorId, $folderId, $permissions);
     }
 
-    private function ensureIsNotGrantingPermissionsToSelf(UserID $collaboratorID): void
+    private function ensureIsNotGrantingPermissionsToSelf(int $collaboratorID, int $authUserId): void
     {
-        if (UserID::fromAuthUser()->equals($collaboratorID)) {
+        if ($authUserId === $collaboratorID) {
             throw HttpException::forbidden([
-                'message' => 'Cannot grant permissions to self'
+                'message' => 'CannotGrantPermissionsToSelf'
             ]);
         }
     }
 
-    private function ensureUserIsCurrentlyACollaborator(UAC $collaboratorCurrentPermissions): void
+    private function ensureUserIsCurrentlyACollaborator(UAC $currentPermissions): void
     {
-        if ($collaboratorCurrentPermissions->isEmpty()) {
-            throw HttpException::notFound([
-                'message' => 'User not a collaborator'
-            ]);
+        if ($currentPermissions->isEmpty()) {
+            throw HttpException::notFound(['message' => 'UserNotACollaborator']);
         }
     }
 
-    private function ensureCollaboratorDoesNotHavePermissions(UAC $collaboratorCurrentPermissions, UAC $grantPermissions): void
+    private function ensureCollaboratorDoesNotHavePermissions(UAC $currentPermissions, UAC $grant): void
     {
-        if ($collaboratorCurrentPermissions->containsAny($grantPermissions)) {
-            throw HttpException::conflict([
-                'message' => 'user already has permissions'
-            ]);
+        if ($currentPermissions->containsAny($grant)) {
+            throw HttpException::conflict(['message' => 'DuplicatePermissions']);
         }
     }
 }

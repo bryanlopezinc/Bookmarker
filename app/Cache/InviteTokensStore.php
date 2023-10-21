@@ -5,16 +5,13 @@ declare(strict_types=1);
 namespace App\Cache;
 
 use App\UAC;
-use App\ValueObjects\ResourceID;
-use App\ValueObjects\UserID;
-use App\ValueObjects\Uuid;
 use Illuminate\Contracts\Cache\Repository;
 
 final class InviteTokensStore
 {
-    public const INVITER_ID = 'inviterID';
-    public const INVITEE_ID = 'inviteeID';
-    public const FOLDER_ID = 'folderID';
+    public const INVITER_ID  = 'inviterID';
+    public const INVITEE_ID  = 'inviteeID';
+    public const FOLDER_ID   = 'folderID';
     public const PERMISSIONS = 'permission';
 
     public function __construct(private readonly Repository $repository, private readonly int $ttl)
@@ -22,24 +19,32 @@ final class InviteTokensStore
     }
 
     public function store(
-        Uuid $token,
-        UserID $inviterID,
-        UserID $inviteeID,
-        ResourceID $folderID,
+        string $uuid,
+        int $inviterID,
+        int $inviteeID,
+        int $folderID,
         UAC $permissions
     ): void {
         $data = [
-            self::INVITER_ID => $inviterID->value(),
-            self::INVITEE_ID => $inviteeID->value(),
-            self::FOLDER_ID => $folderID->value(),
+            self::INVITER_ID  => $inviterID,
+            self::INVITEE_ID  => $inviteeID,
+            self::FOLDER_ID   => $folderID,
             self::PERMISSIONS => $permissions->serialize()
         ];
 
-        $this->repository->put($token->value, $data, $this->ttl);
+        $this->repository->put($uuid, $data, $this->ttl);
     }
 
-    public function get(Uuid $token): array
+    /**
+     * @return array<string,mixed>
+     */
+    public function get(string $token): array
     {
-        return $this->repository->get($token->value, []);
+        return $this->repository->get($token, []);
+    }
+
+    public function forget(string $token): void
+    {
+        $this->repository->forget($token);
     }
 }

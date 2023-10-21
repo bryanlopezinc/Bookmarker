@@ -7,19 +7,17 @@ namespace Tests\Unit\Importers\Pocket;
 use Closure;
 use ArrayIterator;
 use Tests\TestCase;
-use App\ValueObjects\Uuid;
 use Illuminate\Support\Str;
-use App\ValueObjects\UserID;
 use App\Jobs\UpdateBookmarkWithHttpResponse;
 use Illuminate\Support\Facades\Bus;
-use App\DataTransferObjects\Bookmark;
 use Illuminate\Foundation\Testing\WithFaker;
 use PHPUnit\Framework\MockObject\MockObject;
-use App\Contracts\CreateBookmarkRepositoryInterface;
 use App\Importers\Pocket\DOMParserInterface;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use App\Importers\Pocket\Importer as Importer;
-use App\ValueObjects\Tag;
+use App\Services\CreateBookmarkService;
+use App\ValueObjects\Url;
+use Carbon\Carbon;
 use Database\Factories\TagFactory;
 use Tests\Unit\Importers\MockFilesystem;
 
@@ -31,7 +29,7 @@ class ImporterTest extends TestCase
     {
         $this->expectException(FileNotFoundException::class);
 
-        $this->getImporter()->import(new UserID(22), Uuid::generate(), []);
+        $this->getImporter()->import(21, $this->faker->uuid, []);
     }
 
     protected function getImporter(): Importer
@@ -41,7 +39,6 @@ class ImporterTest extends TestCase
 
     public function testWillClearDataAfterImport(): void
     {
-        $requestID = Uuid::generate();
         $DOMParser = $this->getMockBuilder(DOMParserInterface::class)->getMock();
 
         $this->mockFilesystem(function (MockObject $mock) {
@@ -54,7 +51,7 @@ class ImporterTest extends TestCase
 
         $this->swap(DOMParserInterface::class, $DOMParser);
 
-        $this->getImporter()->import(new UserID(120), $requestID, []);
+        $this->getImporter()->import(21, $this->faker->uuid, []);
     }
 
     public function testWillUseBookmarkTagsByDefault(): void
@@ -80,16 +77,16 @@ class ImporterTest extends TestCase
             $mock->expects($this->once())->method('get')->willReturn($html);
         });
 
-        $this->mockRepository(function (MockObject $repository) {
+        $this->mockServiceClass(function (MockObject $repository) {
             $repository->expects($this->once())
-                ->method('create')
-                ->willReturnCallback(function (Bookmark $bookmark) {
-                    $this->assertEquals(['2017', 'bots', 'telegram'], $bookmark->tags->toStringCollection()->all());
+                ->method('fromArray')
+                ->willReturnCallback(function (array $bookmark) {
+                    $this->assertEquals(['2017', 'bots', 'telegram'], $bookmark['tags']);
                     return $bookmark;
                 });
         });
 
-        $this->getImporter()->import(new UserID(200), Uuid::generate(), []);
+        $this->getImporter()->import(21, $this->faker->uuid, []);
     }
 
     public function testWillUseOnlyUniqueTags(): void
@@ -115,16 +112,16 @@ class ImporterTest extends TestCase
             $mock->expects($this->once())->method('get')->willReturn($html);
         });
 
-        $this->mockRepository(function (MockObject $repository) {
+        $this->mockServiceClass(function (MockObject $repository) {
             $repository->expects($this->once())
-                ->method('create')
-                ->willReturnCallback(function (Bookmark $bookmark) {
-                    $this->assertEquals(['2017', 'bots', 'telegram'], $bookmark->tags->toStringCollection()->all());
+                ->method('fromArray')
+                ->willReturnCallback(function (array $bookmark) {
+                    $this->assertEquals(['2017', 'bots', 'telegram'], $bookmark['tags']);
                     return $bookmark;
                 });
         });
 
-        $this->getImporter()->import(new UserID(330), Uuid::generate(), []);
+        $this->getImporter()->import(21, $this->faker->uuid, []);
     }
 
     public function testWillNotUseBookmarkTagsWhenIndicated(): void
@@ -150,16 +147,16 @@ class ImporterTest extends TestCase
             $mock->expects($this->once())->method('get')->willReturn($html);
         });
 
-        $this->mockRepository(function (MockObject $repository) {
+        $this->mockServiceClass(function (MockObject $repository) {
             $repository->expects($this->once())
-                ->method('create')
-                ->willReturnCallback(function (Bookmark $bookmark) {
-                    $this->assertTrue($bookmark->tags->isEmpty());
+                ->method('fromArray')
+                ->willReturnCallback(function (array $bookmark) {
+                    $this->assertEmpty($bookmark['tags']);
                     return $bookmark;
                 });
         });
 
-        $this->getImporter()->import(new UserID(7), Uuid::generate(), ['ignore_tags' => true]);
+        $this->getImporter()->import(21, $this->faker->uuid, ['ignore_tags' => true]);
     }
 
     public function test_will_not_use_bookmark_tags_when_tags_count_is_greater_than_15(): void
@@ -187,16 +184,16 @@ class ImporterTest extends TestCase
             $mock->expects($this->once())->method('get')->willReturn($html);
         });
 
-        $this->mockRepository(function (MockObject $repository) {
+        $this->mockServiceClass(function (MockObject $repository) {
             $repository->expects($this->once())
-                ->method('create')
-                ->willReturnCallback(function (Bookmark $bookmark) {
-                    $this->assertTrue($bookmark->tags->isEmpty());
+                ->method('fromArray')
+                ->willReturnCallback(function (array $bookmark) {
+                    $this->assertEmpty($bookmark['tags']);
                     return $bookmark;
                 });
         });
 
-        $this->getImporter()->import(new UserID(45), Uuid::generate(), []);
+        $this->getImporter()->import(21, $this->faker->uuid, []);
     }
 
     public function testWillNotUseIncompatibleBookmarkTags(): void
@@ -204,7 +201,7 @@ class ImporterTest extends TestCase
         Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
         $tags = implode(',', [
-            Str::random(Tag::MAX_LENGTH + 1), ' ', 'bot'
+            Str::random(23), ' ', 'bot'
         ]);
 
         $html = <<<HTML
@@ -226,25 +223,25 @@ class ImporterTest extends TestCase
             $mock->expects($this->once())->method('get')->willReturn($html);
         });
 
-        $this->mockRepository(function (MockObject $repository) {
+        $this->mockServiceClass(function (MockObject $repository) {
             $repository->expects($this->once())
-                ->method('create')
-                ->willReturnCallback(function (Bookmark $bookmark) {
-                    $this->assertEquals('bot', $bookmark->tags->toStringCollection()->sole());
+                ->method('fromArray')
+                ->willReturnCallback(function (array $bookmark) {
+                    $this->assertEquals(['bot'], $bookmark['tags']);
                     return $bookmark;
                 });
         });
 
-        $this->getImporter()->import(new UserID(950), Uuid::generate(), []);
+        $this->getImporter()->import(21, $this->faker->uuid, []);
     }
 
-    private function mockRepository(Closure $mock): void
+    private function mockServiceClass(Closure $mock): void
     {
-        $repository = $this->getMockBuilder(CreateBookmarkRepositoryInterface::class)->getMock();
+        $service = $this->getMockBuilder(CreateBookmarkService::class)->getMock();
 
-        $mock($repository);
+        $mock($service);
 
-        $this->swap(CreateBookmarkRepositoryInterface::class, $repository);
+        $this->swap(CreateBookmarkService::class, $service);
     }
 
     public function testWillUseBookmarkDateByDefault(): void
@@ -270,16 +267,16 @@ class ImporterTest extends TestCase
             $mock->expects($this->once())->method('get')->willReturn($html);
         });
 
-        $this->mockRepository(function (MockObject $repository) {
+        $this->mockServiceClass(function (MockObject $repository) {
             $repository->expects($this->exactly(1))
-                ->method('create')
-                ->willReturnCallback(function (Bookmark $bookmark) {
-                    $this->assertEquals($bookmark->timeCreated->year, 2021);
+                ->method('fromArray')
+                ->willReturnCallback(function (array $bookmark) {
+                    $this->assertEquals(Carbon::parse($bookmark['createdOn'])->year, 2021);
                     return $bookmark;
                 });
         });
 
-        $this->getImporter()->import(new UserID(210), Uuid::generate(), []);
+        $this->getImporter()->import(21, $this->faker->uuid, []);
     }
 
     public function testWillNotUseBookmarkDateWhenIndicated(): void
@@ -305,16 +302,16 @@ class ImporterTest extends TestCase
             $mock->expects($this->once())->method('get')->willReturn($html);
         });
 
-        $this->mockRepository(function (MockObject $repository) {
+        $this->mockServiceClass(function (MockObject $repository) {
             $repository->expects($this->exactly(1))
-                ->method('create')
-                ->willReturnCallback(function (Bookmark $bookmark) {
-                    $this->assertTrue($bookmark->timeCreated->isToday());
+                ->method('fromArray')
+                ->willReturnCallback(function (array $bookmark) {
+                    $this->assertTrue(Carbon::parse($bookmark['createdOn'])->isToday());
                     return $bookmark;
                 });
         });
 
-        $this->getImporter()->import(new UserID(320), Uuid::generate(), ['use_timestamp' => false]);
+        $this->getImporter()->import(21, $this->faker->uuid, ['use_timestamp' => false]);
     }
 
     public function testWillUseDefaultDateWhenDateIsInvalid(): void
@@ -340,16 +337,16 @@ class ImporterTest extends TestCase
             $mock->expects($this->once())->method('get')->willReturn($html);
         });
 
-        $this->mockRepository(function (MockObject $repository) {
+        $this->mockServiceClass(function (MockObject $repository) {
             $repository->expects($this->once())
-                ->method('create')
-                ->willReturnCallback(function (Bookmark $bookmark) {
-                    $this->assertTrue($bookmark->timeCreated->isToday());
+                ->method('fromArray')
+                ->willReturnCallback(function (array $bookmark) {
+                    $this->assertTrue(Carbon::parse($bookmark['createdOn'])->isToday());
                     return $bookmark;
                 });
         });
 
-        $this->getImporter()->import(new UserID(2144), Uuid::generate(), []);
+        $this->getImporter()->import(21, $this->faker->uuid, []);
     }
 
     public function testWillNotSaveBookmarkIfUrlIsInvalid(): void
@@ -373,11 +370,11 @@ class ImporterTest extends TestCase
             $mock->expects($this->once())->method('get')->willReturn($html);
         });
 
-        $this->mockRepository(function (MockObject $repository) {
-            $repository->expects($this->never())->method('create');
+        $this->mockServiceClass(function (MockObject $repository) {
+            $repository->expects($this->never())->method('fromArray');
         });
 
-        $this->getImporter()->import(new UserID(4344), Uuid::generate(), []);
+        $this->getImporter()->import(21, $this->faker->uuid, []);
     }
 
     public function testWillStoreBookmarks(): void
@@ -391,18 +388,18 @@ class ImporterTest extends TestCase
             );
         });
 
-        $this->mockRepository(function (MockObject $repository) {
-            $repository->expects($this->exactly(11))->method('create')->willReturn(new Bookmark([]));
+        $this->mockServiceClass(function (MockObject $repository) {
+            $repository->expects($this->exactly(11))->method('fromArray');
         });
 
-        $this->getImporter()->import(new UserID(2302), Uuid::generate(), []);
+        $this->getImporter()->import(21, $this->faker->uuid, []);
     }
 
     public function testWillSaveCorrectData(): void
     {
         Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
-        $userID = new UserID(rand(10, PHP_INT_MAX));
+        $userID = 33;
 
         $html = <<<HTML
             <!DOCTYPE html>
@@ -423,24 +420,21 @@ class ImporterTest extends TestCase
             $mock->expects($this->once())->method('get')->willReturn($html);
         });
 
-        $this->mockRepository(function (MockObject $repository) use ($userID) {
+        $this->mockServiceClass(function (MockObject $repository) use ($userID) {
             $repository->expects($this->exactly(1))
-                ->method('create')
-                ->willReturnCallback(function (Bookmark $bookmark) use ($userID) {
-                    $this->assertEquals("https://cai.tools.sap/blog/top-telegram-bots-2017/", $bookmark->url->toString());
-                    $this->assertEquals(1627725769, $bookmark->timeCreated->timestamp);
-                    $this->assertTrue($bookmark->description->isEmpty());
-                    $this->assertFalse($bookmark->descriptionWasSetByUser);
-                    $this->assertEquals('cai.tools.sap', $bookmark->source->domainName->value);
-                    $this->assertFalse($bookmark->hasCustomTitle);
-                    $this->assertFalse($bookmark->hasThumbnailUrl);
-                    $this->assertTrue($bookmark->ownerId->equals($userID));
-                    $this->assertFalse($bookmark->hasThumbnailUrl);
-                    $this->assertTrue($bookmark->tags->isEmpty());
+                ->method('fromArray')
+                ->willReturnCallback(function (array $bookmark) use ($userID) {
+                    $this->assertEquals($bookmark, [
+                        'url'       => new Url('https://cai.tools.sap/blog/top-telegram-bots-2017/'),
+                        'tags'      => [],
+                        'createdOn' => '2021-07-31 10:02:49',
+                        'userID'    => $userID,
+                    ]);
+
                     return $bookmark;
                 });
         });
 
-        $this->getImporter()->import($userID, Uuid::generate(), []);
+        $this->getImporter()->import($userID, $this->faker->uuid, []);
     }
 }

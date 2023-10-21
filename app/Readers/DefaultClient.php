@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Readers;
 
-use App\DataTransferObjects\Bookmark;
+use App\Models\Bookmark;
 use App\ValueObjects\Url;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
@@ -27,7 +27,7 @@ final class DefaultClient implements HttpClientInterface
         try {
             $response = Http::accept('text/html')
                 ->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36')
-                ->get($bookmark->url->toString());
+                ->get($bookmark->url);
         } catch (ConnectionException $e) {
             return $this->handleException($e->getPrevious(), $bookmark);
         }
@@ -39,12 +39,12 @@ final class DefaultClient implements HttpClientInterface
         $this->dOMReader->loadHTML($response->body(), $resolvedUrl = new Url($response->effectiveUri()));
 
         return BookmarkMetaData::fromArray([
-            'title' => $this->dOMReader->getPageTitle(),
-            'description' => $this->dOMReader->getPageDescription(),
-            'imageUrl' => $this->dOMReader->getPreviewImageUrl(),
-            'siteName' => $this->dOMReader->getSiteName(),
+            'title'        => $this->dOMReader->getPageTitle(),
+            'description'  => $this->dOMReader->getPageDescription(),
+            'imageUrl'     => $this->dOMReader->getPreviewImageUrl(),
+            'siteName'     => $this->dOMReader->getSiteName(),
             'canonicalUrl' => $this->dOMReader->getCanonicalUrl(),
-            'resolvedUrl' => $resolvedUrl
+            'resolvedUrl'  => $resolvedUrl
         ]);
     }
 
@@ -68,12 +68,12 @@ final class DefaultClient implements HttpClientInterface
     private function emptyResponse(Bookmark $bookmark): BookmarkMetaData
     {
         return BookmarkMetaData::fromArray([
-            'title' => false,
-            'description' => false,
-            'imageUrl' => false,
-            'siteName' => false,
+            'title'        => false,
+            'description'  => false,
+            'imageUrl'     => false,
+            'siteName'     => false,
             'canonicalUrl' => false,
-            'resolvedUrl' => $bookmark->url
+            'resolvedUrl'  => new Url($bookmark->url)
         ]);
     }
 }

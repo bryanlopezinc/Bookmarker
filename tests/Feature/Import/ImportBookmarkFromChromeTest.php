@@ -12,7 +12,7 @@ use Laravel\Passport\Passport;
 
 class ImportBookmarkFromChromeTest extends ImportBookmarkBaseTest
 {
-    public function testRequiredAttributesMustBePresent(): void
+    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -27,22 +27,12 @@ class ImportBookmarkFromChromeTest extends ImportBookmarkBaseTest
             ->assertJsonValidationErrors([
                 'html' => ['The html field is required.']
             ]);
-    }
-
-    public function testSourceMustBeValid(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
 
         $this->importBookmarkResponse(['source' => 'foo'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'source' => ['The selected source is invalid.']
             ]);
-    }
-
-    public function testFileMustNotBeGreaterThan_5_MegaBytes(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
 
         $this->importBookmarkResponse([
             'source' => 'chromeExportFile',
@@ -51,25 +41,13 @@ class ImportBookmarkFromChromeTest extends ImportBookmarkBaseTest
             ->assertJsonValidationErrors([
                 'html' => ['The html must not be greater than 5000 kilobytes.']
             ]);
-    }
-
-    public function testCannotAddMoreThan_15_Tags(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $tags = TagFactory::new()->count(16)->make()->pluck('name')->implode(',');
 
         $this->importBookmarkResponse([
             'source' => 'chromeExportFile',
-            'tags' => $tags
+            'tags'   => TagFactory::new()->count(16)->make()->pluck('name')->implode(',')
         ])->assertJsonValidationErrors([
             'tags' => 'The tags must not be greater than 15 characters.'
         ]);
-    }
-
-    public function testTagsMustBeUnique(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
 
         $this->importBookmarkResponse([
             'source' => 'chromeExportFile',
@@ -80,7 +58,7 @@ class ImportBookmarkFromChromeTest extends ImportBookmarkBaseTest
         ]);
     }
 
-    public function testWillImportBookmarks(): void
+    public function testImportBookmarks(): void
     {
         Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 
@@ -88,7 +66,7 @@ class ImportBookmarkFromChromeTest extends ImportBookmarkBaseTest
 
         $this->importBookmarkResponse([
             'source' => 'chromeExportFile',
-            'html' => UploadedFile::fake()->createWithContent('file.html', file_get_contents(base_path('tests/stubs/imports/chromeExportFile.html'))),
+            'html'   => UploadedFile::fake()->createWithContent('file.html', file_get_contents(base_path('tests/stubs/imports/chromeExportFile.html'))),
         ])->assertStatus(Response::HTTP_PROCESSING);
     }
 }

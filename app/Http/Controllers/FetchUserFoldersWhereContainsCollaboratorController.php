@@ -20,16 +20,14 @@ final class FetchUserFoldersWhereContainsCollaboratorController
         $request->validate([
             ...PaginationData::new()->asValidationRules(),
             'collaborator_id' => ['required', new ResourceIdRule()],
-            'fields' => ['sometimes', new UserCollaborationFieldsRule()]
+            'fields'          => ['sometimes', new UserCollaborationFieldsRule()]
         ]);
 
         $result = $repository->get(
-            UserID::fromAuthUser(),
-            new UserID((int)$request->input('collaborator_id')),
+            UserID::fromAuthUser()->value(),
+            $request->integer('collaborator_id'),
             PaginationData::fromRequest($request),
         );
-
-        $result->appends('per_page', $request->input('per_page', PaginationData::DEFAULT_PER_PAGE))->withQueryString();
 
         return new ResourceCollection($result, FilterUserCollaborationResource::class);
     }

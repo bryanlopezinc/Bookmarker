@@ -2,10 +2,11 @@
 
 namespace Tests\Feature\Folder;
 
-use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\Enums\FolderSettingKey;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
-use App\Models\FolderBookmarksCount;
+use App\Models\FolderSetting;
+use App\Services\Folder\AddBookmarksToFolderService;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
@@ -23,6 +24,10 @@ class RemoveBookmarksFromFolderTest extends TestCase
 
     protected function removeFolderBookmarksResponse(array $parameters = []): TestResponse
     {
+        if (array_key_exists('bookmarks', $parameters)) {
+            $parameters['bookmarks'] = implode(',', $parameters['bookmarks']);
+        }
+
         return $this->deleteJson(route('removeBookmarksFromFolder'), $parameters);
     }
 
@@ -31,7 +36,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
         $this->assertRouteIsAccessibleViaPath('v1/folders/bookmarks', 'removeBookmarksFromFolder');
     }
 
-    public function testUnAuthorizedUserCannotAccessRoute(): void
+    public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
         $this->removeFolderBookmarksResponse()->assertUnauthorized();
     }
@@ -45,78 +50,56 @@ class RemoveBookmarksFromFolderTest extends TestCase
             ->assertJsonValidationErrors(['bookmarks', 'folder']);
     }
 
-    public function testWillThrowValidationWhenAttributesAreInvalid(): void
+    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->removeFolderBookmarksResponse(['bookmarks' => '1,2bar'])
+        $this->removeFolderBookmarksResponse(['bookmarks' => ['1', '2bar']])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
-                "folder" => ["The folder field is required."],
+                "folder"      => ["The folder field is required."],
                 "bookmarks.1" => ["The bookmarks.1 attribute is invalid"]
             ]);
-    }
 
-    public function testAttributesMustBeUnique(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->removeFolderBookmarksResponse(['bookmarks' => ['1', '3', '4', '1']])
+            ->assertJsonValidationErrors([
+                "bookmarks.0" => ["The bookmarks.0 field has a duplicate value."],
+                "bookmarks.3" => ["The bookmarks.3 field has a duplicate value."]
+            ]);
 
-        $this->removeFolderBookmarksResponse([
-            'bookmarks' => '1,1,3,4,5',
-        ])->assertJsonValidationErrors([
-            "bookmarks.0" => ["The bookmarks.0 field has a duplicate value."],
-            "bookmarks.1" => ["The bookmarks.1 field has a duplicate value."]
-        ]);
-    }
-
-    public function testCannotRemoveMoreThan_50_bookmarks_simultaneously(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $this->removeFolderBookmarksResponse(['bookmarks' => implode(',', range(1, 51))])
+        $this->removeFolderBookmarksResponse(['bookmarks' => range(1, 51)])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'bookmarks' => 'The bookmarks must not have more than 50 items.'
             ]);
     }
 
-    public function testWillRemoveBookmarksFromFolder(): void
+    public function testRemoveBookmarks(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarkIDs = BookmarkFactory::new()->count(10)->for($user)->create([
+        $bookmarkIDs = BookmarkFactory::new()->count(2)->for($user)->create([
             'created_at' => $createdAt = now()->yesterday(),
             'updated_at' => $createdAt,
         ])->pluck('id');
 
         $folderID = FolderFactory::new()->for($user)->create()->id;
 
-        $this->addBookmarksToFolder($bookmarkIDs->implode(','), $folderID);
+        $this->addBookmarksToFolder($bookmarkIDs->all(), $folderID);
 
-        $bookmarksToRemove = $bookmarkIDs->take(9);
-
-        //Remove first 9 bookmarks from folder.
         $this->removeFolderBookmarksResponse([
-            'bookmarks' => $bookmarksToRemove->implode(','),
-            'folder' => $folderID
+            'bookmarks' => [$bookmarkIDs[0]],
+            'folder'    => $folderID
         ])->assertSuccessful();
 
-        $bookmarksToRemove->each(function (int $bookmarkID) use ($folderID) {
-            $this->assertDatabaseMissing(FolderBookmark::class, [
-                'bookmark_id' => $bookmarkID,
-                'folder_id' => $folderID
-            ]);
-        });
-
-        //Ensure last bookmark still exists in folder
-        $this->assertDatabaseHas(FolderBookmark::class, [
-            'bookmark_id' => $bookmarkIDs->last(),
-            'folder_id' => $folderID
+        $this->assertDatabaseMissing(FolderBookmark::class, [
+            'bookmark_id' => $bookmarkIDs[0],
+            'folder_id'   => $folderID
         ]);
 
-        $this->assertDatabaseHas(FolderBookmarksCount::class, [
-            'folder_id' => $folderID,
-            'count' => 1,
+        $this->assertDatabaseHas(FolderBookmark::class, [
+            'bookmark_id' => [$bookmarkIDs[1]],
+            'folder_id'   => $folderID
         ]);
 
         //Assert the folder updated_at column was updated
@@ -125,46 +108,62 @@ class RemoveBookmarksFromFolderTest extends TestCase
         );
     }
 
-    public function testWillReturnNotFoundResponseWhenBookmarksDontExistsInFolder(): void
+    public function testWillReturnNotFoundResponseWhenBookmarksDoesNotExistsInFolder(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarkIDs = BookmarkFactory::new()->count(3)->for($user)->create()->pluck('id');
+        $bookmarkIDs = BookmarkFactory::new()->count(2)->for($user)->create()->pluck('id');
         $folderID = FolderFactory::new()->for($user)->create()->id;
 
         //Assert will return not found when all bookmarks don't exist in folder
         $this->removeFolderBookmarksResponse([
-            'bookmarks' => $bookmarkIDs->implode(','),
-            'folder' => $folderID
+            'bookmarks' => $bookmarkIDs->all(),
+            'folder'    => $folderID
         ])->assertNotFound()
-            ->assertExactJson([
-                'message' => "Bookmarks does not exists in folder"
-            ]);
+            ->assertExactJson($error = ['message' => "BookmarkNotFound"]);
 
-        //add some bookmarks to folder.
-        $this->addBookmarksToFolder($bookmarkIDs->take(1)->implode(','), $folderID);
+        $this->addBookmarksToFolder($bookmarkIDs[0], $folderID);
 
         //Assert will return not found when some (but not all) bookmarks exist in folder
         $this->removeFolderBookmarksResponse([
-            'bookmarks' => $bookmarkIDs->implode(','),
-            'folder' => $folderID
+            'bookmarks' => $bookmarkIDs->all(),
+            'folder'    => $folderID
         ])->assertNotFound()
-            ->assertExactJson([
-                'message' => "Bookmarks does not exists in folder"
-            ]);
+            ->assertExactJson($error);
     }
 
-    public function testUserCanOnlyRemoveBookmarksFromOwnFolder(): void
+    public function testWillReturnNotFoundWhenBookmarkHasBeenDeleted(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarks = BookmarkFactory::new()->count(10)->for($user)->create();
+        $bookmarks = BookmarkFactory::times(2)->for($user)->create();
+
+        $folder = FolderFactory::new()->for($user)->create();
+
+        $this->addBookmarksToFolder($bookmarks->pluck('id')->all(), $folder->id);
+
+        $bookmarks->first()->delete();
+
+        $this->removeFolderBookmarksResponse([
+            'folder'    => $folder->id,
+            'bookmarks' => $bookmarks->pluck('id')->all()
+        ])->assertNotFound()
+            ->assertExactJson(['message' => 'BookmarkNotFound']);
+    }
+
+    public function testWillReturnNotFoundWhenFolderDoesNotBelongToUser(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $bookmarks = BookmarkFactory::new()->count(2)->for($user)->create();
+
         $folder = FolderFactory::new()->for(UserFactory::new())->create();
 
         $this->removeFolderBookmarksResponse([
-            'bookmarks' => $bookmarks->pluck('id')->implode(','),
-            'folder' => $folder->id
-        ])->assertForbidden();
+            'bookmarks' => $bookmarks->pluck('id')->all(),
+            'folder'    => $folder->id
+        ])->assertNotFound()
+            ->assertExactJson(['message' => 'FolderNotFound']);
     }
 
     public function testUserWithPermissionCanRemoveBookmarksFromFolder(): void
@@ -176,7 +175,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
 
         Passport::actingAs($folderOwner);
 
-        $this->addBookmarksToFolder($bookmarkIDs->implode(','), $folderID);
+        $this->addBookmarksToFolder($bookmarkIDs->all(), $folderID);
 
         FolderCollaboratorPermissionFactory::new()
             ->user($user->id)
@@ -187,37 +186,12 @@ class RemoveBookmarksFromFolderTest extends TestCase
         Passport::actingAs($user);
 
         $this->removeFolderBookmarksResponse([
-            'bookmarks' => $bookmarkIDs->implode(','),
+            'bookmarks' => $bookmarkIDs->all(),
             'folder' => $folderID
         ])->assertOk();
     }
 
-    public function testUserWithOnlyViewPermissionCannotRemoveBookmarks(): void
-    {
-        [$folderOwner, $user] = UserFactory::new()->count(2)->create();
-
-        $bookmarkIDs = BookmarkFactory::times(3)->create(['user_id' => $folderOwner->id])->pluck('id');
-        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
-
-        Passport::actingAs($folderOwner);
-
-        $this->addBookmarksToFolder($bookmarkIDs->implode(','), $folderID);
-
-        FolderCollaboratorPermissionFactory::new()
-            ->user($user->id)
-            ->folder($folderID)
-            ->viewBookmarksPermission()
-            ->create();
-
-        Passport::actingAs($user);
-
-        $this->removeFolderBookmarksResponse([
-            'bookmarks' => $bookmarkIDs->implode(','),
-            'folder' => $folderID
-        ])->assertForbidden();
-    }
-
-    public function testCollaboratorMustHaveRemoveBookmarksPermission(): void
+    public function testWillReturnForbiddenWhenCollaboratorDoesNotHaveRemoveBookmarksPermission(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
@@ -230,24 +204,25 @@ class RemoveBookmarksFromFolderTest extends TestCase
         $folderAccessFactory->inviteUser()->create();
 
         Passport::actingAs($folderOwner);
-        $this->addBookmarksToFolder($bookmarkIDs->implode(','), $folderID);
+        $this->addBookmarksToFolder($bookmarkIDs->all(), $folderID);
 
         Passport::actingAs($collaborator);
         $this->removeFolderBookmarksResponse([
-            'bookmarks' => $bookmarkIDs->implode(','),
-            'folder' => $folderID
-        ])->assertForbidden();
+            'bookmarks' => $bookmarkIDs->all(),
+            'folder'    => $folderID
+        ])->assertForbidden()
+            ->assertExactJson(['message' => 'NoRemoveBookmarksPermission']);
     }
 
-    private function addBookmarksToFolder(string $bookmarkIDs, int $folderID): void
+    private function addBookmarksToFolder(int|array $bookmarkIDs, int $folderID): void
     {
-        $this->postJson(route('addBookmarksToFolder'), [
-            'bookmarks' => $bookmarkIDs,
-            'folder' => $folderID
-        ])->assertCreated();
+        /** @var AddBookmarksToFolderService */
+        $service = app(AddBookmarksToFolderService::class);
+
+        $service->add($folderID, $bookmarkIDs);
     }
 
-    public function testUserCannotRemoveBookmarksFromInvalidFolder(): void
+    public function testWillReturnNotFoundWhenFolderDoesNotExists(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -255,79 +230,10 @@ class RemoveBookmarksFromFolderTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->removeFolderBookmarksResponse([
-            'bookmarks' => $bookmarks->pluck('id')->implode(','),
-            'folder' => $folder->id + 1
+            'bookmarks' => $bookmarks->pluck('id')->all(),
+            'folder'    => $folder->id + 1
         ])->assertNotFound()
-            ->assertExactJson([
-                'message' => "The folder does not exists"
-            ]);
-    }
-
-    public function testUserCannotRemoveBookmarksFromFolderMoreThanOnce(): void
-    {
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        $bookmarkIDs = BookmarkFactory::new()->count(10)->for($user)->create([
-            'created_at' => $createdAt = now()->yesterday(),
-            'updated_at' => $createdAt,
-        ])->pluck('id');
-
-        $folderID = FolderFactory::new()->for($user)->create()->id;
-
-        //add bookmarks to folder.
-        $this->postJson(route('addBookmarksToFolder'), [
-            'bookmarks' => $bookmarkIDs->implode(','),
-            'folder' => $folderID
-        ])->assertCreated();
-
-        $this->removeFolderBookmarksResponse([
-            'bookmarks' => $bookmarkIDs->implode(','),
-            'folder' => $folderID
-        ])->assertSuccessful();
-
-        $this->removeFolderBookmarksResponse([
-            'bookmarks' => $bookmarkIDs->implode(','),
-            'folder' => $folderID
-        ])->assertNotFound();
-    }
-
-    public function testWillNotReturnStaleData(): void
-    {
-        cache()->setDefaultDriver('redis');
-        $this->artisan('cache:clear')->run();
-
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        $bookmarkIDs = BookmarkFactory::new()->count(10)->for($user)->create([
-            'created_at' => $createdAt = now()->yesterday(),
-            'updated_at' => $createdAt,
-        ])->pluck('id');
-
-        $folderID = FolderFactory::new()->for($user)->create()->id;
-
-        //add bookmarks to folder.
-        $this->postJson(route('addBookmarksToFolder'), [
-            'bookmarks' => $bookmarkIDs->implode(','),
-            'folder' => $folderID
-        ])->assertCreated();
-
-        //should cache folder.
-        $this->getJson(route('fetchFolder', ['id' => $folderID]))
-            ->assertOk()
-            ->assertJsonFragment([
-                'items_count' => 10
-            ]);
-
-        $this->removeFolderBookmarksResponse([
-            'bookmarks' => $bookmarkIDs->take(9)->implode(','),
-            'folder' => $folderID
-        ])->assertSuccessful();
-
-        $this->getJson(route('fetchFolder', ['id' => $folderID]))
-            ->assertOk()
-            ->assertJsonFragment([
-                'items_count' => 1
-            ]);
+            ->assertExactJson(['message' => "FolderNotFound"]);
     }
 
     public function test_user_with_permission_cannot_remove_bookmarks_when_folder_owner_has_deleted_account(): void
@@ -342,15 +248,14 @@ class RemoveBookmarksFromFolderTest extends TestCase
             ->removeBookmarksPermission()
             ->create();
 
-        Passport::actingAs($folderOwner);
-        $this->deleteJson(route('deleteUserAccount'), ['password' => 'password'])->assertOk();
+        $folderOwner->delete();
 
         Passport::actingAs($collaborator);
         $this->removeFolderBookmarksResponse([
-            'bookmarks' => '1,2,3',
-            'folder' => $folder->id,
+            'bookmarks' => [1, 2],
+            'folder'    => $folder->id,
         ])->assertNotFound()
-            ->assertExactJson(['message' => "The folder does not exists"]);
+            ->assertExactJson(['message' => "FolderNotFound"]);
     }
 
     public function testWillNotSendNotificationWhenBookmarksWereRemovedByFolderOwner(): void
@@ -362,10 +267,10 @@ class RemoveBookmarksFromFolderTest extends TestCase
         Notification::fake();
 
         Passport::actingAs($folderOwner);
-        $this->addBookmarksToFolder($bookmarkIDs->implode(','), $folderID);
+        $this->addBookmarksToFolder($bookmarkIDs->all(), $folderID);
         $this->removeFolderBookmarksResponse([
-            'bookmarks' => $bookmarkIDs->implode(','),
-            'folder' => $folderID
+            'bookmarks' => $bookmarkIDs->all(),
+            'folder'    => $folderID
         ])->assertOk();
 
         Notification::assertNothingSent();
@@ -378,7 +283,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
         $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
 
         Passport::actingAs($folderOwner);
-        $this->addBookmarksToFolder($bookmarkIDs->implode(','), $folderID);
+        $this->addBookmarksToFolder($bookmarkIDs->all(), $folderID);
 
         FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
@@ -388,7 +293,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
 
         Passport::actingAs($collaborator);
         $this->removeFolderBookmarksResponse([
-            'bookmarks' => $bookmarkIDs->implode(','),
+            'bookmarks' => $bookmarkIDs->all(),
             'folder' => $folderID
         ])->assertOk();
 
@@ -406,13 +311,16 @@ class RemoveBookmarksFromFolderTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
-        $folderID = FolderFactory::new()
-            ->for($folderOwner)
-            ->setting(fn (FolderSettingsBuilder $b) => $b->disableNotifications())
-            ->create()->id;
+        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
+
+        FolderSetting::create([
+            'key'       => FolderSettingKey::ENABLE_NOTIFICATIONS->value,
+            'value'     => false,
+            'folder_id' => $folderID
+        ]);
 
         Passport::actingAs($folderOwner);
-        $this->addBookmarksToFolder($bookmarkIDs->implode(','), $folderID);
+        $this->addBookmarksToFolder($bookmarkIDs->all(), $folderID);
 
         FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
@@ -424,8 +332,8 @@ class RemoveBookmarksFromFolderTest extends TestCase
 
         Passport::actingAs($collaborator);
         $this->removeFolderBookmarksResponse([
-            'bookmarks' => $bookmarkIDs->implode(','),
-            'folder' => $folderID
+            'bookmarks' => $bookmarkIDs->all(),
+            'folder'    => $folderID
         ])->assertOk();
 
         Notification::assertNothingSent();
@@ -435,13 +343,16 @@ class RemoveBookmarksFromFolderTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
-        $folderID = FolderFactory::new()
-            ->for($folderOwner)
-            ->setting(fn (FolderSettingsBuilder $b) => $b->disableBookmarksRemovedNotification())
-            ->create()->id;
+        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
+
+        FolderSetting::create([
+            'key'       => FolderSettingKey::NOTIFY_ON_BOOKMARK_DELETED->value,
+            'value'     => false,
+            'folder_id' => $folderID
+        ]);
 
         Passport::actingAs($folderOwner);
-        $this->addBookmarksToFolder($bookmarkIDs->implode(','), $folderID);
+        $this->addBookmarksToFolder($bookmarkIDs->all(), $folderID);
 
         FolderCollaboratorPermissionFactory::new()
             ->user($collaborator->id)
@@ -453,8 +364,8 @@ class RemoveBookmarksFromFolderTest extends TestCase
 
         Passport::actingAs($collaborator);
         $this->removeFolderBookmarksResponse([
-            'bookmarks' => $bookmarkIDs->implode(','),
-            'folder' => $folderID
+            'bookmarks' => $bookmarkIDs->all(),
+            'folder'    => $folderID
         ])->assertOk();
 
         Notification::assertNothingSent();

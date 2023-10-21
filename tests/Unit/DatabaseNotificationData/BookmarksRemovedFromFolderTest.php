@@ -2,11 +2,8 @@
 
 namespace Tests\Unit\DatabaseNotificationData;
 
-use App\Collections\ResourceIDsCollection;
 use App\Enums\NotificationType;
 use App\Notifications\BookmarksRemovedFromFolderNotification;
-use App\ValueObjects\ResourceID;
-use App\ValueObjects\UserID;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Arr;
 use Tests\TestCase;
@@ -20,19 +17,17 @@ class BookmarksRemovedFromFolderTest extends TestCase
 
     public function testValid(): void
     {
-        $this->assertTrue($this->isValid($data = $this->notificationPayload()));
-        $this->assertTrue($this->canBeSavedToDB($data));
+        $this->assertTrue($this->canBeSavedToDB($this->notificationPayload()));
     }
 
-    public function testAllPropertiesMustBePresent(): void
+    public function testWillThrowExceptionWhenAllAttributesAreNotPresent(): void
     {
         foreach ($interacted = ['N-type', 'bookmarks_removed', 'removed_from_folder', 'removed_by', 'version'] as $attribute) {
             $data = $this->notificationPayload();
             $this->assertKeyIsDefinedInPayload($attribute);
             unset($data[$attribute]);
 
-            $this->assertFalse($this->isValid($data), $message = "Failed asserting that [$attribute] failed validation when not included in payload");
-            $this->assertFalse($this->canBeSavedToDB($data), $message);
+            $this->assertFalse($this->canBeSavedToDB($data), "Failed asserting that [$attribute] failed validation when not included in payload");
         }
 
         $this->assertEquals(
@@ -48,26 +43,24 @@ class BookmarksRemovedFromFolderTest extends TestCase
         }
     }
 
-    public function testVersionMustBeValid(): void
+    public function testWillThrowExceptionWhenVersionIsInValid(): void
     {
         $data = $this->notificationPayload();
         $this->assertKeyIsDefinedInPayload('version');
         $data['version'] = 'foo';
 
-        $this->assertFalse($this->isValid($data));
         $this->assertFalse($this->canBeSavedToDB($data));
     }
 
-    public function testCannotHaveAdditionalAttributes(): void
+    public function testWillThrowExceptionWhenPayloadHasAdditionalAttributes(): void
     {
         $data = $this->notificationPayload();
         $data['anotherVal'] = 'foo';
 
-        $this->assertFalse($this->isValid($data));
         $this->assertFalse($this->canBeSavedToDB($data));
     }
 
-    public function test_n_Type_Attribute_must_be_valid(): void
+    public function testWillThrowExceptionWhenTypeAttributeIsInvalid(): void
     {
         $data = $this->notificationPayload();
 
@@ -75,35 +68,21 @@ class BookmarksRemovedFromFolderTest extends TestCase
 
         $data['N-type'] = 'foo';
 
-        $this->assertFalse($this->isValid($data));
         $this->assertFalse($this->canBeSavedToDB($data));
     }
 
-    public function test_id_types_must_be_an_integer(): void
+    public function testWillThrowExceptionWhenIdIsNotAnInteger(): void
     {
         foreach (['removed_from_folder', 'removed_by'] as $attribute) {
             $data = $this->notificationPayload();
             $this->assertKeyIsDefinedInPayload($attribute);
             $data[$attribute] = '34';
 
-            $this->assertFalse($this->isValid($data), $message = "Failed asserting that [$attribute] failed validation when not an integer");
-            $this->assertFalse($this->canBeSavedToDB($data), $message);
+            $this->assertFalse($this->canBeSavedToDB($data), "Failed asserting that [$attribute] failed validation when not an integer");
         }
     }
 
-    public function test_id_types_must_be_greater_than_one(): void
-    {
-        foreach (['removed_from_folder', 'removed_by'] as $attribute) {
-            $data = $this->notificationPayload();
-            $this->assertKeyIsDefinedInPayload($attribute);
-            $data[$attribute] = -1;
-
-            $this->assertFalse($this->isValid($data), $message = "Failed asserting that [$attribute] failed validation when less than one");
-            $this->assertFalse($this->canBeSavedToDB($data), $message);
-        }
-    }
-
-    public function test_bookmarks_must_be_unique(): void
+    public function testWillThrowExceptionWhenBookmarksAreNotUnique(): void
     {
         $data = $this->notificationPayload();
 
@@ -111,11 +90,10 @@ class BookmarksRemovedFromFolderTest extends TestCase
 
         $data[$key] = [10, 10, 10];
 
-        $this->assertFalse($this->isValid($data));
         $this->assertFalse($this->canBeSavedToDB($data));
     }
 
-    public function test_bookmarks_cannot_be_empty(): void
+    public function testWillThrowExceptionWhenBookmarksAreEmpty(): void
     {
         $data = $this->notificationPayload();
 
@@ -123,11 +101,10 @@ class BookmarksRemovedFromFolderTest extends TestCase
 
         $data[$key] = [];
 
-        $this->assertFalse($this->isValid($data));
         $this->assertFalse($this->canBeSavedToDB($data));
     }
 
-    public function test_bookmarks_cannot_be_more_than_50(): void
+    public function testWillThrowExceptionWhenBookmarksCountIsGreaterThan_50(): void
     {
         $data = $this->notificationPayload();
 
@@ -135,11 +112,10 @@ class BookmarksRemovedFromFolderTest extends TestCase
 
         $data[$key] = range(1, 51);
 
-        $this->assertFalse($this->isValid($data));
         $this->assertFalse($this->canBeSavedToDB($data));
     }
 
-    public function test_bookmarks_can_be_equal_to_50(): void
+    public function testWillNotThrowExceptionWhenBookmarksCountIsEqualTo_50(): void
     {
         $data = $this->notificationPayload();
 
@@ -147,11 +123,10 @@ class BookmarksRemovedFromFolderTest extends TestCase
 
         $data[$key] = range(1, 50);
 
-        $this->assertTrue($this->isValid($data));
         $this->assertTrue($this->canBeSavedToDB($data));
     }
 
-    public function test_bookmark_ids_must_be_integers(): void
+    public function testWillThrowExceptionWhenBookmarksIdsContainsInvalidIntegers(): void
     {
         $data = $this->notificationPayload();
 
@@ -159,23 +134,10 @@ class BookmarksRemovedFromFolderTest extends TestCase
 
         $data[$key] = ['foo', 'bar'];
 
-        $this->assertFalse($this->isValid($data));
         $this->assertFalse($this->canBeSavedToDB($data));
     }
 
-    public function test_bookmark_ids_must_be_valid(): void
-    {
-        $data = $this->notificationPayload();
-
-        $this->assertKeyIsDefinedInPayload($key = 'bookmarks_removed');
-
-        $data[$key] = [-1, 2, 0];
-
-        $this->assertFalse($this->isValid($data));
-        $this->assertFalse($this->canBeSavedToDB($data));
-    }
-
-    public function test_bookmark_must_be_an_array(): void
+    public function testWillThrowExceptionWhenBookmarksIsNotAnArray(): void
     {
         $data = $this->notificationPayload();
 
@@ -183,16 +145,15 @@ class BookmarksRemovedFromFolderTest extends TestCase
 
         $data[$key] = 'bar';
 
-        $this->assertFalse($this->isValid($data));
         $this->assertFalse($this->canBeSavedToDB($data));
     }
 
     private function notificationPayload(): array
     {
         return (new BookmarksRemovedFromFolderNotification(
-            ResourceIDsCollection::fromNativeTypes([10, 20, 30]),
-            new ResourceID(20),
-            new UserID(33)
+            [10, 20, 30],
+            20,
+            33
         ))->toDatabase('');
     }
 

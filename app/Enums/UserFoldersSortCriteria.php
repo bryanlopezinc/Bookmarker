@@ -17,12 +17,12 @@ enum UserFoldersSortCriteria
     public static function fromRequest(FetchUserFoldersRequest $request): self
     {
         return match ($request->input('sort')) {
-            'oldest', => self::OLDEST,
-            'newest' => self::NEWEST,
-            'most_items' => self::MOST_ITEMS,
-            'least_items' => self::LEAST_ITEMS,
+            'oldest',          => self::OLDEST,
+            'newest'           => self::NEWEST,
+            'most_items'       => self::MOST_ITEMS,
+            'least_items'      => self::LEAST_ITEMS,
             'updated_recently' => self::RECENTLY_UPDATED,
-            default => self::NEWEST
+            default            => self::NEWEST
         };
     }
 }

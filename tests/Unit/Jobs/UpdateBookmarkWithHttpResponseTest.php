@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs;
 
-use App\Contracts\UpdateBookmarkRepositoryInterface as Repository;
-use App\DataTransferObjects\Builders\BookmarkBuilder;
-use App\DataTransferObjects\UpdateBookmarkData;
+use App\Exceptions\UserNotFoundException;
 use App\Jobs\UpdateBookmarkWithHttpResponse;
 use App\Models\Bookmark;
 use App\Models\Source;
+use App\Models\User;
 use App\Readers\BookmarkMetaData;
 use App\Readers\HttpClientInterface;
 use App\Repositories\BookmarkRepository;
@@ -28,106 +27,64 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
 {
     use WithFaker;
 
-    public function test_will_not_perform_any_update_if_bookmark_has_been_deleted(): void
+    public function testWillNotExecuteWhenBookmarkHasBeenDeleted(): void
     {
-        $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
+        $bookmark = BookmarkFactory::new()->create();
 
-        $this->mock(BookmarkRepository::class, function (MockInterface $mock) {
-            $mock->shouldReceive('findManyById')->once()->andReturn(collect());
-        });
+        $bookmark->delete();
 
         $this->mockClient(function (MockObject $mock) {
             $mock->expects($this->never())->method('fetchBookmarkPageData');
         });
 
-        $this->mockRepository(function (MockObject $mock) {
-            $mock->expects($this->never())->method('update');
-        });
-
         $this->handleUpdateBookmarkJob($bookmark);
     }
 
-    public function test_will_not_perform_any_update_if_user_has_deleted_account(): void
+    public function testWillNotExecuteWhenBookmarkOwnerHasBeenDeleted(): void
     {
-        $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
+        $bookmark = BookmarkFactory::new()->create();
 
-        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
-            $mock->shouldReceive('findManyById')
-                ->once()
-                ->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
-        });
-
-        $this->mock(UserRepository::class, function (MockInterface $mock) {
-            $mock->shouldReceive('findByID')->once()->andReturn(false);
-        });
+        User::query()->whereKey($bookmark->user_id)->delete();
 
         $this->mockClient(function (MockObject $mock) {
             $mock->expects($this->never())->method('fetchBookmarkPageData');
         });
 
-        $this->mockRepository(function (MockObject $mock) {
-            $mock->expects($this->never())->method('update');
-        });
-
         $this->handleUpdateBookmarkJob($bookmark);
     }
 
-    public function test_will_not_perform_any_update_if_web_page_request_fails(): void
+    public function testWillNotExecuteWhenWebPageRequestFailed(): void
     {
-        $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
-
-        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
-            $mock->shouldReceive('findManyById')
-                ->once()
-                ->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
-        });
+        $bookmark = BookmarkFactory::new()->create();
 
         $this->mockClient(function (MockObject $mock) {
             $mock->method('fetchBookmarkPageData')->willReturn(false);
         });
 
-        $this->mockRepository(function (MockObject $mock) {
-            $mock->expects($this->never())->method('update');
-        });
-
         $this->handleUpdateBookmarkJob($bookmark);
+
+        $this->assertEquals($bookmark->getAttributes(), Bookmark::find($bookmark->id)->getAttributes());
     }
 
     public function test_will_update_resolved_at_attribute_after_updates(): void
     {
-        $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
+        /** @var Bookmark */
+        $bookmark = BookmarkFactory::new()->create();
 
-        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
-            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
+        Bookmark::updated(function (Bookmark $bookmark) {
+            $this->assertNotNull($bookmark->resolved_at);
         });
 
         $this->mockClient(function (MockObject $mock) {
             $mock->method('fetchBookmarkPageData')
                 ->willReturn(BookmarkMetaData::fromArray([
-                    'description' => false,
-                    'title' => false,
-                    'siteName' => false,
-                    'imageUrl' => false,
+                    'description'  => false,
+                    'title'        => false,
+                    'siteName'     => false,
+                    'imageUrl'     => false,
                     'canonicalUrl' => false,
-                    'resolvedUrl' => new Url($this->faker->url)
+                    'resolvedUrl'  => new Url($this->faker->url)
                 ]));
-        });
-
-        $this->mockRepository(function (MockObject $mock) use ($bookmark) {
-            $mock->expects($this->once())
-                ->method('update')
-                ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
-                    $this->assertTrue($data->hasResolvedAt());
-                    $this->assertTrue($data->bookmark->resolvedAt->isSameMinute());
-                    $this->assertFalse($data->hasCanonicalUrl());
-                    $this->assertFalse($data->hasCanonicalUrlHash());
-                    $this->assertFalse($data->hasDescription());
-                    $this->assertFalse($data->hasThumbnailUrl());
-                    $this->assertFalse($data->hasTitle());
-                    $this->assertTrue($data->hasResolvedUrl());
-
-                    return BookmarkBuilder::fromModel($bookmark)->build();
-                });
         });
 
         $this->handleUpdateBookmarkJob($bookmark);
@@ -135,14 +92,11 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
 
     public function testWillUpdateBookmark(): void
     {
-        $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
-
-        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
-            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
-        });
+        /** @var Bookmark */
+        $bookmark = BookmarkFactory::new()->create();
 
         $canonicalUrl = new Url($this->faker->url);
-        $description = $this->faker->sentences(1, true);
+        $description = $this->faker->sentence;
         $imageUrl = new Url($this->faker->url);
         $title = $this->faker->sentences(1, true);
         $resolvedUrl = new Url($this->faker->url);
@@ -150,37 +104,14 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         $this->mockClient(function (MockObject $mock) use ($canonicalUrl, $description, $imageUrl, $title, $resolvedUrl) {
             $mock->method('fetchBookmarkPageData')
                 ->willReturn(BookmarkMetaData::fromArray([
-                    'description' => $description,
-                    'title' => $title,
-                    'siteName' => false,
-                    'imageUrl' => $imageUrl,
+                    'description'  => $description,
+                    'title'        => $title,
+                    'siteName'     => false,
+                    'imageUrl'     => $imageUrl,
                     'canonicalUrl' => $canonicalUrl,
-                    'resolvedUrl' => $resolvedUrl
+                    'resolvedUrl'  => $resolvedUrl
                 ]));
         });
-
-        $this->mockRepository(function (MockObject $mock) use ($bookmark, $canonicalUrl, $description, $imageUrl, $title, $resolvedUrl) {
-            $mock->expects($this->once())
-                ->method('update')
-                ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark, $canonicalUrl, $description, $imageUrl, $title, $resolvedUrl) {
-                    $this->assertEquals($canonicalUrl->toString(), $data->bookmark->canonicalUrl->toString());
-                    $this->assertEquals($description, $data->bookmark->description->value);
-                    $this->assertEquals($imageUrl->toString(), $data->bookmark->thumbnailUrl->toString());
-                    $this->assertEquals($title, $data->bookmark->title->value);
-                    $this->assertEquals($resolvedUrl->toString(), $data->bookmark->resolvedUrl->toString());
-                    $this->assertTrue($data->hasResolvedAt());
-                    $this->assertTrue($data->bookmark->resolvedAt->isSameMinute());
-                    $this->assertTrue($data->hasCanonicalUrl());
-                    $this->assertTrue($data->hasCanonicalUrlHash());
-                    $this->assertTrue($data->hasDescription());
-                    $this->assertTrue($data->hasThumbnailUrl());
-                    $this->assertTrue($data->hasTitle());
-                    $this->assertTrue($data->hasResolvedUrl());
-
-                    return BookmarkBuilder::fromModel($bookmark)->build();
-                });
-        });
-
 
         $this->mockUrlHasher(function (MockObject $m) use ($canonicalUrl) {
             $m->expects($this->once())
@@ -195,108 +126,89 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         });
 
         $this->handleUpdateBookmarkJob($bookmark);
+
+        /** @var Bookmark */
+        $updatedBookmark = Bookmark::query()->find($bookmark->id);
+
+        $this->assertEquals($updatedBookmark->url_canonical, $canonicalUrl->toString());
+        $this->assertEquals($updatedBookmark->description, $description);
+        $this->assertEquals($updatedBookmark->preview_image_url, $imageUrl->toString());
+        $this->assertEquals($updatedBookmark->title, $title);
+        $this->assertEquals($updatedBookmark->resolved_url, $resolvedUrl->toString());
+        $this->assertNotNull($updatedBookmark->resolved_at);
     }
 
-    public function testWillNotUpdateDescriptionIfDescriptionWasSetByUser(): void
+    public function testWillNotUpdateDescriptionWhenDescriptionWasSetByUser(): void
     {
-        $bookmark = BookmarkFactory::new()->make([
-            'id' => 5001,
-            'description_set_by_user' => true
+        /** @var Bookmark */
+        $bookmark = BookmarkFactory::new()->create([
+            'description_set_by_user' => true,
+            'description'             => $this->faker->sentence
         ]);
-
-        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
-            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
-        });
 
         $this->mockClient(function (MockObject $mock) {
             $mock->method('fetchBookmarkPageData')
                 ->willReturn(BookmarkMetaData::fromArray([
-                    'description' => $this->faker->sentence,
-                    'imageUrl' => false,
-                    'title' => false,
-                    'siteName' => false,
+                    'description'  => $this->faker->sentence,
+                    'imageUrl'     => false,
+                    'title'        => false,
+                    'siteName'     => false,
                     'canonicalUrl' => false,
-                    'resolvedUrl' => new Url($this->faker->url)
+                    'resolvedUrl'  => new Url($this->faker->url)
                 ]));
         });
 
-        $this->mockRepository(function (MockObject $m) use ($bookmark) {
-            $m->expects($this->once())
-                ->method('update')
-                ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
-                    $this->assertFalse($data->hasDescription());
-
-                    return BookmarkBuilder::fromModel($bookmark)->build();
-                });
-        });
-
         $this->handleUpdateBookmarkJob($bookmark);
+
+        /** @var Bookmark */
+        $updatedBookmark = Bookmark::query()->find($bookmark->id);
+
+        $this->assertEquals($updatedBookmark->description, $bookmark->description);
     }
 
-    public function testWill_LimitDescriptionIfPageDescriptionIsTooLong(): void
+    public function testWill_LimitDescriptionWhenPageDescriptionIsTooLong(): void
     {
-        $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
+        $bookmark = BookmarkFactory::new()->create();
+
         $description = str_repeat('B', 201);
 
-        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
-            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
+        Bookmark::updated(function (Bookmark $bookmark) {
+            $this->assertEquals(200, strlen($bookmark->description));
         });
 
         $this->mockClient(function (MockObject $mock) use ($description) {
             $mock->method('fetchBookmarkPageData')
                 ->willReturn(BookmarkMetaData::fromArray([
-                    'description' => $description,
-                    'imageUrl' => false,
-                    'title' => false,
-                    'siteName' => false,
+                    'description'  => $description,
+                    'imageUrl'     => false,
+                    'title'        => false,
+                    'siteName'     => false,
                     'canonicalUrl' => false,
-                    'resolvedUrl' => new Url($this->faker->url)
+                    'resolvedUrl'  => new Url($this->faker->url)
                 ]));
-        });
-
-        $this->mockRepository(function (MockObject $m) use ($bookmark) {
-            $m->expects($this->once())
-                ->method('update')
-                ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
-                    $this->assertTrue($data->hasDescription());
-                    $this->assertEquals(200, strlen($data->bookmark->description->value));
-
-                    return BookmarkBuilder::fromModel($bookmark)->build();
-                });
         });
 
         $this->handleUpdateBookmarkJob($bookmark);
     }
 
-    public function testWill_LimitTitleIfPageTitleIsTooLong(): void
+    public function testWill_LimitTitleWhenPageTitleIsTooLong(): void
     {
-        $bookmark = BookmarkFactory::new()->make(['id' => 5001]);
+        $bookmark = BookmarkFactory::new()->create();
 
-        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
-            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
+        Bookmark::updated(function (Bookmark $bookmark) {
+            $this->assertEquals(100, strlen($bookmark->title));
         });
 
         $this->mockClient(function (MockObject $mock) {
             $mock->method('fetchBookmarkPageData')
                 ->willReturn(BookmarkMetaData::fromArray([
-                    'description' => false,
-                    'imageUrl' => false,
-                    'title' => str_repeat('A', 200),
-                    'siteName' => false,
+                    'description'  => false,
+                    'imageUrl'     => false,
+                    'title'        => str_repeat('A', 200),
+                    'siteName'     => false,
                     'canonicalUrl' => false,
-                    'resolvedUrl' => new Url($this->faker->url)
+                    'resolvedUrl'  => new Url($this->faker->url)
                 ]));
-        });
-
-        $this->mockRepository(function (MockObject $m) use ($bookmark) {
-            $m->expects($this->once())
-                ->method('update')
-                ->willReturnCallback(function (UpdateBookmarkData $data) use ($bookmark) {
-                    $this->assertTrue($data->hasTitle());
-                    $this->assertEquals(100, strlen($data->bookmark->title->value));
-
-                    return BookmarkBuilder::fromModel($bookmark)->build();
-                });
         });
 
         $this->handleUpdateBookmarkJob($bookmark);
@@ -310,19 +222,15 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             'source_id' => $source->id
         ])->setRelation('source', $source);
 
-        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
-            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
-        });
-
         $this->mockClient(function (MockObject $mock) {
             $mock->method('fetchBookmarkPageData')
                 ->willReturn(BookmarkMetaData::fromArray([
-                    'description' => false,
-                    'imageUrl' => false,
-                    'title' => false,
-                    'siteName' => 'PlayStation',
+                    'description'  => false,
+                    'imageUrl'     => false,
+                    'title'        => false,
+                    'siteName'     => 'PlayStation',
                     'canonicalUrl' => false,
-                    'resolvedUrl' => new Url($this->faker->url)
+                    'resolvedUrl'  => new Url($this->faker->url)
                 ]));
         });
 
@@ -334,7 +242,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         ]);
     }
 
-    public function testWillNotUpdateNameIfSiteNameDataIsFalse(): void
+    public function testWillNotUpdateNameWhenSiteNameDataIsFalse(): void
     {
         $source = SourceFactory::new()->create();
 
@@ -342,19 +250,16 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             'source_id' =>  $source->id
         ])->setRelation('source', $source);
 
-        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
-            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
-        });
 
         $this->mockClient(function (MockObject $mock) {
             $mock->method('fetchBookmarkPageData')
                 ->willReturn(BookmarkMetaData::fromArray([
-                    'description' => false,
-                    'imageUrl' => false,
-                    'title' => false,
-                    'siteName' => false,
+                    'description'  => false,
+                    'imageUrl'     => false,
+                    'title'        => false,
+                    'siteName'     => false,
                     'canonicalUrl' => false,
-                    'resolvedUrl' => new Url($this->faker->url)
+                    'resolvedUrl'  => new Url($this->faker->url)
                 ]));
         });
 
@@ -370,26 +275,22 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
     {
         $source = SourceFactory::new()->create([
             'name_updated_at' => now(),
-            'name' => 'foosite'
+            'name'            => 'foo'
         ]);
 
         $bookmark = BookmarkFactory::new()->create([
             'source_id' => $source->id
         ])->setRelation('source', $source);
 
-        $this->mock(BookmarkRepository::class, function (MockInterface $mock) use ($bookmark) {
-            $mock->shouldReceive('findManyById')->once()->andReturn(collect([BookmarkBuilder::fromModel($bookmark)->build()]));
-        });
-
         $this->mockClient(function (MockObject $mock) {
             $mock->method('fetchBookmarkPageData')
                 ->willReturn(BookmarkMetaData::fromArray([
-                    'description' => false,
-                    'imageUrl' => false,
-                    'title' => false,
-                    'siteName' => 'PlayStation',
+                    'description'  => false,
+                    'imageUrl'     => false,
+                    'title'        => false,
+                    'siteName'     => 'PlayStation',
                     'canonicalUrl' => false,
-                    'resolvedUrl' => new Url($this->faker->url)
+                    'resolvedUrl'  => new Url($this->faker->url)
                 ]));
         });
 
@@ -397,7 +298,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
 
         $this->assertDatabaseHas(Source::class, [
             'id'   => $source->id,
-            'name' => 'foosite'
+            'name' => 'PlayStation'
         ]);
     }
 
@@ -410,22 +311,12 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         $this->swap(HttpClientInterface::class, $client);
     }
 
-    private function mockRepository(Closure $mock): void
-    {
-        $repository = $this->getMockBuilder(Repository::class)->getMock();
-
-        $mock($repository);
-
-        $this->swap(Repository::class, $repository);
-    }
-
     private function handleUpdateBookmarkJob(Bookmark $bookmark)
     {
-        $job = (new UpdateBookmarkWithHttpResponse(BookmarkBuilder::fromModel($bookmark)->build()));
+        $job = (new UpdateBookmarkWithHttpResponse($bookmark));
 
         $job->handle(
             app(HttpClientInterface::class),
-            app(Repository::class),
             app(UrlHasher::class),
             app(BookmarkRepository::class)
         );

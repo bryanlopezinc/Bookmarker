@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
-use App\DataTransferObjects\Folder;
+use App\Enums\FolderVisibility;
+use App\Models\Folder;
+use App\ValueObjects\FolderStorage;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 final class FolderResource extends JsonResource
@@ -19,27 +21,24 @@ final class FolderResource extends JsonResource
      */
     public function toArray($request)
     {
+        $storage = new FolderStorage($this->folder->bookmarksCount);
+
         return [
-            'type' => 'folder',
+            'type'       => 'folder',
             'attributes' => [
-                'id' => $this->folder->folderID->value(),
-                'name' => $this->folder->name->safe(),
-                'has_description' => !$this->folder->description->isEmpty(),
-                'description' => $this->when(!$this->folder->description->isEmpty(), function () {
-                    return $this->folder->description->safe();
-                }),
-                'date_created' => $this->folder->createdAt->toDateTimeString(),
-                'last_updated' => $this->folder->updatedAt->toDateTimeString(),
-                'is_public' => $this->folder->isPublic,
-                'tags' => $this->folder->tags->toStringCollection()->all(),
-                'has_tags' => $this->folder->tags->isNotEmpty(),
-                'tags_count' => $this->folder->tags->count(),
+                'id'              => $this->folder->id,
+                'name'            => $this->folder->name,
+                'has_description' => $this->folder->description !== null,
+                'description'     => $this->when($this->folder->description !== null, $this->folder->description),
+                'date_created'    => $this->folder->created_at->toDateTimeString(),
+                'last_updated'    => $this->folder->updated_at->toDateTimeString(),
+                'visibility'      => FolderVisibility::from($this->folder->visibility)->toWord(),
                 'storage' => [
-                    'items_count' => $this->folder->storage->total,
-                    'capacity' => $this->folder->storage::MAX_ITEMS,
-                    'is_full' => $this->folder->storage->isFull(),
-                    'available' => $this->folder->storage->spaceAvailable(),
-                    'percentage_used' => $this->folder->storage->percentageUsed(),
+                    'items_count'     => $storage->total,
+                    'capacity'        => $storage::MAX_ITEMS,
+                    'is_full'         => $storage->isFull(),
+                    'available'       => $storage->spaceAvailable(),
+                    'percentage_used' => $storage->percentageUsed(),
                 ]
             ]
         ];

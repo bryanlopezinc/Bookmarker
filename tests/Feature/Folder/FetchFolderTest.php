@@ -14,6 +14,10 @@ class FetchFolderTest extends TestCase
 {
     protected function fetchFolderResponse(array $parameters = []): TestResponse
     {
+        if (array_key_exists('id', $parameters)) {
+            $parameters['id'] = (string) $parameters['id'];
+        }
+
         return $this->getJson(route('fetchFolder', $parameters));
     }
 
@@ -22,19 +26,19 @@ class FetchFolderTest extends TestCase
         $this->assertRouteIsAccessibleViaPath('v1/folders', 'fetchFolder');
     }
 
-    public function testUnAuthorizedUserCannotAccessRoute(): void
+    public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
         $this->fetchFolderResponse()->assertUnauthorized();
     }
 
-    public function testRequiredAttributesMustBePresent(): void
+    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
         $this->fetchFolderResponse()->assertJsonValidationErrors(['id']);
     }
 
-    public function testSuccessResponse(): void
+    public function testFetchFolder(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -43,19 +47,16 @@ class FetchFolderTest extends TestCase
 
         $this->fetchFolderResponse(['id' => $folder->id])
             ->assertOk()
-            ->assertJsonCount(11, 'data.attributes')
+            ->assertJsonCount(8, 'data.attributes')
             ->assertJson(function (AssertableJson $json) use ($folder) {
                 $json->etc();
                 $json->where('data.attributes.id', $folder->id);
-                $json->where('data.attributes.is_public', false);
+                $json->where('data.attributes.visibility', 'public');
                 $json->where('data.attributes.storage.capacity', 200);
                 $json->where('data.attributes.storage.items_count', 0);
                 $json->where('data.attributes.storage.is_full', false);
                 $json->where('data.attributes.storage.available', 200);
                 $json->where('data.attributes.storage.percentage_used', 0);
-                $json->where('data.attributes.tags', []);
-                $json->where('data.attributes.has_tags', false);
-                $json->where('data.attributes.tags_count', 0);
                 $json->where('data.attributes.has_description', true);
                 $json->where('data.attributes.name', $folder->name);
                 $json->where('data.attributes.description', $folder->description);
@@ -72,10 +73,7 @@ class FetchFolderTest extends TestCase
                         "has_description",
                         "date_created",
                         "last_updated",
-                        "is_public",
-                        'tags',
-                        'has_tags',
-                        'tags_count',
+                        "visibility",
                         'storage' => [
                             'items_count',
                             'capacity',
@@ -88,6 +86,19 @@ class FetchFolderTest extends TestCase
             ]);
     }
 
+    public function testWhenFolderIsPrivate(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        /** @var Model */
+        $folder = FolderFactory::new()->for($user)->private()->create();
+
+        $this->fetchFolderResponse(['id' => $folder->id])
+            ->assertOk()
+            ->assertJsonCount(8, 'data.attributes')
+            ->assertJsonPath('data.attributes.visibility', 'private');
+    }
+
     public function testWillReturnNotFoundWhenFolderDoesNotExists(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
@@ -95,17 +106,21 @@ class FetchFolderTest extends TestCase
         /** @var Model */
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->fetchFolderResponse(['id' => $folder->id + 1])->assertNotFound();
+        $this->fetchFolderResponse(['id' => $folder->id + 1])
+            ->assertNotFound()
+            ->assertExactJson(['message' => 'FolderNotFound']);
     }
 
-    public function testCanViewOnlyOwnFolder(): void
+    public function testWillReturnNotFoundWhenFolderDoesNotBelongToUser(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->fetchFolderResponse(['id' => FolderFactory::new()->create()->id])->assertForbidden();
+        $this->fetchFolderResponse(['id' => FolderFactory::new()->create()->id])
+            ->assertNotFound()
+            ->assertExactJson(['message' => 'FolderNotFound']);
     }
 
-    public function testCanRequestPartialResource(): void
+    public function testRequestPartialResource(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -136,7 +151,7 @@ class FetchFolderTest extends TestCase
             ]);
     }
 
-    public function testFieldsMustBeValid(): void
+    public function testWillReturnUnprocessableWhenFieldsParameterIsInValid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -145,7 +160,7 @@ class FetchFolderTest extends TestCase
             'fields' => 'id,name,foo,1'
         ])->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'fields' => ['The selected fields is invalid.']
+                'fields' => ['The selected fields.2 is invalid.']
             ]);
 
         $this->fetchFolderResponse([
@@ -153,13 +168,8 @@ class FetchFolderTest extends TestCase
             'fields' => '1,2,3,4'
         ])->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'fields' => ['The selected fields is invalid.']
+                'fields' => ['The selected fields.0 is invalid.']
             ]);
-    }
-
-    public function testFieldsMustBeUnique(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
 
         $this->fetchFolderResponse([
             'id' => 33,
@@ -172,11 +182,6 @@ class FetchFolderTest extends TestCase
                     'The fields.3 field has a duplicate value.'
                 ]
             ]);
-    }
-
-    public function testCannotRequestStorageWithAStorageChild(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
 
         $this->fetchFolderResponse([
             'id' => 33,
@@ -184,7 +189,7 @@ class FetchFolderTest extends TestCase
         ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'fields' => ['Cannot request storage with a storage child field']
+                'fields' => ['Cannot request the storage field with any of its child attributes.']
             ]);
     }
 }

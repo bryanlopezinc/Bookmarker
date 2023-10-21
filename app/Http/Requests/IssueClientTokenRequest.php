@@ -11,9 +11,9 @@ final class IssueClientTokenRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'client_id' => ['required', 'int'],
+            'client_id'     => ['required', 'int'],
             'client_secret' => ['required', 'string'],
-            'grant_type' => ['required', 'string']
+            'grant_type'    => ['required', 'string']
         ];
     }
 

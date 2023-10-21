@@ -19,7 +19,7 @@ class ImportBookmarkBaseTest extends TestCase
         $this->assertRouteIsAccessibleViaPath('v1/bookmarks/import', 'importBookmark');
     }
 
-    final public function testUnAuthorizedUserCannotAccessRoute(): void
+    final public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
         $this->importBookmarkResponse()->assertUnauthorized();
     }

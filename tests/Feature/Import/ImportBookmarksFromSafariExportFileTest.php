@@ -12,7 +12,7 @@ use Laravel\Passport\Passport;
 
 class ImportBookmarksFromSafariExportFileTest extends ImportBookmarkBaseTest
 {
-    public function testRequiredAttributesMustBePresent(): void
+    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -27,22 +27,6 @@ class ImportBookmarksFromSafariExportFileTest extends ImportBookmarkBaseTest
             ->assertJsonValidationErrors([
                 'safari_html' => ['The safari html field is required.']
             ]);
-    }
-
-    public function testSourceMustBeValid(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $this->importBookmarkResponse(['source' => 'foo'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'source' => ['The selected source is invalid.']
-            ]);
-    }
-
-    public function testFileMustNotBeGreaterThan_5_MegaBytes(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
 
         $this->importBookmarkResponse([
             'source' => 'safariExportFile',
@@ -51,25 +35,13 @@ class ImportBookmarksFromSafariExportFileTest extends ImportBookmarkBaseTest
             ->assertJsonValidationErrors([
                 'safari_html' => ['The safari html must not be greater than 5000 kilobytes.']
             ]);
-    }
-
-    public function testCannotAddMoreThan_15_Tags(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $tags = TagFactory::new()->count(16)->make()->pluck('name')->implode(',');
 
         $this->importBookmarkResponse([
             'source' => 'safariExportFile',
-            'tags' => $tags
+            'tags'   => TagFactory::new()->count(16)->make()->pluck('name')->implode(',')
         ])->assertJsonValidationErrors([
             'tags' => 'The tags must not be greater than 15 characters.'
         ]);
-    }
-
-    public function testTagsMustBeUnique(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
 
         $this->importBookmarkResponse([
             'source' => 'safariExportFile',
@@ -80,7 +52,7 @@ class ImportBookmarksFromSafariExportFileTest extends ImportBookmarkBaseTest
         ]);
     }
 
-    public function testWillImportBookmarks(): void
+    public function testImportBookmarks(): void
     {
         Bus::fake([UpdateBookmarkWithHttpResponse::class]);
 

@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Collections\TagsCollection;
 use App\Events\TagsDetachedEvent;
-use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\QueryColumns\BookmarkAttributes;
-use App\ValueObjects\ResourceID;
+use App\Exceptions\BookmarkNotFoundException;
+use App\Exceptions\HttpException;
 use App\Repositories\BookmarkRepository;
 use App\Repositories\TagRepository;
-use App\ValueObjects\UserID;
+use Illuminate\Support\Collection;
 
 final class DeleteBookmarkTagsService
 {
@@ -21,18 +19,23 @@ final class DeleteBookmarkTagsService
     ) {
     }
 
-    public function delete(ResourceID $bookmarkId, TagsCollection $tagsCollection): void
+    /**
+     * @param array<string> $tags
+     */
+    public function delete(int $bookmarkId, array $tags): void
     {
-        $bookmark = $this->bookmarksRepository->findById($bookmarkId, BookmarkAttributes::only('user_id,id,tags'));
+        $bookmark = $this->bookmarksRepository->findById($bookmarkId, ['user_id', 'id', 'tags']);
 
-        (new EnsureAuthorizedUserOwnsResource())($bookmark);
+        BookmarkNotFoundException::throwIfDoesNotBelongToAuthUser($bookmark);
 
-        if (!$bookmark->tags->contains($tagsCollection)) {
-            return;
-        }
+        $bookmark->tags
+            ->pluck('name')
+            ->intersect($tags)
+            ->whenEmpty(fn () => throw HttpException::notFound(['message' => 'BookmarkHasNoSuchTags']))
+            ->tap(function (Collection $tags) use ($bookmarkId) {
+                $this->tagsRepository->detach($tags->all(), $bookmarkId);
 
-        $this->tagsRepository->detach($tagsCollection, $bookmarkId);
-
-        event(new TagsDetachedEvent($bookmark->tags, UserID::fromAuthUser()));
+                event(new TagsDetachedEvent($tags->all()));
+            });
     }
 }

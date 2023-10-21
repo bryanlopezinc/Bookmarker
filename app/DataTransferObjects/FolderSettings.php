@@ -4,106 +4,52 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects;
 
-use App\Exceptions\InvalidJsonException;
-use App\Utils\JsonValidator;
-use Exception;
-use Illuminate\Support\Arr;
+use App\Enums\FolderSettingKey as Key;
+use App\Utils\FolderSettingsValidator;
+use Illuminate\Contracts\Support\Arrayable;
 
-final class FolderSettings
+final class FolderSettings implements Arrayable
 {
     /**
-     * The jsonSchema that will be used to validate the folder settings.
+     * @var array<int,mixed> $settings
      */
-    private static string $jsonSchema = '';
+    private array $settings;
 
     /**
-     * @param array<string,string|array|bool> $settings
+     * @param array<int,mixed> $settings
      */
-    public function __construct(private readonly array $settings)
+    public function __construct(array $settings)
     {
+        $this->settings = $settings;
+
         $this->ensureIsValid();
     }
 
-    public static function default(): self
+    public static function fromQuery(iterable $result): self
     {
-        return new self([
-            'version' => '1.0.0',
-            'notifications' => [
-                'enabled' => true,
-                'newCollaborator' => [
-                    'notify' => true,
-                    'onlyCollaboratorsInvitedByMe' => false,
-                ],
-                'updated' => true,
-                'bookmarksAdded' => true,
-                'bookmarksRemoved' => true,
-                'collaboratorExit' => [
-                    'notify' => true,
-                    'onlyWhenCollaboratorHasWritePermission' => false,
-                ]
-            ]
-        ]);
+        return new self(
+            collect($result)
+                ->mapWithKeys(fn (array $setting) => [$setting['key'] => boolval($setting['value'])])
+                ->all()
+        );
     }
 
     private function ensureIsValid(): void
     {
-        try {
-            (new JsonValidator())->validate($this->settings, $this->getSchema());
-        } catch (InvalidJsonException $e) {
-            throw new Exception($e->getMessage(), 1777);
+        if (empty($this->settings)) {
+            return;
         }
 
-        $this->ensureHasValidState();
-    }
+        $validator = new FolderSettingsValidator();
 
-    private function getSchema(): string
-    {
-        if (!empty(static::$jsonSchema)) {
-            return static::$jsonSchema;
-        }
+        $validator->validate($this);
 
-        $schema = file_get_contents(base_path('database/JsonSchema/folder_settings_1.0.0.json'));
-
-        if ($schema === false) {
-            throw new \Exception('could not get schema contents');
-        }
-
-        return static::$jsonSchema = $schema;
-    }
-
-    private function ensureHasValidState(): void
-    {
-        $errorMessages = [];
-
-        if (
-            $this->get('notifications.newCollaborator') == [
-                'notify' => false,
-                'onlyCollaboratorsInvitedByMe' => true,
-            ]
-        ) {
-            $errorMessages[] = "The newCollaborator settings combination is invalid";
-        }
-
-        if (
-            $this->get('notifications.collaboratorExit') == [
-                'notify' => false,
-                'onlyWhenCollaboratorHasWritePermission' => true,
-            ]
-        ) {
-            $errorMessages[] = "The collaboratorExit settings combination is invalid";
-        }
-
-        if (!empty($errorMessages)) {
-            throw new Exception(
-                'The given settings is invalid. errors : ' . json_encode($errorMessages, JSON_PRETTY_PRINT),
-                1778
-            );
-        }
+        $validator->ensureValidState($this);
     }
 
     public function notificationsAreEnabled(): bool
     {
-        return $this->get('notifications.enabled');
+        return $this->settings[key::ENABLE_NOTIFICATIONS->value] ?? true;
     }
 
     public function notificationsAreDisabled(): bool
@@ -113,7 +59,7 @@ final class FolderSettings
 
     public function newCollaboratorNotificationIsEnabled(): bool
     {
-        return $this->get('notifications.newCollaborator.notify');
+        return $this->settings[key::NEW_COLLABORATOR_NOTIFICATION->value] ?? true;
     }
 
     public function newCollaboratorNotificationIsDisabled(): bool
@@ -126,7 +72,7 @@ final class FolderSettings
      */
     public function onlyCollaboratorsInvitedByMeNotificationIsEnabled(): bool
     {
-        return $this->get('notifications.newCollaborator.onlyCollaboratorsInvitedByMe');
+        return $this->settings[key::ONLY_COLLABORATOR_INVITED_BY_USER_NOTIFICATION->value] ?? false;
     }
 
     public function onlyCollaboratorsInvitedByMeNotificationIsDisabled(): bool
@@ -136,7 +82,7 @@ final class FolderSettings
 
     public function folderUpdatedNotificationIsEnabled(): bool
     {
-        return $this->get('notifications.updated');
+        return $this->settings[key::NOTIFy_ON_UPDATE->value] ?? true;
     }
 
     public function folderUpdatedNotificationIsDisabled(): bool
@@ -146,7 +92,7 @@ final class FolderSettings
 
     public function newBookmarksNotificationIsEnabled(): bool
     {
-        return $this->get('notifications.bookmarksAdded');
+        return $this->settings[key::NOTIFY_ON_NEW_BOOKMARK->value] ?? true;
     }
 
     public function newBookmarksNotificationIsDisabled(): bool
@@ -156,7 +102,7 @@ final class FolderSettings
 
     public function bookmarksRemovedNotificationIsEnabled(): bool
     {
-        return $this->get('notifications.bookmarksRemoved');
+        return $this->settings[key::NOTIFY_ON_BOOKMARK_DELETED->value] ?? true;
     }
 
     public function bookmarksRemovedNotificationIsDisabled(): bool
@@ -166,7 +112,7 @@ final class FolderSettings
 
     public function collaboratorExitNotificationIsEnabled(): bool
     {
-        return $this->get('notifications.collaboratorExit.notify');
+        return $this->settings[key::NOTIFY_ON_COLLABORATOR_EXIT->value] ?? true;
     }
 
     public function collaboratorExitNotificationIsDisabled(): bool
@@ -179,12 +125,7 @@ final class FolderSettings
      */
     public function onlyCollaboratorWithWritePermissionNotificationIsEnabled(): bool
     {
-        return $this->get('notifications.collaboratorExit.onlyWhenCollaboratorHasWritePermission');
-    }
-
-    private function get(string $key): mixed
-    {
-        return Arr::get($this->settings, $key, fn () => throw new Exception('Invalid key ' . $key));
+        return $this->settings[key::NOTIFY_ON_COLLABORATOR_EXIT_ONLY_WHEN_HAS_WRITE_PERMISSION->value] ?? false;
     }
 
     /**

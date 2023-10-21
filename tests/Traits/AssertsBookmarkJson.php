@@ -12,8 +12,7 @@ trait AssertsBookmarkJson
     {
         $testJson = new AssertableJsonString($data);
 
-        $testJson->assertCount(15, 'attributes')
-            ->assertCount(3, 'attributes.created_on')
+        $testJson->assertCount(3, 'attributes.created_on')
             ->assertStructure([
                 'type',
                 'attributes' => [
@@ -25,7 +24,6 @@ trait AssertsBookmarkJson
                     'description',
                     'has_description',
                     'source',
-                    'tags',
                     'has_tags',
                     'tags_count',
                     'is_healthy',

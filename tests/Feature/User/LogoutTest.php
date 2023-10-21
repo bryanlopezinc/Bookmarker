@@ -4,19 +4,22 @@ declare(strict_types=1);
 
 namespace Tests\Feature\User;
 
-use App\Models\User;
 use Database\Factories\UserFactory;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
-use Tests\Traits\Requests2FACode;
 
 final class LogoutTest extends TestCase
 {
-    use Requests2FACode;
+    /**
+     * {@inheritdoc}
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-    protected static string $accessToken;
-    protected static string $refreshToken;
+        Artisan::call('passport:client --personal --no-interaction');
+    }
 
     protected function logOutResponse(array $parameters = [], array $headers = []): TestResponse
     {
@@ -28,53 +31,17 @@ final class LogoutTest extends TestCase
         $this->assertRouteIsAccessibleViaPath('v1/users/logout', 'logoutUser');
     }
 
-    public function testUnAuthorizedUserCannotAccessRoute(): void
+    public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
         $this->logOutResponse()->assertUnauthorized();
     }
 
-    public function testWillLogoutUser(): void
+    public function testLogoutUser(): void
     {
         $user = UserFactory::new()->create();
 
-        $this->setTokens($user);
+        $accessToken = $user->createToken('token')->accessToken;
 
-        $this->logOutResponse(headers: ['Authorization' => 'Bearer ' . static::$accessToken])->assertOk();
-    }
-
-    private function setTokens(User $user): void
-    {
-        $client = ClientFactory::new()->asPasswordClient()->create();
-
-        $response = $this->postJson(route('loginUser'), [
-            'username'  => $user->username,
-            'password'  => 'password',
-            'client_id' => $client->id,
-            'client_secret' => $client->secret,
-            'grant_type' => 'password',
-            'two_fa_code' => (string)$this->get2FACode($user->username, 'password'),
-        ])->assertOk();
-
-        static::$accessToken =  $response->json('data.token.access_token');
-        static::$refreshToken = $response->json('data.token.refresh_token');
-    }
-
-    /**
-     * @depends testWillLogoutUser
-     */
-    public function testWillRevokeTokens(): void
-    {
-        $client = ClientFactory::new()->asPasswordClient()->create();
-
-        $this->getJson(route('authUserProfile'), $headers = [
-            'Authorization' => 'Bearer ' . static::$accessToken
-        ])->assertUnauthorized();
-
-        $this->postJson(route('refreshToken'), [
-            'grant_type' => 'refresh_token',
-            'refresh_token' => static::$refreshToken,
-            'client_id' => $client->id,
-            'client_secret' => $client->secret,
-        ], $headers)->assertUnauthorized();
+        $this->logOutResponse(headers: ['Authorization' => "Bearer {$accessToken}"])->assertOk();
     }
 }

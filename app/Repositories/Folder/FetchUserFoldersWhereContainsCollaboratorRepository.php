@@ -4,62 +4,63 @@ declare(strict_types=1);
 
 namespace App\Repositories\Folder;
 
-use App\DataTransferObjects\Builders\FolderBuilder;
 use App\DataTransferObjects\UserCollaboration;
 use App\Models\Folder;
 use App\Models\FolderPermission;
 use App\PaginationData;
-use App\QueryColumns\FolderAttributes;
-use App\ValueObjects\UserID;
 use Illuminate\Pagination\Paginator;
-use App\Models\DeletedUser;
+use App\Models\FolderCollaboratorPermission;
+use App\Models\User;
 use App\UAC;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 final class FetchUserFoldersWhereContainsCollaboratorRepository
 {
     /**
      * @return Paginator<UserCollaboration>
      */
-    public function get(UserID $userID, UserID $collaboratorID, PaginationData $pagination): Paginator
+    public function get(int $authUserId, int $collaboratorId, PaginationData $pagination): Paginator
     {
-        /** @var Paginator */
-        $collaborations = Folder::onlyAttributes(new FolderAttributes())
-            ->join('folders_collaborators_permissions', 'folders_collaborators_permissions.folder_id', '=', 'folders.id')
-            ->where('folders_collaborators_permissions.user_id', $collaboratorID->value())
-            ->where('folders.user_id', $userID->value())
-            ->whereNotIn('folders_collaborators_permissions.user_id', DeletedUser::select('deleted_users.user_id'))
-            ->groupBy('folders_collaborators_permissions.folder_id')
-            ->simplePaginate($pagination->perPage(), page: $pagination->page());
+        $folderModel = new Folder;
 
-        $permissions = $this->getCollaboratorPermissions($collaborations->pluck('id')->all(), $collaboratorID);
+        $query = Folder::onlyAttributes()
+            ->addSelect([
+                'permissions' => FolderPermission::query()
+                    ->select(DB::raw("JSON_ARRAYAGG(name)"))
+                    ->whereIn(
+                        'id',
+                        FolderCollaboratorPermission::select('permission_id')
+                            ->whereRaw("folder_id = {$folderModel->qualifyColumn('id')}")
+                            ->where('user_id', $collaboratorId)
+                    )
+            ])
+            ->whereIn(
+                'id',
+                FolderCollaboratorPermission::select('folder_id')
+                    ->where('user_id', $collaboratorId)
+                    ->distinct('folder_id')
+            )
+            ->where('user_id', $authUserId)
+            ->whereExists(function (&$query) use ($collaboratorId) {
+                $query = User::select('id')->where('id', $collaboratorId)->getQuery();
+            });
+
+        /** @var Paginator */
+        $collaborations = $query->simplePaginate($pagination->perPage(), page: $pagination->page());
 
         return $collaborations->setCollection(
             $collaborations->map(
-                $this->createCollaborationFn($permissions)
+                $this->createCollaborationFn()
             )
         );
     }
 
-    /**
-     * @param array<int> $folderIDs
-     */
-    private function getCollaboratorPermissions(array $folderIDs, UserID $collaborator): Collection
+    private function createCollaborationFn(): \Closure
     {
-        return FolderPermission::select('name', 'folder_id')
-            ->join('folders_collaborators_permissions', 'folders_collaborators_permissions.permission_id', '=', 'folders_permissions.id')
-            ->where('user_id', $collaborator->value())
-            ->whereIn('folder_id', $folderIDs)
-            ->get()
-            ->map(fn (FolderPermission $model) => $model->toArray());
-    }
-
-    private function createCollaborationFn(Collection $collaboratorsPermissions): \Closure
-    {
-        return function (Folder $collaboration) use ($collaboratorsPermissions) {
+        return function (Folder $folder) {
             return new UserCollaboration(
-                FolderBuilder::fromModel($collaboration)->build(),
-                new UAC($collaboratorsPermissions->where('folder_id', $collaboration->id)->pluck('name')->all())
+                $folder,
+                new UAC(json_decode($folder->permissions, true, flags: JSON_THROW_ON_ERROR))
             );
         };
     }

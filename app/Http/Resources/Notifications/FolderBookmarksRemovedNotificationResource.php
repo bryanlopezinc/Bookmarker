@@ -4,17 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Notifications;
 
-use App\DataTransferObjects\Bookmark;
-use App\DataTransferObjects\Folder;
-use App\Contracts\TransformsNotificationInterface;
-use App\DataTransferObjects\DatabaseNotification;
-use App\DataTransferObjects\User;
+use App\DataTransferObjects\Notifications\BookmarksRemovedFromFolder;
+use App\Models\Bookmark;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Repositories\FetchNotificationResourcesRepository as Repository;
 
-final class FolderBookmarksRemovedNotificationResource extends JsonResource implements TransformsNotificationInterface
+final class FolderBookmarksRemovedNotificationResource extends JsonResource
 {
-    public function __construct(private DatabaseNotification $notification, private Repository $repository)
+    public function __construct(private BookmarksRemovedFromFolder $notification)
     {
     }
 
@@ -23,56 +19,30 @@ final class FolderBookmarksRemovedNotificationResource extends JsonResource impl
      */
     public function toArray($request)
     {
-        $collaborator = $this->getCollaborator();
-        $folder = $this->getFolder();
-        $bookmarks = $this->getBookmarks();
+        $collaborator = $this->notification->collaborator;
+        $folder = $this->notification->folder;
+        $bookmarks = $this->notification->bookmarks;
 
         return [
             'type' => 'BookmarksRemovedFromFolderNotification',
             'attributes' => [
-                'id' => $this->notification->id->value,
+                'id'                  => $this->notification->uuid,
                 'collaborator_exists' => $collaborator !== null,
-                'folder_exists' => $folder !== null,
-                'bookmarks_count' => count($bookmarks),
-                'by_collaborator' => $this->when($collaborator !== null, fn () => [
-                    'id' => $collaborator->id->value(), // @phpstan-ignore-line
-                    'first_name' => $collaborator->firstName->value, // @phpstan-ignore-line
-                    'last_name' => $collaborator->lastName->value // @phpstan-ignore-line
+                'folder_exists'       => $folder !== null,
+                'bookmarks_count'     => count($bookmarks),
+                'by_collaborator'     => $this->when($collaborator !== null, fn () => [
+                    'id'         => $collaborator->id,
+                    'first_name' => $collaborator->first_name,
+                    'last_name'  => $collaborator->last_name
                 ]),
-                'folder' => $this->when($folder !== null, fn () => [
-                    'name' => $folder->name->safe(), // @phpstan-ignore-line
-                    'id' => $folder->folderID->value() // @phpstan-ignore-line
+                'folder'              => $this->when($folder !== null, fn () => [
+                    'name' => $folder->name,
+                    'id'   => $folder->id
                 ]),
                 'bookmarks' => array_map(fn (Bookmark $bookmark) => [
-                    'title' => $bookmark->title->safe()
+                    'title' => $bookmark->title
                 ], $bookmarks)
             ]
         ];
-    }
-
-    /**
-     * Get the user that removed the bookmarks
-     */
-    private function getCollaborator(): ?User
-    {
-        return $this->repository->findUserByID($this->notification->notificationData['removed_by']);
-    }
-
-    private function getFolder(): ?Folder
-    {
-        return $this->repository->findFolderByID($this->notification->notificationData['removed_from_folder']);
-    }
-
-    /**
-     * @return array<Bookmark>
-     */
-    private function getBookmarks(): array
-    {
-        return $this->repository->findBookmarksByIDs($this->notification->notificationData['bookmarks_removed']);
-    }
-
-    public function toJsonResource(): JsonResource
-    {
-        return $this;
     }
 }

@@ -22,11 +22,9 @@ final class FetchUserCollaborationsController
         ]);
 
         $result = $repository->get(
-            UserID::fromAuthUser(),
+            UserID::fromAuthUser()->value(),
             PaginationData::fromRequest($request),
         );
-
-        $result->appends('per_page', $request->input('per_page', PaginationData::DEFAULT_PER_PAGE))->withQueryString();
 
         return new ResourceCollection($result, FilterUserCollaborationResource::class);
     }

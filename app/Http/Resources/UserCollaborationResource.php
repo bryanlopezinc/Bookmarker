@@ -24,12 +24,7 @@ final class UserCollaborationResource extends JsonResource
         $response = $folderResource->toArray($request);
 
         Arr::set($response, 'type', 'userCollaboration');
-        Arr::set($response, 'attributes.permissions', [
-            'canInviteUsers' => $this->userCollaboration->permissions->canInviteUser(),
-            'canAddBookmarks' => $this->userCollaboration->permissions->canAddBookmarks(),
-            'canRemoveBookmarks' => $this->userCollaboration->permissions->canRemoveBookmarks(),
-            'canUpdateFolder' => $this->userCollaboration->permissions->canUpdateFolder()
-        ]);
+        Arr::set($response, 'attributes.permissions', $this->userCollaboration->permissions->toJsonResponse());
 
         return $response;
     }

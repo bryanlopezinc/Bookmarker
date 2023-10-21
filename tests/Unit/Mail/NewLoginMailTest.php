@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 class NewLoginMailTest extends TestCase
 {
-    public function testWillRenderMail(): void
+    public function testRenderMail(): void
     {
         $loginData = new LoginInformation(
             new Device(DeviceType::MOBILE, 'IPhone'),

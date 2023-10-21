@@ -4,112 +4,158 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
-use App\Collections\BookmarksCollection;
-use App\Collections\ResourceIDsCollection as IDs;
-use App\Contracts\FolderRepositoryInterface;
-use App\DataTransferObjects\{Bookmark, Folder};
-use App\Events\FolderModifiedEvent;
-use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\QueryColumns\BookmarkAttributes;
+use App\DataTransferObjects\FolderSettings;
+use App\Enums\FolderBookmarkVisibility as Visibility;
+use App\Exceptions\BookmarkNotFoundException;
+use App\Exceptions\FolderNotFoundException;
 use App\Repositories\BookmarkRepository;
-use App\ValueObjects\{ResourceID, UserID};
+use App\ValueObjects\UserID;
 use App\Exceptions\HttpException as HttpException;
+use App\Http\Requests\AddBookmarksToFolderRequest as Request;
 use App\Jobs\CheckBookmarksHealth;
+use App\Models\Bookmark;
+use App\Models\Folder;
+use App\Models\FolderBookmark;
+use App\Models\User;
 use App\Notifications\BookmarksAddedToFolderNotification as Notification;
-use App\QueryColumns\FolderAttributes as Attributes;
-use App\Repositories\Folder\FolderBookmarkRepository;
 use App\Repositories\Folder\FolderPermissionsRepository;
-use App\Repositories\NotificationRepository;
+use App\ValueObjects\FolderStorage;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Collection;
-use Symfony\Component\HttpKernel\Exception\HttpException as SymfonyHttpException;
 
 final class AddBookmarksToFolderService
 {
     public function __construct(
-        private FolderRepositoryInterface $repository,
+        private FetchFolderService $repository,
         private BookmarkRepository $bookmarksRepository,
-        private FolderBookmarkRepository $folderBookmarks,
         private FolderPermissionsRepository $permissions,
     ) {
     }
 
-    public function add(IDs $bookmarkIDs, ResourceID $folderID, IDs $makeHidden): void
+    public function fromRequest(Request $request): void
     {
-        $folder = $this->repository->find($folderID, Attributes::only('id,user_id,bookmarks_count,settings'));
-        $bookmarks = $this->bookmarksRepository->findManyById($bookmarkIDs, BookmarkAttributes::only('user_id,id,url'));
+        $authUserId = UserID::fromAuthUser()->value();
+        $folderId = $request->integer('folder');
+        $bookmarkIds = $request->collect('bookmarks')->map(fn (string $id) => (int) $id)->all();
 
-        $this->ensureUserHasPermissionToPerformAction($folder);
-        $this->ensureFolderCanContainBookmarks($bookmarkIDs, $folder);
-        $this->ensureBookmarksExistAndBelongToUser($bookmarks, $bookmarkIDs);
-        $this->ensureFolderDoesNotContainBookmarks($folderID, $bookmarkIDs);
+        $folder = $this->repository->find($folderId, ['id', 'user_id', 'bookmarks_count', 'settings']);
 
-        $this->folderBookmarks->add($folderID, $bookmarkIDs, $makeHidden);
+        $bookmarks = $this->bookmarksRepository->findManyById($bookmarkIds, ['user_id', 'id', 'url']);
 
-        event(new FolderModifiedEvent($folderID));
-        dispatch(new CheckBookmarksHealth(new BookmarksCollection($bookmarks)));
+        $this->ensureUserHasPermissionToPerformAction($folder, $authUserId);
+        $this->ensureFolderCanContainBookmarks($bookmarkIds, $folder);
+        $this->ensureBookmarksExistAndBelongToUser($bookmarks, $bookmarkIds);
+        $this->ensureCollaboratorCannotMarkBookmarksAsHidden($request, $folder, $authUserId);
+        $this->ensureFolderDoesNotContainBookmarks($folderId, $bookmarkIds);
 
-        $this->notifyFolderOwner($bookmarkIDs, $folder);
+        $this->add($folderId, $bookmarkIds, $request->input('make_hidden', []));
+
+        $folder->touch();
+
+        dispatch(new CheckBookmarksHealth($bookmarks));
+
+        $this->notifyFolderOwner($bookmarkIds, $folder);
     }
 
-    private function ensureUserHasPermissionToPerformAction(Folder $folder): void
+    /**
+     * @param int|array<int> $bookmarkIds
+     * @param array<int> $hidden
+     */
+    public function add(int $folderId, array|int $bookmarkIds, array $hidden = []): void
+    {
+        $makeHidden = collect($hidden);
+
+        collect((array)$bookmarkIds)
+            ->map(fn (int $bookmarkID) => [
+                'bookmark_id' => $bookmarkID,
+                'folder_id'   => $folderId,
+                'visibility'  => $makeHidden->contains($bookmarkID) ? Visibility::PRIVATE->value : Visibility::PUBLIC->value
+            ])
+            ->tap(fn (Collection $data) => FolderBookmark::insert($data->all()));
+    }
+
+    private function ensureCollaboratorCannotMarkBookmarksAsHidden(Request $request, Folder $folder, int $authUserId): void
+    {
+        $folderBelongsToAuthUser = $folder->user_id === $authUserId;
+
+        if ($request->missing('make_hidden') || $folderBelongsToAuthUser) {
+            return;
+        }
+
+        throw new HttpResponseException(
+            response()->json(['message' => 'collaboratorCannotMakeBookmarksHidden'], 400)
+        );
+    }
+
+    private function ensureUserHasPermissionToPerformAction(Folder $folder, int $authUserId): void
     {
         try {
-            (new EnsureAuthorizedUserOwnsResource())($folder);
-        } catch (SymfonyHttpException $e) {
-            $canAddBookmarksToFolder = $this->permissions
-                ->getUserAccessControls(UserID::fromAuthUser(), $folder->folderID)
-                ->canAddBookmarks();
+            FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
+        } catch (FolderNotFoundException $e) {
+            $userFolderAccess = $this->permissions->getUserAccessControls($authUserId, $folder->id);
 
-            if (!$canAddBookmarksToFolder) {
+            if ($userFolderAccess->isEmpty()) {
                 throw $e;
+            }
+
+            if (!$userFolderAccess->canAddBookmarks()) {
+                throw new HttpResponseException(
+                    response()->json(['message' => 'NoAddBookmarkPermission'], 403)
+                );
             }
         }
     }
 
-    private function ensureFolderCanContainBookmarks(IDs $bookmarks, Folder $folder): void
+    private function ensureFolderCanContainBookmarks(array $bookmarkIds, Folder $folder): void
     {
-        $exceptionMessage = $folder->storage->isFull()
-            ? 'folder cannot contain more bookmarks'
-            : sprintf('folder can only take only %s more bookmarks', $folder->storage->spaceAvailable());
+        $storage = new FolderStorage($folder->bookmarksCount);
 
-        if (!$folder->storage->canContain($bookmarks)) {
-            throw HttpException::forbidden(['message' => $exceptionMessage]);
+        if (!$storage->canContain($bookmarkIds)) {
+            throw HttpException::forbidden(['message' => 'folderBookmarksLimitReached']);
         }
     }
 
     /**
      * @param Collection<Bookmark> $bookmarks
      */
-    private function ensureBookmarksExistAndBelongToUser(Collection $bookmarks, IDs $bookmarksToAddToFolder): void
+    private function ensureBookmarksExistAndBelongToUser(Collection $bookmarks, array $bookmarksToAddToFolder): void
     {
-        if ($bookmarks->count() !== $bookmarksToAddToFolder->count()) {
-            throw HttpException::notFound(['message' => 'The bookmarks does not exists']);
+        if ($bookmarks->count() !== count($bookmarksToAddToFolder)) {
+            throw new BookmarkNotFoundException;
         }
 
-        $bookmarks->each(new EnsureAuthorizedUserOwnsResource());
+        $bookmarks->each(function (Bookmark $bookmark) {
+            BookmarkNotFoundException::throwIfDoesNotBelongToAuthUser($bookmark);
+        });
     }
 
-    private function ensureFolderDoesNotContainBookmarks(ResourceID $folderID, IDs $bookmarkIDs): void
+    private function ensureFolderDoesNotContainBookmarks(int $folderID, array $bookmarkIDs): void
     {
-        if ($this->folderBookmarks->contains($bookmarkIDs, $folderID)) {
-            throw HttpException::conflict(['message' => 'Bookmarks already exists']);
+        $hasBookmarks = FolderBookmark::where('folder_id', $folderID)
+            ->whereIntegerInRaw('bookmark_id', $bookmarkIDs)
+            ->count() > 0;
+
+        if ($hasBookmarks) {
+            throw HttpException::conflict(['message' => 'FolderContainsBookmarks']);
         }
     }
 
-    private function notifyFolderOwner(IDs $bookmarkIDs, Folder $folder): void
+    private function notifyFolderOwner(array $bookmarkIDs, Folder $folder): void
     {
-        $collaboratorID = UserID::fromAuthUser();
-        $bookmarksWereAddedByFolderOwner = $collaboratorID->equals($folder->ownerID);
-        $notification = new Notification($bookmarkIDs, $folder->folderID, $collaboratorID);
+        $collaboratorID = UserID::fromAuthUser()->value();
+
+        $settings = FolderSettings::fromQuery($folder->settings);
 
         if (
-            $bookmarksWereAddedByFolderOwner ||
-            $folder->settings->notificationsAreDisabled()  ||
-            $folder->settings->newBookmarksNotificationIsDisabled()
+            $collaboratorID === $folder->user_id ||
+            $settings->notificationsAreDisabled()  ||
+            $settings->newBookmarksNotificationIsDisabled()
         ) {
             return;
         }
 
-        (new NotificationRepository())->notify($folder->ownerID, $notification);
+        (new User(['id' => $folder->user_id]))->notify(
+            new Notification($bookmarkIDs, $folder->id, $collaboratorID)
+        );
     }
 }

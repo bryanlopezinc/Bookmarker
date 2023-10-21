@@ -4,6 +4,7 @@ namespace Tests\Feature\User;
 
 use App\Notifications\ResetPasswordNotification;
 use Database\Factories\UserFactory;
+use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
@@ -12,6 +13,8 @@ use Laravel\Passport\Passport;
 
 class RequestPasswordResetTest extends TestCase
 {
+    use WithFaker;
+
     protected function requestPasswordResetResponse(array $parameters = [], array $headers = []): TestResponse
     {
         return $this->postJson(route('requestPasswordResetToken'), $parameters, $headers);
@@ -35,18 +38,16 @@ class RequestPasswordResetTest extends TestCase
         $this->requestPasswordResetResponse(['email' => 'my mail@yahoo.com'])->assertUnprocessable();
     }
 
-    public function testEmailMustBelongToARegisteredUser(): void
+    public function testWillReturnNotFoundWhenDoesNotExists(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asClientCredentials()->create());
 
-        $this->requestPasswordResetResponse(['email'  => 'non-existentUser@yahoo.com'])
+        $this->requestPasswordResetResponse(['email'  => $this->faker->email])
             ->assertNotFound()
-            ->assertExactJson([
-                'message' => 'User not found'
-            ]);
+            ->assertExactJson(['message' => 'UserNotFound']);
     }
 
-    public function testWillSendPasswordResetLink(): void
+    public function testSendPasswordResetLink(): void
     {
         config(['settings.RESET_PASSWORD_URL' => 'https://url.com/reset?token=:token&email=:email&foo=bar']);
 
@@ -60,9 +61,7 @@ class RequestPasswordResetTest extends TestCase
             ->assertOk()
             ->assertExactJson(['message' => 'success']);
 
-        $this->assertDatabaseHas('password_resets', [
-            'email' => $user->email,
-        ]);
+        $this->assertDatabaseHas('password_resets', ['email' => $user->email]);
 
         Notification::assertSentTo($user, function (ResetPasswordNotification $notification) use ($user) {
             $this->assertEquals(

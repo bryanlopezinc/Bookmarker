@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property string $host
  * @property string $name
- * @property \Carbon\Carbon $name_updated_at
+ * @property \Carbon\Carbon|null $name_updated_at
  * @property \Carbon\Carbon $created_at
  */
 final class Source extends Model

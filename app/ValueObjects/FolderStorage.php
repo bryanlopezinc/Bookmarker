@@ -10,7 +10,9 @@ final class FolderStorage
 
     public function __construct(public readonly int $total)
     {
-        new PositiveNumber($total);
+        if ($total  < 0) {
+            throw new \InvalidArgumentException("Invalid item count $total");
+        }
 
         if ($total > self::MAX_ITEMS) {
             throw new \InvalidArgumentException(

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
-use App\DataTransferObjects\User;
+use App\Models\User;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 final class AccessTokenResource extends JsonResource

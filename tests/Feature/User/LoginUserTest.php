@@ -50,28 +50,18 @@ class LoginUserTest extends TestCase
 
         //wrong password
         $this->loginUserResponse([
-            'username'  => $this->user->username,
-            'password'  => 'wrongPassword',
-            'client_id' => $this->client->id,
+            'username'      => $this->user->username,
+            'password'      => 'wrongPassword',
+            'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
-            'grant_type' => 'password',
-            'two_fa_code' => '12345',
-        ])->assertStatus(400)->assertExactJson($data);
-
-        //username does not exists
-        $this->loginUserResponse([
-            'username'  =>  UserFactory::randomUsername(),
-            'password'  => 'password',
-            'client_id' => $this->client->id,
-            'client_secret' => $this->client->secret,
-            'grant_type' => 'password',
-            'two_fa_code' => '12345',
+            'grant_type'    => 'password',
+            'two_fa_code'   => '12345',
         ])->assertStatus(400)->assertExactJson($data);
 
         //missing credentials
         $this->loginUserResponse([
-            'username'  => $this->user->username,
-            'password'  => 'password',
+            'username'    => $this->user->username,
+            'password'    => 'password',
             'two_fa_code' => '12345',
         ])->assertStatus(400)->assertExactJson([
             "error" => "unsupported_grant_type",
@@ -81,15 +71,15 @@ class LoginUserTest extends TestCase
         ]);
     }
 
-    public function testUsernameMustBeAnEmailOrUsername(): void
+    public function testWillReturnUnprocessableWhenUsernameIsNotAnEmailOrUsername(): void
     {
         $this->loginUserResponse([
-            'username'  => 'urhen#uh', //invalid username
-            'password'  => 'password',
-            'client_id' => $this->client->id,
+            'username'      => 'urhen#uh', //invalid username
+            'password'      => 'password',
+            'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
-            'grant_type' => 'password',
-            'two_fa_code' => '12345',
+            'grant_type'    => 'password',
+            'two_fa_code'   => '12345',
         ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
@@ -99,12 +89,12 @@ class LoginUserTest extends TestCase
             ]);
 
         $this->loginUserResponse([
-            'username'  => 'bryanlopez.@yahoo.com',
-            'password'  => 'password',
-            'client_id' => $this->client->id,
+            'username'      => 'bryanlopez.@yahoo.com',
+            'password'      => 'password',
+            'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
-            'grant_type' => 'password',
-            'two_fa_code' => '12345',
+            'grant_type'    => 'password',
+            'two_fa_code'   => '12345',
         ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
@@ -114,7 +104,7 @@ class LoginUserTest extends TestCase
             ]);
     }
 
-    public function testWillLoginUser(): void
+    public function testLoginUser(): void
     {
         Mail::fake();
 
@@ -125,17 +115,17 @@ class LoginUserTest extends TestCase
             }'),
         ]);
 
-        $code = (string)$this->get2FACode($this->user->username, 'password');
+        $code = (string)$this->get2FACode($this->user->id);
 
         $this->loginUserResponse([
-            'username'  => $this->user->username,
-            'password'  => 'password',
-            'client_id' => $this->client->id,
+            'username'      => $this->user->username,
+            'password'      => 'password',
+            'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
-            'grant_type' => 'password',
-            'two_fa_code' => $code,
-            'with_ip' => '24.48.0.1',
-            'with_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
+            'grant_type'    => 'password',
+            'two_fa_code'   => $code,
+            'with_ip'       => '24.48.0.1',
+            'with_agent'    => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
         ])
             ->assertOk()
             ->assertJsonCount(3, 'data')
@@ -153,8 +143,8 @@ class LoginUserTest extends TestCase
                 'data' => [
                     'type',
                     'attributes' => [
-                        'firstname',
-                        'lastname',
+                        'first_name',
+                        'last_name',
                         'username',
                         'bookmarks_count',
                         'favorites_count',
@@ -181,7 +171,7 @@ class LoginUserTest extends TestCase
         });
     }
 
-    public function testCanLoginWithEmail(): void
+    public function testLoginWithEmail(): void
     {
         $email = $this->user->email;
 
@@ -192,21 +182,21 @@ class LoginUserTest extends TestCase
             }'),
         ]);
 
-        $code = (string)$this->get2FACode($email, 'password');
+        $code = (string)$this->get2FACode($this->user->id);
 
         $this->loginUserResponse([
-            'username'  => $email,
-            'password'  => 'password',
-            'client_id' => $this->client->id,
+            'username'      => $email,
+            'password'      => 'password',
+            'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
-            'grant_type' => 'password',
-            'two_fa_code' => $code,
-            'with_ip' => '24.48.0.1',
-            'with_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
+            'grant_type'    => 'password',
+            'two_fa_code'   => $code,
+            'with_ip'       => '24.48.0.1',
+            'with_agent'    => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
         ])->assertOk();
     }
 
-    public function testCannotReuseVerificationCode(): void
+    public function testWillReturnBadRequestWhenVerificationCodeHasBeenUsed(): void
     {
         $email = $this->user->email;
 
@@ -217,34 +207,29 @@ class LoginUserTest extends TestCase
             }'),
         ]);
 
-        $code = (string)$this->get2FACode($email, 'password');
+        $code = (string)$this->get2FACode($this->user->id);
 
-        $this->loginUserResponse([
-            'username'  => $email,
-            'password'  => 'password',
-            'client_id' => $this->client->id,
+        $this->loginUserResponse($params = [
+            'username'      => $email,
+            'password'      => 'password',
+            'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
-            'grant_type' => 'password',
-            'two_fa_code' => $code,
-            'with_ip' => '24.48.0.1',
-            'with_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
+            'grant_type'    => 'password',
+            'two_fa_code'   => $code,
+            'with_ip'       => '24.48.0.1',
+            'with_agent'    => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
         ])->assertOk();
 
-        $this->loginUserResponse([
-            'username'  => $email,
-            'password'  => 'password',
-            'client_id' => $this->client->id,
-            'client_secret' => $this->client->secret,
-            'grant_type' => 'password',
-            'two_fa_code' => $code,
-        ])->assertStatus(400)->assertExactJson([
-            "error" => "invalidVerificationCode",
-            "error_description" => "The given verification code is invalid.",
-            "message" => "The given verification code is invalid.",
-        ]);
+        $this->loginUserResponse($params)
+            ->assertStatus(400)
+            ->assertExactJson([
+                "error" => "invalidVerificationCode",
+                "error_description" => "The given verification code is invalid.",
+                "message" => "The given verification code is invalid.",
+            ]);
     }
 
-    public function testCannotUseCodeAfter_10_Minutes(): void
+    public function testWillReturnBadRequestWhen2FACodeIsUsedAfter_10_Minutes(): void
     {
         $email = $this->user->email;
 
@@ -255,16 +240,16 @@ class LoginUserTest extends TestCase
             }'),
         ]);
 
-        $code = (string)$this->get2FACode($email, 'password');
+        $code = (string)$this->get2FACode($this->user->id);
 
         $this->travel(11)->minutes(function () use ($code, $email) {
             $this->loginUserResponse([
-                'username'  => $email,
-                'password'  => 'password',
-                'client_id' => $this->client->id,
+                'username'      => $email,
+                'password'      => 'password',
+                'client_id'     => $this->client->id,
                 'client_secret' => $this->client->secret,
-                'grant_type' => 'password',
-                'two_fa_code' => $code,
+                'grant_type'    => 'password',
+                'two_fa_code'   => $code,
             ])->assertStatus(400)->assertExactJson([
                 "error" => "invalidVerificationCode",
                 "error_description" => "The given verification code is invalid.",
@@ -273,32 +258,16 @@ class LoginUserTest extends TestCase
         });
     }
 
-    public function testWillNotLoginUserWhenCodeIsInvalid(): void
+    public function testWillReturnBadRequestWhen2FACodeIsInvalid(): void
     {
-        $code = $this->get2FACode($this->user->username, 'password');
-
         //wrong code
         $this->loginUserResponse([
-            'username'  => $this->user->username,
-            'password'  => 'password',
-            'client_id' => $this->client->id,
+            'username'      => $this->user->username,
+            'password'      => 'password',
+            'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
-            'grant_type' => 'password',
-            'two_fa_code' => '12345',
-        ])->assertStatus(400)->assertExactJson([
-            "error" => "invalidVerificationCode",
-            "error_description" => "The given verification code is invalid.",
-            "message" => "The given verification code is invalid.",
-        ]);
-
-        //valid code but different user
-        $this->loginUserResponse([
-            'username'  => UserFactory::new()->create()->username,
-            'password'  => 'password',
-            'client_id' => $this->client->id,
-            'client_secret' => $this->client->secret,
-            'grant_type' => 'password',
-            'two_fa_code' => (string) $code,
+            'grant_type'    => 'password',
+            'two_fa_code'   => '12345',
         ])->assertStatus(400)->assertExactJson([
             "error" => "invalidVerificationCode",
             "error_description" => "The given verification code is invalid.",
@@ -306,31 +275,39 @@ class LoginUserTest extends TestCase
         ]);
     }
 
-    public function testAttributesMustBeFilledWhenPresent(): void
+    public function testWillReturnBadRequestWhen2FACodeWasNotAssignedToUser(): void
     {
+        $code = $this->get2FACode($this->user->id);
+
         $this->loginUserResponse([
-            'with_ip' => '',
-            'with_agent' => '',
-            'two_fa_code' => ''
-        ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['with_ip', 'with_agent', 'two_fa_code']);
+            'username'      => UserFactory::new()->create()->username,
+            'password'      => 'password',
+            'client_id'     => $this->client->id,
+            'client_secret' => $this->client->secret,
+            'grant_type'    => 'password',
+            'two_fa_code'   => (string) $code,
+        ])->assertStatus(400)->assertExactJson([
+            "error" => "invalidVerificationCode",
+            "error_description" => "The given verification code is invalid.",
+            "message" => "The given verification code is invalid.",
+        ]);
     }
 
     public function testLocationWillBeUnknownWhenIpAttributeIsMissing(): void
     {
-        $code = (string)$this->get2FACode($this->user->username, 'password');
+        $code = (string)$this->get2FACode($this->user->id);
 
         Mail::fake();
         Http::fake();
 
         $this->loginUserResponse([
-            'username'  => $this->user->username,
-            'password'  => 'password',
-            'client_id' => $this->client->id,
+            'username'      => $this->user->username,
+            'password'      => 'password',
+            'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
-            'grant_type' => 'password',
-            'two_fa_code' => $code,
-            'with_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
+            'grant_type'    => 'password',
+            'two_fa_code'   => $code,
+            'with_agent'    => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
         ])->assertOk();
 
         Mail::assertSent(function (NewLoginMail $mail) {
@@ -344,17 +321,17 @@ class LoginUserTest extends TestCase
 
     public function testDeviceWillBeUnknownWhenUserAgentAttributeIsMissing(): void
     {
-        $code = (string)$this->get2FACode($this->user->username, 'password');
+        $code = (string)$this->get2FACode($this->user->id);
 
         Mail::fake();
 
         $this->loginUserResponse([
-            'username'  => $this->user->username,
-            'password'  => 'password',
-            'client_id' => $this->client->id,
+            'username'      => $this->user->username,
+            'password'      => 'password',
+            'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
-            'grant_type' => 'password',
-            'two_fa_code' => $code,
+            'grant_type'    => 'password',
+            'two_fa_code'   => $code,
         ])->assertOk();
 
         Mail::assertSent(function (NewLoginMail $mail) {
@@ -372,12 +349,12 @@ class LoginUserTest extends TestCase
         $user = UserFactory::new()->unverified()->create();
 
         $this->loginUserResponse([
-            'username'  => $user->username,
-            'password'  => 'password',
-            'client_id' => $this->client->id,
+            'username'      => $user->username,
+            'password'      => 'password',
+            'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
-            'grant_type' => 'password',
-            'two_fa_code' => '12345',
+            'grant_type'    => 'password',
+            'two_fa_code'   => '12345',
         ])->assertStatus(400)->assertExactJson([
             "error" => "userEmailNotVerified",
             "error_description" => "The user email has not been verified.",

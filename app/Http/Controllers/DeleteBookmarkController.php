@@ -4,24 +4,38 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Collections\ResourceIDsCollection;
+use App\Exceptions\BookmarkNotFoundException;
+use App\Models\Bookmark;
+use App\Repositories\BookmarkRepository;
 use Illuminate\Http\Request;
 use App\Rules\ResourceIdRule;
 use Illuminate\Http\JsonResponse;
-use App\Services\DeleteBookmarksService;
 
 final class DeleteBookmarkController
 {
-    public function __invoke(Request $request, DeleteBookmarksService $service): JsonResponse
+    public function __invoke(Request $request, BookmarkRepository $bookmarksRepository): JsonResponse
     {
-        $maxBookmarks = setting('MAX_DELETE_BOOKMARKS');
+        $maxBookmarks = 50;
 
         $request->validate([
-            'ids' => ['required', join(':', ['max', $maxBookmarks])],
+            'ids'   => ['required', 'array', "max:{$maxBookmarks}"],
             'ids.*' => [new ResourceIdRule(), 'distinct:strict']
-        ], ['max' => "cannot delete more than $maxBookmarks bookmarks in one request"]);
+        ], ['max'   => "cannot delete more than $maxBookmarks bookmarks in one request"]);
 
-        $service->delete(ResourceIDsCollection::fromNativeTypes($request->input('ids')));
+        $bookmarks = $bookmarksRepository->findManyById(
+            $bookmarkIds = $request->input('ids'),
+            ['user_id', 'id']
+        );
+
+        if ($bookmarks->count() !== count($bookmarkIds)) {
+            throw new BookmarkNotFoundException();
+        }
+
+        $bookmarks->each(function (Bookmark $bookmark) {
+            BookmarkNotFoundException::throwIfDoesNotBelongToAuthUser($bookmark);
+        });
+
+        Bookmark::whereIn('id', $bookmarkIds)->delete();
 
         return response()->json();
     }

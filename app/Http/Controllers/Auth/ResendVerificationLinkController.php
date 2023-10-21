@@ -5,12 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Auth;
 
 use App\Events\ResendEmailVerificationLinkRequested;
-use App\QueryColumns\UserAttributes;
 use App\Repositories\UserRepository;
-use App\ValueObjects\Email;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 
 final class ResendVerificationLinkController
 {
@@ -19,18 +16,12 @@ final class ResendVerificationLinkController
         $request->validate(['email' => ['required', 'email']]);
 
         $user = $repository->findByEmail(
-            new Email($request->input('email')),
-            UserAttributes::only('id,email,email_verified_at')
+            $request->input('email'),
+            ['id', 'email', 'email_verified_at']
         );
 
-        if ($user === false) {
-            return response()->json(status: Response::HTTP_NOT_FOUND);
-        }
-
-        if ($user->hasVerifiedEmail) {
-            return response()->json([
-                'message' => 'Email already verified'
-            ]);
+        if ($user->email_verified_at) {
+            return response()->json(['message' => 'EmailAlreadyVerified']);
         }
 
         event(new ResendEmailVerificationLinkRequested($user));

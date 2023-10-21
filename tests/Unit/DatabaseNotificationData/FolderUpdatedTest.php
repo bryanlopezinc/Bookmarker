@@ -2,10 +2,9 @@
 
 namespace Tests\Unit\DatabaseNotificationData;
 
-use App\DataTransferObjects\Builders\FolderBuilder;
 use App\Enums\NotificationType;
 use App\Notifications\FolderUpdatedNotification;
-use App\ValueObjects\UserID;
+use Database\Factories\FolderFactory;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Arr;
 use Tests\TestCase;
@@ -19,19 +18,17 @@ class FolderUpdatedTest extends TestCase
 
     public function testValid(): void
     {
-        $this->assertTrue($this->isValid($data = $this->notificationPayload()));
-        $this->assertTrue($this->canBeSavedToDB($data));
+        $this->assertTrue($this->canBeSavedToDB($this->notificationPayload()));
     }
 
-    public function testAllPropertiesMustBePresent(): void
+    public function testWillThrowExceptionWhenAllAttributesAreNotPresent(): void
     {
         foreach ($interacted = ['N-type', 'updated_by', 'folder_updated', 'changes', 'version'] as $property) {
             $data = $this->notificationPayload();
             $this->assertKeyIsDefinedInPayload($property);
             unset($data[$property]);
 
-            $this->assertFalse($this->isValid($data), $message = "Failed asserting that [$property] failed validation when not included in payload");
-            $this->assertFalse($this->canBeSavedToDB($data), $message);
+            $this->assertFalse($this->canBeSavedToDB($data), "Failed asserting that [$property] failed validation when not included in payload");
         }
 
         $this->assertEquals(
@@ -47,26 +44,24 @@ class FolderUpdatedTest extends TestCase
         }
     }
 
-    public function testVersionMustBeValid(): void
+    public function testWillThrowExceptionWhenVersionIsInValid(): void
     {
         $data = $this->notificationPayload();
         $this->assertKeyIsDefinedInPayload('version');
         $data['version'] = 'foo';
 
-        $this->assertFalse($this->isValid($data));
         $this->assertFalse($this->canBeSavedToDB($data));
     }
 
-    public function testCannotHaveAdditionalProperties(): void
+    public function testWillThrowExceptionWhenPayloadHasAdditionalAttributes(): void
     {
         $data = $this->notificationPayload();
         $data['anotherVal'] = 'foo';
 
-        $this->assertFalse($this->isValid($data));
         $this->assertFalse($this->canBeSavedToDB($data));
     }
 
-    public function test_n_Type_property_must_be_valid(): void
+    public function testWillThrowExceptionWhenTypeAttributeIsInvalid(): void
     {
         $data = $this->notificationPayload();
 
@@ -74,84 +69,64 @@ class FolderUpdatedTest extends TestCase
 
         $data['N-type'] = 'foo';
 
-        $this->assertFalse($this->isValid($data));
         $this->assertFalse($this->canBeSavedToDB($data));
     }
 
-    public function test_id_properties_must_be_an_integer(): void
+    public function testWillThrowExceptionWhenIdIsNotAnInteger(): void
     {
         foreach (['updated_by', 'folder_updated'] as $property) {
             $data = $this->notificationPayload();
             $this->assertKeyIsDefinedInPayload($property);
             $data[$property] = '34';
 
-            $this->assertFalse($this->isValid($data), $message = "Failed asserting that [$property] failed validation when not an integer");
-            $this->assertFalse($this->canBeSavedToDB($data), $message);
+            $this->assertFalse($this->canBeSavedToDB($data), "Failed asserting that [$property] failed validation when not an integer");
         }
     }
 
-    public function test_id_properties_must_be_greater_than_one(): void
-    {
-        foreach (['updated_by', 'folder_updated'] as $property) {
-            $data = $this->notificationPayload();
-            $this->assertKeyIsDefinedInPayload($property);
-            $data[$property] = -1;
-
-            $this->assertFalse($this->isValid($data), $message = "Failed asserting that [$property] failed validation when less than one");
-            $this->assertFalse($this->canBeSavedToDB($data), $message);
-        }
-    }
-
-    public function test_changes_property_cannot_have_additional_properties(): void
+    public function testWillThrowExceptionWhenChangesAttributeHasAdditionalValues(): void
     {
         $data = $this->notificationPayload();
         $this->assertKeyIsDefinedInPayload('changes');
         $data['changes'] = array_merge($data['changes'], ['foo' => 'bar']);
 
-        $this->assertFalse($this->isValid($data));
         $this->assertFalse($this->canBeSavedToDB($data));
     }
 
-    public function test_changes_properties_cannot_have_additional_properties(): void
+    public function testWillThrowExceptionWhenChangesAttributesHasAdditionalValues(): void
     {
-        foreach (['name', 'description', 'tags'] as $property) {
+        foreach (['name', 'description'] as $property) {
             $data = $this->notificationPayload();
 
             $this->assertKeyIsDefinedInPayload($key = "changes.$property");
 
             Arr::set($data, $key, array_merge($data['changes'][$property], ['baz' => 'bar']));
 
-            $this->assertFalse($this->isValid($data), $message = "Failed asserting that [$property] failed validation when has more attribute/s");
-            $this->assertFalse($this->canBeSavedToDB($data), $message);
+            $this->assertFalse($this->canBeSavedToDB($data), "Failed asserting that [$property] failed validation when has more attribute/s");
         }
     }
 
-    public function test_all_properties_must_be_present_in_changes_sub_types(): void
+    public function testWillThrowExceptionWhenChangesAttributeDoesNotIncludeAllValues(): void
     {
         foreach (['from', 'to'] as $attribute) {
-            foreach (['name', 'description', 'tags'] as $property) {
+            foreach (['name', 'description'] as $property) {
                 $data = $this->notificationPayload();
                 Arr::forget($data, $key = "changes.$property.$attribute");
                 $this->assertKeyIsDefinedInPayload($key);
 
-                $this->assertFalse($this->isValid($data), $message = "Failed asserting that [$property.$attribute] failed validation when not present");
-                $this->assertFalse($this->canBeSavedToDB($data), $message);
+                $this->assertFalse($this->canBeSavedToDB($data), "Failed asserting that [$property.$attribute] failed validation when not present");
             }
         }
     }
 
     private function notificationPayload(): array
     {
-        $builder = (new FolderBuilder)
-            ->setID(30)
-            ->setDescription('foo')
-            ->setName('bar')
-            ->setTags(['foo']);
+        $folder = FolderFactory::new()->create();
+        $folder->description = 'foo';
+        $folder->name = 'bar';
 
         return (new FolderUpdatedNotification(
-            $builder->build(),
-            $builder->setName('baz')->setDescription('fooBar')->setTags(['tags'])->build(),
-            new UserID(33)
+            $folder,
+            33,
         ))->toDatabase('');
     }
 

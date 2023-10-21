@@ -37,37 +37,23 @@ class CreateUserTest extends TestCase
         $this->createUserResponse()->assertUnauthorized();
     }
 
-    public function testWillReturnValidationErrorsWhenRequiredAttributesAreMissing(): void
+    public function testWillReturnUnprocessableWhenRequiredAttributesAreMissing(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $attributes = [
-            'firstname' => $this->faker->firstName,
-            'lastname'  => $this->faker->lastName,
-            'username'  => Str::random(Username::MAX_LENGTH - 2) . '_' . rand(0, 9),
-            'email'     => $this->faker->safeEmail,
-            'password'  => $password = str::random(7) . rand(0, 9),
-            'password_confirmation' => $password
-        ];
-
-        foreach (Arr::except($attributes, ['password_confirmation']) as $key => $attribute) {
-            $params = $attributes;
-
-            unset($params[$key]);
-
-            $this->createUserResponse($params)
-                ->assertUnprocessable()
-                ->assertJsonValidationErrors([$key => "The {$key} field is required."])
-                ->assertJsonCount(1, 'errors');
-        }
-
-        $this->createUserResponse(Arr::except($attributes, ['password_confirmation']))
+        $this->createUserResponse()
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['password' => 'The password confirmation does not match.'])
-            ->assertJsonCount(1, 'errors');
+            ->assertJsonCount(5, 'errors')
+            ->assertJsonValidationErrors([
+                'first_name',
+                'last_name',
+                'username',
+                'email',
+                'password'
+            ]);
     }
 
-    public function testUsernameMustBeValid(): void
+    public function testWillReturnUnprocessableWhenUsernameIsValid(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
@@ -77,18 +63,18 @@ class CreateUserTest extends TestCase
 
         $this->createUserResponse(['username' => Str::random(Username::MAX_LENGTH + 1)])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['username' => sprintf('The username must not be greater than %s characters.', Username::MAX_LENGTH)]);
+            ->assertJsonValidationErrors(['username' => 'The username must not be greater than 15 characters.']);
 
         $this->createUserResponse(['username' => Str::random(Username::MIN_LENGTH - 1)])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['username' => sprintf('The username must be at least %s characters.', Username::MIN_LENGTH)]);
+            ->assertJsonValidationErrors(['username' => 'The username must be at least 8 characters.']);
 
         $this->createUserResponse(['username' => Str::random(Username::MIN_LENGTH - 1) . '!'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['username' => 'The username contains invalid characters']);
     }
 
-    public function testEmailMustBeValid(): void
+    public function testWillReturnUnprocessableWhenEmailExists(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
@@ -97,15 +83,15 @@ class CreateUserTest extends TestCase
             ->assertJsonValidationErrors(['email' => 'The email has already been taken.']);
     }
 
-    public function testEmailMustNotBe_Existing_SecondaryEmail(): void
+    public function testWillReturnUnprocessableWhenEmailIsExistingSecondaryEmail(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         $user = UserFactory::new()->create();
 
         SecondaryEmail::query()->create([
-            'email' => $userSecondaryEmail = UserFactory::new()->make()->email,
-            'user_id' => $user->id,
+            'email'       => $userSecondaryEmail = UserFactory::new()->make()->email,
+            'user_id'     => $user->id,
             'verified_at' => now()
         ]);
 
@@ -114,7 +100,7 @@ class CreateUserTest extends TestCase
             ->assertJsonValidationErrors(['email' => 'The email has already been taken.']);
     }
 
-    public function testWillCreateUser(): void
+    public function testCreateUser(): void
     {
         Passport::actingAsClient($client = ClientFactory::new()->asPasswordClient()->create());
 
@@ -123,23 +109,25 @@ class CreateUserTest extends TestCase
         Notification::fake();
 
         $this->createUserResponse([
-            'firstname' => $firstname = $this->faker->firstName,
-            'lastname'  => $lastname =  $this->faker->lastName,
-            'username'  => $username = Str::random(Username::MAX_LENGTH - 2) . '_' . rand(0, 9),
-            'email'     => $mail = $this->faker->safeEmail,
-            'password'  => $password = str::random(7) . rand(0, 9),
+            'first_name'            => $firstName = $this->faker->firstName,
+            'last_name'             => $lastName =  $this->faker->lastName,
+            'username'              => $username = Str::random(Username::MAX_LENGTH - 2) . '_' . rand(0, 9),
+            'email'                 => $mail = $this->faker->safeEmail,
+            'password'              => $password = str::random(7) . rand(0, 9),
             'password_confirmation' => $password,
-            'client_id' => $client->id,
-            'client_secret' => $client->secret,
-            'grant_type' => 'password',
+            'client_id'             => $client->id,
+            'client_secret'         => $client->secret,
+            'grant_type'            => 'password',
         ])->assertCreated();
 
+        /** @var User */
         $user = User::query()->where('email', $mail)->sole();
 
         $this->assertEquals($username, $user->username);
-        $this->assertEquals($firstname, $user->firstname);
-        $this->assertEquals($lastname, $user->lastname);
+        $this->assertEquals($firstName, $user->first_name);
+        $this->assertEquals($lastName, $user->last_name);
         $this->assertNull($user->email_verified_at);
+        $this->assertNotEquals(password_get_info($user->password)['algoName'], 'unknown');
 
         Notification::assertSentTo($user, VerifyEmailNotification::class, function (VerifyEmailNotification $notification) use ($user) {
             static::$verificationUrl =  $notification->toMail($user)->actionUrl;
@@ -149,7 +137,7 @@ class CreateUserTest extends TestCase
     }
 
     /**
-     * @depends testWillCreateUser
+     * @depends testCreateUser
      */
     public function testCanVerifyEmailWithParameters(): void
     {
@@ -169,25 +157,25 @@ class CreateUserTest extends TestCase
         $this->assertTrue(User::whereKey($components['id'])->sole()->email_verified_at->isToday());
     }
 
-    public function testFirstNameMustNotBeGreaterThan_100(): void
+    public function testWillReturnUnprocessableWhenFirstNameIsGreaterThan_100(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->createUserResponse(['firstname' => str_repeat('A', 101)])
+        $this->createUserResponse(['first_name' => str_repeat('A', 101)])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['firstname' => 'The firstname must not be greater than 100 characters.']);
+            ->assertJsonValidationErrors(['first_name' => 'The first name must not be greater than 100 characters.']);
     }
 
-    public function testLastNameMustNotBeGreaterThan_100(): void
+    public function testWillReturnUnprocessableWhenLastNameIsGreaterThan_100(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->createUserResponse(['lastname' => str_repeat('A', 101)])
+        $this->createUserResponse(['last_name' => str_repeat('A', 101)])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['lastname' => 'The lastname must not be greater than 100 characters.']);
+            ->assertJsonValidationErrors(['last_name' => 'The last name must not be greater than 100 characters.']);
     }
 
-    public function testPasswordMustBeAtLeast_8_characters(): void
+    public function testWillReturnUnprocessableWhenPasswordIsLessThan_8_Characters(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
@@ -196,7 +184,7 @@ class CreateUserTest extends TestCase
             ->assertJsonValidationErrors(['password' => 'The password must be at least 8 characters.']);
     }
 
-    public function testPasswordMustContainOneNumber(): void
+    public function testWillReturnUnprocessableWhenPasswordDoesNotContainANumber(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 

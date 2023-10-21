@@ -6,28 +6,31 @@ namespace App\Repositories;
 
 use App\Models\Tag as Model;
 use Illuminate\Support\Collection;
-use App\Collections\TagsCollection;
-use App\Contracts\TaggableInterface;
+use App\Models\Bookmark;
 use App\Models\Taggable;
 use App\PaginationData;
-use App\ValueObjects\ResourceID;
-use App\ValueObjects\Tag;
-use App\ValueObjects\UserID;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Arr;
 
 final class TagRepository
 {
-    public function attach(TagsCollection $tags, TaggableInterface $taggable): void
+    /**
+     * @param array<string|Model> $tags
+     */
+    public function attach(array|Model $tags, Bookmark $bookmark): void
     {
+        $tags = collect(Arr::wrap($tags))->map(function (Model|string $tag) {
+            return is_string($tag) ? $tag : $tag->name;
+        });
+
         if ($tags->isEmpty()) {
             return;
         }
 
-        if (filled($tagIds = $this->insertGetIDs($tags, $taggable->taggedBy()))) {
+        if (filled($tagIds = $this->insertGetIDs($tags->all()))) {
             Taggable::insert(array_map(fn (int $tagID) => [
-                'taggable_id' => $taggable->taggableID()->value(),
-                'taggable_type' => $taggable->taggableType()->type(),
-                'tag_id' => $tagID
+                'taggable_id' => $bookmark->id,
+                'tag_id'      => $tagID
             ], $tagIds));
         }
     }
@@ -35,69 +38,79 @@ final class TagRepository
     /**
      * Save new tags and return their ids with existing tag ids
      *
+     * @param array<string> $tags
+     *
      * @return array<int>
      */
-    private function insertGetIDs(TagsCollection $tags, UserID $userID): array
+    private function insertGetIDs(array $tags): array
     {
         /** @var \Illuminate\Database\Eloquent\Collection */
-        $existingTags = Model::where('created_by', $userID->value())
-            ->whereIn('name', $tags->toStringCollection()->all())
-            ->get();
+        $existingTags = Model::whereIn('name', $tags)->get();
 
         //All tags exists. Nothing to insert.
-        if ($existingTags->count() === $tags->count()) {
+        if ($existingTags->count() === count($tags)) {
             return $existingTags->pluck('id')->all();
         }
 
-        $newTags = $tags
-            ->except(TagsCollection::make($existingTags))
-            ->toStringCollection()
+        $newTags = collect($tags)
+            ->mapWithKeys(fn (string $tag) => [$tag => $tag])
+            ->except($existingTags->pluck('name'))
             ->tap(fn (Collection $tags) => Model::insert(
-                $tags->map(fn (string $tag) => [
-                    'name' => $tag,
-                    'created_by' => $userID->value()
-                ])->all()
+                $tags->map(fn (string $tag) => ['name' => $tag])->all()
             ));
 
         return $existingTags->merge(
-            Model::where('created_by', $userID->value())->whereIn('name', $newTags->all())->get()
+            Model::whereIn('name', $newTags->all())->get()
         )->pluck('id')->all();
     }
 
     /**
      * Search for tags that was created by user.
+     *
+     * @return Collection<string>
      */
-    public function search(string $tag, UserID $userID, int $limit): TagsCollection
+    public function search(string $tag, int $userID, int $limit): Collection
     {
         return Model::query()
-            ->where('created_by', $userID->value())
+            ->join('taggables', 'tag_id', '=', 'tags.id')
             ->where('tags.name', 'LIKE', "%$tag%")
-            ->orderByDesc('tags.id')
+            ->whereExists(function (&$query) use ($userID) {
+                $query = Bookmark::query()
+                    ->select('id')
+                    ->whereRaw('id = taggables.taggable_id')
+                    ->where('user_id', $userID)
+                    ->getQuery();
+            })
             ->limit($limit)
             ->get()
-            ->pipe(fn (Collection $tags) => TagsCollection::make($tags));
+            ->map(fn (Model $tag) => $tag->name);
     }
 
     /**
-     * @return Paginator<Tag>
+     * @return Paginator<Model>
      */
-    public function getUserTags(UserID $userID, PaginationData $pagination): Paginator
+    public function getUserTags(int $userId, PaginationData $pagination): Paginator
     {
-        /** @var Paginator */
-        $result = Model::query()
-            ->where('created_by', $userID->value())
+        return Model::query()
+            ->join('taggables', 'tag_id', '=', 'tags.id')
+            ->whereExists(function (&$query) use ($userId) {
+                $query = Bookmark::query()
+                    ->select('id')
+                    ->whereRaw('id = taggables.taggable_id')
+                    ->where('user_id', $userId)
+                    ->getQuery();
+            })
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
-
-        return $result->setCollection(
-            $result->getCollection()->map(fn (Model $tag) => new Tag($tag->name))
-        );
     }
 
-    public function detach(TagsCollection $tags, ResourceID $resourceID): void
+    /**
+     * @param array<string> $tags
+     */
+    public function detach(array $tags, int $resourceID): void
     {
         Taggable::query()
-            ->where('taggable_id', $resourceID->value())
-            ->whereIn('tag_id', Model::select('id')->whereIn('name', $tags->toStringCollection()->all()))
+            ->where('taggable_id', $resourceID)
+            ->whereIn('tag_id', Model::select('id')->whereIn('name', $tags))
             ->delete();
     }
 }

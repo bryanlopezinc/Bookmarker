@@ -6,32 +6,35 @@ namespace App\Services;
 
 use App\ValueObjects\Url;
 use App\ValueObjects\UserID;
-use App\Http\Requests\CreateBookmarkRequest;
-use App\DataTransferObjects\Builders\BookmarkBuilder;
-use App\DataTransferObjects\Builders\SourceBuilder;
+use App\Http\Requests\CreateOrUpdateBookmarkRequest;
 use App\Jobs\UpdateBookmarkWithHttpResponse;
-use App\Contracts\CreateBookmarkRepositoryInterface as Repository;
+use App\Models\Bookmark;
+use App\Models\Source;
+use App\Repositories\TagRepository;
 use App\Utils\UrlHasher;
 use Illuminate\Http\Resources\MissingValue;
 use Symfony\Component\HttpFoundation\ParameterBag;
 
-final class CreateBookmarkService
+class CreateBookmarkService
 {
-    public function __construct(private Repository $repository)
+    private TagRepository $tagRepository;
+
+    public function __construct(TagRepository $tagRepository = null)
     {
+        $this->tagRepository = $tagRepository ?: new TagRepository;
     }
 
-    public function fromRequest(CreateBookmarkRequest $request): void
+    public function fromRequest(CreateOrUpdateBookmarkRequest $request): void
     {
         $data = [
-            'url' => new Url($request->validated('url')),
-            'createdOn' => (string)now(),
-            'userID' => UserID::fromAuthUser(),
-            'tags' => $request->validated('tags', new MissingValue()),
-            'title' => $request->validated('title', new MissingValue()),
-            'description' =>  $request->input('description', new MissingValue()),
+            'url'                  => new Url($request->validated('url')),
+            'createdOn'            => (string)now(),
+            'userID'               => UserID::fromAuthUser()->value(),
+            'tags'                 => $request->validated('tags', new MissingValue()),
+            'title'                => $request->validated('title', new MissingValue()),
+            'description'          =>  $request->input('description', new MissingValue()),
             'descriptionSetByUser' => $request->has('description'),
-            'hasCustomTitle' => $request->has('title'),
+            'hasCustomTitle'       => $request->has('title'),
         ];
 
         $this->fromArray(
@@ -44,14 +47,14 @@ final class CreateBookmarkService
      *
      * ```php
      *  $data = [
-     *     'url' => App\ValueObjects\Url, //Required
-     *     'createdOn' => string, // Required
-     *      'userID' => App\ValueObjects\UserID //Required
-     *     'tags' => array<string>, //Optional
-     *     'title' => string, //Optional,
-     *     'description' => string //Optional,
-     *      'descriptionSetByUser' =>bool //optional,
-     *      'hasCustomTitle' => bool //optional
+     *     'url'                  => App\ValueObjects\Url, //Required
+     *     'createdOn'            => string, // Required
+     *     'userID'               => int //Required
+     *     'tags'                 => array<string>, //Optional
+     *     'title'                => string, //Optional,
+     *     'description'          => string //Optional,
+     *      descriptionSetByUser' => bool //optional,
+     *      hasCustomTitle'       => bool //optional
      *  ]
      * ```
      */
@@ -67,26 +70,31 @@ final class CreateBookmarkService
 
         /**
          * @var Url $url
-         * @var UserID $userID
+         * @var int $userID
          * */
         [$url, $userID] = [$attributes->get('url'), $attributes->get('userID')];
 
-        $bookmark = BookmarkBuilder::new()
-            ->title($attributes->get('title', $url->toString()))
-            ->hasCustomTitle($attributes->get('hasCustomTitle', false))
-            ->url($url->toString())
-            ->thumbnailUrl('')
-            ->description($attributes->get('description'))
-            ->descriptionWasSetByUser($attributes->get('descriptionSetByUser', false))
-            ->bookmarkedById($userID->value())
-            ->source(SourceBuilder::new()->domainName($url->getHost())->name($url->toString())->build())
-            ->tags($attributes->get('tags', []))
-            ->bookmarkedOn($attributes->get('createdOn'))
-            ->canonicalUrl($url)
-            ->canonicalUrlHash((new UrlHasher())->hashUrl($url))
-            ->resolvedUrl($url)
-            ->build();
+        /** @var Source */
+        $source = Source::query()->firstOrCreate(['host' => $url->getHost()], ['name' => $url->toString()]);
 
-        UpdateBookmarkWithHttpResponse::dispatch($this->repository->create($bookmark));
+        /** @var Bookmark */
+        $bookmark = Bookmark::query()->create([
+            'title'                   => $attributes->get('title', $url->toString()),
+            'has_custom_title'        => $attributes->get('hasCustomTitle', false),
+            'url'                     => $url->toString(),
+            'preview_image_url'       => null,
+            'description'             => $attributes->get('description'),
+            'description_set_by_user' => $attributes->get('descriptionSetByUser', false),
+            'user_id'                 => $userID,
+            'source_id'               => $source->id,
+            'created_at'              => $attributes->get('createdOn'),
+            'url_canonical'           => $url->toString(),
+            'url_canonical_hash'      => (new UrlHasher())->hashUrl($url),
+            'resolved_url'            => $url->toString(),
+        ]);
+
+        $this->tagRepository->attach($attributes->get('tags', []), $bookmark);
+
+        UpdateBookmarkWithHttpResponse::dispatch($bookmark);
     }
 }

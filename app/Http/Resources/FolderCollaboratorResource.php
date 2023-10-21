@@ -22,15 +22,10 @@ final class FolderCollaboratorResource extends JsonResource
         return [
             'type' => 'folderCollaborator',
             'attributes' => [
-                'id' => $this->folderCollaborator->user->id->value(),
-                'firstname' => $this->folderCollaborator->user->firstName->value,
-                'lastname' => $this->folderCollaborator->user->lastName->value,
-                'permissions' => [
-                    'canInviteUsers' => $this->folderCollaborator->permissions->canInviteUser(),
-                    'canAddBookmarks' => $this->folderCollaborator->permissions->canAddBookmarks(),
-                    'canRemoveBookmarks' => $this->folderCollaborator->permissions->canRemoveBookmarks(),
-                    'canUpdateFolder' => $this->folderCollaborator->permissions->canUpdateFolder()
-                ],
+                'id'          => $this->folderCollaborator->user->id,
+                'first_name'  => $this->folderCollaborator->user->first_name,
+                'last_name'   => $this->folderCollaborator->user->last_name,
+                'permissions' => $this->folderCollaborator->permissions->toJsonResponse()
             ]
         ];
     }

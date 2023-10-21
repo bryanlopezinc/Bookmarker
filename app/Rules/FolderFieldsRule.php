@@ -4,24 +4,19 @@ declare(strict_types=1);
 
 namespace App\Rules;
 
-use Illuminate\Contracts\Validation\Rule as RuleContract;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\MessageBag;
-use Illuminate\Validation\Rule;
-
-class FolderFieldsRule implements RuleContract
+class FolderFieldsRule extends AbstractFieldsRule
 {
-    protected array $ALLOWED = [
-        "id",
-        "name",
-        "description",
-        "has_description",
-        "date_created",
-        "last_updated",
-        "is_public",
-        'tags',
-        'has_tags',
-        'tags_count',
+    /**
+     * {@inheritdoc}
+     */
+    protected array $allowedFields = [
+        'id',
+        'name',
+        'description',
+        'has_description',
+        'date_created',
+        'last_updated',
+        'visibility',
         'storage',
         'storage.items_count',
         'storage.capacity',
@@ -30,56 +25,16 @@ class FolderFieldsRule implements RuleContract
         'storage.percentage_used'
     ];
 
-    protected MessageBag $errors;
-
-    public function __construct()
-    {
-        $this->errors = new MessageBag();
-    }
-
     /**
-     * @param  string  $attribute
-     * @param  mixed  $value
-     * @return bool
+     * {@inheritdoc}
      */
-    public function passes($attribute, $value)
-    {
-        $validator = Validator::make([$attribute => $value], [
-            $attribute => ['array', Rule::in($this->ALLOWED)],
-            "$attribute.*" => ['distinct:strict']
-        ]);
-
-        $this->errors->addIf(
-            $this->hasDuplicateStorageTypes($value),
-            $attribute,
-            'Cannot request storage with a storage child field'
-        );
-
-        $this->errors->merge($validator->errors());
-
-        return $this->errors->isEmpty();
-    }
-
-    private function hasDuplicateStorageTypes(array $fields): bool
-    {
-        $hasStorageType = collect($fields)->filter(function (string $field) {
-            return in_array($field, [
-                'storage.items_count',
-                'storage.capacity',
-                'storage.is_full',
-                'storage.available',
-                'storage.percentage_used'
-            ], true);
-        })->isNotEmpty();
-
-        return in_array('storage', $fields, true) && $hasStorageType;
-    }
-
-    /**
-     * @return string|array
-     */
-    final public function message()
-    {
-        return $this->errors->all();
-    }
+    protected array $parentChildrenMap = [
+        'storage' => [
+            'storage.items_count',
+            'storage.capacity',
+            'storage.is_full',
+            'storage.available',
+            'storage.percentage_used'
+        ],
+    ];
 }

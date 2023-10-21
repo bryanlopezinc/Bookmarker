@@ -5,20 +5,19 @@ namespace Tests\Feature;
 use App\Models\Bookmark;
 use App\Models\Tag;
 use App\Models\Taggable;
+use App\Repositories\TagRepository;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Support\Collection;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 use Tests\Traits\WillCheckBookmarksHealth;
-use Tests\Traits\CreatesBookmark;
 
 class UpdateBookmarkTest extends TestCase
 {
-    use WithFaker, WillCheckBookmarksHealth, CreatesBookmark;
+    use WithFaker, WillCheckBookmarksHealth;
 
     protected function updateBookmarkResponse(array $parameters = []): TestResponse
     {
@@ -30,30 +29,37 @@ class UpdateBookmarkTest extends TestCase
         $this->assertRouteIsAccessibleViaPath('v1/bookmarks', 'updateBookmark');
     }
 
-    public function testUnAuthorizedUserCannotAccessRoute(): void
+    public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
         $this->updateBookmarkResponse()->assertUnauthorized();
     }
 
-    public function testRequiredAttributesMustBePresent(): void
+    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->updateBookmarkResponse()->assertJsonValidationErrorFor('id');
-    }
+        $this->updateBookmarkResponse()
+            ->assertUnprocessable()
+            ->assertJsonValidationErrorFor('id');
 
-    public function testOneAttributeMustBePresent(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->updateBookmarkResponse(['id' => 112])
+            ->assertJsonValidationErrors([
+                'title' => 'The title field is required when none of tags / description are present.'
+            ]);
 
         $this->updateBookmarkResponse([
-            'id' => 112
+            'tags' => 'howTo,howTo,stackOverflow'
         ])->assertJsonValidationErrors([
-            'title' => 'The title field is required when none of tags / description are present.'
+            "tags.0" => [
+                "The tags.0 field has a duplicate value."
+            ],
+            "tags.1" => [
+                "The tags.1 field has a duplicate value."
+            ]
         ]);
     }
 
-    public function testWillUpdateBookmark(): void
+    public function testUpdateBookmark(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -61,9 +67,9 @@ class UpdateBookmarkTest extends TestCase
         $model = BookmarkFactory::new()->for($user)->create();
 
         $this->updateBookmarkResponse([
-            'id' => $model->id,
-            'title' => $title = $title = $this->faker->sentence,
-            'tags' => $tag = $this->faker->word,
+            'id'          => $model->id,
+            'title'       => $title = $title = $this->faker->sentence,
+            'tags'        => $tag = $this->faker->word,
             'description' => $description = $this->faker->sentence
         ])->assertOk();
 
@@ -80,13 +86,12 @@ class UpdateBookmarkTest extends TestCase
         $this->assertEquals($model->created_at->timestamp, $bookmark->created_at->timestamp);
 
         $this->assertDatabaseHas(Taggable::class, [
-            'taggable_id' => $model->id,
-            'taggable_type' => Taggable::BOOKMARK_TYPE,
-            'tag_id' => Tag::query()->where(['name' => $tag, 'created_by' => $user->id])->first()->id
+            'taggable_id'   => $model->id,
+            'tag_id'        => Tag::query()->where(['name' => $tag])->first()->id
         ]);
     }
 
-    public function testCanUpdateOnlyTags(): void
+    public function testUpdateOnlyTags(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -94,7 +99,7 @@ class UpdateBookmarkTest extends TestCase
         $model = BookmarkFactory::new()->for($user)->create();
 
         $this->updateBookmarkResponse([
-            'id' => $model->id,
+            'id'   => $model->id,
             'tags' => $tag = $this->faker->word,
         ])->assertOk();
 
@@ -109,18 +114,9 @@ class UpdateBookmarkTest extends TestCase
         $this->assertEquals($model->url, $bookmark->url);
         $this->assertEquals($model->source_id, $bookmark->source_id);
         $this->assertEquals($model->created_at->timestamp, $bookmark->created_at->timestamp);
-
-        $this->assertDatabaseHas(Taggable::class, [
-            'taggable_id' => $model->id,
-            'taggable_type' => Taggable::BOOKMARK_TYPE,
-            'tag_id' => Tag::query()->where([
-                'name' => $tag,
-                'created_by' => $user->id,
-            ])->first()->id
-        ]);
     }
 
-    public function testCanUpdateOnlyTitle(): void
+    public function testUpdateOnlyTitle(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -128,7 +124,7 @@ class UpdateBookmarkTest extends TestCase
         $model = BookmarkFactory::new()->for($user)->create();
 
         $this->updateBookmarkResponse([
-            'id' => $model->id,
+            'id'    => $model->id,
             'title' => $title = $this->faker->sentence
         ])->assertOk();
 
@@ -145,7 +141,7 @@ class UpdateBookmarkTest extends TestCase
         $this->assertEquals($model->created_at->timestamp, $bookmark->created_at->timestamp);
     }
 
-    public function testCanUpdateOnlyDescription(): void
+    public function testUpdateOnlyDescription(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -153,7 +149,7 @@ class UpdateBookmarkTest extends TestCase
         $model = BookmarkFactory::new()->for($user)->create();
 
         $this->updateBookmarkResponse([
-            'id' => $model->id,
+            'id'          => $model->id,
             'description' => $description = $this->faker->sentence
         ])->assertOk();
 
@@ -170,27 +166,23 @@ class UpdateBookmarkTest extends TestCase
         $this->assertEquals($model->created_at->timestamp, $bookmark->created_at->timestamp);
     }
 
-    public function testWillReturnBadRequestResponseWhenBookmarkTagsLengthIsExceeded(): void
+    public function testWillReturnBadRequestWhenBookmarkTagsLengthIsExceeded(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
+        /** @var Bookmark */
         $model = BookmarkFactory::new()->for($user)->create();
 
-        TagFactory::new()
-            ->count(10)
-            ->create(['created_by' => $model->user_id])
-            ->tap(function (Collection $collection) use ($model) {
-                Taggable::insert($collection->map(fn (Tag $tag) => [
-                    'taggable_id' => $model->id,
-                    'taggable_type' => Taggable::BOOKMARK_TYPE,
-                    'tag_id' => $tag->id,
-                ])->all());
-            });
+        (new TagRepository)->attach(
+            TagFactory::times(10)->make()->all(),
+            $model
+        );
 
         $this->updateBookmarkResponse([
-            'id' => $model->id,
+            'id'   => $model->id,
             'tags' => TagFactory::new()->count(6)->make()->pluck('name')->implode(',')
-        ])->assertStatus(400);
+        ])->assertStatus(400)
+            ->assertExactJson(['message' => 'MaxBookmarkTagsLengthExceeded']);
     }
 
     public function testWillReturnNotFoundResponseWhenBookmarkDoesNotExists(): void
@@ -198,52 +190,42 @@ class UpdateBookmarkTest extends TestCase
         Passport::actingAs(UserFactory::new()->create());
 
         $this->updateBookmarkResponse([
-            'id' => BookmarkFactory::new()->create()->id + 1,
+            'id'    => BookmarkFactory::new()->create()->id + 1,
             'title' => 'title'
-        ])->assertNotFound();
+        ])->assertNotFound()
+            ->assertExactJson(['message' => 'BookmarkNotFound']);
     }
 
-    public function testBookmarkMustBelongToUser(): void
+    public function testWilReturnNotFoundWhenBookmarkDoesNotBelongToUser(): void
     {
         [$user, $userWithBadIntention] = UserFactory::new()->count(2)->create();
         $userBookmark = BookmarkFactory::new()->for($user)->create();
 
         Passport::actingAs($userWithBadIntention);
         $this->updateBookmarkResponse([
-            'id' => $userBookmark->id,
+            'id'    => $userBookmark->id,
             'title' => 'title'
-        ])->assertForbidden();
+        ])->assertNotFound()
+            ->assertExactJson(['message' => 'BookmarkNotFound']);
     }
 
-    public function testCannotAttachExistingTagToBookmark(): void
+    public function testWillReturnConflictWhenBookmarkAlreadyHasTags(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->saveBookmark(['tags' => $tags = TagFactory::new()->count(3)->make()->pluck('name')->all()]);
+        /** @var Bookmark */
+        $model = BookmarkFactory::new()->for($user)->create();
 
-        shuffle($tags);
+        (new TagRepository)->attach(
+            $tags = TagFactory::times(10)->make()->pluck('name')->all(),
+            $model
+        );
 
         $this->updateBookmarkResponse([
-            'id' => Bookmark::query()->where('user_id', $user->id)->sole('id')->id,
-            'tags' => $tags[0],
+            'id'   => Bookmark::query()->where('user_id', $user->id)->sole('id')->id,
+            'tags' => implode(',', [$this->faker->word, $tags[0]]),
         ])->assertStatus(409)
-            ->assertExactJson(['message' =>  'Duplicate tags']);
-    }
-
-    public function testTagsMustBeUnique(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $this->updateBookmarkResponse([
-            'tags' => 'howTo,howTo,stackOverflow'
-        ])->assertJsonValidationErrors([
-            "tags.0" => [
-                "The tags.0 field has a duplicate value."
-            ],
-            "tags.1" => [
-                "The tags.1 field has a duplicate value."
-            ]
-        ]);
+            ->assertExactJson(['message' => 'DuplicateTags']);
     }
 
     public function testWillCheckBookmarksHealth(): void

@@ -3,8 +3,6 @@
 namespace Tests\Feature\Folder;
 
 use App\Repositories\Folder\FolderPermissionsRepository as Repository;
-use App\ValueObjects\ResourceID;
-use App\ValueObjects\UserID;
 use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -28,12 +26,12 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
         $this->assertRouteIsAccessibleViaPath('v1/folders/collaborators/grant', 'grantPermission');
     }
 
-    public function testUnAuthorizedUserCannotAccessRoute(): void
+    public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
         $this->grantPermissionsResponse()->assertUnauthorized();
     }
 
-    public function testRequiredAttributesMustBePresent(): void
+    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
@@ -44,22 +42,10 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
                 'user_id' => ['The user id field is required.'],
                 'permissions' => ['The permissions field is required.']
             ]);
-    }
-
-    public function testPermissionsAttributesMustBeValid(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
 
         $this->grantPermissionsResponse(['permissions' => 'foo,bar'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'permissions' => ['The selected permissions is invalid.']
-            ]);
-    }
-
-    public function testPermissionsAttributesMustBeUnique(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
+            ->assertJsonValidationErrors(['permissions' => ['The selected permissions is invalid.']]);
 
         $this->grantPermissionsResponse(['permissions' => 'addBookmarks,addBookmarks,inviteUser'])
             ->assertUnprocessable()
@@ -73,48 +59,10 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
             ]);
     }
 
-    public function testWillGrantPermissions(): void
+    public function testGrantPermissions(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->addBookmarksPermission()
-            ->create();
-
-        //assert cannot send invite
-        Passport::actingAs($collaborator);
-        $this->postJson(route('sendFolderCollaborationInvite'), $sendInviteRequest = [
-            'email' => UserFactory::new()->create()->email,
-            'folder_id' => $folder->id,
-        ])->assertForbidden();
-
-        Passport::actingAs($folderOwner);
-        $this->grantPermissionsResponse([
-            'user_id' => $collaborator->id,
-            'folder_id' => $folder->id,
-            'permissions' => 'inviteUser'
-        ])->assertOk();
-
-        //can now perform action.
-        Passport::actingAs($collaborator);
-        $this->postJson(route('sendFolderCollaborationInvite'), $sendInviteRequest)->assertOk();
-
-        $collaboratorPermissions = (new Repository)->getUserAccessControls(
-            new UserID($collaborator->id),
-            new ResourceID($folder->id)
-        );
-
-        $this->assertTrue($collaboratorPermissions->canInviteUser());
-        $this->assertTrue($collaboratorPermissions->canAddBookmarks());
-        $this->assertFalse($collaboratorPermissions->canRemoveBookmarks());
-    }
-
-    public function testCanGrantMultiplePermissions(): void
-    {
-        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderCollaboratorPermissionFactory::new()
@@ -125,49 +73,70 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
         Passport::actingAs($folderOwner);
         $this->grantPermissionsResponse([
-            'user_id' => $collaborator->id,
-            'folder_id' => $folder->id,
+            'user_id'     => $collaborator->id,
+            'folder_id'   => $folder->id,
+            'permissions' => 'inviteUser'
+        ])->assertOk();
+
+        $collaboratorPermissions = (new Repository)->getUserAccessControls($collaborator->id, $folder->id);
+
+        $this->assertTrue($collaboratorPermissions->canInviteUser());
+
+        $this->assertEquals($collaboratorPermissions->count(), 2);
+    }
+
+    public function testGrantMultiplePermissions(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        FolderCollaboratorPermissionFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->viewBookmarksPermission()
+            ->create();
+
+        Passport::actingAs($folderOwner);
+        $this->grantPermissionsResponse([
+            'user_id'     => $collaborator->id,
+            'folder_id'   => $folder->id,
             'permissions' => 'inviteUser,addBookmarks'
         ])->assertOk();
 
-        $collaboratorPermissions = (new Repository)->getUserAccessControls(
-            new UserID($collaborator->id),
-            new ResourceID($folder->id)
-        );
+        $collaboratorPermissions = (new Repository)->getUserAccessControls($collaborator->id, $folder->id);
 
         $this->assertTrue($collaboratorPermissions->canInviteUser());
         $this->assertTrue($collaboratorPermissions->canAddBookmarks());
-        $this->assertFalse($collaboratorPermissions->canRemoveBookmarks());
+        $this->assertEquals($collaboratorPermissions->count(), 3);
     }
 
-    public function testCannotPerformActionOnSelf(): void
+    public function testWillReturnForbiddenWhenGrantingPermissionToSelf(): void
     {
-        $self = UserFactory::new()->create();
-        $folder = FolderFactory::new()->for($self)->create();
+        $user = UserFactory::new()->create();
+        $folder = FolderFactory::new()->for($user)->create();
 
-        Passport::actingAs($self);
+        Passport::actingAs($user);
         $this->grantPermissionsResponse([
-            'user_id' => $self->id,
+            'user_id' => $user->id,
             'folder_id' => $folder->id,
             'permissions' => 'inviteUser'
         ])->assertForbidden()
-            ->assertExactJson([
-                'message' => 'Cannot grant permissions to self'
-            ]);
+            ->assertExactJson(['message' => 'CannotGrantPermissionsToSelf']);
     }
 
-    public function testFolderMustBelongToUser(): void
+    public function testWillReturnNotFoundWhenFolderDoesNotBelongToUser(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
         $this->grantPermissionsResponse([
-            'user_id' => UserFactory::new()->create()->id,
-            'folder_id' => FolderFactory::new()->create()->id,
+            'user_id'     => UserFactory::new()->create()->id,
+            'folder_id'   => FolderFactory::new()->create()->id,
             'permissions' => 'inviteUser'
-        ])->assertForbidden();
+        ])->assertNotFound();
     }
 
-    public function testWhenCollaboratorAlreadyHasPermissions(): void
+    public function testWillReturnConflictWhenCollaboratorAlreadyHasPermissions(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
@@ -180,88 +149,51 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
         Passport::actingAs($folderOwner);
         $this->grantPermissionsResponse([
-            'user_id' => $collaborator->id,
-            'folder_id' => $folder->id,
+            'user_id'     => $collaborator->id,
+            'folder_id'   => $folder->id,
             'permissions' => 'addBookmarks'
         ])->assertStatus(Response::HTTP_CONFLICT)
-            ->assertExactJson([
-                'message' => 'user already has permissions'
-            ]);
-
-        //when collaborator has at least one permission in the given permissions
-        $this->grantPermissionsResponse([
-            'user_id' => $collaborator->id,
-            'folder_id' => $folder->id,
-            'permissions' => 'inviteUser,addBookmarks'
-        ])->assertStatus(Response::HTTP_CONFLICT)
-            ->assertExactJson([
-                'message' => 'user already has permissions'
-            ]);
+            ->assertExactJson(['message' => 'DuplicatePermissions']);
     }
 
-    public function testWhenUserIsNotACollaborator(): void
+    public function testWillReturnNotFoundWhenUserIsNotACollaborator(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
         Passport::actingAs($folderOwner);
         $this->grantPermissionsResponse([
-            'user_id' => $collaborator->id,
-            'folder_id' => $folder->id,
+            'user_id'     => $collaborator->id,
+            'folder_id'   => $folder->id,
             'permissions' => 'addBookmarks'
         ])->assertNotFound()
-            ->assertExactJson([
-                'message' => 'User not a collaborator'
-            ]);
+            ->assertExactJson(['message' => 'UserNotACollaborator']);
     }
 
-    public function testWhenCollaboratorIsNotARegisteredUser(): void
+    public function testWillReturnNotFoundWhenUserDoesNotExist(): void
     {
         $folderOwner = UserFactory::new()->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
         Passport::actingAs($folderOwner);
         $this->grantPermissionsResponse([
-            'user_id' => UserFactory::new()->create()->id + 1,
-            'folder_id' => $folder->id,
+            'user_id'     => UserFactory::new()->create()->id + 1,
+            'folder_id'   => $folder->id,
             'permissions' => 'addBookmarks'
         ])->assertNotFound()
-            ->assertExactJson([
-                'message' => 'User not a collaborator'
-            ]);
+            ->assertExactJson(['message' => 'UserNotACollaborator']);
     }
 
-    public function testWhenFolderDoesNotExist(): void
+    public function testWillReturnNotFoundWhenFolderDoesNotExist(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
 
         Passport::actingAs($folderOwner);
         $this->grantPermissionsResponse([
-            'user_id' => $collaborator->id,
-            'folder_id' => FolderFactory::new()->create()->id + 1,
+            'user_id'     => $collaborator->id,
+            'folder_id'   => FolderFactory::new()->create()->id + 1,
             'permissions' => 'addBookmarks'
         ])->assertNotFound()
-            ->assertExactJson([
-                'message' => 'The folder does not exists'
-            ]);
-    }
-
-    public function testCanGrantUpdateFolderPermission(): void
-    {
-        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->for($folderOwner)->create();
-
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->addBookmarksPermission()
-            ->create();
-
-        Passport::actingAs($folderOwner);
-        $this->grantPermissionsResponse([
-            'user_id' => $collaborator->id,
-            'folder_id' => $folder->id,
-            'permissions' => 'updateFolder'
-        ])->assertOk();
+            ->assertExactJson(['message' => 'FolderNotFound']);
     }
 }

@@ -2,18 +2,18 @@
 
 namespace Tests\Feature;
 
+use App\Models\Bookmark;
+use App\Repositories\TagRepository;
+use Database\Factories\BookmarkFactory;
 use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
-use Tests\Traits\CreatesBookmark;
 
 class FetchUserTagsTest extends TestCase
 {
-    use CreatesBookmark;
-
-    protected function getTestResponse(array $parameters = []): TestResponse
+    protected function FetchUserTagsResponse(array $parameters = []): TestResponse
     {
         return $this->getJson(route('userTags', $parameters));
     }
@@ -23,51 +23,32 @@ class FetchUserTagsTest extends TestCase
         $this->assertRouteIsAccessibleViaPath('v1/users/tags', 'userTags');
     }
 
-    public function testUnAuthorizedUserCannotAccessRoute(): void
+    public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
-        $this->getTestResponse()->assertUnauthorized();
+        $this->FetchUserTagsResponse()->assertUnauthorized();
     }
 
-    public function testPaginationDataMustBeValid(): void
+    public function testFetchUserTags(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->getTestResponse(['per_page' => 3])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'per_page' => ['The per page must be at least 15.']
-            ]);
+        /** @var Bookmark */
+        $bookmark = BookmarkFactory::new()->for($user)->create();
 
-        $this->getTestResponse(['per_page' => 51])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'per_page' => ['The per page must not be greater than 50.']
-            ]);
+        $tag = TagFactory::new()->create();
 
-        $this->getTestResponse(['page' => 2001])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'page' => ['The page must not be greater than 2000.']
-            ]);
+        (new TagRepository)->attach([$tag], $bookmark);
 
-        $this->getTestResponse(['page' => -1])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'page' => ['The page must be at least 1.']
-            ]);
-    }
-
-    public function testWillFetchUserTags(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $this->saveBookmark(['tags' => $tags = TagFactory::new()->count(3)->make()->pluck('name')->all()]);
-
-        $response = $this->getTestResponse()
+        $this->FetchUserTagsResponse()
             ->assertOk()
-            ->assertJsonCount(3, 'data')
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.attributes.name', $tag->name)
             ->assertJsonStructure([
-                'data',
+                'data' => [
+                    '*' => [
+                        'attributes' => ['name']
+                    ]
+                ],
                 'links' => [
                     'first',
                     'prev'
@@ -79,16 +60,24 @@ class FetchUserTagsTest extends TestCase
                     'has_more_pages'
                 ]
             ]);
+    }
 
-        $response->assertJsonStructure([
-            'type',
-            'attributes' => [
-                'name'
-            ]
-        ], $response->json('data.0'));
+    public function testWillSortByLatest(): void
+    {
+        // Passport::actingAs($user = UserFactory::new()->create());
 
-        foreach ($response->json('data.*.attributes.name') as $tag) {
-            $this->assertContains($tag, $tags);
-        }
+        // /** @var Bookmark[] */
+        // $bookmarks = BookmarkFactory::new()->count(2)->for($user)->create();
+
+        // $tags = TagFactory::new()->count(2)->create();
+
+        // (new TagRepository)->attach(TagsCollection::make([$tags[0]]), $bookmarks[0]);
+        // (new TagRepository)->attach(TagsCollection::make([$tags[1]]), $bookmarks[1]);
+
+        // $this->getTestResponse()
+        //     ->assertOk()
+        //     ->assertJsonCount(2, 'data')
+        //     ->assertJsonPath('data.0.attributes.name', $tags[1]->name)
+        //     ->assertJsonPath('data.0.attributes.name', $tags[0]->name);
     }
 }

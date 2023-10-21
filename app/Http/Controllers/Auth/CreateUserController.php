@@ -6,16 +6,24 @@ namespace App\Http\Controllers\Auth;
 
 use App\Events\RegisteredEvent;
 use App\Http\Requests\CreateUserRequest;
-use App\Services\CreateUserService;
+use App\Models\User;
+use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
 
 final class CreateUserController
 {
-    public function __invoke(CreateUserRequest $request, CreateUserService $service): JsonResponse
+    public function __invoke(CreateUserRequest $request, Hasher $hasher): JsonResponse
     {
-        event(new RegisteredEvent($service->fromRequest($request)));
+        $user = User::query()->create([
+            'username'   => $request->validated('username'),
+            'first_name' => $request->validated('first_name'),
+            'last_name'  => $request->validated('last_name'),
+            'email'      => $request->validated('email'),
+            'password'   => $hasher->make($request->validated('password'))
+        ]);
 
-        return response()->json(status: Response::HTTP_CREATED);
+        event(new RegisteredEvent($user));
+
+        return response()->json(status: JsonResponse::HTTP_CREATED);
     }
 }

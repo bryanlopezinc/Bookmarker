@@ -2,12 +2,9 @@
 
 namespace Tests\Unit\Repositories;
 
-use App\Collections\ResourceIDsCollection;
 use App\HealthCheckResult;
-use App\Models\Bookmark;
 use App\Models\BookmarkHealth;
 use App\Repositories\BookmarksHealthRepository;
-use App\ValueObjects\ResourceID;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\BookmarkHealthFactory;
 use Illuminate\Http\Client\Response;
@@ -18,43 +15,43 @@ class BookmarksHealthRepositoryTest extends TestCase
 {
     public function testWillReturnOnlyBookmarkIdsNotCheckedInSixDays(): void
     {
-        /** @var array<ResourceID> */
-        $ids = BookmarkFactory::new()->count(4)->create()->map(fn (Bookmark $model) => new ResourceID($model->id))->all();
+        /** @var array<int> */
+        $ids = BookmarkFactory::new()->count(4)->create()->pluck('id')->all();
 
         [$first, $second, $third] = $ids;
 
-        BookmarkHealthFactory::new()->create(['bookmark_id' => $first->value()]); //Recently checked
-        BookmarkHealthFactory::new()->checkedDaysAgo(6)->create(['bookmark_id' => $second->value()]);
-        BookmarkHealthFactory::new()->checkedDaysAgo(7)->create(['bookmark_id' => $third->value()]);
+        BookmarkHealthFactory::new()->create(['bookmark_id' => $first]); //Recently checked
+        BookmarkHealthFactory::new()->checkedDaysAgo(6)->create(['bookmark_id' => $second]);
+        BookmarkHealthFactory::new()->checkedDaysAgo(7)->create(['bookmark_id' => $third]);
 
-        $result = (new BookmarksHealthRepository)->whereNotRecentlyChecked(new ResourceIDsCollection($ids));
+        $result = (new BookmarksHealthRepository)->whereNotRecentlyChecked($ids);
 
         $this->assertCount(3, $result);
-        $this->assertContains($second->value(), $result->asIntegers()->all());
-        $this->assertContains($third->value(), $result->asIntegers()->all());
+        $this->assertContains($second, $result);
+        $this->assertContains($third, $result);
     }
 
     public function testWillReturnBookmarkIdsThatHasNeverBeenChecked(): void
     {
         $bookmark = BookmarkFactory::new()->create();
 
-        $result = (new BookmarksHealthRepository)->whereNotRecentlyChecked((new ResourceID($bookmark->id))->toCollection());
+        $result = (new BookmarksHealthRepository)->whereNotRecentlyChecked([$bookmark->id]);
 
         $this->assertCount(1, $result);
-        $this->assertContains($bookmark->id, $result->asIntegers()->all());
+        $this->assertContains($bookmark->id, $result);
     }
 
     public function testUpdateRecords(): void
     {
-        /** @var array<ResourceID> */
-        $ids = BookmarkFactory::new()->count(3)->create()->map(fn (Bookmark $model) => new ResourceID($model->id))->all();
+        /** @var array<int> */
+        $ids = BookmarkFactory::new()->count(3)->create()->pluck('id')->all();
 
         [$first, $second, $third] = $ids;
 
         $time = now()->toDateString();
 
         //first bookmarkID was healthy.
-        BookmarkHealthFactory::new()->create(['bookmark_id' => $first->value()]);
+        BookmarkHealthFactory::new()->create(['bookmark_id' => $first]);
 
         (new BookmarksHealthRepository)->update([
             new HealthCheckResult($first, new Response(new Psr7Response(404))),
@@ -62,22 +59,24 @@ class BookmarksHealthRepositoryTest extends TestCase
             new HealthCheckResult($third, new Response(new Psr7Response())),
         ]);
 
-        $this->assertDatabaseHas(BookmarkHealth::class, [
-            'bookmark_id' => $first->value(),
-            'is_healthy' => false,
+        /** @var array<BookmarkHealth> */
+        $records = BookmarkHealth::query()
+            ->whereIn('bookmark_id', [$first, $second, $third])
+            ->get(['is_healthy', 'last_checked']);
+
+        $this->assertEquals($records[0]->getAttributes(), [
+            'is_healthy'   => false,
             'last_checked' => $time
         ]);
 
-        $this->assertDatabaseHas(BookmarkHealth::class, [
-            'bookmark_id' => $second->value(),
-            'is_healthy' => true,
-            'last_checked' => $time,
+        $this->assertEquals($records[1]->getAttributes(), [
+            'is_healthy'   => true,
+            'last_checked' => $time
         ]);
 
-        $this->assertDatabaseHas(BookmarkHealth::class, [
-            'bookmark_id' => $third->value(),
-            'is_healthy' => true,
-            'last_checked' => $time,
+        $this->assertEquals($records[2]->getAttributes(), [
+            'is_healthy'   => true,
+            'last_checked' => $time
         ]);
     }
 }

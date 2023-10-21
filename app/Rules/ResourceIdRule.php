@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Rules;
 
-use App\Exceptions\InvalidResourceIdException;
-use App\ValueObjects\ResourceID;
 use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Validation\Concerns\ValidatesAttributes;
 
@@ -13,7 +11,7 @@ final class ResourceIdRule implements Rule
 {
     use ValidatesAttributes;
 
-    protected string|array $message;
+    protected string|array $message = [];
 
     /**
      * @param  string  $attribute
@@ -28,15 +26,13 @@ final class ResourceIdRule implements Rule
             return false;
         }
 
-        try {
-            new ResourceID((int) $value);
-
-            return true;
-        } catch (InvalidResourceIdException) {
+        if (intval($value) < 1) {
             $this->message = sprintf('The %s attribute is invalid', $attribute);
 
             return false;
         }
+
+        return true;
     }
 
     /**

@@ -23,10 +23,10 @@ final class FetchUserFoldersController
         ]);
 
         $result = $repository->fetch(
-            UserID::fromAuthUser(),
+            UserID::fromAuthUser()->value(),
             PaginationData::fromRequest($request),
             UserFoldersSortCriteria::fromRequest($request)
-        )->appends('per_page', $request->input('per_page', PaginationData::DEFAULT_PER_PAGE));
+        );
 
         return new ResourceCollection($result, FilterFolderResource::class);
     }

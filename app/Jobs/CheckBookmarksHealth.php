@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Collections\BookmarksCollection;
 use App\HealthChecker;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -12,6 +11,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use App\Models\Bookmark;
 
 final class CheckBookmarksHealth implements ShouldQueue
 {
@@ -20,7 +20,10 @@ final class CheckBookmarksHealth implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    public function __construct(private BookmarksCollection $bookmarks)
+    /**
+     * @param iterable<Bookmark> $bookmarks
+     */
+    public function __construct(private iterable $bookmarks)
     {
     }
 

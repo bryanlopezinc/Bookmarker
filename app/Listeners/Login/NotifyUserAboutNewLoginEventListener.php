@@ -28,7 +28,7 @@ final class NotifyUserAboutNewLoginEventListener implements ShouldQueue
     {
         $loginInfo = new LoginInformation($this->getDeviceInfo($event), $this->getLocation($event));
 
-        $this->mailer->to($event->user->email->value)->send(new NewLoginMail($loginInfo));
+        $this->mailer->to($event->user->email)->send(new NewLoginMail($loginInfo));
     }
 
     private function getDeviceInfo(LoginEvent $event): Device

@@ -41,18 +41,49 @@ final class UAC implements Countable
 
     public static function fromRequest(Request $request, string $key): self
     {
-        $permissions = $request->input($key, []);
-
-        if (in_array('*', $permissions, true)) {
+        if (in_array('*', $request->input($key, []), true)) {
             return new self(self::VALID);
         }
 
-        return static::translate($permissions, [
-            'addBookmarks' => Model::ADD_BOOKMARKS,
+        $permissions = [];
+
+        $translation = [
+            'addBookmarks'    => Model::ADD_BOOKMARKS,
             'removeBookmarks' => Model::DELETE_BOOKMARKS,
-            'inviteUser' => Model::INVITE,
-            'updateFolder' => Model::UPDATE_FOLDER
-        ]);
+            'inviteUser'      => Model::INVITE,
+            'updateFolder'    => Model::UPDATE_FOLDER
+        ];
+
+        foreach ($request->input($key, []) as $permission) {
+            $permissions[] = $translation[$permission];
+        }
+
+        return new self($permissions);
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function toJsonResponse(): array
+    {
+        $response = [];
+
+        $translation = [
+            Model::ADD_BOOKMARKS     => 'addBookmarks',
+            Model::DELETE_BOOKMARKS  => 'removeBookmarks',
+            Model::INVITE            => 'inviteUsers',
+            Model::UPDATE_FOLDER     => 'updateFolder',
+        ];
+
+        foreach ($this->permissions as $permission) {
+            if ($permission === Model::VIEW_BOOKMARKS) {
+                continue;
+            }
+
+            $response[] = $translation[$permission];
+        }
+
+        return $response;
     }
 
     public static function all(): self
@@ -76,32 +107,6 @@ final class UAC implements Countable
     public static function fromUnSerialized(array $unserialize): self
     {
         return new self($unserialize);
-    }
-
-    /**
-     * @param array<string> $permissions Accepted values = ['read']
-     */
-    public static function fromArray(array $permissions): self
-    {
-        return static::translate($permissions, [
-            'read' => Model::VIEW_BOOKMARKS,
-            'write' => Model::ADD_BOOKMARKS
-        ]);
-    }
-
-    /**
-     * @param array<string> $data
-     * @param array<string,string> $translation
-     */
-    private static function translate(array $data, array $translation): self
-    {
-        $permissions = [];
-
-        foreach ($data as $permission) {
-            $permissions[] = $translation[$permission];
-        }
-
-        return new self($permissions);
     }
 
     /**

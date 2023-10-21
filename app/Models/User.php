@@ -2,26 +2,28 @@
 
 namespace App\Models;
 
-use App\QueryColumns\UserAttributes;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Query\JoinClause;
+use Illuminate\Support\Collection;
 
 /**
  * @property int $id
  * @property string $username
- * @property string $firstname
- * @property string $lastname
+ * @property string $first_name
+ * @property string $last_name
  * @property string $email
  * @property string $password
+ * @property int $bookmarks_count
+ * @property int $favorites_count
+ * @property int $folders_count
  * @property \Carbon\Carbon|null $email_verified_at
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
- * @method static Builder WithQueryOptions(UserAttributes $columns)
+ * @method static Builder WithQueryOptions(array $columns = [])
  */
 final class User extends Authenticatable implements MustVerifyEmail
 {
@@ -64,8 +66,10 @@ final class User extends Authenticatable implements MustVerifyEmail
      *
      * @return Builder
      */
-    public function scopeWithQueryOptions($builder, UserAttributes $columns)
+    public function scopeWithQueryOptions($builder, array $columns = [])
     {
+        $columns = collect($columns)->mapWithKeys(fn (string $value) => [$value => $value]);
+
         $builder->addSelect($this->getQualifiedKeyName());
 
         if ($columns->isEmpty()) {
@@ -74,7 +78,7 @@ final class User extends Authenticatable implements MustVerifyEmail
 
         if (!$columns->isEmpty()) {
             $builder->addSelect($this->qualifyColumns($columns->except([
-                'bookmarks_count', 'folders_count', 'favourites_count'
+                'bookmarks_count', 'folders_count', 'favorites_count'
             ])));
         }
 
@@ -88,7 +92,7 @@ final class User extends Authenticatable implements MustVerifyEmail
     /**
      * @param Builder $builder
      */
-    private function addBookmarksCountQuery(&$builder, UserAttributes $options): void
+    private function addBookmarksCountQuery(&$builder, Collection $options): void
     {
         $wantsBookmarksCount = $options->has('bookmarks_count') ?: $options->isEmpty();
 
@@ -96,31 +100,35 @@ final class User extends Authenticatable implements MustVerifyEmail
             return;
         }
 
-        $builder->join('users_resources_counts as bc', function (JoinClause $join) {
-            $join->on('users.id', '=', 'bc.user_id')->where('bc.type', UserBookmarksCount::TYPE);
-        }, type: 'left outer')->addSelect('bc.count as bookmarks_count');
+        $builder->addSelect([
+            'bookmarks_count' => Bookmark::query()
+                ->selectRaw("COUNT(*)")
+                ->whereRaw("user_id = {$this->qualifyColumn('id')}")
+        ]);
     }
 
     /**
      * @param Builder $builder
      */
-    private function addFavoritesCountQuery(&$builder, UserAttributes $options): void
+    private function addFavoritesCountQuery(&$builder, Collection $options): void
     {
-        $wantsFavoritesCount = $options->has('favourites_count') ?: $options->isEmpty();
+        $wantsFavoritesCount = $options->has('favorites_count') ?: $options->isEmpty();
 
         if (!$wantsFavoritesCount) {
             return;
         }
 
-        $builder->join('users_resources_counts as fc', function (JoinClause $join) {
-            $join->on('users.id', '=', 'fc.user_id')->where('fc.type', UserFavoritesCount::TYPE);
-        }, type: 'left outer')->addSelect('fc.count as favourites_count');
+        $builder->addSelect([
+            'favorites_count' => Favorite::query()
+                ->selectRaw("COUNT(*)")
+                ->whereRaw("user_id = {$this->qualifyColumn('id')}")
+        ]);
     }
 
     /**
      * @param Builder $builder
      */
-    private function addFoldersCountQuery(&$builder, UserAttributes $options): void
+    private function addFoldersCountQuery(&$builder, Collection $options): void
     {
         $wantsFoldersCount = $options->has('folders_count') ?: $options->isEmpty();
 
@@ -128,8 +136,10 @@ final class User extends Authenticatable implements MustVerifyEmail
             return;
         }
 
-        $builder->join('users_resources_counts as ufc', function (JoinClause $join) {
-            $join->on('users.id', '=', 'ufc.user_id')->where('ufc.type', UserFoldersCount::TYPE);
-        }, type: 'left outer')->addSelect('ufc.count as folders_count');
+        $builder->addSelect([
+            'folders_count' => Folder::query()
+                ->selectRaw("COUNT(*)")
+                ->whereRaw("user_id = {$this->qualifyColumn('id')}")
+        ]);
     }
 }

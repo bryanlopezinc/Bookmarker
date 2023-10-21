@@ -15,7 +15,7 @@ final class AcceptFolderCollaborationInviteController
     {
         $request->validate(['invite_hash' => ['required', 'uuid']]);
 
-        $service->accept($request);
+        $service->fromRequest($request);
 
         return response()->json(status: Response::HTTP_CREATED);
     }

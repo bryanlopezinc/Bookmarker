@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
-use App\Collections\ResourceIDsCollection;
 use App\Enums\NotificationType;
-use App\ValueObjects\ResourceID;
-use App\ValueObjects\UserID;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Bus\Queueable;
@@ -18,9 +15,9 @@ final class BookmarksRemovedFromFolderNotification extends Notification implemen
     use FormatDatabaseNotification;
 
     public function __construct(
-        private ResourceIDsCollection $bookmarkIDs,
-        private ResourceID $folderID,
-        private UserID $collaboratorID
+        private array $bookmarkIDs,
+        private int $folderID,
+        private int $collaboratorID
     ) {
         $this->afterCommit();
     }
@@ -43,9 +40,9 @@ final class BookmarksRemovedFromFolderNotification extends Notification implemen
     {
         return $this->formatNotificationData([
             'N-type' => $this->databaseType(),
-            'bookmarks_removed' => $this->bookmarkIDs->asIntegers()->all(),
-            'removed_from_folder' => $this->folderID->value(),
-            'removed_by' => $this->collaboratorID->value()
+            'bookmarks_removed'   => $this->bookmarkIDs,
+            'removed_from_folder' => $this->folderID,
+            'removed_by'          => $this->collaboratorID
         ]);
     }
 

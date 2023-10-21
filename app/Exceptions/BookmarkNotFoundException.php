@@ -4,15 +4,41 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
-use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Http\Response;
+use App\Models\Bookmark;
+use App\ValueObjects\UserID;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use RuntimeException;
 
-final class BookmarkNotFoundException extends HttpResponseException
+final class BookmarkNotFoundException extends RuntimeException
 {
-    public function __construct()
+    public function __construct(
+        string $message = 'BookmarkNotFound',
+        int $code = 0,
+        ?\Throwable $previous = null
+    ) {
+        parent::__construct($message, $code, $previous);
+    }
+
+    public function report(): void
     {
-        parent::__construct(response()->json([
-            'message' => "The bookmark does not exists"
-        ], Response::HTTP_NOT_FOUND));
+    }
+
+    /**
+     * @throws self
+     */
+    public static function throwIfDoesNotBelongToAuthUser(Bookmark $bookmark): void
+    {
+        if ($bookmark->user_id !== UserID::fromAuthUser()->value()) {
+            throw new self;
+        }
+    }
+
+    /**
+     * Render the exception into an HTTP Response.
+     */
+    public function render(Request $request): JsonResponse
+    {
+        return new JsonResponse(['message' => $this->message], JsonResponse::HTTP_NOT_FOUND);
     }
 }

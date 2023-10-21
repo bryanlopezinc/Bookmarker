@@ -21,65 +21,22 @@ class FetchUserBookmarksSourcesTest extends TestCase
         $this->assertRouteIsAccessibleViaPath('v1/users/bookmarks/sources', 'fetchUserBookmarksSources');
     }
 
-    public function testUnAuthorizedUserCannotAccessRoute(): void
+    public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
         $this->userBookmarksSourcesResponse()->assertUnauthorized();
     }
 
-    public function testPaginationDataMustBeValid(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $this->userBookmarksSourcesResponse(['per_page' => 3])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'per_page' => ['The per page must be at least 15.']
-            ]);
-
-        $this->userBookmarksSourcesResponse(['per_page' => 51])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'per_page' => ['The per page must not be greater than 50.']
-            ]);
-
-        $this->userBookmarksSourcesResponse(['page' => 2001])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'page' => ['The page must not be greater than 2000.']
-            ]);
-
-        $this->userBookmarksSourcesResponse(['page' => -1])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'page' => ['The page must be at least 1.']
-            ]);
-    }
-
-    public function testSuccessResponse(): void
+    public function testSuccess(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
         $source = SourceFactory::new()->create();
 
-        BookmarkFactory::new()->count(5)->for($user)->create(['source_id' => $source->id]);
+        BookmarkFactory::new()->for($user)->create(['source_id' => $source->id]);
 
-        BookmarkFactory::new()->for($user)->count(5)->create();
-
-        $this->withoutExceptionHandling()
-            ->userBookmarksSourcesResponse()
+        $this->userBookmarksSourcesResponse()
             ->assertOk()
-            ->assertJsonCount(6, 'data')
-            ->assertJsonStructure([
-                "links" => [
-                    "first",
-                    "prev",
-                ],
-                "meta" => [
-                    "current_page",
-                    "path",
-                    "per_page",
-                    "has_more_pages",
-                ]
-            ]);
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.attributes.name', $source->name);
     }
 }

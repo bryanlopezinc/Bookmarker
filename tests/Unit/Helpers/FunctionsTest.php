@@ -6,7 +6,7 @@ use Tests\TestCase;
 
 class FunctionsTest extends TestCase
 {
-    public function test_Setting_WillThrowExceptionWhenConfigDoesNotExists(): void
+    public function testWillThrowExceptionWhenConfigDoesNotExists(): void
     {
         $this->expectExceptionCode(30_000);
 

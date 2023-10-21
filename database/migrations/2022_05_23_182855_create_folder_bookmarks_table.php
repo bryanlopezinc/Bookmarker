@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -16,19 +15,12 @@ return new class extends Migration
     {
         Schema::create('folders_bookmarks', function (Blueprint $table) {
             $table->id();
-            $table->boolean('is_public')->index();
-            $table->foreignId('bookmark_id')->constrained('bookmarks');
-            $table->foreignId('folder_id')->constrained('folders');
+            $table->enum('visibility', ['private', 'public'])->index();
+            $table->foreignId('bookmark_id');
+            $table->foreignId('folder_id');
             $table->unique(['bookmark_id', 'folder_id']);
             $table->timestamp('created_at')->useCurrent();
         });
-
-        //Favor trigger over cascade delete to enable other triggers fire
-        DB::unprepared(<<<SQL
-            CREATE TRIGGER delete_folders_bookmark_on_bookmark_delete
-            BEFORE DELETE ON bookmarks FOR EACH ROW
-            DELETE FROM folders_bookmarks fb WHERE fb.bookmark_id = OLD.id
-        SQL);
     }
 
     /**

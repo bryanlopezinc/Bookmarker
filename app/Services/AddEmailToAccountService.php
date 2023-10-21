@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Cache\SecondaryEmailVerificationCodeRepository as PendingVerifications;
+use App\Cache\EmailVerificationCodeRepository as PendingVerifications;
 use App\Exceptions\HttpException;
 use App\Mail\TwoFACodeMail;
 use App\Repositories\UserRepository;
-use App\ValueObjects\Email;
 use App\ValueObjects\TwoFACode;
-use App\ValueObjects\UserID;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Mail;
 
@@ -22,29 +20,26 @@ final class AddEmailToAccountService
     ) {
     }
 
-    public function __invoke(UserID $userID, Email $secondaryEmail): void
+    public function __invoke(int $authUserId, string $secondaryEmail): void
     {
-        $this->validateAction($userID);
+        $this->ensureHasNotReachedMaxEmailLimit($authUserId);
+
+        $this->ensureHasNoPendingVerification($authUserId);
 
         $verificationCode = TwoFACode::generate();
 
-        $this->pendingVerifications->put($userID, $secondaryEmail, $verificationCode);
+        $this->pendingVerifications->put($authUserId, $secondaryEmail, $verificationCode);
 
-        Mail::to($secondaryEmail->value)->queue(new TwoFACodeMail($verificationCode));
+        Mail::to($secondaryEmail)->queue(new TwoFACodeMail($verificationCode));
     }
 
-    private function validateAction(UserID $userID): void
+    private function ensureHasNotReachedMaxEmailLimit(int $authUserId): void
     {
-        $userSecondaryEmails = $this->userRepository->getUserSecondaryEmails($userID);
+        $userSecondaryEmails = $this->userRepository->getUserSecondaryEmails($authUserId);
 
-        if (count($userSecondaryEmails) === setting('MAX_SECONDARY_EMAIL')) {
-            throw HttpException::forbidden([
-                'message' => 'Max emails reached',
-                'error_code' => 142
-            ]);
+        if (count($userSecondaryEmails) === 3) {
+            throw HttpException::forbidden(['message' => 'MaxEmailsLimitReached']);
         }
-
-        $this->ensureHasNoPendingVerification($userID);
     }
 
     /**
@@ -53,13 +48,10 @@ final class AddEmailToAccountService
      * only to return a "max email reached"
      * response when the user is trying to verify an email with a verification code.
      */
-    private function ensureHasNoPendingVerification(UserID $userID): void
+    private function ensureHasNoPendingVerification(int $authUserId): void
     {
-        if ($this->pendingVerifications->has($userID)) {
-            throw new HttpException([
-                'message' => 'Verify email',
-                'error_code' => 3118
-            ], Response::HTTP_BAD_REQUEST);
+        if ($this->pendingVerifications->has($authUserId)) {
+            throw new HttpException(['message' => 'AwaitingVerification'], Response::HTTP_BAD_REQUEST);
         }
     }
 }

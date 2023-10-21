@@ -14,7 +14,7 @@ use Tests\Traits\AssertsBookmarkJson;
 
 class FetchDuplicatesTest extends TestCase
 {
-    use WithFaker, AssertsBookmarkJson;
+    use WithFaker, AssertsBookmarkJson, AssertValidPaginationData;
 
     protected function fetchDuplicatesResponse(array $parameters = []): TestResponse
     {
@@ -26,92 +26,47 @@ class FetchDuplicatesTest extends TestCase
         $this->assertRouteIsAccessibleViaPath('v1/bookmarks/duplicates', 'fetchPossibleDuplicates');
     }
 
-    public function testUnAuthorizedUserCannotAccessRoute(): void
+    public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
         $this->fetchDuplicatesResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationWhenRequiredAttributesAreMissing(): void
+    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->fetchDuplicatesResponse()->assertJsonValidationErrorFor('id');
+        $this->assertValidPaginationData($this, 'fetchPossibleDuplicates');
+
+        $this->fetchDuplicatesResponse()
+            ->assertUnprocessable()
+            ->assertJsonValidationErrorFor('id');
+
+        $this->fetchDuplicatesResponse(['id' => 'foo bar'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrorFor('id');
     }
 
-    public function testWillThrowValidationWhenAttributesAreInvalid(): void
+    public function testWillReturnNotFoundWhenBookmarkDoesNotBelongToUser(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->fetchDuplicatesResponse(['id' => 'foo bar'])->assertJsonValidationErrorFor('id');
+        $this->fetchDuplicatesResponse(['id' => BookmarkFactory::new()->create()->id])
+            ->assertNotFound()
+            ->assertExactJson(['message' => 'BookmarkNotFound']);
     }
 
-    public function testPaginationDataMustBeValid(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $this->fetchDuplicatesResponse(['per_page' => 3])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'per_page' => ['The per page must be at least 15.']
-            ]);
-
-        $this->fetchDuplicatesResponse(['per_page' => 51])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'per_page' => ['The per page must not be greater than 39.']
-            ]);
-
-        $this->fetchDuplicatesResponse(['page' => 2001])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'page' => ['The page must not be greater than 2000.']
-            ]);
-
-        $this->fetchDuplicatesResponse(['page' => -1])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'page' => ['The page must be at least 1.']
-            ]);
-    }
-
-    public function testBookmarkMustBelongToUser(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $this->fetchDuplicatesResponse(['id' => BookmarkFactory::new()->create()->id])->assertForbidden();
-    }
-
-    public function testWillReturnDuplicates(): void
+    public function testDuplicates(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $userBookmarks = BookmarkFactory::new()
-            ->for($user)
-            ->count(5)
-            ->create(['url_canonical_hash' => (new UrlHasher)->hashUrl(new Url($this->faker->url))])
-            ->pluck('id');
+        $hash = (new UrlHasher)->hashUrl(new Url($this->faker->url));
 
-        $this->fetchDuplicatesResponse(['id' => $userBookmarks->first()])
+        $duplicates = BookmarkFactory::times(2)->for($user)->create(['url_canonical_hash' => $hash]);
+
+        $this->fetchDuplicatesResponse(['id' => $duplicates->first()])
             ->assertOk()
-            ->assertJsonCount(4, 'data')
-            ->assertJsonStructure([
-                'data',
-                "links" => [
-                    "first",
-                    "prev",
-                ],
-                "meta" => [
-                    "current_page",
-                    "path",
-                    "per_page",
-                    "has_more_pages",
-                ]
-            ])
-            ->collect('data')
-            ->each(function (array $data) use ($userBookmarks) {
-                $this->assertBookmarkJson($data);
-                $this->assertNotEquals($data['attributes']['id'], $userBookmarks->first());
-            });
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.attributes.id', $duplicates->last()->id);
     }
 
     public function testWillReturnOnlyUserBookmarks(): void
@@ -122,23 +77,21 @@ class FetchDuplicatesTest extends TestCase
 
         BookmarkFactory::times(5)->create(['url_canonical_hash' => $hash]);
 
-        $userBookmarks = BookmarkFactory::new()->count(3)->for($user)->create(['url_canonical_hash' => $hash])->pluck('id');
+        $duplicates = BookmarkFactory::times(2)->for($user)->create(['url_canonical_hash' => $hash])->pluck('id');
 
-        $this->fetchDuplicatesResponse(['id' => $userBookmarks->first()])
+        $this->fetchDuplicatesResponse(['id' => $duplicates->first()])
             ->assertOk()
-            ->assertJsonCount(2, 'data')
-            ->collect('data')
-            ->each(function (array $data) use ($userBookmarks) {
-                $this->assertContains($data['attributes']['id'], $userBookmarks);
-            });
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.attributes.id', $duplicates->last());
     }
 
-    public function testWhenBookmarkDoesNotExist(): void
+    public function testWillReturnNotFoundWhenBookmarkDoesNotExist(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
         $this->fetchDuplicatesResponse([
             'id' => BookmarkFactory::new()->create()->id + 1
-        ])->assertNotFound();
+        ])->assertNotFound()
+            ->assertExactJson(['message' => 'BookmarkNotFound']);
     }
 }

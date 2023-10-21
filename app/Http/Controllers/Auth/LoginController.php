@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
-use App\DataTransferObjects\User;
+use App\Models\User;
 use App\Events\LoginEvent;
 use App\Exceptions\InvalidUsernameException;
 use App\Http\Requests\LoginUserRequest;
 use App\Http\Resources\AccessTokenResource;
 use App\IpGeoLocation\IpAddress;
 use App\Repositories\UserRepository;
-use App\ValueObjects\Email;
 use App\ValueObjects\Username;
 use Laravel\Passport\Http\Controllers\AccessTokenController;
 use Psr\Http\Message\ServerRequestInterface;
@@ -39,12 +38,11 @@ final class LoginController extends AccessTokenController
     private function getUser(LoginUserRequest $request, UserRepository $repository): User
     {
         try {
-            $user = $repository->findByUsername(Username::fromRequest($request));
-        } catch (InvalidUsernameException) {
-            $user = $repository->findByEmail(new Email($request->validated('username')));
-        }
+            new Username($request->validated('username'));
 
-        /** @var User */
-        return $user;
+            return $repository->findByUsername($request->validated('username'));
+        } catch (InvalidUsernameException) {
+            return $repository->findByEmail($request->validated('username'));
+        }
     }
 }

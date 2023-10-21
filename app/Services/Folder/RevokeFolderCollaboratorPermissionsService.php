@@ -4,53 +4,78 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
-use App\Contracts\FolderRepositoryInterface;
+use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
-use App\Policies\EnsureAuthorizedUserOwnsResource;
-use App\QueryColumns\FolderAttributes;
+use App\Models\Folder;
+use App\Models\FolderCollaboratorPermission;
+use App\Models\FolderPermission;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\UAC;
-use App\ValueObjects\ResourceID;
 use App\ValueObjects\UserID;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class RevokeFolderCollaboratorPermissionsService
 {
     public function __construct(
         private FolderPermissionsRepository $permissions,
-        private FolderRepositoryInterface $folderRepository
+        private FetchFolderService $folderRepository
     ) {
     }
 
-    public function revokePermissions(UserID $collaboratorID, ResourceID $folderID, UAC $revokePermissions): void
+    public function revokePermissions(int $collaboratorID, int $folderID, UAC $revokePermissions): void
     {
-        $folder = $this->folderRepository->find($folderID, FolderAttributes::only('id,user_id'));
-        $collaboratorsCurrentPermissions = $this->permissions->getUserAccessControls($collaboratorID, $folderID);
+        $folder = $this->folderRepository->find($folderID, ['id', 'user_id']);
 
-        (new EnsureAuthorizedUserOwnsResource())($folder);
+        $collaboratorPermissions = $this->permissions->getUserAccessControls($collaboratorID, $folderID);
 
-        $this->ensureIsNotPerformingActionOnSelf($collaboratorID);
+        $this->ensureIsNotPerformingActionOnSelf($collaboratorID, $authUserId = UserID::fromAuthUser()->value());
 
-        $this->ensureUserIsCurrentlyACollaborator($collaboratorsCurrentPermissions);
+        $this->ensureUserHasPermissionToPerformAction($folder, $authUserId);
 
-        $this->ensureCollaboratorCurrentlyHasPermissions($collaboratorsCurrentPermissions, $revokePermissions);
+        $this->ensureUserIsACollaborator($collaboratorPermissions);
 
-        $this->permissions->revoke($collaboratorID, $folderID, $revokePermissions);
+        $this->ensureCollaboratorHasPermissions($collaboratorPermissions, $revokePermissions);
+
+        FolderCollaboratorPermission::query()
+            ->where('folder_id', $folderID)
+            ->where('user_id', $collaboratorID)
+            ->whereIn('permission_id', FolderPermission::select('id')->whereIn('name', $revokePermissions->permissions))
+            ->delete();
     }
 
-    private function ensureIsNotPerformingActionOnSelf(UserID $collaboratorID): void
+    private function ensureUserHasPermissionToPerformAction(Folder $folder, int $authUserId): void
     {
-        if (UserID::fromAuthUser()->equals($collaboratorID)) {
+        try {
+            FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
+        } catch (FolderNotFoundException $e) {
+            $userFolderAccess = $this->permissions->getUserAccessControls($authUserId, $folder->id);
+
+            if ($userFolderAccess->isEmpty()) {
+                throw $e;
+            }
+
+            if (!$userFolderAccess->canAddBookmarks()) {
+                throw new HttpResponseException(
+                    response()->json(['message' => 'NoRevokePermissionPermission'], 403)
+                );
+            }
+        }
+    }
+
+    private function ensureIsNotPerformingActionOnSelf(int $collaboratorID, int $authUserId): void
+    {
+        if ($authUserId === $collaboratorID) {
             throw HttpException::forbidden([
-                'message' => 'Cannot perform action on self'
+                'message' => 'CannotRemoveSelf'
             ]);
         }
     }
 
-    private function ensureUserIsCurrentlyACollaborator(UAC $collaboratorsCurrentPermissions): void
+    private function ensureUserIsACollaborator(UAC $collaboratorsCurrentPermissions): void
     {
         if ($collaboratorsCurrentPermissions->isEmpty()) {
             throw HttpException::notFound([
-                'message' => 'User not a collaborator'
+                'message' => 'UserNotACollaborator'
             ]);
         }
     }
@@ -58,13 +83,13 @@ final class RevokeFolderCollaboratorPermissionsService
     /**
      * Ensure the collaborator currently has all the permissions the folder owner is trying to revoke.
      */
-    private function ensureCollaboratorCurrentlyHasPermissions(
-        UAC $collaboratorsCurrentPermissions,
+    private function ensureCollaboratorHasPermissions(
+        UAC $collaboratorPermissions,
         UAC $permissionsToRevoke
     ): void {
-        if (!$collaboratorsCurrentPermissions->containsAll($permissionsToRevoke)) {
+        if (!$collaboratorPermissions->containsAll($permissionsToRevoke)) {
             throw HttpException::notFound([
-                'message' => 'User does not have such permissions'
+                'message' => 'UserHasNoSuchPermissions'
             ]);
         }
     }

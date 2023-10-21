@@ -4,39 +4,41 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder;
 
-use App\Mail\FolderCollaborationInviteMail;
+use App\Cache\InviteTokensStore;
 use App\Models\FolderCollaboratorPermission;
 use App\Models\FolderPermission as Permission;
-use App\Models\SecondaryEmail;
-use App\ValueObjects\Url;
-use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
-use App\DataTransferObjects\Builders\FolderSettingsBuilder as SettingsBuilder;
+use App\Enums\FolderSettingKey;
+use App\Models\FolderSetting;
+use App\UAC;
 use Illuminate\Testing\Assert as PHPUnit;
 
 class AcceptFolderCollaborationInviteTest extends TestCase
 {
     use WithFaker;
 
+    protected InviteTokensStore $tokenStore;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->tokenStore = app(InviteTokensStore::class);
+    }
+
     protected function acceptInviteResponse(array $parameters = []): TestResponse
     {
         return $this->getJson(route('acceptFolderCollaborationInvite', $parameters));
-    }
-
-    protected function sendInviteResponse(array $parameters = []): TestResponse
-    {
-        return $this->postJson(route('sendFolderCollaborationInvite'), $parameters);
     }
 
     public function testIsAccessibleViaPath(): void
@@ -65,71 +67,29 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         $this->acceptInviteResponse()->assertUnauthorized();
     }
 
-    public function testRequiredAttributesMustBePresent(): void
+    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         $this->acceptInviteResponse([])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'invite_hash' => 'The invite hash field is required.'
-            ]);
-    }
-
-    public function testAttributesMustBeValid(): void
-    {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+            ->assertJsonValidationErrors(['invite_hash' => 'The invite hash field is required.']);
 
         $this->acceptInviteResponse(['invite_hash' => $this->faker->word])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'invite_hash' => 'The invite hash must be a valid UUID.'
-            ]);
+            ->assertJsonValidationErrors(['invite_hash' => 'The invite hash must be a valid UUID.']);
     }
 
-    public function testWillNotCreatePermissionWhenInvitationHasExpired(): void
-    {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
-
-        [$user, $invitee] = UserFactory::new()->count(2)->create();
-
-        $folder = FolderFactory::new()->for($user)->create();
-
-        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
-            Passport::actingAs($user);
-
-            $this->sendInviteResponse([
-                'email' => $invitee->email,
-                'folder_id' => $folder->id,
-            ])->assertOk();
-        });
-
-        $this->travel(25)->hours(function () use ($parameters) {
-            $this->acceptInviteResponse($parameters)
-                ->assertNotFound()
-                ->assertExactJson([
-                    'message' => 'Invitation not found or expired'
-                ]);
-        });
-
-        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
-            'folder_id' => $folder->id,
-            'user_id' => $invitee->id,
-        ]);
-    }
-
-    public function testWillNotCreatePermissionWhenInvitationWasNeverSent(): void
+    public function testWillReturnNotFoundWhenInvitationHasExpiredOrDoesNotExists(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         $this->acceptInviteResponse(['invite_hash' => $this->faker->uuid])
             ->assertNotFound()
-            ->assertExactJson([
-                'message' => 'Invitation not found or expired'
-            ]);
+            ->assertExactJson(['message' => 'InvitationNotFoundOrExpired']);
     }
 
-    public function testWillAcceptInviteWithPermissions(): void
+    public function testAcceptInviteWithPermissions(): void
     {
         //Will give only view-bookmarks permission if no permissions were specified
         $this->assertWillAcceptInvite([], function (Collection $savedPermissions) {
@@ -137,31 +97,31 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
         });
 
-        $this->assertWillAcceptInvite(['addBookmarks'], function (Collection $savedPermissions) {
+        $this->assertWillAcceptInvite([Permission::ADD_BOOKMARKS], function (Collection $savedPermissions) {
             $this->assertCount(2, $savedPermissions);
             $this->assertTrue($savedPermissions->containsStrict(Permission::ADD_BOOKMARKS));
             $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
         });
 
-        $this->assertWillAcceptInvite(['removeBookmarks'], function (Collection $savedPermissions) {
+        $this->assertWillAcceptInvite([Permission::DELETE_BOOKMARKS], function (Collection $savedPermissions) {
             $this->assertCount(2, $savedPermissions);
             $this->assertTrue($savedPermissions->containsStrict(Permission::DELETE_BOOKMARKS));
             $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
         });
 
-        $this->assertWillAcceptInvite(['inviteUser'], function (Collection $savedPermissions) {
+        $this->assertWillAcceptInvite([Permission::INVITE], function (Collection $savedPermissions) {
             $this->assertCount(2, $savedPermissions);
             $this->assertTrue($savedPermissions->containsStrict(Permission::INVITE));
             $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
         });
 
-        $this->assertWillAcceptInvite(['updateFolder'], function (Collection $savedPermissions) {
+        $this->assertWillAcceptInvite([Permission::UPDATE_FOLDER], function (Collection $savedPermissions) {
             $this->assertCount(2, $savedPermissions);
             $this->assertTrue($savedPermissions->containsStrict(Permission::UPDATE_FOLDER));
             $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
         });
 
-        $this->assertWillAcceptInvite(['removeBookmarks', 'addBookmarks'], function (Collection $savedPermissions) {
+        $this->assertWillAcceptInvite([Permission::DELETE_BOOKMARKS, Permission::ADD_BOOKMARKS], function (Collection $savedPermissions) {
             $this->assertCount(3, $savedPermissions);
             $this->assertTrue($savedPermissions->containsStrict(Permission::DELETE_BOOKMARKS));
             $this->assertTrue($savedPermissions->containsStrict(Permission::ADD_BOOKMARKS));
@@ -183,23 +143,23 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         [$user, $invitee] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->for($user)->create();
-        $parameters = [
-            'email' => $invitee->email,
-            'folder_id' => $folder->id,
-        ];
 
-        if (!empty($permissions)) {
-            $parameters['permissions'] = implode(',', $permissions);
+        $folder = FolderFactory::new()->for($user)->create();
+
+        if (in_array('*', $permissions)) {
+            $permissions = UAC::all()->permissions;
         }
 
-        $parameters = $this->extractInviteUrlParameters(function () use ($user, $parameters) {
-            Passport::actingAs($user);
-            $this->sendInviteResponse($parameters)->assertOk();
-        });
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $user->id,
+            $invitee->id,
+            $folder->id,
+            new UAC($permissions)
+        );
 
         try {
-            $this->acceptInviteResponse($parameters)->assertCreated();
+            $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
 
             $savedPermissions = FolderCollaboratorPermission::query()->where([
                 'folder_id' => $folder->id,
@@ -221,104 +181,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         }
     }
 
-    public function testCannotAccept_Invite_MoreThanOnce(): void
-    {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
-
-        [$user, $invitee] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->for($user)->create();
-
-        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
-            Passport::actingAs($user);
-
-            $this->sendInviteResponse([
-                'email' => $invitee->email,
-                'folder_id' => $folder->id,
-            ])->assertOk();
-        });
-
-        $this->acceptInviteResponse($parameters)->assertCreated();
-
-        $this->acceptInviteResponse($parameters)
-            ->assertStatus(Response::HTTP_CONFLICT)
-            ->assertExactJson([
-                'message' => 'Invitation already accepted'
-            ]);
-    }
-
-    public function testWhenMultipleInvitesWereSent(): void
-    {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
-
-        [$user, $invitee] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->for($user)->create();
-
-        $firstInviteParameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
-            Passport::actingAs($user);
-
-            $this->sendInviteResponse([
-                'email' => $invitee->email,
-                'folder_id' => $folder->id,
-            ])->assertOk();
-        });
-
-        $secondInviteParameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
-            Passport::actingAs($user);
-
-            $this->travel(2)->minutes(function () use ($invitee, $folder) {
-                $this->sendInviteResponse([
-                    'email' => $invitee->email,
-                    'folder_id' => $folder->id,
-                ])->assertOk();
-            });
-        });
-
-        $this->acceptInviteResponse($firstInviteParameters)->assertCreated();
-        $this->acceptInviteResponse($secondInviteParameters)
-            ->assertStatus(Response::HTTP_CONFLICT)
-            ->assertExactJson([
-                'message' => 'Invitation already accepted'
-            ]);
-    }
-
-    public function testWhenMultipleInvitesWereSentToDifferentEmails(): void
-    {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
-
-        [$user, $invitee] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->for($user)->create();
-
-        SecondaryEmail::query()->create([
-            'email' => $inviteeSecondaryEmail = $this->faker->unique()->email,
-            'user_id' => $invitee->id,
-            'verified_at' => now()
-        ]);
-
-        $firstInviteParameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
-            Passport::actingAs($user);
-            $this->sendInviteResponse([
-                'email' => $invitee->email,
-                'folder_id' => $folder->id,
-            ])->assertOk();
-        });
-
-        $secondInviteParameters = $this->extractInviteUrlParameters(function () use ($inviteeSecondaryEmail, $folder, $user) {
-            Passport::actingAs($user);
-            $this->sendInviteResponse([
-                'email' => $inviteeSecondaryEmail,
-                'folder_id' => $folder->id,
-            ])->assertOk();
-        });
-
-        $this->acceptInviteResponse($firstInviteParameters)->assertCreated();
-        $this->acceptInviteResponse($secondInviteParameters)
-            ->assertStatus(Response::HTTP_CONFLICT)
-            ->assertExactJson([
-                'message' => 'Invitation already accepted'
-            ]);
-    }
-
-    public function testWillNotCreatePermissionWhenFolderHasBeenDeleted(): void
+    public function testWillReturnNotFoundWhenFolderHasBeenDeleted(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
@@ -328,28 +191,24 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         Passport::actingAs($user);
 
-        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
-            $this->sendInviteResponse([
-                'email' => $invitee->email,
-                'folder_id' => $folder->id,
-            ])->assertOk();
-        });
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $user->id,
+            $invitee->id,
+            $folder->id,
+            new UAC([Permission::VIEW_BOOKMARKS])
+        );
 
-        $this->deleteJson(route('deleteFolder'), ['folder' => $folder->id])->assertOk();
+        $folder->delete();
 
-        $this->acceptInviteResponse($parameters)
+        $this->acceptInviteResponse(['invite_hash' => $id])
             ->assertNotFound()
-            ->assertExactJson([
-                'message' => 'The folder does not exists'
-            ]);
+            ->assertExactJson(['message' => 'FolderNotFound']);
 
-        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
-            'folder_id' => $folder->id,
-            'user_id' => $invitee->id,
-        ]);
+        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, ['folder_id' => $folder->id]);
     }
 
-    public function testWillNotCreatePermissionWhenInviteeHasDeletedAccount(): void
+    public function testWillReturnNotFoundWhenInviteeHasDeletedAccount(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
@@ -357,30 +216,24 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder, $user) {
-            Passport::actingAs($user);
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $user->id,
+            $invitee->id,
+            $folder->id,
+            new UAC([Permission::VIEW_BOOKMARKS])
+        );
 
-            $this->sendInviteResponse([
-                'email' => $invitee->email,
-                'folder_id' => $folder->id,
-            ])->assertOk();
-        });
+        $invitee->delete();
 
-        Passport::actingAs($invitee);
-        $this->deleteJson(route('deleteUserAccount'), ['password' => 'password'])->assertOk();
-        $this->acceptInviteResponse($parameters)
+        $this->acceptInviteResponse(['invite_hash' => $id])
             ->assertNotFound()
-            ->assertExactJson([
-                'message' => 'User not found'
-            ]);;
+            ->assertExactJson(['message' => 'UserNotFound']);
 
-        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
-            'folder_id' => $folder->id,
-            'user_id' => $invitee->id,
-        ]);
+        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, ['folder_id' => $folder->id]);
     }
 
-    public function testWillNotCreatePermissionWhenInviterHasDeletedAccount(): void
+    public function testWillReturnNotFoundWhenInviterHasDeletedAccount(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
@@ -388,46 +241,21 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        Passport::actingAs($user);
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $user->id,
+            $invitee->id,
+            $folder->id,
+            new UAC([Permission::VIEW_BOOKMARKS])
+        );
 
-        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
-            $this->sendInviteResponse([
-                'email' => $invitee->email,
-                'folder_id' => $folder->id,
-            ])->assertOk();
-        });
+        $user->delete();
 
-        $this->deleteJson(route('deleteUserAccount'), ['password' => 'password'])->assertOk();
-        $this->acceptInviteResponse($parameters)
+        $this->acceptInviteResponse(['invite_hash' => $id])
             ->assertNotFound()
-            ->assertExactJson([
-                'message' => 'User not found'
-            ]);;
+            ->assertExactJson(['message' => 'UserNotFound']);
 
-        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
-            'folder_id' => $folder->id,
-            'user_id' => $invitee->id,
-        ]);
-    }
-
-    private function extractInviteUrlParameters(\Closure $action): array
-    {
-        config([
-            'settings.ACCEPT_INVITE_URL' => $this->faker->url . '?invite_hash=:invite_hash'
-        ]);
-
-        $parameters = [];
-        Mail::fake();
-        $action();
-
-        Mail::assertQueued(function (FolderCollaborationInviteMail $mail) use (&$parameters) {
-            $parts = (new Url($mail->inviteUrl()))->parseQuery();
-            $parameters['invite_hash'] = $parts['invite_hash'];
-
-            return true;
-        });
-
-        return $parameters;
+        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, ['folder_id' => $folder->id,]);
     }
 
     public function testWillNotNotifyFolderOwnerWhenInvitationWasSentByFolderOwner(): void
@@ -435,19 +263,20 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
+
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
         Notification::fake();
 
-        Passport::actingAs($folderOwner);
-        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
-            $this->sendInviteResponse([
-                'email' => $invitee->email,
-                'folder_id' => $folder->id,
-            ])->assertOk();
-        });
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $folderOwner->id,
+            $invitee->id,
+            $folder->id,
+            new UAC([Permission::VIEW_BOOKMARKS])
+        );
 
-        $this->acceptInviteResponse($parameters)->assertCreated();
+        $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
 
         Notification::assertNothingSent();
     }
@@ -457,29 +286,24 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
+
         $folder = FolderFactory::new()->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->inviteUser()
-            ->create();
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $collaborator->id,
+            $invitee->id,
+            $folder->id,
+            new UAC([Permission::VIEW_BOOKMARKS])
+        );
 
-        Passport::actingAs($collaborator);
-        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
-            $this->sendInviteResponse([
-                'email' => $invitee->email,
-                'folder_id' => $folder->id,
-            ])->assertOk();
-        });
+        $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
 
-        $this->acceptInviteResponse($parameters)->assertCreated();
-
-        $notificationData = DatabaseNotification::query()->where('notifiable_id', $folder->user_id)->sole(['data'])->data;
+        $notificationData = DatabaseNotification::query()->where('notifiable_id', $folder->user_id)->first(['data'])->data;
 
         PHPUnit::assertArraySubset([
-            'new_collaborator_id' => $invitee->id,
-            'added_to_folder' => $folder->id,
+            'new_collaborator_id'   => $invitee->id,
+            'added_to_folder'       => $folder->id,
             'added_by_collaborator' => $collaborator->id,
         ], $notificationData);
     }
@@ -489,52 +313,26 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()
-            ->setting(fn (SettingsBuilder $b) => $b->disableNotifications())
-            ->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->inviteUser()
-            ->create();
+        $folder = FolderFactory::new()->create();
 
-        Notification::fake();
-
-        Passport::actingAs($collaborator);
-        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
-            $this->sendInviteResponse([
-                'email' => $invitee->email,
-                'folder_id' => $folder->id,
-            ])->assertOk();
-        });
-
-        $this->acceptInviteResponse($parameters)->assertCreated();
-
-        Notification::assertNothingSent();
-    }
-
-    public function testWillNotNotifyFolderOwnerWhenNotificationsIsDisabled_andInviteWasSentByFolderOwner(): void
-    {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
-
-        [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()
-            ->setting(fn (SettingsBuilder $b) => $b->disableNotifications())
-            ->for($folderOwner)
-            ->create();
+        FolderSetting::create([
+            'key'       => FolderSettingKey::ENABLE_NOTIFICATIONS->value,
+            'value'     => false,
+            'folder_id' => $folder->id
+        ]);
 
         Notification::fake();
 
-        Passport::actingAs($folderOwner);
-        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
-            $this->sendInviteResponse([
-                'email' => $invitee->email,
-                'folder_id' => $folder->id,
-            ])->assertOk();
-        });
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $collaborator->id,
+            $invitee->id,
+            $folder->id,
+            new UAC([Permission::VIEW_BOOKMARKS])
+        );
 
-        $this->acceptInviteResponse($parameters)->assertCreated();
+        $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
 
         Notification::assertNothingSent();
     }
@@ -544,52 +342,25 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()
-            ->setting(fn (SettingsBuilder $b) => $b->disableNewCollaboratorNotification())
-            ->create();
+        $folder = FolderFactory::new()->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->inviteUser()
-            ->create();
+        FolderSetting::create([
+            'key'       => FolderSettingKey::NEW_COLLABORATOR_NOTIFICATION->value,
+            'value'     => false,
+            'folder_id' => $folder->id
+        ]);
 
         Notification::fake();
 
-        Passport::actingAs($collaborator);
-        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
-            $this->sendInviteResponse([
-                'email' => $invitee->email,
-                'folder_id' => $folder->id,
-            ])->assertOk();
-        });
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $collaborator->id,
+            $invitee->id,
+            $folder->id,
+            new UAC([Permission::VIEW_BOOKMARKS])
+        );
 
-        $this->acceptInviteResponse($parameters)->assertCreated();
-
-        Notification::assertNothingSent();
-    }
-
-    public function testWillNotNotifyFolderOwnerWhenNewCollaboratorNotificationIsDisabled_andInviteWasSentByFolderOwner(): void
-    {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
-
-        [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()
-            ->setting(fn (SettingsBuilder $b) => $b->disableNewCollaboratorNotification())
-            ->for($folderOwner)
-            ->create();
-
-        Notification::fake();
-
-        Passport::actingAs($folderOwner);
-        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
-            $this->sendInviteResponse([
-                'email' => $invitee->email,
-                'folder_id' => $folder->id,
-            ])->assertOk();
-        });
-
-        $this->acceptInviteResponse($parameters)->assertCreated();
+        $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
 
         Notification::assertNothingSent();
     }
@@ -599,27 +370,26 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()
-            ->setting(fn (SettingsBuilder $b) => $b->enableOnlyCollaboratorsInvitedByMeNotification())
-            ->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->inviteUser()
-            ->create();
+        $folder = FolderFactory::new()->create();
+
+        FolderSetting::create([
+            'key'       => FolderSettingKey::ONLY_COLLABORATOR_INVITED_BY_USER_NOTIFICATION->value,
+            'value'     => true,
+            'folder_id' => $folder->id
+        ]);
+
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $collaborator->id,
+            $invitee->id,
+            $folder->id,
+            new UAC([Permission::VIEW_BOOKMARKS])
+        );
 
         Notification::fake();
 
-        Passport::actingAs($collaborator);
-        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
-            $this->sendInviteResponse([
-                'email' => $invitee->email,
-                'folder_id' => $folder->id,
-            ])->assertOk();
-        });
-
-        $this->acceptInviteResponse($parameters)->assertCreated();
+        $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
 
         Notification::assertNothingSent();
     }
@@ -629,22 +399,26 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()
-            ->setting(fn (SettingsBuilder $b) => $b->enableOnlyCollaboratorsInvitedByMeNotification())
-            ->for($folderOwner)
-            ->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        FolderSetting::create([
+            'key'       => FolderSettingKey::ONLY_COLLABORATOR_INVITED_BY_USER_NOTIFICATION->value,
+            'value'     => true,
+            'folder_id' => $folder->id
+        ]);
+
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $folderOwner->id,
+            $invitee->id,
+            $folder->id,
+            new UAC([Permission::VIEW_BOOKMARKS])
+        );
 
         Notification::fake();
 
-        Passport::actingAs($folderOwner);
-        $parameters = $this->extractInviteUrlParameters(function () use ($invitee, $folder) {
-            $this->sendInviteResponse([
-                'email' => $invitee->email,
-                'folder_id' => $folder->id,
-            ])->assertOk();
-        });
-
-        $this->acceptInviteResponse($parameters)->assertCreated();
+        $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
 
         Notification::assertTimesSent(1, \App\Notifications\NewCollaboratorNotification::class);
     }

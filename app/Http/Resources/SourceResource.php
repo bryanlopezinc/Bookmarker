@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
-use App\DataTransferObjects\Source;
+use App\Models\Source;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 final class SourceResource extends JsonResource
@@ -17,10 +17,10 @@ final class SourceResource extends JsonResource
     public function toArray($request): array
     {
         return [
-            'type' => 'source',
+            'type'       => 'source',
             'attributes' => [
-                'id'   => $this->source->id->value(),
-                'name' => $this->source->name->value,
+                'id'   => $this->source->id,
+                'name' => $this->source->name,
             ]
         ];
     }

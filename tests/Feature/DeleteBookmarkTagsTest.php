@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Tag;
 use App\Models\Taggable;
+use App\Repositories\TagRepository;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
@@ -25,36 +27,40 @@ class DeleteBookmarkTagsTest extends TestCase
         $this->assertRouteIsAccessibleViaPath('v1/bookmarks/tags/remove', 'deleteBookmarkTags');
     }
 
-    public function testUnAuthorizedUserCannotAccessRoute(): void
+    public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
         $this->deleteBookmarkTagsResponse()->assertUnauthorized();
     }
 
-    public function testWillThrowValidationWhenRequiredAttributesAreMissing(): void
+    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
         $this->deleteBookmarkTagsResponse()
+            ->assertUnprocessable()
             ->assertJsonValidationErrorFor('id')
             ->assertJsonValidationErrorFor('tags');
     }
 
-    public function testWillDeleteBookmarkTags(): void
+    public function testDeleteBookmarkTags(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $model = BookmarkFactory::new()->for($user)->create();
+        $bookmark = BookmarkFactory::new()->for($user)->create();
+        $tags = TagFactory::new()->count(2)->make([]);
 
-        $tag = TagFactory::new()->create(['created_by' => $model->user_id]);
+        (new TagRepository)->attach($tags->all(), $bookmark);
 
-        Taggable::create($tagAttributes = [
-            'taggable_id' => $model->id,
-            'tag_id' => $tag->id,
-            'taggable_type' => Taggable::BOOKMARK_TYPE
-        ]);
+        $this->deleteBookmarkTagsResponse(['id' => $bookmark->id, 'tags' => $tags[0]->name])->assertOk();
 
-        $this->deleteBookmarkTagsResponse(['id' => $model->id, 'tags' => $tag->name])->assertOk();
-        $this->assertDatabaseMissing(Taggable::class, $tagAttributes);
+        $bookmarkTags = Taggable::query()->where('taggable_id', $bookmark->id)->get();
+
+        $this->assertCount(1, $bookmarkTags);
+
+        $this->assertEquals(
+            $bookmarkTags->first()->tag_id,
+            Tag::where('name', $tags[1]->name)->sole()->id
+        );
     }
 
     public function testWillReturnNotFoundResponseIfBookmarkDoesNotExists(): void
@@ -63,27 +69,32 @@ class DeleteBookmarkTagsTest extends TestCase
 
         $model = BookmarkFactory::new()->for($user)->create();
 
-        $this->deleteBookmarkTagsResponse(['id' => $model->id + 1, 'tags' => $this->faker->word])->assertNotFound();
+        $this->deleteBookmarkTagsResponse(['id' => $model->id + 1, 'tags' => $this->faker->word])
+            ->assertNotFound()
+            ->assertExactJson(['message' => 'BookmarkNotFound']);
     }
 
-    public function testWillReturnSuccessIfBookmarkDoesNotHaveTags(): void
+    public function testWillReturnNotFoundWhenBookmarkDoesNotHaveTags(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
         $model = BookmarkFactory::new()->for($user)->create();
 
         $this->deleteBookmarkTagsResponse([
-            'id' => $model->id,
+            'id'   => $model->id,
             'tags' => $this->faker->word
-        ])->assertOk();
+        ])->assertNotFound()
+            ->assertExactJson(['message' => 'BookmarkHasNoSuchTags']);
     }
 
-    public function testWillReturnForbiddenWhenUserDoesNotOwnBookmark(): void
+    public function testWillReturnNotFoundWhenUserDoesNotOwnBookmark(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
         $model = BookmarkFactory::new()->create();
 
-        $this->deleteBookmarkTagsResponse(['id' => $model->id, 'tags' => $this->faker->word])->assertForbidden();
+        $this->deleteBookmarkTagsResponse(['id' => $model->id, 'tags' => $this->faker->word])
+            ->assertNotFound()
+            ->assertExactJson(['message' => 'BookmarkNotFound']);
     }
 }

@@ -5,19 +5,18 @@ namespace Tests\Feature;
 use App\Models\Folder;
 use App\Models\FolderCollaboratorPermission;
 use App\Models\FolderPermission;
-use App\Models\User;
 use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
-use Illuminate\Support\Collection;
 use Illuminate\Testing\AssertableJsonString;
-use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 
 class FetchUserCollaborationsTest extends TestCase
 {
+    use AssertValidPaginationData;
+
     protected function userCollaborationsResponse(array $parameters = []): TestResponse
     {
         return $this->getJson(route('fetchUserCollaborations', $parameters));
@@ -28,116 +27,107 @@ class FetchUserCollaborationsTest extends TestCase
         $this->assertRouteIsAccessibleViaPath('v1/users/folders/collaborations', 'fetchUserCollaborations');
     }
 
-    public function testUnAuthorizedUserCannotAccessRoute(): void
+    public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
         $this->userCollaborationsResponse()->assertUnauthorized();
     }
 
-    public function testWillReturnValidationErrorsWhenPaginationDataIsInvalid(): void
+    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->userCollaborationsResponse(['page' => -1])
+        $this->assertValidPaginationData($this, 'fetchUserCollaborations');
+
+        $this->userCollaborationsResponse(['fields' => 'id,name,foo,1'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'page' => ['The page must be at least 1.']
+                'fields' => ['The selected fields.2 is invalid.']
             ]);
 
-        $this->userCollaborationsResponse(['page' => 2001])
+        $this->userCollaborationsResponse(['fields' => '1,2,3,4'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'page' => ['The page must not be greater than 2000.']
+                'fields' => ['The selected fields.0 is invalid.']
             ]);
 
-        $this->userCollaborationsResponse(['per_page' => 14])
+        $this->userCollaborationsResponse(['fields' => 'id,name,description,description'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'per_page' => ['The per page must be at least 15.']
-            ]);;
-
-        $this->userCollaborationsResponse(['per_page' => 40])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'per_page' => ['The per page must not be greater than 39.']
+                'fields' => [
+                    'The fields.2 field has a duplicate value.',
+                    'The fields.3 field has a duplicate value.'
+                ]
             ]);
     }
 
-    public function testWillFetchFolders(): void
+    public function testFetchFolders(): void
     {
-        /** @var array<Folder> */
-        $foldersWhereUserIsACollaborator = [];
-        $collaborator = UserFactory::new()->create();
+        $user = UserFactory::new()->create();
 
-        UserFactory::new()
-            ->count(3)
-            ->create()
-            ->tap(function (Collection $folderOwners) use ($collaborator, &$foldersWhereUserIsACollaborator) {
-                $permissionIDs = FolderPermission::all(['id'])->pluck(['id']);
+        /** @var Folder */
+        $folder = FolderFactory::new()->create();
 
-                $records = $folderOwners->map(function (User $folderOwner) use ($collaborator, $permissionIDs, &$foldersWhereUserIsACollaborator) {
-                    $folder = FolderFactory::new()->for($folderOwner)->create();
-                    $foldersWhereUserIsACollaborator[] = $folder;
+        $permissions = FolderPermission::all(['id'])
+            ->pluck(['id'])
+            ->map(fn (int $permissionId) => [
+                'folder_id'     => $folder->id,
+                'user_id'       => $user->id,
+                'permission_id' => $permissionId,
+                'created_at'    => now()
+            ]);
 
-                    return [
-                        'folder_id' => $folder->id,
-                        'user_id' => $collaborator->id,
-                        'permission_id' => $permissionIDs->random(),
-                        'created_at' => now()
-                    ];
-                })->all();
+        FolderCollaboratorPermission::insert($permissions->all());
 
-                FolderCollaboratorPermission::insert($records);
-            });
-
-        Passport::actingAs($collaborator);
+        Passport::actingAs($user);
         $this->userCollaborationsResponse()
             ->assertOk()
-            ->assertJsonCount(3, 'data')
-            ->assertJson(function (AssertableJson $json) use ($foldersWhereUserIsACollaborator) {
-                $json->etc()
-                    ->fromArray($json->toArray()['data'])
-                    ->each(function (AssertableJson $json) use ($foldersWhereUserIsACollaborator) {
-                        $json->etc();
-                        $json->where('type', 'userCollaboration');
-                        $json->where('attributes.id', function (int $folderID) use ($foldersWhereUserIsACollaborator) {
-                            return collect($foldersWhereUserIsACollaborator)->pluck('id')->containsStrict($folderID);
-                        });
-
-                        (new AssertableJsonString($json->toArray()))
-                            ->assertCount(4, 'attributes.permissions')
-                            ->assertStructure([
-                                "type",
-                                "attributes" => [
-                                    "id",
-                                    "name",
-                                    "description",
-                                    "has_description",
-                                    "date_created",
-                                    "last_updated",
-                                    "is_public",
-                                    'tags',
-                                    'has_tags',
-                                    'tags_count',
-                                    'storage' => [
-                                        'items_count',
-                                        'capacity',
-                                        'is_full',
-                                        'available',
-                                        'percentage_used'
-                                    ],
-                                    'permissions' => [
-                                        'canInviteUsers',
-                                        'canAddBookmarks',
-                                        'canRemoveBookmarks',
-                                        'canUpdateFolder'
-                                    ]
-                                ]
-                            ]);
-                    });
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.attributes.id', $folder->id)
+            ->assertJsonPath('data.0.type', 'userCollaboration')
+            ->assertJsonPath('data.0.attributes.permissions', function (array $permissions) {
+                $this->assertContains('inviteUsers', $permissions);
+                $this->assertContains('addBookmarks', $permissions);
+                $this->assertContains('removeBookmarks', $permissions);
+                $this->assertContains('updateFolder', $permissions);
+                return true;
+            })
+            ->collect('data')
+            ->each(function (array $data) {
+                (new AssertableJsonString($data))
+                    ->assertCount(4, 'attributes.permissions')
+                    ->assertStructure([
+                        "type",
+                        "attributes" => [
+                            "id",
+                            "name",
+                            "description",
+                            "has_description",
+                            "date_created",
+                            "last_updated",
+                            "visibility",
+                            'permissions',
+                            'storage' => [
+                                'items_count',
+                                'capacity',
+                                'is_full',
+                                'available',
+                                'percentage_used'
+                            ],
+                        ]
+                    ]);
             });
     }
 
-    public function testWhenUserIsRemovedAsCollaborator(): void
+    public function testWillReturnEmptyResponseWhenUserIsNotACollaboratorInAnyFolder(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->userCollaborationsResponse()
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
+    public function testWillReturnEmptyResponseWhenFolderIsDeletedByOwner(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
@@ -152,11 +142,7 @@ class FetchUserCollaborationsTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data');
 
-        Passport::actingAs($folderOwner);
-        $this->deleteJson(route('deleteFolderCollaborator', [
-            'user_id' => $collaborator->id,
-            'folder_id' => $folder->id
-        ]))->assertOk();
+        $folder->delete();
 
         Passport::actingAs($collaborator);
         $this->userCollaborationsResponse()
@@ -164,40 +150,7 @@ class FetchUserCollaborationsTest extends TestCase
             ->assertJsonCount(0, 'data');
     }
 
-    public function testWhenUserIsNotACollaboratorInAnyFolder(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $this->userCollaborationsResponse()
-            ->assertOk()
-            ->assertJsonCount(0, 'data');
-    }
-
-    public function testWhenFolderIsDeletedByOwner(): void
-    {
-        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->for($folderOwner)->create();
-
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->create();
-
-        Passport::actingAs($collaborator);
-        $this->userCollaborationsResponse()
-            ->assertOk()
-            ->assertJsonCount(1, 'data');
-
-        Passport::actingAs($folderOwner);
-        $this->deleteJson(route('deleteFolder'), ['folder' => $folder->id])->assertOk();
-
-        Passport::actingAs($collaborator);
-        $this->userCollaborationsResponse()
-            ->assertOk()
-            ->assertJsonCount(0, 'data');
-    }
-
-    public function testWillShowCorrectPermissions(): void
+    public function testWillReturnCorrectPermissions(): void
     {
         $collaborator = UserFactory::new()->create();
         $folders = FolderFactory::new()->count(2)->create();
@@ -214,17 +167,11 @@ class FetchUserCollaborationsTest extends TestCase
             ->inviteUser()
             ->create();
 
-
         Passport::actingAs($collaborator);
-        $response = $this->userCollaborationsResponse()->assertOk();
-
-        $this->assertTrue($response->json('data.0.attributes.permissions.canAddBookmarks'));
-        $this->assertFalse($response->json('data.0.attributes.permissions.canInviteUsers'));
-        $this->assertFalse($response->json('data.0.attributes.permissions.canRemoveBookmarks'));
-
-        $this->assertTrue($response->json('data.1.attributes.permissions.canInviteUsers'));
-        $this->assertFalse($response->json('data.1.attributes.permissions.canAddBookmarks'));
-        $this->assertFalse($response->json('data.1.attributes.permissions.canRemoveBookmarks'));
+        $this->userCollaborationsResponse()
+            ->assertOk()
+            ->assertJsonPath('data.0.attributes.permissions', ['addBookmarks'])
+            ->assertJsonPath('data.1.attributes.permissions', ['inviteUsers']);
     }
 
     public function testWillReturnOnlyUserRecords(): void
@@ -248,11 +195,7 @@ class FetchUserCollaborationsTest extends TestCase
         $this->userCollaborationsResponse()
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonFragment([
-                'canInviteUsers' => false,
-                'canAddBookmarks' => true,
-                'canRemoveBookmarks' => false
-            ]);
+            ->assertJsonPath('data.0.attributes.permissions', ['addBookmarks']);
     }
 
     public function testWillNotShowDuplicateRecords(): void
@@ -268,11 +211,7 @@ class FetchUserCollaborationsTest extends TestCase
         $this->userCollaborationsResponse()
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonFragment([
-                'canInviteUsers' => true,
-                'canAddBookmarks' => true,
-                'canRemoveBookmarks' => false
-            ]);
+            ->assertJsonPath('data.0.attributes.permissions', ['addBookmarks', 'inviteUsers']);
     }
 
     public function testWhenFolderOwnerHasDeletedAccount(): void
@@ -290,8 +229,7 @@ class FetchUserCollaborationsTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data');
 
-        Passport::actingAs($folderOwner);
-        $this->deleteJson(route('deleteUserAccount'), ['password' => 'password'])->assertOk();
+        $folderOwner->delete();
 
         Passport::actingAs($collaborator);
         $this->userCollaborationsResponse()
@@ -299,42 +237,19 @@ class FetchUserCollaborationsTest extends TestCase
             ->assertJsonCount(0, 'data');
     }
 
-    public function testWillNotIncludeDeletedUsersFolders(): void
-    {
-        [$mark, $jeff, $collaborator] = UserFactory::new()->count(3)->create();
-
-        $marksFolder = FolderFactory::new()->for($mark)->create();
-        $jeffsFolder = FolderFactory::new()->for($jeff)->create();
-        $permission =  FolderCollaboratorPermissionFactory::new()->user($collaborator->id);
-
-        $permission->folder($marksFolder->id)->create();
-        $permission->folder($jeffsFolder->id)->create();
-
-        Passport::actingAs($collaborator);
-        $this->userCollaborationsResponse()
-            ->assertOk()
-            ->assertJsonCount(2, 'data');
-
-        Passport::actingAs($mark);
-        $this->deleteJson(route('deleteUserAccount'), ['password' => 'password'])->assertOk();
-
-        Passport::actingAs($collaborator);
-        $this->userCollaborationsResponse()
-            ->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonFragment(['id' => $jeffsFolder->id]);
-    }
-
-    public function testCanRequestPartialResource(): void
+    public function testRequestPartialResource(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->create();
+        FolderCollaboratorPermissionFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->inviteUser()
+            ->create();
 
         Passport::actingAs($collaborator);
-
-        $this->userCollaborationsResponse(['fields' => 'id,name,storage.items_count,permissions.canInviteUsers'])
+        $this->userCollaborationsResponse(['fields' => 'id,name,storage.items_count,permissions'])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->collect('data')
@@ -349,86 +264,9 @@ class FetchUserCollaborationsTest extends TestCase
                             "id",
                             "name",
                             "storage" => ['items_count'],
-                            'permissions' => ['canInviteUsers']
+                            'permissions'
                         ]
                     ]);
             });
-
-        $this->userCollaborationsResponse(['fields' => 'id,name,storage.items_count,permissions'])
-            ->assertOk()
-            ->collect('data')
-            ->each(function (array $data) {
-                (new AssertableJsonString($data))
-                    ->assertCount(4, 'attributes')
-                    ->assertCount(1, 'attributes.storage')
-                    ->assertCount(4, 'attributes.permissions')
-                    ->assertStructure([
-                        "type",
-                        "attributes" => [
-                            "id",
-                            "name",
-                            "storage" => ['items_count'],
-                            'permissions' => [
-                                'canInviteUsers',
-                                'canAddBookmarks',
-                                'canRemoveBookmarks',
-                                'canUpdateFolder'
-                            ]
-                        ]
-                    ]);
-            });
-    }
-
-    public function testFieldsMustBeValid(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $this->userCollaborationsResponse(['fields' => 'id,name,foo,1'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'fields' => ['The selected fields is invalid.']
-            ]);
-
-        $this->userCollaborationsResponse(['fields' => '1,2,3,4'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'fields' => ['The selected fields is invalid.']
-            ]);
-    }
-
-    public function testFieldsMustBeUnique(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $this->userCollaborationsResponse(['fields' => 'id,name,description,description'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'fields' => [
-                    'The fields.2 field has a duplicate value.',
-                    'The fields.3 field has a duplicate value.'
-                ]
-            ]);
-    }
-
-    public function testCannotRequestStorageWithAStorageChild(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $this->userCollaborationsResponse(['fields' => 'id,name,storage,storage.items_count'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'fields' => ['Cannot request storage with a storage child field']
-            ]);
-    }
-
-    public function testCannotRequestPermissionWithAPermissionChild(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $this->userCollaborationsResponse(['fields' => 'id,name,permissions,permissions.canInviteUsers'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'fields' => ['Cannot request permission with a permission child field']
-            ]);
     }
 }

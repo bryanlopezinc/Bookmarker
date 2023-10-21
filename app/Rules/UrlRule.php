@@ -30,6 +30,7 @@ final class UrlRule implements Rule
 
         try {
             new Url($value);
+            
             return true;
         } catch (MalformedURLException) {
             return false;

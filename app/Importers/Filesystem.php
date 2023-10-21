@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Importers;
 
-use App\ValueObjects\UserID;
-use App\ValueObjects\Uuid;
 use Illuminate\Contracts\Filesystem\Filesystem as FilesystemContract;
 
 final class Filesystem
@@ -14,27 +12,27 @@ final class Filesystem
     {
     }
 
-    public function put(string $contents, UserID $userID, Uuid $requestID): void
+    public function put(string $contents, int $userID, string $requestID): void
     {
         $this->filesystem->put($this->buildFileName($userID, $requestID), $contents);
     }
 
-    private function buildFileName(UserID $userID, Uuid $requestID): string
+    private function buildFileName(int $userID, string $requestID): string
     {
-        return implode('::', [$userID->value(), $requestID->value]);
+        return implode('_', [$userID, $requestID]);
     }
 
-    public function delete(UserID $userID, Uuid $requestID): void
+    public function delete(int $userID, string $requestID): void
     {
         $this->filesystem->delete($this->buildFileName($userID, $requestID));
     }
 
-    public function exists(UserID $userID, Uuid $requestID): bool
+    public function exists(int $userID, string $requestID): bool
     {
         return $this->filesystem->exists($this->buildFileName($userID, $requestID));
     }
 
-    public function get(UserID $userID, Uuid $requestID): string
+    public function get(int $userID, string $requestID): string
     {
         $contents = $this->filesystem->get($this->buildFileName($userID, $requestID));
 

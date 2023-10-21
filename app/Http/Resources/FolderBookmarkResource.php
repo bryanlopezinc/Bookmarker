@@ -21,6 +21,7 @@ final class FolderBookmarkResource extends JsonResource
         data_set($bookmarkResource, 'type', 'folderBookmark');
         data_set($bookmarkResource, 'attributes.visibility', $this->folderBookmark->visibility->value);
         data_set($bookmarkResource, 'attributes.can_favorite', $this->canFavoriteBookmark());
+        data_set($bookmarkResource, 'attributes.belongs_to_auth_user', auth('api')->id() === $this->folderBookmark->bookmark->user_id);
 
         return $bookmarkResource;
     }

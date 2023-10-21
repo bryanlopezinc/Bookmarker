@@ -22,7 +22,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         Http::preventStrayRequests();
-        
+
         Model::preventLazyLoading($this->app->environment('local', 'testing'));
 
         $this->app->bind(UserRepository::class, function () {

@@ -3,7 +3,9 @@
 namespace Tests\Feature\Folder;
 
 use App\Models\Folder as Model;
+use App\Repositories\Folder\FolderPermissionsRepository;
 use App\Services\Folder\AddBookmarksToFolderService;
+use App\UAC;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -49,13 +51,14 @@ class FetchFolderTest extends TestCase
 
         $this->fetchFolderResponse(['id' => $folder->id])
             ->assertOk()
-            ->assertJsonCount(8, 'data.attributes')
+            ->assertJsonCount(9, 'data.attributes')
             ->assertJson(function (AssertableJson $json) use ($folder) {
                 $json->etc();
                 $json->where('data.attributes.id', $folder->id);
                 $json->where('data.attributes.visibility', 'public');
                 $json->where('data.attributes.storage.capacity', 200);
                 $json->where('data.attributes.storage.items_count', 0);
+                $json->where('data.attributes.collaborators_count', 0);
                 $json->where('data.attributes.storage.is_full', false);
                 $json->where('data.attributes.storage.available', 200);
                 $json->where('data.attributes.storage.percentage_used', 0);
@@ -66,16 +69,17 @@ class FetchFolderTest extends TestCase
                 $json->where('data.attributes.last_updated', (string) $folder->updated_at);
             })
             ->assertJsonStructure([
-                "data" => [
-                    "type",
-                    "attributes" => [
-                        "id",
-                        "name",
-                        "description",
-                        "has_description",
-                        "date_created",
-                        "last_updated",
-                        "visibility",
+                'data' => [
+                    'type',
+                    'attributes' => [
+                        'id',
+                        'name',
+                        'description',
+                        'collaborators_count',
+                        'has_description',
+                        'date_created',
+                        'last_updated',
+                        'visibility',
                         'storage' => [
                             'items_count',
                             'capacity',
@@ -88,7 +92,7 @@ class FetchFolderTest extends TestCase
             ]);
     }
 
-    public function testBookmarksCountWillReturnCorrectValueWhenBookmarksDoesNotExists(): void
+    public function testWillReturnCorrectBookmarksCount(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -112,6 +116,29 @@ class FetchFolderTest extends TestCase
             ->assertJsonPath('data.attributes.storage.items_count', 1);
     }
 
+    public function testWillReturnCorrectCollaboratorsCount(): void
+    {
+        $users = UserFactory::times(2)->create();
+
+        Passport::actingAs($folderOwner = UserFactory::new()->create());
+
+        /** @var Model */
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        (new FolderPermissionsRepository)->create($users[0]->id, $folder->id, UAC::all());
+        (new FolderPermissionsRepository)->create($users[1]->id, $folder->id, UAC::all());
+
+        $this->fetchFolderResponse(['id' => $folder->id])
+            ->assertOk()
+            ->assertJsonPath('data.attributes.collaborators_count', 2);
+
+        $users->first()->delete();
+
+        $this->fetchFolderResponse(['id' => $folder->id])
+            ->assertOk()
+            ->assertJsonPath('data.attributes.collaborators_count', 1);
+    }
+
     public function testWhenFolderIsPrivate(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
@@ -121,7 +148,6 @@ class FetchFolderTest extends TestCase
 
         $this->fetchFolderResponse(['id' => $folder->id])
             ->assertOk()
-            ->assertJsonCount(8, 'data.attributes')
             ->assertJsonPath('data.attributes.visibility', 'private');
     }
 

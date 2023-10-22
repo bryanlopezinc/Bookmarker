@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -21,6 +20,7 @@ use Illuminate\Support\Facades\DB;
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  * @property int bookmarksCount
+ * @property int collaboratorsCount
  * @method static Builder|QueryBuilder onlyAttributes(array $attributes = [])
  */
 final class Folder extends Model
@@ -63,32 +63,25 @@ final class Folder extends Model
 
         if (!$attributes->isEmpty()) {
             $builder->addSelect(
-                $this->qualifyColumns($attributes->except(['bookmarks_count', 'settings'])->all())
+                $this->qualifyColumns($attributes->except(['bookmarks_count', 'settings', 'collaboratorsCount'])->all())
             );
         }
 
-        $this->parseBookmarksCountRelationQuery($builder, $attributes);
+        $builder->when($attributes->has('collaboratorsCount') || $attributes->isEmpty(), function ($query) {
+            $query->addSelect([
+                'collaboratorsCount' => FolderCollaboratorPermission::query()
+                    ->selectRaw('COUNT(DISTINCT user_id)')
+                    ->whereRaw("folder_id = {$this->getQualifiedKeyName()}")
+                    ->whereExists(function (&$query) {
+                        $query = User::query()
+                            ->whereRaw("id = folders_collaborators_permissions.user_id")
+                            ->getQuery();
+                    })
+            ]);
+        });
 
-        $this->parseSettingsQuery($builder, $attributes);
-
-        return $builder;
-    }
-
-    /**
-     * @param Builder $builder
-     *
-     * @return Builder
-     */
-    protected function parseBookmarksCountRelationQuery(&$builder, Collection $attributes)
-    {
-        $wantsBookmarksCount = $attributes->has('bookmarks_count') ?: $attributes->isEmpty();
-
-        if (!$wantsBookmarksCount) {
-            return $builder;
-        }
-        
-        return $builder
-            ->addSelect([
+        $builder->when($attributes->has('bookmarks_count') || $attributes->isEmpty(), function ($query) {
+            $query->addSelect([
                 'bookmarksCount' => FolderBookmark::query()
                     ->selectRaw('COUNT(*)')
                     ->whereRaw("folder_id = {$this->qualifyColumn('id')}")
@@ -98,26 +91,16 @@ final class Folder extends Model
                             ->getQuery();
                     })
             ]);
-    }
+        });
 
-    /**
-     * @param Builder $builder
-     *
-     * @return Builder
-     */
-    protected function parseSettingsQuery(&$builder, Collection $attributes)
-    {
-        $wantsSettings = $attributes->has('settings') ?: $attributes->isEmpty();
-
-        if (!$wantsSettings) {
-            return $builder;
-        }
-
-        return $builder
-            ->addSelect([
+        $builder->when($attributes->has('settings') || $attributes->isEmpty(), function ($query) {
+            $query->addSelect([
                 'settings' => FolderSetting::query()
                     ->select(DB::raw("ifNULL(JSON_ARRAYAGG(JSON_OBJECT('key', `key`, 'value', `value`)), '{}')"))
                     ->whereRaw("folder_id = {$this->qualifyColumn('id')}")
             ]);
+        });
+
+        return $builder;
     }
 }

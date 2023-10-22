@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\User;
 
+use App\Repositories\FavoriteRepository;
+use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
@@ -57,5 +59,24 @@ class FetchAuthUserProfileTest extends TestCase
                     ],
                 ]
             ]);
+    }
+
+    public function testWillReturnCorrectFavoritesCountValueWhenBookmarksDoesNotExists(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $bookmarks = BookmarkFactory::times(2)->for($user)->create();
+
+        (new FavoriteRepository)->createMany($bookmarks->pluck('id')->all(), $user->id);
+
+        $this->getUserProfileResponse()
+            ->assertOk()
+            ->assertJsonPath('data.attributes.favorites_count', 2);
+
+        $bookmarks->first()->delete();
+
+        $this->getUserProfileResponse()
+            ->assertOk()
+            ->assertJsonPath('data.attributes.favorites_count', 1);
     }
 }

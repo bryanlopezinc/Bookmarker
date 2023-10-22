@@ -86,12 +86,17 @@ final class Folder extends Model
         if (!$wantsBookmarksCount) {
             return $builder;
         }
-
+        
         return $builder
             ->addSelect([
                 'bookmarksCount' => FolderBookmark::query()
-                    ->selectRaw("COUNT(*)")
+                    ->selectRaw('COUNT(*)')
                     ->whereRaw("folder_id = {$this->qualifyColumn('id')}")
+                    ->whereExists(function (&$query) {
+                        $query = Bookmark::query()
+                            ->whereRaw('id = folders_bookmarks.bookmark_id')
+                            ->getQuery();
+                    })
             ]);
     }
 

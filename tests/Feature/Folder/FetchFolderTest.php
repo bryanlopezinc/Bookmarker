@@ -3,6 +3,8 @@
 namespace Tests\Feature\Folder;
 
 use App\Models\Folder as Model;
+use App\Services\Folder\AddBookmarksToFolderService;
+use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\Fluent\AssertableJson;
@@ -84,6 +86,30 @@ class FetchFolderTest extends TestCase
                     ]
                 ]
             ]);
+    }
+
+    public function testBookmarksCountWillReturnCorrectValueWhenBookmarksDoesNotExists(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        /** @var AddBookmarksToFolderService */
+        $repository = app(AddBookmarksToFolderService::class);
+
+        /** @var Model */
+        $folder = FolderFactory::new()->for($user)->create();
+        $bookmarks = BookmarkFactory::times(2)->for($user)->create();
+
+        $repository->add($folder->id, $bookmarks->pluck('id')->all());
+
+        $this->fetchFolderResponse(['id' => $folder->id])
+            ->assertOk()
+            ->assertJsonPath('data.attributes.storage.items_count', 2);
+
+        $bookmarks->first()->delete();
+
+        $this->fetchFolderResponse(['id' => $folder->id])
+            ->assertOk()
+            ->assertJsonPath('data.attributes.storage.items_count', 1);
     }
 
     public function testWhenFolderIsPrivate(): void

@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('folders_bookmarks', function (Blueprint $table) {
             $table->id();
             $table->enum('visibility', ['private', 'public'])->index();
-            $table->foreignId('bookmark_id');
+            $table->foreignId('bookmark_id')->index('bookmark_id_index');
             $table->foreignId('folder_id');
             $table->unique(['bookmark_id', 'folder_id']);
             $table->timestamp('created_at')->useCurrent();

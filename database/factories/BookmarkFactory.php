@@ -9,6 +9,9 @@ use App\Utils\UrlHasher;
 use App\ValueObjects\Url;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<Bookmark>
+ */
 final class BookmarkFactory extends Factory
 {
     protected $model = Bookmark::class;

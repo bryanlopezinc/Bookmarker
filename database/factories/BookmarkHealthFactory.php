@@ -7,6 +7,9 @@ namespace Database\Factories;
 use App\Models\BookmarkHealth;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<BookmarkHealth>
+ */
 final class BookmarkHealthFactory extends Factory
 {
     protected $model = BookmarkHealth::class;

@@ -7,6 +7,9 @@ namespace Database\Factories;
 use App\Models\SecondaryEmail;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<SecondaryEmail>
+ */
 final class EmailFactory extends Factory
 {
     protected $model = SecondaryEmail::class;

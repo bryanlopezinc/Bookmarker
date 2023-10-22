@@ -8,6 +8,9 @@ use App\Models\Tag as Model;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
+/**
+ * @extends Factory<Model>
+ */
 final class TagFactory extends Factory
 {
     protected $model = Model::class;

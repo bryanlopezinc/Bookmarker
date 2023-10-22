@@ -9,6 +9,9 @@ use App\Models\FolderPermission;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Collection;
 
+/**
+ * @extends Factory<FolderCollaboratorPermission>
+ */
 final class FolderCollaboratorPermissionFactory extends Factory
 {
     protected $model = FolderCollaboratorPermission::class;

@@ -8,6 +8,9 @@ use App\Enums\FolderVisibility;
 use App\Models\Folder;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<Folder>
+ */
 final class FolderFactory extends Factory
 {
     protected $model = Folder::class;

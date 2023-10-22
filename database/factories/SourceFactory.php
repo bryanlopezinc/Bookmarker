@@ -8,6 +8,9 @@ use App\Models\Source;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<Source>
+ */
 final class SourceFactory extends Factory
 {
     protected $model = Source::class;

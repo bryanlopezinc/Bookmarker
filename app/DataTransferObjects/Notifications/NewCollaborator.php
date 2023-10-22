@@ -13,7 +13,8 @@ final class NewCollaborator
         public readonly ?User $collaborator,
         public readonly ?Folder $folder,
         public readonly ?User $newCollaborator,
-        public readonly string $uuid
+        public readonly string $uuid,
+        public readonly string $notifiedOn
     ) {
     }
 }

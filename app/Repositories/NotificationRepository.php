@@ -25,7 +25,7 @@ final class NotificationRepository
     public function unread(int $userID, PaginationData $pagination): Paginator
     {
         /** @var Paginator */
-        $notifications = NotificationModel::select(['data', 'type', 'id', 'notifiable_id'])
+        $notifications = NotificationModel::select(['data', 'type', 'id', 'notifiable_id', 'created_at'])
             ->unRead()
             ->where('notifiable_id', $userID)
             ->latest()

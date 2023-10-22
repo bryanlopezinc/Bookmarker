@@ -17,7 +17,8 @@ final class BookmarksAddedToFolder
         public readonly ?Folder $folder,
         public readonly ?User $collaborator,
         public readonly array $bookmarks,
-        public readonly string $uuid
+        public readonly string $uuid,
+        public readonly string $notifiedOn
     ) {
     }
 }

@@ -12,7 +12,7 @@ final class BookmarksAddedToFolderNotificationResource extends JsonResource
 {
     public function __construct(private BookmarksAddedToFolder $notification)
     {
-    } 
+    }
 
     /**
      * {@inheritdoc}
@@ -30,6 +30,7 @@ final class BookmarksAddedToFolderNotificationResource extends JsonResource
                 'collaborator_exists' => $collaborator !== null,
                 'folder_exists'       => $folder !== null,
                 'bookmarks_count'     => count($bookmarks),
+                'notified_on'         => $this->notification->notifiedOn,
                 'by_collaborator'     => $this->when($collaborator !== null, fn () => [
                     'id'         => $collaborator->id,
                     'first_name' => $collaborator->first_name,

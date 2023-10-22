@@ -12,7 +12,8 @@ final class CollaboratorExit
     public function __construct(
         public readonly ?User $collaborator,
         public readonly ?Folder $folder,
-        public readonly string $uuid
+        public readonly string $uuid,
+        public readonly string $notifiedOn
     )
     {
     }

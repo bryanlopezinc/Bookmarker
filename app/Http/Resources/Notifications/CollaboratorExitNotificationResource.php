@@ -27,6 +27,7 @@ final class CollaboratorExitNotificationResource extends JsonResource
                 'id'                  => $this->notification->uuid,
                 'collaborator_exists' => $collaboratorThatLeft !== null,
                 'folder_exists'       => $folder !== null,
+                'notified_on'         => $this->notification->notifiedOn,
                 'collaborator'        => $this->when($collaboratorThatLeft !== null, fn () => [
                     'first_name' => $collaboratorThatLeft->first_name, // @phpstan-ignore-line
                     'last_name' => $collaboratorThatLeft->last_name // @phpstan-ignore-line

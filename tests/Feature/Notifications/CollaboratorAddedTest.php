@@ -9,6 +9,7 @@ use Illuminate\Support\Collection;
 use Database\Factories\UserFactory;
 use Database\Factories\FolderFactory;
 use App\Notifications\NewCollaboratorNotification;
+use Illuminate\Notifications\DatabaseNotification;
 
 class CollaboratorAddedTest extends TestCase
 {
@@ -28,11 +29,13 @@ class CollaboratorAddedTest extends TestCase
             )
         );
 
+        $expectedDateTime = DatabaseNotification::where('notifiable_id', $folderOwner->id)->sole(['created_at'])->created_at;
+
         Passport::actingAs($folderOwner);
         $this->fetchNotificationsResponse()
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonCount(7, 'data.0.attributes')
+            ->assertJsonCount(8, 'data.0.attributes')
             ->assertJsonCount(3, 'data.0.attributes.collaborator')
             ->assertJsonCount(3, 'data.0.attributes.new_collaborator')
             ->assertJsonCount(2, 'data.0.attributes.folder')
@@ -41,6 +44,7 @@ class CollaboratorAddedTest extends TestCase
             ->assertJsonPath('data.0.attributes.id', fn (string $id) => Str::isUuid($id))
             ->assertJsonPath('data.0.attributes.folder_exists', true)
             ->assertJsonPath('data.0.attributes.new_collaborator_exists', true)
+            ->assertJsonPath('data.0.attributes.notified_on', fn (string $dateTime) => $dateTime === (string) $expectedDateTime)
             ->assertJsonPath('data.0.attributes.collaborator', function (array $collaboratorData) use ($collaborator) {
                 $this->assertEquals($collaborator->id, $collaboratorData['id']);
                 $this->assertEquals($collaborator->first_name, $collaboratorData['first_name']);
@@ -67,6 +71,7 @@ class CollaboratorAddedTest extends TestCase
                             "collaborator_exists",
                             "folder_exists",
                             "new_collaborator_exists",
+                            'notified_on',
                             "collaborator" =>  [
                                 "id",
                                 "first_name",
@@ -107,7 +112,7 @@ class CollaboratorAddedTest extends TestCase
         $this->fetchNotificationsResponse()
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonCount(6, 'data.0.attributes')
+            ->assertJsonCount(7, 'data.0.attributes')
             ->assertJsonPath('data.0.attributes.collaborator_exists', false)
             ->assertJsonMissingPath('data.0.attributes.by_collaborator');
     }
@@ -132,7 +137,7 @@ class CollaboratorAddedTest extends TestCase
         $this->fetchNotificationsResponse()
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonCount(6, 'data.0.attributes')
+            ->assertJsonCount(7, 'data.0.attributes')
             ->assertJsonPath('data.0.attributes.folder_exists', false)
             ->assertJsonMissingPath('data.0.attributes.folder');
     }

@@ -37,6 +37,7 @@ final class HealthChecker
         );
 
         collect($responses)
+            ->reject(fn ($response) => !$response instanceof Response)
             ->map(function (Response $response, int $bookmarkID) {
                 return new HealthCheckResult($bookmarkID, $response);
             })

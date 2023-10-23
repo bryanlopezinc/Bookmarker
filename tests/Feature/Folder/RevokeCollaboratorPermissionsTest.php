@@ -89,7 +89,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
     {
         $users = UserFactory::times(3)->create();
 
-        $folderID = FolderFactory::new()->for($users[0])->create()->id;
+        $folderID = FolderFactory::new()->create()->id;
 
         FolderCollaboratorPermissionFactory::new()->user($users[1]->id)->folder($folderID)->create();
         FolderCollaboratorPermissionFactory::new()->user($users[2]->id)->folder($folderID)->addBookmarksPermission()->create();

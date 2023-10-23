@@ -21,7 +21,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        Http::preventStrayRequests();
+        if ($this->app->environment('testing')) {
+            Http::preventStrayRequests();
+        }
 
         Model::preventLazyLoading($this->app->environment('local', 'testing'));
 

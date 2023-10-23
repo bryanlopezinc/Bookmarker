@@ -55,7 +55,6 @@ class FetchUserCollaborationsTest extends TestCase
             ->assertJsonValidationErrors([
                 'fields' => [
                     'The fields.2 field has a duplicate value.',
-                    'The fields.3 field has a duplicate value.'
                 ]
             ]);
     }

@@ -6,11 +6,11 @@ namespace App\Rules;
 
 use App\Exceptions\Invalid2FACodeException;
 use App\ValueObjects\TwoFACode;
-use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Contracts\Validation\ValidatorAwareRule;
 use Illuminate\Validation\Validator;
+use Illuminate\Contracts\Validation\ValidationRule;
 
-final class TwoFACodeRule implements Rule, ValidatorAwareRule
+final class TwoFACodeRule implements ValidationRule, ValidatorAwareRule
 {
     private Validator $validator;
 
@@ -22,11 +22,9 @@ final class TwoFACodeRule implements Rule, ValidatorAwareRule
     }
 
     /**
-     * @param  string  $attribute
-     * @param  mixed  $value
-     * @return bool
+     * {@inheritdoc}
      */
-    public function passes($attribute, $value)
+    public function validate($attribute, mixed $value, \Closure $fail): void
     {
         try {
             if (!$this->validator->validateInteger($attribute, $value)) {
@@ -34,18 +32,8 @@ final class TwoFACodeRule implements Rule, ValidatorAwareRule
             }
 
             TwoFACode::fromString(strval($value));
-            
-            return true;
         } catch (Invalid2FACodeException) {
-            return false;
+            $fail('Invalid verification code format');
         }
-    }
-
-    /**
-     * @return string|array
-     */
-    public function message()
-    {
-        return 'Invalid verification code format';
     }
 }

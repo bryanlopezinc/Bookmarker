@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Rules;
 
 use Exception;
-use Illuminate\Contracts\Validation\Rule as ValidationRule;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\MessageBag;
 use Illuminate\Validation\Rule;
@@ -63,11 +63,11 @@ abstract class AbstractFieldsRule implements ValidationRule
     /**
      * {@inheritdoc}
      */
-    public function passes($attribute, $value)
+    public function validate($attribute, mixed $value, \Closure $fail): void
     {
         $validator = Validator::make([$attribute => $value], [
-            $attribute     =>  ['array'],
-            "$attribute.*" => ['distinct:strict', Rule::in($this->allowedFields)]
+            $attribute      => ['array', 'bail'],
+            "$attribute.*"  => ['bail', 'distinct:strict', Rule::in($this->allowedFields)]
         ]);
 
         $this->errors->merge($validator->errors());
@@ -76,7 +76,9 @@ abstract class AbstractFieldsRule implements ValidationRule
             $this->ensureDidNotRequestParentWithChildren($attribute, $value);
         }
 
-        return $this->errors->isEmpty();
+        if ($this->errors->isNotEmpty()) {
+            $fail($attribute, $this->errors->first());
+        }
     }
 
     /**

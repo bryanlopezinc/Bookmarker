@@ -5,32 +5,20 @@ declare(strict_types=1);
 namespace App\Rules;
 
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
-use Illuminate\Contracts\Validation\Rule as RuleContract;
+use Illuminate\Contracts\Validation\ValidationRule;
 use App\Exceptions\InvalidFolderSettingException;
 
-final class FolderSettingsRule implements RuleContract
+final class FolderSettingsRule implements ValidationRule
 {
     /**
-     * @param  string  $attribute
-     * @param  mixed  $value
-     * @return bool
+     * {@inheritdoc}
      */
-    public function passes($attribute, $value)
+    public function validate($attribute, mixed $value, \Closure $fail): void
     {
         try {
             FolderSettingsBuilder::fromRequest((array) json_decode($value, true))->build();
         } catch (InvalidFolderSettingException) {
-            return false;
+            $fail('The given folder setting is invalid');
         }
-
-        return true;
-    }
-
-    /**
-     * @return array
-     */
-    public function message()
-    {
-        return 'The given folder setting is invalid.';
     }
 }

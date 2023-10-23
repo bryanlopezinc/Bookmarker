@@ -6,42 +6,27 @@ namespace App\Rules;
 
 use App\Exceptions\MalformedURLException;
 use App\ValueObjects\Url;
-use Illuminate\Contracts\Validation\Rule;
-use Illuminate\Validation\Concerns\ValidatesAttributes;
+use Illuminate\Contracts\Validation\ValidationRule;
 
-final class UrlRule implements Rule
+final class UrlRule implements ValidationRule
 {
-    use ValidatesAttributes;
-
-    protected string|array $message;
-
     /**
-     * @param  string  $attribute
-     * @param  mixed  $value
-     * @return bool
+     * {@inheritdoc}
      */
-    public function passes($attribute, $value)
+    public function validate($attribute, mixed $value, \Closure $fail): void
     {
-        $this->message = "The $attribute must be a valid url";
+        $message = "The $attribute must be a valid url";
 
         if (!is_string($value)) {
-            return false;
+            $fail($message);
+
+            return;
         }
 
         try {
             new Url($value);
-            
-            return true;
         } catch (MalformedURLException) {
-            return false;
+            $fail($message);
         }
-    }
-
-    /**
-     * @return string|array
-     */
-    public function message()
-    {
-        return $this->message;
     }
 }

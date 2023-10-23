@@ -52,7 +52,7 @@ class CreateBookmarkTest extends TestCase
 
         $this->createBookmarkResponse(['tags' => 'foo,bar,fooBarFooBarFoodFooBarA', 'url' => $this->faker->url])
             ->assertUnprocessable()
-            ->assertJsonValidationErrorFor('tags.2');
+            ->assertJsonValidationErrors(['tags.2' => 'The tags.2 must not be greater than 22 characters.']);
 
         $this->createBookmarkResponse([
             'url'  => $this->faker->url,

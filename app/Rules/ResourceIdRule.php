@@ -4,42 +4,26 @@ declare(strict_types=1);
 
 namespace App\Rules;
 
-use Illuminate\Contracts\Validation\Rule;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Concerns\ValidatesAttributes;
 
-final class ResourceIdRule implements Rule
+final class ResourceIdRule implements ValidationRule
 {
     use ValidatesAttributes;
 
-    protected string|array $message = [];
-
     /**
-     * @param  string  $attribute
-     * @param  mixed  $value
-     * @return bool
+     * {@inheritdoc}
      */
-    public function passes($attribute, $value)
+    public function validate($attribute, mixed $value, \Closure $fail): void
     {
         if (!$this->validateInteger($attribute, $value)) {
-            $this->message = sprintf('The %s attribute is invalid', $attribute);
+            $fail(sprintf('The %s attribute is invalid', $attribute));
 
-            return false;
+            return;
         }
 
         if (intval($value) < 1) {
-            $this->message = sprintf('The %s attribute is invalid', $attribute);
-
-            return false;
+            $fail(sprintf('The %s attribute is invalid', $attribute));
         }
-
-        return true;
-    }
-
-    /**
-     * @return string|array
-     */
-    public function message()
-    {
-        return $this->message;
     }
 }

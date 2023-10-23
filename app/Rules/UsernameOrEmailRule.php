@@ -5,38 +5,25 @@ declare(strict_types=1);
 namespace App\Rules;
 
 use App\ValueObjects\Username;
-use Illuminate\Contracts\Validation\Rule;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Validator;
 
-final class UsernameOrEmailRule implements Rule
+final class UsernameOrEmailRule implements ValidationRule
 {
-    protected string $message;
-    protected string $attribute;
-
     /**
-     * @param  string  $attribute
-     * @param  mixed  $value
-     * @return bool
+     * {@inheritdoc}
      */
-    public function passes($attribute, $value)
+    public function validate($attribute, mixed $value, \Closure $fail): void
     {
-        $this->attribute = $attribute;
-
         $data = [$attribute => $value];
 
-        $failedValidations = array_filter([
-            Validator::make($data, [$attribute => Username::rules()])->fails(),
-            Validator::make($data, [$attribute => ['email']])->fails(),
-        ]);
+        [$isValidUsername, $isValidEmail] = [
+            Validator::make($data, [$attribute => Username::rules()])->passes(),
+            Validator::make($data, [$attribute => ['email']])->passes(),
+        ];
 
-        return count($failedValidations) < 2;
-    }
-
-    /**
-     * @return string
-     */
-    public function message()
-    {
-        return str_replace(':attribute', $this->attribute, 'The :attribute must be a valid username or email');
+        if (!$isValidEmail && !$isValidUsername) {
+            $fail("The $attribute must be a valid username or email");
+        }
     }
 }

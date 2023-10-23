@@ -7,6 +7,7 @@ use App\Notifications\VerifyEmailNotification;
 use App\ValueObjects\Url;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
@@ -18,6 +19,7 @@ class ResendEmailVerificationLinkTest extends TestCase
     use WithFaker;
 
     private static string $verificationUrl;
+    private static User $createdUser;
 
     protected function resendVerificationLinkResponse(array $parameters = []): TestResponse
     {
@@ -29,35 +31,28 @@ class ResendEmailVerificationLinkTest extends TestCase
         $this->assertRouteIsAccessibleViaPath('v1/email/verify/resend', 'verification.resend');
     }
 
-    public function testUnauthorizedClientCannotAccessRoute(): void
+    public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
         $this->resendVerificationLinkResponse()->assertUnauthorized();
     }
 
-    public function testWillReturnNotFoundWhenEmailDoesNotExists(): void
+    public function testWillReturnConflictWhenEmailIsAlreadyVerified(): void
     {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
-
-        $this->resendVerificationLinkResponse(['email' => UserFactory::new()->make()->email])->assertNotFound();
-    }
-
-    public function testWhenEmailIsAlreadyVerified(): void
-    {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+        Passport::actingAs($user = UserFactory::new()->create());
 
         $this->resendVerificationLinkResponse([
-            'email' => UserFactory::new()->create()->email
-        ])->assertOk()
+            'email' => $user->email
+        ])->assertStatus(Response::HTTP_CONFLICT)
             ->assertJson(['message' => 'EmailAlreadyVerified']);
     }
 
     public function testResendLink(): void
     {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+        Passport::actingAs($user = UserFactory::new()->unverified()->create());
+
+        self::$createdUser = $user;
 
         config(['settings.EMAIL_VERIFICATION_URL' => $this->faker->url . '?id=:id&hash=:hash&signature=:signature&expires=:expires']);
-
-        $user = UserFactory::new()->unverified()->create();
 
         Notification::fake();
 
@@ -75,7 +70,7 @@ class ResendEmailVerificationLinkTest extends TestCase
      */
     public function testCanVerifyEmailWithParameters(): void
     {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+        Passport::actingAs(self::$createdUser);
 
         $components = (new Url(static::$verificationUrl))->parseQuery();
 
@@ -93,16 +88,14 @@ class ResendEmailVerificationLinkTest extends TestCase
 
     public function testWillThrottleRequestWhenUserMakesMoreThan_6_RequestsPerMinute(): void
     {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+        Passport::actingAs(UserFactory::new()->unverified()->create());
 
         $user = UserFactory::new()->unverified()->create();
 
         for ($i = 0; $i < 6; $i++) {
-            $this->resendVerificationLinkResponse([
-                'email' => $user->email
-            ])->assertOk();
+            $this->resendVerificationLinkResponse()->assertOk();
         }
 
-        $this->resendVerificationLinkResponse(['email' => $user->email])->assertStatus(429);
+        $this->resendVerificationLinkResponse()->assertStatus(429);
     }
 }

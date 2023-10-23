@@ -15,7 +15,7 @@ class FilterFolderResourceTest extends TestCase
     public function testWillReturnAllAttributesWhenNoFieldsAreRequested(): void
     {
         $this->assertWillReturnPartialResource('', function (AssertableJsonString $json) {
-            $json->assertCount(8, 'data.attributes')
+            $json->assertCount(9, 'data.attributes')
                 ->assertStructure([
                     "data" => [
                         "type",
@@ -27,6 +27,7 @@ class FilterFolderResourceTest extends TestCase
                             "date_created",
                             "last_updated",
                             "visibility",
+                            'collaborators_count',
                             'storage' => [
                                 'items_count',
                                 'capacity',

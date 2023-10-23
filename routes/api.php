@@ -67,6 +67,9 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
         Route::patch('collaborators/grant', F\GrantPermissionsToCollaboratorController::class)->middleware([StringToArray::keys('permissions')])->name('grantPermission');
         Route::post('invite', F\SendFolderCollaborationInviteController::class)->middleware([StringToArray::keys('permissions')])->name('sendFolderCollaborationInvite');
     });
+
+    Route::get('email/verify/{id}/{hash}', A\VerifyEmailController::class)->middleware('signed')->name('verification.verify');
+    Route::post('email/verify/resend', A\ResendVerificationLinkController::class)->middleware('throttle:6,1')->name('verification.resend');
 }); // End auth middleware
 
 //sendGrid callback url
@@ -83,7 +86,4 @@ Route::middleware([CheckClientCredentials::class])->group(function () {
     Route::post('users/password/reset-token', A\RequestPasswordResetController::class)->middleware([DBTransaction::class])->name('requestPasswordResetToken');
     Route::post('users/password/reset', A\ResetPasswordController::class)->middleware([DBTransaction::class])->name('resetPassword');
     Route::post('users/request-verification-code', A\Request2FACodeController::class)->middleware([DBTransaction::class])->name('requestVerificationCode');
-
-    Route::get('email/verify/{id}/{hash}', A\VerifyEmailController::class)->middleware('signed')->name('verification.verify');
-    Route::post('email/verify/resend', A\ResendVerificationLinkController::class)->middleware('throttle:6,1') ->name('verification.resend');
 });

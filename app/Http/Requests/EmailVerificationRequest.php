@@ -13,8 +13,6 @@ final class EmailVerificationRequest extends Request
      */
     public function authorize()
     {
-        auth()->onceUsingId($this->route('id'));
-
         return parent::authorize();
     }
 }

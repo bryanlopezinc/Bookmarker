@@ -63,7 +63,7 @@ class FetchUserFoldersTest extends TestCase
         $this->userFoldersResponse([])
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonCount(8, 'data.0.attributes')
+            ->assertJsonCount(9, 'data.0.attributes')
             ->assertJsonPath('data.0.attributes.id', $folder->id)
             ->assertJsonStructure([
                 'data' => [
@@ -77,6 +77,7 @@ class FetchUserFoldersTest extends TestCase
                             "date_created",
                             "last_updated",
                             "visibility",
+                            'collaborators_count',
                             'storage' => [
                                 'items_count',
                                 'capacity',

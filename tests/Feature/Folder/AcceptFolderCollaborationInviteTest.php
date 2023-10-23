@@ -420,6 +420,6 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
 
-        Notification::assertTimesSent(1, \App\Notifications\NewCollaboratorNotification::class);
+        Notification::assertSentTimes(\App\Notifications\NewCollaboratorNotification::class, 1);
     }
 }

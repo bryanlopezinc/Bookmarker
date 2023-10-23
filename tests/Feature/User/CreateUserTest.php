@@ -9,7 +9,7 @@ use App\ValueObjects\Url;
 use App\ValueObjects\Username;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Support\{Arr, Str};
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
@@ -21,6 +21,7 @@ class CreateUserTest extends TestCase
     use WithFaker;
 
     private static string $verificationUrl;
+    private static User $createdUser;
 
     protected function createUserResponse(array $parameters = []): TestResponse
     {
@@ -122,6 +123,7 @@ class CreateUserTest extends TestCase
 
         /** @var User */
         $user = User::query()->where('email', $mail)->sole();
+        self::$createdUser = $user;
 
         $this->assertEquals($username, $user->username);
         $this->assertEquals($firstName, $user->first_name);
@@ -141,7 +143,7 @@ class CreateUserTest extends TestCase
      */
     public function testCanVerifyEmailWithParameters(): void
     {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+        Passport::actingAs(self::$createdUser);
 
         $components = (new Url(static::$verificationUrl))->parseQuery();
 

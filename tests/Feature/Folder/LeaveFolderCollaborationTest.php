@@ -231,6 +231,6 @@ class LeaveFolderCollaborationTest extends TestCase
         Passport::actingAs($collaborator);
         $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
 
-        Notification::assertTimesSent(1, \App\Notifications\CollaboratorExitNotification::class);
+        Notification::assertSentTimes(\App\Notifications\CollaboratorExitNotification::class, 1);
     }
 }

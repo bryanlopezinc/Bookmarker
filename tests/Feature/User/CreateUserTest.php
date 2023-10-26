@@ -105,7 +105,7 @@ class CreateUserTest extends TestCase
     {
         Passport::actingAsClient($client = ClientFactory::new()->asPasswordClient()->create());
 
-        config(['settings.EMAIL_VERIFICATION_URL' => $this->faker->url . '?id=:id&hash=:hash&signature=:signature&expires=:expires']);
+        config(['settings.EMAIL_VERIFICATION_URL' => 'https://laravel.com/:id?hash=:hash&signature=:signature&expires=:expires&t=f']);
 
         Notification::fake();
 
@@ -132,7 +132,14 @@ class CreateUserTest extends TestCase
         $this->assertNotEquals(password_get_info($user->password)['algoName'], 'unknown');
 
         Notification::assertSentTo($user, VerifyEmailNotification::class, function (VerifyEmailNotification $notification) use ($user) {
-            static::$verificationUrl =  $notification->toMail($user)->actionUrl;
+            static::$verificationUrl = $url = $notification->toMail($user)->actionUrl;
+
+            $parts = (new Url($url))->parseQuery();
+
+            $this->assertEquals(
+                $url,
+                "https://laravel.com/{$user->id}?hash={$parts['hash']}&signature={$parts['signature']}&expires={$parts['expires']}&t=f"
+            );
 
             return true;
         });
@@ -143,12 +150,12 @@ class CreateUserTest extends TestCase
      */
     public function testCanVerifyEmailWithParameters(): void
     {
-        Passport::actingAs(self::$createdUser);
+        Passport::actingAs($user = self::$createdUser);
 
         $components = (new Url(static::$verificationUrl))->parseQuery();
 
         $uri = route('verification.verify', [
-            $components['id'],
+            $user->id,
             $components['hash'],
             'signature' => $components['signature'],
             'expires' => $components['expires']
@@ -156,7 +163,7 @@ class CreateUserTest extends TestCase
 
         $this->getJson($uri)->assertOk();
 
-        $this->assertTrue(User::whereKey($components['id'])->sole()->email_verified_at->isToday());
+        $this->assertTrue(User::whereKey($user->id)->sole()->email_verified_at->isToday());
     }
 
     public function testWillReturnUnprocessableWhenFirstNameIsGreaterThan_100(): void

@@ -90,7 +90,7 @@ class ResendEmailVerificationLinkTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->unverified()->create());
 
-        $user = UserFactory::new()->unverified()->create();
+        UserFactory::new()->unverified()->create();
 
         for ($i = 0; $i < 6; $i++) {
             $this->resendVerificationLinkResponse()->assertOk();

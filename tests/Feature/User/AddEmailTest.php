@@ -4,6 +4,7 @@ namespace Tests\Feature\User;
 
 use App\Mail\TwoFACodeMail;
 use App\Models\SecondaryEmail;
+use Database\Factories\EmailFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
@@ -65,14 +66,8 @@ class AddEmailTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        for ($i = 0; $i < 3; $i++) {
-            SecondaryEmail::create([
-                'user_id'     => $user->id,
-                'email'       => $this->faker->unique()->email,
-                'verified_at' => now()
-            ]);
-        }
-
+        EmailFactory::times(3)->for($user)->create();
+  
         $this->addEmailToAccount(['email' => $this->faker->unique()->email])
             ->assertForbidden()
             ->assertExactJson(['message' => 'MaxEmailsLimitReached']);

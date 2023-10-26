@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Env;
+
 return [
     //The amount of bookmarks that can be add to  favorites in one request.
     'MAX_POST_FAVOURITES' => 50,
@@ -43,21 +45,17 @@ return [
     //The url should contain placeholders for the 'id', 'hash', 'signature', and 'expires' parameters.
     //Eg https://webclient.com/:id/:hash?signature=:signature&expires=:expires
     //All extra query parameters will be reserved.
-    'EMAIL_VERIFICATION_URL' => env('EMAIL_VERIFICATION_URL'),
+    'EMAIL_VERIFICATION_URL' => Env::getOrFail('EMAIL_VERIFICATION_URL'),
 
     //The reset password url that will be sent to the users email.
     //The url should contain placeholders for the 'token' and 'email' parameters
     //Eg https://webclient-here.com/?emailQueryName=:email&tokenQueryName=:token
-    //the password reset link that will be sent to the user will be
-    //https://webclient-here.com/?emailQueryName=user-email&tokenQueryName=reset-token.
-    // Also https://webclient-here.com/:email/:token will become
-    //https://webclient-here.com/user-email/reset-token.
     //All extra query parameters will be reserved.
-    'RESET_PASSWORD_URL' => env('RESET_PASSWORD_URL'),
+    'RESET_PASSWORD_URL' => Env::getOrFail('RESET_PASSWORD_URL'),
 
     //The accept invite url that will be sent to the user.
     //The url should contain placeholders for the 'invite_hash', 'signature', and 'expires' parameters.
-    'ACCEPT_INVITE_URL' => env('ACCEPT_INVITE_URL'),
+    'ACCEPT_INVITE_URL' => Env::getOrFail('ACCEPT_INVITE_URL'),
 
     'FIRST_NAME_MAX_LENGTH' => 100,
     'LAST_NAME_MAX_LENGTH' => 100,

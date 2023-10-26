@@ -49,7 +49,7 @@ class RequestPasswordResetTest extends TestCase
 
     public function testSendPasswordResetLink(): void
     {
-        config(['settings.RESET_PASSWORD_URL' => 'https://url.com/reset?token=:token&email=:email&foo=bar']);
+        config(['settings.RESET_PASSWORD_URL' => 'https://url.com/reset/:token?email=:email&foo=bar&t=b']);
 
         Notification::fake();
 
@@ -66,7 +66,7 @@ class RequestPasswordResetTest extends TestCase
         Notification::assertSentTo($user, function (ResetPasswordNotification $notification) use ($user) {
             $this->assertEquals(
                 $notification->toMail($user)->actionUrl,
-                "https://url.com/reset?token=$notification->token&email={$user->email}&foo=bar"
+                "https://url.com/reset/{$notification->token}?email={$user->email}&foo=bar&t=b"
             );
 
             return true;

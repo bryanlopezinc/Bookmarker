@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Env;
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -30,6 +32,6 @@ return [
     ],
 
     'youtube' => [
-        'key' => env('GOOGLE_API_KEY')
+        'key' => Env::getOrFail('GOOGLE_API_KEY')
     ],
 ];

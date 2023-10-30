@@ -236,28 +236,28 @@ class FetchFolderBookmarksTest extends TestCase
 
     public function testFavoriteParametersForBookmarkOwner(): void
     {
-        $users = UserFactory::new()->count(2)->create();
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
 
-        $folder = FolderFactory::new()->for($users[0])->create();
-        $userBookmark = BookmarkFactory::new()->for($users[1])->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+        $collaboratorBookmark = BookmarkFactory::new()->for($collaborator)->create();
 
         FolderCollaboratorPermissionFactory::new()
-            ->user($users[1]->id)
+            ->user($collaborator->id)
             ->folder($folder->id)
             ->addBookmarksPermission()
             ->create();
 
-        $this->addBookmarksToFolder->add($folder->id, $userBookmark->id);
-        Favorite::create(['user_id' => $users[1]->id, 'bookmark_id' => $userBookmark->id]);
+        $this->addBookmarksToFolder->add($folder->id, $collaboratorBookmark->id);
+        Favorite::create(['user_id' => $collaborator->id, 'bookmark_id' => $collaboratorBookmark->id]);
 
-        Passport::actingAs($users[1]);
+        Passport::actingAs($collaborator);
         $this->folderBookmarksResponse(['folder_id' => $folder->id])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.attributes.is_user_favorite', true)
             ->assertJsonPath('data.0.attributes.can_favorite', false);
 
-        Passport::actingAs($users[0]);
+        Passport::actingAs($folderOwner);
         $this->folderBookmarksResponse(['folder_id' => $folder->id])
             ->assertOk()
             ->assertJsonCount(1, 'data')

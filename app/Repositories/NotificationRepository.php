@@ -34,7 +34,7 @@ final class NotificationRepository
         $notificationsResources = (new FetchNotificationResourcesRepository($notifications->getCollection()));
 
         return $notifications->setCollection(
-            $notifications->getCollection()->map(new SelectNotificationObject($notificationsResources))
+            $notifications->getCollection()->map(new NotificationFactory\NotificationFactory($notificationsResources))
         );
     }
 }

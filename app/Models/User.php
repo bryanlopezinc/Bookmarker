@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TwoFaMode;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -23,6 +24,7 @@ use Illuminate\Support\Collection;
  * @property \Carbon\Carbon|null $email_verified_at
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
+ * @property TwoFaMode $two_fa_mode
  * @method static Builder WithQueryOptions(array $columns = [])
  */
 final class User extends Authenticatable implements MustVerifyEmail
@@ -43,6 +45,7 @@ final class User extends Authenticatable implements MustVerifyEmail
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'two_fa_mode' => TwoFaMode::class
     ];
 
     public function findForPassport(string $emailOrUsername): ?self

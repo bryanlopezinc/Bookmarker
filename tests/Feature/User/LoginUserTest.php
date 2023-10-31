@@ -13,12 +13,11 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
 use Laravel\Passport\Client;
-use Tests\Traits\Requests2FACode;
+use App\Cache\User2FACodeRepository;
+use App\ValueObjects\TwoFACode;
 
 class LoginUserTest extends TestCase
 {
-    use Requests2FACode;
-
     private Client $client;
     private User $user;
 
@@ -115,15 +114,12 @@ class LoginUserTest extends TestCase
             }'),
         ]);
 
-        $code = (string)$this->get2FACode($this->user->id);
-
         $this->loginUserResponse([
             'username'      => $this->user->username,
             'password'      => 'password',
             'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
             'grant_type'    => 'password',
-            'two_fa_code'   => $code,
             'with_ip'       => '24.48.0.1',
             'with_agent'    => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
         ])
@@ -171,6 +167,45 @@ class LoginUserTest extends TestCase
         });
     }
 
+    public function testLoginUserWith_2FA_enabled(): void
+    {
+        $user = UserFactory::new()->with2FA()->create();
+
+        Mail::fake();
+
+        Http::fake([
+            'ip-api.com/*' => Http::response('{
+                    "country": "Canada",
+                    "city": "Montreal"
+            }'),
+        ]);
+
+        $code = (string)$this->get2FACode($user->id);
+
+        $this->loginUserResponse([
+            'username'      => $user->username,
+            'password'      => 'password',
+            'client_id'     => $this->client->id,
+            'client_secret' => $this->client->secret,
+            'grant_type'    => 'password',
+            'two_fa_code'   => $code,
+            'with_ip'       => '24.48.0.1',
+            'with_agent'    => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
+        ])->assertOk();
+    }
+
+    private function get2FACode(int $userId): int
+    {
+        $code = TwoFACode::generate();
+
+        /** @var User2FACodeRepository */
+        $repository = app(User2FACodeRepository::class);
+
+        $repository->put($userId, $code);
+
+        return $code->value();
+    }
+
     public function testLoginWithEmail(): void
     {
         $email = $this->user->email;
@@ -182,15 +217,12 @@ class LoginUserTest extends TestCase
             }'),
         ]);
 
-        $code = (string)$this->get2FACode($this->user->id);
-
         $this->loginUserResponse([
             'username'      => $email,
             'password'      => 'password',
             'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
             'grant_type'    => 'password',
-            'two_fa_code'   => $code,
             'with_ip'       => '24.48.0.1',
             'with_agent'    => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
         ])->assertOk();
@@ -198,7 +230,8 @@ class LoginUserTest extends TestCase
 
     public function testWillReturnBadRequestWhenVerificationCodeHasBeenUsed(): void
     {
-        $email = $this->user->email;
+        $user = UserFactory::new()->with2FA()->create();
+        $email = $user->email;
 
         Http::fake([
             'ip-api.com/*' => Http::response('{
@@ -207,7 +240,7 @@ class LoginUserTest extends TestCase
             }'),
         ]);
 
-        $code = (string)$this->get2FACode($this->user->id);
+        $code = (string)$this->get2FACode($user->id);
 
         $this->loginUserResponse($params = [
             'username'      => $email,
@@ -231,7 +264,8 @@ class LoginUserTest extends TestCase
 
     public function testWillReturnBadRequestWhen2FACodeIsUsedAfter_10_Minutes(): void
     {
-        $email = $this->user->email;
+        $user = UserFactory::new()->with2FA()->create();
+        $email = $user->email;
 
         Http::fake([
             'ip-api.com/*' => Http::response('{
@@ -240,7 +274,7 @@ class LoginUserTest extends TestCase
             }'),
         ]);
 
-        $code = (string)$this->get2FACode($this->user->id);
+        $code = (string)$this->get2FACode($user->id);
 
         $this->travel(11)->minutes(function () use ($code, $email) {
             $this->loginUserResponse([
@@ -260,9 +294,10 @@ class LoginUserTest extends TestCase
 
     public function testWillReturnBadRequestWhen2FACodeIsInvalid(): void
     {
-        //wrong code
+        $user = UserFactory::new()->with2FA()->create();
+
         $this->loginUserResponse([
-            'username'      => $this->user->username,
+            'username'      => $user->username,
             'password'      => 'password',
             'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
@@ -277,10 +312,12 @@ class LoginUserTest extends TestCase
 
     public function testWillReturnBadRequestWhen2FACodeWasNotAssignedToUser(): void
     {
-        $code = $this->get2FACode($this->user->id);
+        $user = UserFactory::new()->with2FA()->create();
+
+        $code = $this->get2FACode($user->id);
 
         $this->loginUserResponse([
-            'username'      => UserFactory::new()->create()->username,
+            'username'      => UserFactory::new()->with2FA()->create()->username,
             'password'      => 'password',
             'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
@@ -295,8 +332,6 @@ class LoginUserTest extends TestCase
 
     public function testLocationWillBeUnknownWhenIpAttributeIsMissing(): void
     {
-        $code = (string)$this->get2FACode($this->user->id);
-
         Mail::fake();
         Http::fake();
 
@@ -306,7 +341,6 @@ class LoginUserTest extends TestCase
             'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
             'grant_type'    => 'password',
-            'two_fa_code'   => $code,
             'with_agent'    => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15'
         ])->assertOk();
 
@@ -321,8 +355,6 @@ class LoginUserTest extends TestCase
 
     public function testDeviceWillBeUnknownWhenUserAgentAttributeIsMissing(): void
     {
-        $code = (string)$this->get2FACode($this->user->id);
-
         Mail::fake();
 
         $this->loginUserResponse([
@@ -331,7 +363,6 @@ class LoginUserTest extends TestCase
             'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
             'grant_type'    => 'password',
-            'two_fa_code'   => $code,
         ])->assertOk();
 
         Mail::assertSent(function (NewLoginMail $mail) {
@@ -359,6 +390,23 @@ class LoginUserTest extends TestCase
             "error" => "userEmailNotVerified",
             "error_description" => "The user email has not been verified.",
             "message" => "The user email has not been verified.",
+        ]);
+    }
+
+    public function testWillReturnErrorWhen_2FA_isEnabledButNotSupplied(): void
+    {
+        $user = UserFactory::new()->with2FA()->create();
+
+        $this->loginUserResponse([
+            'username'      => $user->username,
+            'password'      => 'password',
+            'client_id'     => $this->client->id,
+            'client_secret' => $this->client->secret,
+            'grant_type'    => 'password',
+        ])->assertStatus(400)->assertExactJson([
+            "error" => "2FARequired",
+            "error_description" => "A verification code is required.",
+            "message" => "A verification code is required.",
         ]);
     }
 }

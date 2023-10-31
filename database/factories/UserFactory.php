@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\TwoFaMode;
 use App\ValueObjects\Username;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -28,6 +29,7 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password'          => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
             'remember_token'    => Str::random(10),
+            'two_fa_mode'       => TwoFaMode::NONE
         ];
     }
 
@@ -48,5 +50,10 @@ class UserFactory extends Factory
                 'email_verified_at' => null,
             ];
         });
+    }
+
+    public function with2FA()
+    {
+        return $this->state(['two_fa_mode' => TwoFaMode::EMAIL]);
     }
 }

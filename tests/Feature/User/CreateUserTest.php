@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\User;
 
+use App\Enums\TwoFaMode;
 use App\Models\SecondaryEmail;
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
@@ -128,6 +129,7 @@ class CreateUserTest extends TestCase
         $this->assertEquals($username, $user->username);
         $this->assertEquals($firstName, $user->first_name);
         $this->assertEquals($lastName, $user->last_name);
+        $this->assertEquals(TwoFaMode::NONE, $user->two_fa_mode);
         $this->assertNull($user->email_verified_at);
         $this->assertNotEquals(password_get_info($user->password)['algoName'], 'unknown');
 

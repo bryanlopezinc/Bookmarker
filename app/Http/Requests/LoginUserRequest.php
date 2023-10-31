@@ -19,7 +19,7 @@ final class LoginUserRequest extends FormRequest
             'password'    => ['required'],
             'with_ip'     => ['ip', 'sometimes', 'filled'],
             'with_agent'  => ['sometimes', 'filled'],
-            'two_fa_code' => ['required', 'string', 'filled']
+            'two_fa_code' => ['sometimes', 'string', 'filled']
         ];
     }
 
@@ -32,7 +32,7 @@ final class LoginUserRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function (Validator $validator) {
-            if (filled($validator->failed())) {
+            if (filled($validator->failed()) || $this->missing('two_fa_code')) {
                 return;
             }
 

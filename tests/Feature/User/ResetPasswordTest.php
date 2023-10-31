@@ -9,13 +9,10 @@ use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\PasswordBroker;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
-use Tests\Traits\Requests2FACode;
 use Laravel\Passport\Database\Factories\ClientFactory;
 
 class ResetPasswordTest extends TestCase
 {
-    use Requests2FACode;
-
     private const NEW_PASSWORD = 'abcdef123';
 
     protected function resetPasswordResponse(array $parameters = [], array $headers = []): TestResponse

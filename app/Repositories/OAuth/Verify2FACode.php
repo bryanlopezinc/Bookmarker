@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Repositories\OAuth;
 
 use App\Cache\User2FACodeRepository;
+use App\Enums\TwoFaMode;
+use App\Models\User;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Repositories\UserRepositoryInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
@@ -29,13 +31,24 @@ final class Verify2FACode implements UserRepositoryInterface
     ) {
         $request = request();
 
-        $user = $this->userRepository->getUserEntityByUserCredentials($username, $password, $grantType, $clientEntity);
+        $userEntity = $this->userRepository->getUserEntityByUserCredentials($username, $password, $grantType, $clientEntity);
 
-        if (!$request->routeIs('loginUser') || !$user) {
-            return $user;
+        if (!$request->routeIs('loginUser') || !$userEntity) {
+            return $userEntity;
         };
 
-        $userID = $user->getIdentifier();
+        $userID = $userEntity->getIdentifier();
+
+        /** @var User */
+        $user = User::query()->find($userID, 'two_fa_mode');
+
+        if ($user->two_fa_mode == TwoFaMode::NONE) {
+            return $userEntity;
+        }
+
+        if ($request->missing('two_fa_code')) {
+            throw new OAuthServerException('A verification code is required.', 6, '2FARequired');
+        }
 
         if (!$this->user2FACodeRepository->has($userID)) {
             $this->throwException();
@@ -47,7 +60,7 @@ final class Verify2FACode implements UserRepositoryInterface
 
         $this->user2FACodeRepository->forget($userID);
 
-        return $user;
+        return $userEntity;
     }
 
     private function twoFACodeMatches(TwoFACode $code, int $userID): bool

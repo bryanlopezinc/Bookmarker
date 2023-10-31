@@ -5,14 +5,13 @@ namespace Tests\Feature\User;
 use Tests\TestCase;
 use App\Models\User;
 use Laravel\Passport\Passport;
-use Tests\Traits\Requests2FACode;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Illuminate\Foundation\Testing\WithFaker;
 
 class DeleteUserAccountTest extends TestCase
 {
-    use Requests2FACode, WithFaker;
+    use WithFaker;
 
     protected function deleteAccountResponse(array $parameters = [], array $headers = []): TestResponse
     {

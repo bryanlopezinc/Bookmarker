@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\TwoFaMode;
 use App\Events\RegisteredEvent;
 use App\Http\Requests\CreateUserRequest;
 use App\Models\User;
@@ -15,11 +16,12 @@ final class CreateUserController
     public function __invoke(CreateUserRequest $request, Hasher $hasher): JsonResponse
     {
         $user = User::query()->create([
-            'username'   => $request->validated('username'),
-            'first_name' => $request->validated('first_name'),
-            'last_name'  => $request->validated('last_name'),
-            'email'      => $request->validated('email'),
-            'password'   => $hasher->make($request->validated('password'))
+            'username'    => $request->validated('username'),
+            'first_name'  => $request->validated('first_name'),
+            'last_name'   => $request->validated('last_name'),
+            'email'       => $request->validated('email'),
+            'password'    => $hasher->make($request->validated('password')),
+            'two_fa_mode' => TwoFaMode::NONE
         ]);
 
         event(new RegisteredEvent($user));

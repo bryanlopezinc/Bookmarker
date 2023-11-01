@@ -67,6 +67,7 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
         Route::patch('collaborators/grant', F\GrantPermissionsToCollaboratorController::class)->middleware([StringToArray::keys('permissions')])->name('grantPermission');
         Route::post('invite', F\SendFolderCollaborationInviteController::class)->middleware([StringToArray::keys('permissions')])->name('sendFolderCollaborationInvite');
         Route::get('banned', F\FetchBannedCollaboratorsController::class)->name('fetchBannedCollaborator');
+        Route::delete('ban', F\UnBanUserController::class)->name('unBanUser');
     });
 
     Route::get('email/verify/{id}/{hash}', A\VerifyEmailController::class)->middleware('signed')->name('verification.verify');

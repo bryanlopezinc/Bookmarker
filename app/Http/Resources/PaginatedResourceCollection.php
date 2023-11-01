@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
-use App\PaginationData;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
@@ -25,8 +24,7 @@ final class PaginatedResourceCollection extends ResourceCollection
      */
     public function toArray($request)
     {
-        $this->paginator->appends('per_page', $request->input('per_page', PaginationData::DEFAULT_PER_PAGE));
-        $this->paginator->withQueryString();
+         $this->paginator->withQueryString();
 
         $data = $this->paginator->toArray();
 

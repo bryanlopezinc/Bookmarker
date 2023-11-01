@@ -66,6 +66,7 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
         Route::delete('collaborators/revoke_permissions', F\RevokeFolderCollaboratorPermissionsController::class)->middleware([StringToArray::keys('permissions')])->name('revokePermissions');
         Route::patch('collaborators/grant', F\GrantPermissionsToCollaboratorController::class)->middleware([StringToArray::keys('permissions')])->name('grantPermission');
         Route::post('invite', F\SendFolderCollaborationInviteController::class)->middleware([StringToArray::keys('permissions')])->name('sendFolderCollaborationInvite');
+        Route::get('banned', F\FetchBannedCollaboratorsController::class)->name('fetchBannedCollaborator');
     });
 
     Route::get('email/verify/{id}/{hash}', A\VerifyEmailController::class)->middleware('signed')->name('verification.verify');

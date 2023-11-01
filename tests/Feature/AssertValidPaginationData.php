@@ -8,10 +8,10 @@ use Tests\TestCase;
 
 trait AssertValidPaginationData
 {
-    private function assertValidPaginationData(TestCase $testCase, string $routeName): void
+    private function assertValidPaginationData(TestCase $testCase, string $routeName, array $requiredParams = []): void
     {
-        $testResponse = function (array $data) use ($testCase, $routeName) {
-            return $testCase->getJson(route($routeName, $data));
+        $testResponse = function (array $data) use ($testCase, $routeName, $requiredParams) {
+            return $testCase->getJson(route($routeName, array_merge($requiredParams, $data)));
         };
 
         $testResponse(['page' => '-1'])

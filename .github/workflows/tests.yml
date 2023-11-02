@@ -33,6 +33,9 @@ jobs:
     - name: Install Dependencies
       run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
 
+    - name: Dump
+      run: composer dump-autoload
+
     - name: Generate key
       run: php artisan key:generate
 
@@ -50,7 +53,5 @@ jobs:
         php artisan passport:install
         php artisan passport:keys --force
 
-    - name: Execute tests (Unit and Feature tests) via PHPUnit
-      run: |
-        php artisan test --testsuite=Unit
-        php artisan test --testsuite=Feature
+    - name: Run tests
+      run: php artisan test

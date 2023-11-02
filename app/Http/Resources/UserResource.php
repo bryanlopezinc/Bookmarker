@@ -22,8 +22,7 @@ final class UserResource extends JsonResource
         return [
             'type' => 'user',
             'attributes'      => [
-                'first_name'         => $this->user->first_name,
-                'last_name'          => $this->user->last_name,
+                'name'               => $this->user->full_name,
                 'username'           => $this->user->username,
                 'bookmarks_count'    => $this->user->bookmarks_count,
                 'favorites_count'    => $this->user->favorites_count,

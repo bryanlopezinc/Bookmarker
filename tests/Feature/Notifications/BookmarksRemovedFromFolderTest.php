@@ -43,8 +43,7 @@ class BookmarksRemovedFromFolderTest extends TestCase
             ->assertJsonPath('data.0.attributes.notified_on', fn (string $dateTime) => $dateTime === (string) $expectedDateTime)
             ->assertJsonPath('data.0.attributes.by_collaborator', function (array $collaboratorData) use ($collaborator) {
                 $this->assertEquals($collaborator->id, $collaboratorData['id']);
-                $this->assertEquals($collaborator->first_name, $collaboratorData['first_name']);
-                $this->assertEquals($collaborator->last_name, $collaboratorData['last_name']);
+                $this->assertEquals($collaborator->full_name, $collaboratorData['name']);
                 return true;
             })
             ->assertJsonPath('data.0.attributes.folder', function (array $folderData) use ($folder) {
@@ -57,7 +56,7 @@ class BookmarksRemovedFromFolderTest extends TestCase
                 return true;
             })
             ->assertJsonCount(8, 'data.0.attributes')
-            ->assertJsonCount(3, 'data.0.attributes.by_collaborator')
+            ->assertJsonCount(2, 'data.0.attributes.by_collaborator')
             ->assertJsonCount(2, 'data.0.attributes.folder')
             ->assertJsonStructure([
                 'data' => [
@@ -71,8 +70,7 @@ class BookmarksRemovedFromFolderTest extends TestCase
                             'notified_on',
                             "by_collaborator" =>  [
                                 "id",
-                                "first_name",
-                                "last_name",
+                                "name",
                             ],
                             "folder" => [
                                 "name",

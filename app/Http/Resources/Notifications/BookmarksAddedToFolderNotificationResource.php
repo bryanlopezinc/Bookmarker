@@ -32,9 +32,8 @@ final class BookmarksAddedToFolderNotificationResource extends JsonResource
                 'bookmarks_count'     => count($bookmarks),
                 'notified_on'         => $this->notification->notifiedOn,
                 'by_collaborator'     => $this->when($collaborator !== null, fn () => [
-                    'id'         => $collaborator->id,
-                    'first_name' => $collaborator->first_name,
-                    'last_name'  => $collaborator->last_name
+                    'id'   => $collaborator->id,
+                    'name' => $collaborator->full_name,
                 ]),
                 'folder'             => $this->when($folder !== null, fn () => [
                     'name' => $folder->name,

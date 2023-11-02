@@ -38,8 +38,7 @@ class CollaboratorExitNotificationTest extends TestCase
             ->assertJsonPath('data.0.attributes.folder_exists', true)
             ->assertJsonPath('data.0.attributes.notified_on', fn (string $dateTime) => $dateTime === (string) $expectedDateTime)
             ->assertJsonPath('data.0.attributes.collaborator', function (array $collaboratorData) use ($collaborator) {
-                $this->assertEquals($collaborator->first_name, $collaboratorData['first_name']);
-                $this->assertEquals($collaborator->last_name, $collaboratorData['last_name']);
+                $this->assertEquals($collaborator->full_name, $collaboratorData['name']);
                 return true;
             })
             ->assertJsonPath('data.0.attributes.folder', function (array $folderData) use ($folder) {
@@ -48,7 +47,7 @@ class CollaboratorExitNotificationTest extends TestCase
                 return true;
             })
             ->assertJsonCount(6, 'data.0.attributes')
-            ->assertJsonCount(2, 'data.0.attributes.collaborator')
+            ->assertJsonCount(1, 'data.0.attributes.collaborator')
             ->assertJsonCount(2, 'data.0.attributes.folder')
             ->assertJsonStructure([
                 'data' => [
@@ -60,8 +59,7 @@ class CollaboratorExitNotificationTest extends TestCase
                             "folder_exists",
                             'notified_on',
                             "collaborator" =>  [
-                                "first_name",
-                                "last_name",
+                                "name",
                             ],
                             "folder" => [
                                 "name",

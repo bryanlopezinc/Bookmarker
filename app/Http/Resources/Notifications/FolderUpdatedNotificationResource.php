@@ -30,9 +30,8 @@ final class FolderUpdatedNotificationResource extends JsonResource
                 'folder_exists'       => $folder !== null,
                 'notified_on'         => $this->notification->notifiedOn,
                 'collaborator'        => $this->when($updatedBy !== null, fn () => [
-                    'id'         => $updatedBy->id,
-                    'first_name' => $updatedBy->first_name,
-                    'last_name'  => $updatedBy->last_name
+                    'id'   => $updatedBy->id,
+                    'name' => $updatedBy->full_name,
                 ]),
                 'folder'              => $this->when($folder !== null, fn () => [
                     'name' => $folder->name,

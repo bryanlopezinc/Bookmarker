@@ -36,8 +36,8 @@ class CollaboratorAddedTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(8, 'data.0.attributes')
-            ->assertJsonCount(3, 'data.0.attributes.collaborator')
-            ->assertJsonCount(3, 'data.0.attributes.new_collaborator')
+            ->assertJsonCount(2, 'data.0.attributes.collaborator')
+            ->assertJsonCount(2, 'data.0.attributes.new_collaborator')
             ->assertJsonCount(2, 'data.0.attributes.folder')
             ->assertJsonPath('data.0.type', 'CollaboratorAddedToFolderNotification')
             ->assertJsonPath('data.0.attributes.collaborator_exists', true)
@@ -47,8 +47,7 @@ class CollaboratorAddedTest extends TestCase
             ->assertJsonPath('data.0.attributes.notified_on', fn (string $dateTime) => $dateTime === (string) $expectedDateTime)
             ->assertJsonPath('data.0.attributes.collaborator', function (array $collaboratorData) use ($collaborator) {
                 $this->assertEquals($collaborator->id, $collaboratorData['id']);
-                $this->assertEquals($collaborator->first_name, $collaboratorData['first_name']);
-                $this->assertEquals($collaborator->last_name, $collaboratorData['last_name']);
+                $this->assertEquals($collaborator->full_name, $collaboratorData['name']);
                 return true;
             })
             ->assertJsonPath('data.0.attributes.folder', function (array $folderData) use ($folder) {
@@ -58,8 +57,7 @@ class CollaboratorAddedTest extends TestCase
             })
             ->assertJsonPath('data.0.attributes.new_collaborator', function (array $newCollaboratorData)  use ($newCollaborator) {
                 $this->assertEquals($newCollaborator->id, $newCollaboratorData['id']);
-                $this->assertEquals($newCollaborator->first_name, $newCollaboratorData['first_name']);
-                $this->assertEquals($newCollaborator->last_name, $newCollaboratorData['last_name']);
+                $this->assertEquals($newCollaborator->full_name, $newCollaboratorData['name']);
                 return true;
             })
             ->assertJsonStructure([
@@ -74,8 +72,7 @@ class CollaboratorAddedTest extends TestCase
                             'notified_on',
                             "collaborator" =>  [
                                 "id",
-                                "first_name",
-                                "last_name",
+                                "name",
                             ],
                             "folder" => [
                                 "name",
@@ -83,8 +80,7 @@ class CollaboratorAddedTest extends TestCase
                             ],
                             "new_collaborator" =>  [
                                 "id",
-                                "first_name",
-                                "last_name",
+                                "name",
                             ],
                         ]
                     ]

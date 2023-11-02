@@ -23,8 +23,7 @@ final class FolderCollaboratorResource extends JsonResource
             'type' => 'folderCollaborator',
             'attributes' => [
                 'id'          => $this->folderCollaborator->user->id,
-                'first_name'  => $this->folderCollaborator->user->first_name,
-                'last_name'   => $this->folderCollaborator->user->last_name,
+                'name'        => $this->folderCollaborator->user->full_name,
                 'permissions' => $this->folderCollaborator->permissions->toJsonResponse()
             ]
         ];

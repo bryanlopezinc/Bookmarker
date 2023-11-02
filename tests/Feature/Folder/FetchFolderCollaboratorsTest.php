@@ -79,18 +79,18 @@ class FetchFolderCollaboratorsTest extends TestCase
         $this->fetchCollaboratorsResponse(['folder_id' => $userFolder->id])
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonCount(4, 'data.0.attributes')
+            ->assertJsonCount(3, 'data.0.attributes')
             ->assertJsonCount(4, 'data.0.attributes.permissions')
             ->assertJsonPath('data.0.type', 'folderCollaborator')
             ->assertJsonPath('data.0.attributes.id', $collaborator->id)
+            ->assertJsonPath('data.0.attributes.name', $collaborator->full_name)
             ->assertJsonStructure([
                 'data' => [
                     '*' => [
                         'type',
                         'attributes' => [
                             'id',
-                            'first_name',
-                            'last_name',
+                            'name',
                             'permissions'
                         ]
                     ],

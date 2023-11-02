@@ -21,9 +21,8 @@ final class BannedCollaboratorResource extends JsonResource
         return [
             'type' => 'bannedCollaborator',
             'attributes' => [
-                'id'          => $this->bannedCollaborator->id,
-                'first_name'  => $this->bannedCollaborator->first_name,
-                'last_name'   => $this->bannedCollaborator->last_name,
+                'id'    => $this->bannedCollaborator->id,
+                'name'  => $this->bannedCollaborator->full_name,
             ]
         ];
     }

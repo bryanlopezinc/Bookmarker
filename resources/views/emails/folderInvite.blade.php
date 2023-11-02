@@ -9,7 +9,7 @@
 </head>
 
 <body>
-    you have been invited by {{$inviterFirstName}} {{$inviterSecondName}} to join folder {{$folderName}}.
+    you have been invited by {{$inviterName}} to join folder {{$folderName}}.
 
     click to accept invite
 

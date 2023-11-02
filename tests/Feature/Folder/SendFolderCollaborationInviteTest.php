@@ -230,8 +230,7 @@ class SendFolderCollaborationInviteTest extends TestCase
             /** @see https://github.com/laravel/framework/issues/24005#issuecomment-989629711 */
             Mail::swap($mailer);
 
-            $mail->assertSeeInHtml($user->first_name);
-            $mail->assertSeeInHtml($user->last_name);
+            $mail->assertSeeInHtml($user->full_name);
             $mail->assertSeeInHtml($folder->name);
             $mail->assertSeeInHtml("https://laravel.com/docs/9.x/validation?invite_hash={$inviteToken}");
 

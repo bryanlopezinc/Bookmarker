@@ -18,7 +18,7 @@ class BookmarksAddedToFolderTest extends TestCase
 
     public function testFetchNotifications(): void
     {
-        [$user, $tom] = UserFactory::times(2)->create(); 
+        [$user, $tom] = UserFactory::times(2)->create();
         $bookmarks = BookmarkFactory::times(3)->for($tom)->create()->pluck('id');
         $folder = FolderFactory::new()->for($user)->create();
 
@@ -40,8 +40,7 @@ class BookmarksAddedToFolderTest extends TestCase
             ->assertJsonPath('data.0.attributes.notified_on', fn (string $dateTime) => $dateTime === (string) $expectedDateTime)
             ->assertJsonPath('data.0.attributes.by_collaborator', function (array $collaboratorData) use ($tom) {
                 $this->assertEquals($tom->id, $collaboratorData['id']);
-                $this->assertEquals($tom->first_name, $collaboratorData['first_name']);
-                $this->assertEquals($tom->last_name, $collaboratorData['last_name']);
+                $this->assertEquals($tom->full_name, $collaboratorData['name']);
                 return true;
             })
             ->assertJsonPath('data.0.attributes.folder', function (array $folderData) use ($folder) {
@@ -61,8 +60,7 @@ class BookmarksAddedToFolderTest extends TestCase
                             'notified_on',
                             "by_collaborator" =>  [
                                 "id",
-                                "first_name",
-                                "last_name",
+                                "name",
                             ],
                             "folder" => [
                                 "name",

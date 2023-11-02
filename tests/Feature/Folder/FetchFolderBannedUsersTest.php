@@ -57,15 +57,15 @@ class FetchFolderBannedUsersTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.attributes.id', $collaborator->id)
-            ->assertJsonCount(3, 'data.0.attributes')
+            ->assertJsonPath('data.0.attributes.name', $collaborator->full_name)
+            ->assertJsonCount(2, 'data.0.attributes')
             ->assertJsonStructure([
                 'data' => [
                     '*' => [
                         'type',
                         'attributes' => [
                             'id',
-                            'first_name',
-                            'last_name',
+                            'name',
                         ]
                     ]
                 ]

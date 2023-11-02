@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('username', 15)->unique();
             $table->string('first_name', 100);
             $table->string('last_name', 100);
+            $table->string('full_name')->storedAs("CONCAT(first_name, ' ', last_name)")->index();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

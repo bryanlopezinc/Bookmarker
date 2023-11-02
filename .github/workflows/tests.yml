@@ -51,4 +51,4 @@ jobs:
         php artisan passport:keys --force
 
     - name: Run tests
-      run: php artisan test --filter=Tests\\Feature\\CreateBookmarkTest
+      run: php artisan test

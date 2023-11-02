@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\ValueObjects\Url;
-use App\ValueObjects\UserId;
+use App\ValueObjects\UserID;
 use App\Http\Requests\CreateOrUpdateBookmarkRequest;
 use App\Jobs\UpdateBookmarkWithHttpResponse;
 use App\Models\Bookmark;
@@ -29,7 +29,7 @@ class CreateBookmarkService
         $data = [
             'url'                  => new Url($request->validated('url')),
             'createdOn'            => (string)now(),
-            'userID'               => UserId::fromAuthUser()->value(),
+            'userID'               => UserID::fromAuthUser()->value(),
             'tags'                 => $request->validated('tags', new MissingValue()),
             'title'                => $request->validated('title', new MissingValue()),
             'description'          =>  $request->input('description', new MissingValue()),

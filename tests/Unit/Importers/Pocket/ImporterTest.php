@@ -384,7 +384,7 @@ class ImporterTest extends TestCase
         $this->mockFilesystem(function (MockObject $filesystem) {
             $filesystem->expects($this->once())->method('exists')->willReturn(true);
             $filesystem->expects($this->once())->method('get')->willReturn(
-                file_get_contents(base_path('tests/stubs/imports/pocketExportFile.html'))
+                file_get_contents(base_path('tests/stubs/Imports/pocketExportFile.html'))
             );
         });
 

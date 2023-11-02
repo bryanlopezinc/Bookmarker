@@ -51,4 +51,6 @@ jobs:
         php artisan passport:keys --force
 
     - name: Execute tests (Unit and Feature tests) via PHPUnit
-      run: php artisan test
+      run: |
+        php artisan test --testsuite=Unit
+        php artisan test --testsuite=Feature

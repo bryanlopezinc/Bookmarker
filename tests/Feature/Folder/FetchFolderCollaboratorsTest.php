@@ -62,9 +62,12 @@ class FetchFolderCollaboratorsTest extends TestCase
         $this->fetchCollaboratorsResponse([
             'folder_id' => 4,
             'permissions' => 'readOnly,addBookmarks'
-        ])
-            ->assertUnprocessable()
+        ])->assertUnprocessable()
             ->assertJsonValidationErrors(['permissions' => 'Cannot request collaborator with only view permissions with any other permission']);
+
+        $this->fetchCollaboratorsResponse(['name' => str_repeat('A', 11), 'folder_id' => 4])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['name' => 'The name must not be greater than 10 characters.']);
     }
 
     public function testFetchCollaborators(): void
@@ -83,7 +86,7 @@ class FetchFolderCollaboratorsTest extends TestCase
             ->assertJsonCount(4, 'data.0.attributes.permissions')
             ->assertJsonPath('data.0.type', 'folderCollaborator')
             ->assertJsonPath('data.0.attributes.id', $collaborator->id)
-            ->assertJsonPath('data.0.attributes.name', $collaborator->full_name)
+            ->assertJsonPath('data.0.attributes.name', $collaborator->first_name . ' ' . $collaborator->last_name)
             ->assertJsonStructure([
                 'data' => [
                     '*' => [
@@ -96,6 +99,30 @@ class FetchFolderCollaboratorsTest extends TestCase
                     ],
                 ]
             ]);
+    }
+
+    public function testWillReturnOnlyCollaboratorsWithSpecifiedName(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $collaborators = UserFactory::times(3)
+            ->sequence(
+                ['first_name' => 'Bryan'],
+                ['first_name' => 'Bryan'],
+                ['first_name' => 'Jack']
+            )
+            ->create();
+
+        $folderID = FolderFactory::new()->for($user)->create()->id;
+
+        $this->createUserFolderAccess($collaborators[0], $folderID, FolderPermission::VIEW_BOOKMARKS);
+        $this->createUserFolderAccess($collaborators[1], $folderID - 1, FolderPermission::ADD_BOOKMARKS);
+        $this->createUserFolderAccess($collaborators[2], $folderID, FolderPermission::VIEW_BOOKMARKS);
+
+        $this->fetchCollaboratorsResponse(['folder_id' => $folderID, 'name' => 'bryan'])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.attributes.id', $collaborators[0]->id);
     }
 
     public function testWillReturnOnlyCollaboratorsWithSpecifiedPermissions(): void

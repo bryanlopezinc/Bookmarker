@@ -16,7 +16,8 @@ final class FetchFolderCollaboratorsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'folder_id' => ['required', new ResourceIdRule()],
+            'folder_id'   => ['required', new ResourceIdRule()],
+            'name'        => ['sometimes', 'filled', 'string', 'max:10'],
             'permissions' => [
                 'sometimes',
                 'array',
@@ -51,7 +52,7 @@ final class FetchFolderCollaboratorsRequest extends FormRequest
         });
     }
 
-    public function getFilter(): ?UAC
+    public function getPermissions(): ?UAC
     {
         $filtersCount = count($this->validated('permissions', []));
 

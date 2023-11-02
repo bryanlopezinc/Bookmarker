@@ -6,7 +6,7 @@ namespace App\ValueObjects;
 
 use App\Exceptions\InvalidResourceIdException;
 
-final class UserID
+final class UserId
 {
     public function __construct(protected readonly int $id)
     {

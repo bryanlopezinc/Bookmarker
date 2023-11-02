@@ -11,7 +11,7 @@ use App\Models\Bookmark;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Repositories\Folder\FolderPermissionsRepository;
-use App\ValueObjects\UserID;
+use App\ValueObjects\UserId;
 use App\Notifications\BookmarksRemovedFromFolderNotification as Notification;
 use App\Repositories\NotificationRepository;
 use Illuminate\Database\Eloquent\Collection;
@@ -28,7 +28,7 @@ final class RemoveBookmarksFromFolderService
 
     public function remove(array $bookmarkIDs, int $folderID): void
     {
-        $authUserId = UserID::fromAuthUser()->value();
+        $authUserId = UserId::fromAuthUser()->value();
 
         $folder = $this->repository->find($folderID, ['id', 'user_id', 'settings', 'updated_at']);
 

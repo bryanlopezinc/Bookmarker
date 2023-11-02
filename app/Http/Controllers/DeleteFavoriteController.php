@@ -7,7 +7,7 @@ namespace App\Http\Controllers;
 use App\Exceptions\BookmarkNotFoundException;
 use App\Models\Favorite;
 use App\Rules\ResourceIdRule;
-use App\ValueObjects\UserID;
+use App\ValueObjects\UserId;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,7 +21,7 @@ final class DeleteFavoriteController
             'bookmarks.*' => [new ResourceIdRule(), 'distinct:strict'],
         ]);
 
-        Favorite::where('user_id', UserID::fromAuthUser()->value())
+        Favorite::where('user_id', UserId::fromAuthUser()->value())
             ->whereIntegerInRaw('bookmark_id', $bookmarkIds = $request->input('bookmarks'))
             ->get(['bookmark_id', 'id'])
             ->tap(function (Collection $favorites) use ($bookmarkIds) {

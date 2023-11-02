@@ -7,7 +7,7 @@ namespace App\Services;
 use App\Models\Bookmark as Model;
 use App\Models\Favorite;
 use App\PaginationData;
-use App\ValueObjects\UserID;
+use App\ValueObjects\UserId;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\Paginator;
 use App\Http\Requests\FetchUserBookmarksRequest as Request;
@@ -23,7 +23,7 @@ final class FetchUserBookmarksService
         $model = new Model;
 
         $query = Model::WithQueryOptions()
-            ->where('user_id', UserID::fromAuthUser()->value())
+            ->where('user_id', UserId::fromAuthUser()->value())
             ->addSelect([
                 'isUserFavorite' => Favorite::query()
                     ->select('id')

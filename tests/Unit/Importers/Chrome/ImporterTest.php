@@ -9,7 +9,6 @@ use App\Importers\Chrome\DOMParserInterface;
 use App\Jobs\UpdateBookmarkWithHttpResponse;
 use App\Services\CreateBookmarkService;
 use App\ValueObjects\Url;
-use App\ValueObjects\UserID;
 use ArrayIterator;
 use Carbon\Carbon;
 use Closure;

@@ -8,7 +8,7 @@ use App\Http\Resources\PaginatedResourceCollection;
 use App\Http\Resources\TagResource;
 use App\PaginationData;
 use App\Repositories\TagRepository;
-use App\ValueObjects\UserID;
+use App\ValueObjects\UserId;
 use Illuminate\Http\Request;
 
 final class FetchUserTagsController
@@ -18,7 +18,7 @@ final class FetchUserTagsController
         $request->validate(PaginationData::new()->maxPerPage(50)->asValidationRules());
 
         return new PaginatedResourceCollection(
-            $repository->getUserTags(UserID::fromAuthUser()->value(), PaginationData::fromRequest($request)),
+            $repository->getUserTags(UserId::fromAuthUser()->value(), PaginationData::fromRequest($request)),
             TagResource::class
         );
     }

@@ -11,7 +11,7 @@ use App\PaginationData;
 use App\Repositories\Folder\FetchUserFoldersWhereContainsCollaboratorRepository as Repository;
 use App\Rules\ResourceIdRule;
 use App\Rules\UserCollaborationFieldsRule;
-use App\ValueObjects\UserID;
+use App\ValueObjects\UserId;
 
 final class FetchUserFoldersWhereContainsCollaboratorController
 {
@@ -24,7 +24,7 @@ final class FetchUserFoldersWhereContainsCollaboratorController
         ]);
 
         $result = $repository->get(
-            UserID::fromAuthUser()->value(),
+            UserId::fromAuthUser()->value(),
             $request->integer('collaborator_id'),
             PaginationData::fromRequest($request),
         );

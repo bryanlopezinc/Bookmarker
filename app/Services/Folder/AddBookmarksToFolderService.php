@@ -9,7 +9,7 @@ use App\Enums\FolderBookmarkVisibility as Visibility;
 use App\Exceptions\BookmarkNotFoundException;
 use App\Exceptions\FolderNotFoundException;
 use App\Repositories\BookmarkRepository;
-use App\ValueObjects\UserID;
+use App\ValueObjects\UserId;
 use App\Exceptions\HttpException as HttpException;
 use App\Http\Requests\AddBookmarksToFolderRequest as Request;
 use App\Jobs\CheckBookmarksHealth;
@@ -34,7 +34,7 @@ final class AddBookmarksToFolderService
 
     public function fromRequest(Request $request): void
     {
-        $authUserId = UserID::fromAuthUser()->value();
+        $authUserId = UserId::fromAuthUser()->value();
         $folderId = $request->integer('folder');
         $bookmarkIds = $request->collect('bookmarks')->map(fn (string $id) => (int) $id)->all();
 
@@ -142,7 +142,7 @@ final class AddBookmarksToFolderService
 
     private function notifyFolderOwner(array $bookmarkIDs, Folder $folder): void
     {
-        $collaboratorID = UserID::fromAuthUser()->value();
+        $collaboratorID = UserId::fromAuthUser()->value();
 
         $settings = FolderSettings::fromQuery($folder->settings);
 

@@ -9,7 +9,7 @@ use App\Enums\FolderVisibility;
 use App\Http\Requests\CreateOrUpdateFolderRequest as Request;
 use App\Models\Folder;
 use App\Models\FolderSetting;
-use App\ValueObjects\UserID;
+use App\ValueObjects\UserId;
 use Illuminate\Support\Collection;
 
 final class CreateFolderService
@@ -20,7 +20,7 @@ final class CreateFolderService
         $folder = Folder::create([
             'description' => $request->validated('description'),
             'name'        => $request->validated('name'),
-            'user_id'     => UserID::fromAuthUser()->value(),
+            'user_id'     => UserId::fromAuthUser()->value(),
             'visibility'  => (string) FolderVisibility::fromRequest($request)->value,
         ]);
 

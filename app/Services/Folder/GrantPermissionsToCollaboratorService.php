@@ -8,7 +8,7 @@ use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\UAC;
-use App\ValueObjects\UserID;
+use App\ValueObjects\UserId;
 
 final class GrantPermissionsToCollaboratorService
 {
@@ -26,7 +26,7 @@ final class GrantPermissionsToCollaboratorService
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 
-        $this->ensureIsNotGrantingPermissionsToSelf($collaboratorId, UserID::fromAuthUser()->value());
+        $this->ensureIsNotGrantingPermissionsToSelf($collaboratorId, UserId::fromAuthUser()->value());
 
         $this->ensureUserIsCurrentlyACollaborator($currentPermissions);
 

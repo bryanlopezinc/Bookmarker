@@ -12,7 +12,7 @@ use App\Notifications\CollaboratorExitNotification;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\Repositories\NotificationRepository;
 use App\UAC;
-use App\ValueObjects\UserID;
+use App\ValueObjects\UserId;
 
 final class LeaveFolderCollaborationService
 {
@@ -28,7 +28,7 @@ final class LeaveFolderCollaborationService
         $folder = $this->folderRepository->find($folderID, ['id', 'user_id', 'settings']);
 
         $collaboratorPermissions = $this->permissionsRepository->getUserAccessControls(
-            $collaboratorID = UserID::fromAuthUser()->value(),
+            $collaboratorID = UserId::fromAuthUser()->value(),
             $folderID
         );
 

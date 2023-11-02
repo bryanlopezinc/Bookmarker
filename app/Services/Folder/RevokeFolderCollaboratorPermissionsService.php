@@ -11,7 +11,7 @@ use App\Models\FolderCollaboratorPermission;
 use App\Models\FolderPermission;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\UAC;
-use App\ValueObjects\UserID;
+use App\ValueObjects\UserId;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class RevokeFolderCollaboratorPermissionsService
@@ -28,7 +28,7 @@ final class RevokeFolderCollaboratorPermissionsService
 
         $collaboratorPermissions = $this->permissions->getUserAccessControls($collaboratorID, $folderID);
 
-        $this->ensureIsNotPerformingActionOnSelf($collaboratorID, $authUserId = UserID::fromAuthUser()->value());
+        $this->ensureIsNotPerformingActionOnSelf($collaboratorID, $authUserId = UserId::fromAuthUser()->value());
 
         $this->ensureUserHasPermissionToPerformAction($folder, $authUserId);
 

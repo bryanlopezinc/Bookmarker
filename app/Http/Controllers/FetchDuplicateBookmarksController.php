@@ -10,7 +10,7 @@ use App\Http\Resources\PaginatedResourceCollection as ResourceCollection;
 use App\PaginationData;
 use App\Repositories\BookmarkRepository;
 use App\Rules\ResourceIdRule;
-use App\ValueObjects\UserID;
+use App\ValueObjects\UserId;
 use Illuminate\Http\Request;
 
 final class FetchDuplicateBookmarksController
@@ -28,7 +28,7 @@ final class FetchDuplicateBookmarksController
 
         $result = $repository->fetchPossibleDuplicates(
             $bookmark,
-            UserID::fromAuthUser()->value(),
+            UserId::fromAuthUser()->value(),
             PaginationData::fromRequest($request)
         );
 

@@ -6,7 +6,7 @@ namespace App\ValueObjects;
 
 use App\Exceptions\InvalidResourceIdException;
 
-final class UserID
+final class UserId
 {
     public function __construct(protected readonly int $id)
     {
@@ -31,7 +31,7 @@ final class UserID
         return new self(auth('api')->id()); // @phpstan-ignore-line
     }
 
-    public function equals(UserID $userId): bool
+    public function equals(UserId $userId): bool
     {
         return $userId->id === $this->id;
     }

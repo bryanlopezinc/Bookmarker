@@ -6,7 +6,7 @@ namespace App\Services;
 
 use App\Enums\ImportSource;
 use Illuminate\Support\Str;
-use App\ValueObjects\UserID;
+use App\ValueObjects\UserId;
 use App\Importers\Filesystem;
 use App\Jobs\ImportBookmarks;
 use Illuminate\Http\UploadedFile;
@@ -21,8 +21,8 @@ final class ImportBookmarksService
 
     public function fromRequest(ImportBookmarkRequest $request): void
     {
-        $userID = UserID::fromAuthUser()->value();
-        
+        $userID = UserId::fromAuthUser()->value();
+
         $requestID = Str::uuid()->toString();
 
         /** @var UploadedFile*/

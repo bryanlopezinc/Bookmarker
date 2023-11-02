@@ -10,7 +10,7 @@ use App\Jobs\CheckBookmarksHealth;
 use App\Models\Bookmark;
 use App\Repositories\FavoriteRepository;
 use App\Repositories\BookmarkRepository;
-use App\ValueObjects\UserID;
+use App\ValueObjects\UserId;
 
 final class CreateFavoriteService
 {
@@ -25,7 +25,7 @@ final class CreateFavoriteService
      */
     public function create(array $bookmarkIDs): void
     {
-        $userId = UserID::fromAuthUser();
+        $userId = UserId::fromAuthUser();
 
         $bookmarks = $this->bookmarkRepository->findManyById($bookmarkIDs, ['user_id', 'id', 'url']);
 

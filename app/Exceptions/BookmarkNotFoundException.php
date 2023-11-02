@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Exceptions;
 
 use App\Models\Bookmark;
-use App\ValueObjects\UserID;
+use App\ValueObjects\UserId;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
@@ -29,7 +29,7 @@ final class BookmarkNotFoundException extends RuntimeException
      */
     public static function throwIfDoesNotBelongToAuthUser(Bookmark $bookmark): void
     {
-        if ($bookmark->user_id !== UserID::fromAuthUser()->value()) {
+        if ($bookmark->user_id !== UserId::fromAuthUser()->value()) {
             throw new self;
         }
     }

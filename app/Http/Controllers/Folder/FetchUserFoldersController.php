@@ -11,7 +11,7 @@ use App\Http\Resources\PaginatedResourceCollection as ResourceCollection;
 use App\PaginationData;
 use App\Repositories\Folder\UserFoldersRepository;
 use App\Rules\FolderFieldsRule;
-use App\ValueObjects\UserID;
+use App\ValueObjects\UserId;
 
 final class FetchUserFoldersController
 {
@@ -23,7 +23,7 @@ final class FetchUserFoldersController
         ]);
 
         $result = $repository->fetch(
-            UserID::fromAuthUser()->value(),
+            UserId::fromAuthUser()->value(),
             PaginationData::fromRequest($request),
             UserFoldersSortCriteria::fromRequest($request)
         );

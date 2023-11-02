@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use App\Http\Resources\PaginatedResourceCollection as ResourceCollection;
 use App\Http\Resources\FilterUserCollaborationResource;
 use App\Rules\UserCollaborationFieldsRule;
-use App\ValueObjects\UserID;
+use App\ValueObjects\UserId;
 
 final class FetchUserCollaborationsController
 {
@@ -22,7 +22,7 @@ final class FetchUserCollaborationsController
         ]);
 
         $result = $repository->get(
-            UserID::fromAuthUser()->value(),
+            UserId::fromAuthUser()->value(),
             PaginationData::fromRequest($request),
         );
 

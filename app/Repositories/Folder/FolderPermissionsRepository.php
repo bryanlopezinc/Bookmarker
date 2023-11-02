@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Repositories\Folder;
 
-use App\Models\BannedCollaborator;
 use App\Models\FolderCollaboratorPermission;
 use App\UAC;
 use App\Models\FolderPermission;
-use App\ValueObjects\UserID;
 use Illuminate\Support\Collection;
 
 final class FolderPermissionsRepository

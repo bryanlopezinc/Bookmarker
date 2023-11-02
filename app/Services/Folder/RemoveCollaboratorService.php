@@ -8,7 +8,7 @@ use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
 use App\Models\BannedCollaborator;
 use App\Repositories\Folder\FolderPermissionsRepository;
-use App\ValueObjects\UserID;
+use App\ValueObjects\UserId;
 
 final class RemoveCollaboratorService
 {
@@ -24,7 +24,7 @@ final class RemoveCollaboratorService
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 
-        $this->ensureIsNotRemovingSelf($collaboratorID, UserID::fromAuthUser()->value());
+        $this->ensureIsNotRemovingSelf($collaboratorID, UserId::fromAuthUser()->value());
 
         $this->ensureUserIsAnExistingCollaborator($collaboratorID, $folderID);
 

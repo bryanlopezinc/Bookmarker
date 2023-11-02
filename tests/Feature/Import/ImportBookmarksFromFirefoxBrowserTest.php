@@ -43,7 +43,7 @@ class ImportBookmarksFromFirefoxBrowserTest extends ImportBookmarkBaseTest
 
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $content = file_get_contents(base_path('tests/stubs/imports/firefox.html'));
+        $content = file_get_contents(base_path('tests/stubs/Imports/firefox.html'));
 
         $this->importBookmarkResponse([
             'source' => 'firefoxFile',

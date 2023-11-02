@@ -66,7 +66,7 @@ class ImportBookmarkFromChromeTest extends ImportBookmarkBaseTest
 
         $this->importBookmarkResponse([
             'source' => 'chromeExportFile',
-            'html'   => UploadedFile::fake()->createWithContent('file.html', file_get_contents(base_path('tests/stubs/imports/chromeExportFile.html'))),
+            'html'   => UploadedFile::fake()->createWithContent('file.html', file_get_contents(base_path('tests/stubs/Imports/chromeExportFile.html'))),
         ])->assertStatus(Response::HTTP_PROCESSING);
     }
 }

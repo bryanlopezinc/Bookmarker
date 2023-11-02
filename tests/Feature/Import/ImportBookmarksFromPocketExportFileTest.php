@@ -37,7 +37,7 @@ class ImportBookmarksFromPocketExportFileTest extends ImportBookmarkBaseTest
 
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $content = file_get_contents(base_path('tests/stubs/imports/pocketExportFile.html'));
+        $content = file_get_contents(base_path('tests/stubs/Imports/pocketExportFile.html'));
 
         $this->importBookmarkResponse([
             'source' => 'pocketExportFile',

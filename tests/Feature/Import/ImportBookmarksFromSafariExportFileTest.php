@@ -60,7 +60,7 @@ class ImportBookmarksFromSafariExportFileTest extends ImportBookmarkBaseTest
 
         $this->importBookmarkResponse([
             'source' => 'safariExportFile',
-            'safari_html' => UploadedFile::fake()->createWithContent('file.html', file_get_contents(base_path('tests/stubs/imports/SafariExportFile.html'))),
+            'safari_html' => UploadedFile::fake()->createWithContent('file.html', file_get_contents(base_path('tests/stubs/Imports/SafariExportFile.html'))),
         ])->assertStatus(Response::HTTP_PROCESSING);
     }
 }

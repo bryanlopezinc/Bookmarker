@@ -44,6 +44,11 @@ jobs:
 
     - name: Seed Database
       run: php artisan db:seed
-      
+
+    - name: Install Passport
+      run: |
+        php artisan passport:install
+        php artisan passport:keys
+
     - name: Execute tests (Unit and Feature tests) via PHPUnit
       run: php artisan test

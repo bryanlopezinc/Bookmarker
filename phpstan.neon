@@ -12,7 +12,6 @@ parameters:
         -
             message: '#Class .* has an uninitialized readonly property \$.*\. Assign it in the constructor\.#'
             paths:
-                -   'app/DataTransferObjects/*'
                 -  'app/Readers/*'
 
         -

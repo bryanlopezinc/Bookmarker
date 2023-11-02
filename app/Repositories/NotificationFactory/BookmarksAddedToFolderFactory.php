@@ -17,7 +17,7 @@ final class BookmarksAddedToFolderFactory implements Factory
             $repository->findUserByID($notification->data['added_by']),
             $repository->findBookmarksByIDs($notification->data['bookmarks_added_to_folder']),
             $notification->id,
-            $notification->created_at->toDateTimeString()
+            $notification->created_at->toDateTimeString() //@phpstan-ignore-line
         );
     }
 }

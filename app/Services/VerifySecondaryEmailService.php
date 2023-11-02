@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Repositories\UserRepository;
 use App\Cache\EmailVerificationCodeRepository as PendingVerifications;
 use App\Exceptions\HttpException;
 use App\Models\SecondaryEmail;
@@ -13,10 +12,8 @@ use Illuminate\Http\Response;
 
 final class VerifySecondaryEmailService
 {
-    public function __construct(
-        private UserRepository $userRepository,
-        private PendingVerifications $pendingVerifications
-    ) {
+    public function __construct(private PendingVerifications $pendingVerifications)
+    {
     }
 
     public function verify(int $authUserId, string $secondaryEmail, TwoFACode $twoFACode): void

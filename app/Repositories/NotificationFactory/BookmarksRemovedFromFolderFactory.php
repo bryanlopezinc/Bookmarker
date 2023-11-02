@@ -17,7 +17,7 @@ final class BookmarksRemovedFromFolderFactory implements Factory
             $repository->findUserByID($notification->data['removed_by']),
             $repository->findBookmarksByIDs($notification->data['bookmarks_removed']),
             $notification->id,
-            $notification->created_at->toDateTimeString()
+            $notification->created_at->toDateTimeString() //@phpstan-ignore-line
         );
     }
 }

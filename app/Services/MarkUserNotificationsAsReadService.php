@@ -12,7 +12,7 @@ use Illuminate\Notifications\DatabaseNotification as Notification;
 final class MarkUserNotificationsAsReadService
 {
     /**
-     * @param array<string> $notificationIDs
+     * @param array<string> $uuids
      */
     public function markAsRead(array $uuids): void
     {

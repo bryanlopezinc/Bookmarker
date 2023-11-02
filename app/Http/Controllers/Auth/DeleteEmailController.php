@@ -17,7 +17,7 @@ final class DeleteEmailController
 
         $email = $request->input('email');
 
-        if ($request->user('api')->email === $email) {
+        if ($request->user('api')->email === $email) { // @phpstan-ignore-line
             throw new HttpException(['message' => 'CannotRemovePrimaryEmail'], JsonResponse::HTTP_BAD_REQUEST);
         }
 

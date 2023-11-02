@@ -81,9 +81,9 @@ final class User extends Authenticatable implements MustVerifyEmail
         }
 
         if (!$columns->isEmpty()) {
-            $builder->addSelect($this->qualifyColumns($columns->except([
-                'bookmarks_count', 'folders_count', 'favorites_count'
-            ])));
+            $builder->addSelect(
+                $this->qualifyColumns($columns->except(['bookmarks_count', 'folders_count', 'favorites_count'])->all())
+            );
         }
 
         $this->addBookmarksCountQuery($builder, $columns);

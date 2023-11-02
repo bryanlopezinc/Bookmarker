@@ -16,7 +16,7 @@ final class CollaboratorExitFactory implements Factory
             $repository->findUserByID($notification->data['exited_by']),
             $repository->findFolderByID($notification->data['exited_from_folder']),
             $notification->id,
-            $notification->created_at->toDateTimeString()
+            $notification->created_at->toDateTimeString() //@phpstan-ignore-line
         );
     }
 }

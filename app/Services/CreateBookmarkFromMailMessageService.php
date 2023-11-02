@@ -23,9 +23,11 @@ final class CreateBookmarkFromMailMessageService
     {
         $message = new MailParser($mimeMessage);
 
+        $email = $message->from();
+
         try {
             $user = $this->userRepository->findByEmailOrSecondaryEmail(
-                $email = $message->from(),
+                $email,
                 ['id', 'email_verified_at']
             );
         } catch (UserNotFoundException $e) {

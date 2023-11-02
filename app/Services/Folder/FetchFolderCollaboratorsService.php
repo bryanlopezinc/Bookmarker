@@ -41,7 +41,7 @@ final class FetchFolderCollaboratorsService
     /**
      * @return Paginator<FolderCollaborator>
      */
-    private function collaborators(int $folderID, PaginationData $pagination, UAC $permissions = null, ?string $collaboratorName = null): Paginator
+    private function collaborators(int $folderID, PaginationData $pagination, ?UAC $permissions = null, ?string $collaboratorName = null): Paginator
     {
         $model = new FolderCollaboratorPermission();
         $um = new User(); // user model

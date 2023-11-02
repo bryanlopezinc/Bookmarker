@@ -8,7 +8,7 @@ use App\Exceptions\FolderNotFoundException;
 use App\Models\Bookmark;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection;
 
 final class DeleteFolderService
 {

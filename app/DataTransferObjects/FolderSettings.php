@@ -11,12 +11,12 @@ use Illuminate\Contracts\Support\Arrayable;
 final class FolderSettings implements Arrayable
 {
     /**
-     * @var array<int,mixed> $settings
+     * @var array<string,mixed> $settings
      */
     private array $settings;
 
     /**
-     * @param array<int,mixed> $settings
+     * @param array<string,mixed> $settings
      */
     public function __construct(array $settings)
     {
@@ -129,7 +129,7 @@ final class FolderSettings implements Arrayable
     }
 
     /**
-     * @return array<string,string|array|bool>
+     * @return array<string,mixed>
      */
     public function toArray(): array
     {

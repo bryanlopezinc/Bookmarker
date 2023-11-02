@@ -18,7 +18,7 @@ final class HealthChecker
     }
 
     /**
-     * @param iterable<Bookmark>
+     * @param iterable<Bookmark> $bookmarks
      */
     public function ping(iterable $bookmarks): void
     {

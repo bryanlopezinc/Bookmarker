@@ -21,7 +21,7 @@ final class CreateFavoriteService
     }
 
     /**
-     * @param array<int>
+     * @param array<int> $bookmarkIDs
      */
     public function create(array $bookmarkIDs): void
     {

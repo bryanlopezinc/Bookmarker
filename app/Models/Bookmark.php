@@ -81,7 +81,7 @@ final class Bookmark extends Model
     public function getIsHealthyAttribute(?int $value): ?bool
     {
         if (!array_key_exists('isHealthy', $this->attributes)) {
-            return $value;
+            return boolval($value);
         }
 
         return $value === null ? true : boolval($value);

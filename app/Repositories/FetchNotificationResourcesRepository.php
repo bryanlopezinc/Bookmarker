@@ -56,7 +56,7 @@ class FetchNotificationResourcesRepository
     /**
      * The notification resources retrieved from database.
      *
-     * @var array<string,Model>
+     * @var array<string,Model[]>
      */
     private array $notificationResources = [
         'bookmarks' => [],
@@ -160,7 +160,7 @@ class FetchNotificationResourcesRepository
 
     /**
      * @param array<int> $ids
-     * 
+     *
      * @return array<Bookmark>
      */
     public function findBookmarksByIDs(array $ids): array

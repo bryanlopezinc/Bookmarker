@@ -94,14 +94,6 @@ abstract class AbstractFieldsRule implements ValidationRule
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function message()
-    {
-        return $this->errors->all();
-    }
-
     public function errorBag(): MessageBag
     {
         return $this->errors;

@@ -37,7 +37,6 @@ final class FolderSettingsValidator
                 Key::NOTIFy_ON_UPDATE->value                                           => ['type' => 'boolean'],
                 Key::NOTIFY_ON_NEW_BOOKMARK->value                                     => ['type' => 'boolean'],
                 Key::NOTIFY_ON_COLLABORATOR_EXIT->value                                => ['type' => 'boolean'],
-                Key::NOTIFY_ON_COLLABORATOR_EXIT->value                                => ['type' => 'boolean'],
                 Key::NOTIFY_ON_COLLABORATOR_EXIT_ONLY_WHEN_HAS_WRITE_PERMISSION->value => ['type' => 'boolean'],
                 Key::NOTIFY_ON_BOOKMARK_DELETED->value                                 => ['type' => 'boolean'],
             ],

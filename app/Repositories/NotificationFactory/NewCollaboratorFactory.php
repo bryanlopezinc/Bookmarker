@@ -17,7 +17,7 @@ final class NewCollaboratorFactory implements Factory
             $repository->findFolderByID($notification->data['added_to_folder']),
             $repository->findUserByID($notification->data['new_collaborator_id']),
             $notification->id,
-            $notification->created_at->toDateTimeString()
+            $notification->created_at->toDateTimeString() //@phpstan-ignore-line
         );
     }
 }

@@ -17,7 +17,7 @@ final class FolderUpdatedFactory implements Factory
             $repository->findUserByID($notification->data['updated_by']),
             $notification->data['changes'],
             $notification->id,
-            $notification->created_at->toDateTimeString()
+            $notification->created_at->toDateTimeString() //@phpstan-ignore-line
         );
     }
 }

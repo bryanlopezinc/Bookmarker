@@ -6,12 +6,12 @@ namespace App\Http\Controllers\Auth;
 
 use App\Events\ResendEmailVerificationLinkRequested;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 final class ResendVerificationLinkController
 {
-    public function __invoke(Request $request): JsonResponse
+    public function __invoke(): JsonResponse
     {
+        /** @var \App\Models\User */
         $user = auth()->user();
 
         if ($user->email_verified_at) {

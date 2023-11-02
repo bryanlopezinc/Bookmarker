@@ -9,7 +9,7 @@ use LogicException;
 final class TagsDetachedEvent
 {
     /**
-     * @param array<string>
+     * @param array<string> $tags
      */
     public function __construct(public readonly array $tags)
     {

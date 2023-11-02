@@ -21,7 +21,7 @@ final class NotificationFactory
     {
     }
 
-    public function __invoke(DatabaseNotification $notification)
+    public function __invoke(DatabaseNotification $notification): object
     {
         /** @var Factory */
         $factory = new (self::FACTORIES[$notification->type]);

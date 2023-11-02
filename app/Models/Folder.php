@@ -19,8 +19,8 @@ use Illuminate\Support\Facades\DB;
  * @property int $user_id
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
- * @property int bookmarksCount
- * @property int collaboratorsCount
+ * @property int $bookmarksCount
+ * @property int $collaboratorsCount
  * @method static Builder|QueryBuilder onlyAttributes(array $attributes = [])
  */
 final class Folder extends Model

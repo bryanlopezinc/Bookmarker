@@ -23,7 +23,7 @@ final class BookmarkResource extends JsonResource
                 'title'              => $this->bookmark->title,
                 'web_page_link'      => $this->bookmark->url,
                 'has_preview_image'  => $this->bookmark->preview_image_url !== null,
-                'preview_image_url'  => $this->when($this->bookmark->preview_image_url, $this->bookmark->preview_image_url),
+                'preview_image_url'  => $this->when($this->bookmark->preview_image_url !== null, $this->bookmark->preview_image_url),
                 'description'        => $this->when($this->bookmark->description !== null, $this->bookmark->description),
                 'has_description'    => $this->bookmark->description !== null,
                 'source'             => new SourceResource($this->bookmark->source),

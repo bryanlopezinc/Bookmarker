@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Repositories\Folder;
 
-use App\DataTransferObjects\Folder;
 use App\Enums\UserFoldersSortCriteria as SortCriteria;
 use App\Models\Folder as Model;
 use App\PaginationData;
@@ -13,7 +12,7 @@ use Illuminate\Pagination\Paginator;
 final class UserFoldersRepository
 {
     /**
-     * @return Paginator<Folder>
+     * @return Paginator<Model>
      */
     public function fetch(
         int $userId,

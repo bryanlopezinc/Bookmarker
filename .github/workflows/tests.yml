@@ -48,7 +48,7 @@ jobs:
     - name: Install Passport
       run: |
         php artisan passport:install
-        php artisan passport:keys
+        php artisan passport:keys --quiet
 
     - name: Execute tests (Unit and Feature tests) via PHPUnit
       run: php artisan test

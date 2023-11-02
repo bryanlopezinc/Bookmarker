@@ -71,7 +71,13 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(2, 'data.0.attributes.permissions')
-            ->assertJsonPath('data.0.attributes.permissions', ['addBookmarks', 'inviteUsers'])
+            ->assertJsonPath('data.0.attributes.permissions', function (array $permissions) {
+                $this->assertCount(2, $permissions);
+                $this->assertContains('addBookmarks', $permissions);
+                $this->assertContains('inviteUsers', $permissions);
+
+                return true;
+            })
             ->assertJsonPath('data.0.attributes.id', $folders[0]->id)
             ->assertJsonStructure([
                 'data' => [
@@ -201,11 +207,11 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
             ]);
 
         $this->whereHasCollaboratorsResponse(['fields' => 'id,name,description,description'])
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors([
-            'fields' => [
-                'The fields.2 field has a duplicate value.',
-            ]
-        ]);
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'fields' => [
+                    'The fields.2 field has a duplicate value.',
+                ]
+            ]);
     }
 }

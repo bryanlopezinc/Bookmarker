@@ -74,7 +74,7 @@ final class TagRepository
     {
         return Model::query()
             ->join('taggables', 'tag_id', '=', 'tags.id')
-            ->where('tags.name', 'LIKE', "%$tag%")
+            ->where('tags.name', 'LIKE', "$tag%")
             ->whereExists(function (&$query) use ($userID) {
                 $query = Bookmark::query()
                     ->select('id')

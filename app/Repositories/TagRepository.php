@@ -11,6 +11,7 @@ use App\Models\Taggable;
 use App\PaginationData;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 
 final class TagRepository
 {
@@ -92,6 +93,7 @@ final class TagRepository
     public function getUserTags(int $userId, PaginationData $pagination): Paginator
     {
         return Model::query()
+            ->select('name', DB::raw('COUNT(*) as bookmarksWithTag'))
             ->join('taggables', 'tag_id', '=', 'tags.id')
             ->whereExists(function (&$query) use ($userId) {
                 $query = Bookmark::query()
@@ -100,6 +102,7 @@ final class TagRepository
                     ->where('user_id', $userId)
                     ->getQuery();
             })
+            ->groupBy(['name'])
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
     }
 

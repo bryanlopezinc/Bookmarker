@@ -32,21 +32,28 @@ class FetchUserTagsTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        /** @var Bookmark */
-        $bookmark = BookmarkFactory::new()->for($user)->create();
+        /** @var Bookmark[] */
+        $userBookmarks = BookmarkFactory::times(2)->for($user)->create();
 
-        $tag = TagFactory::new()->create();
+        $repository = new TagRepository;
 
-        (new TagRepository)->attach([$tag], $bookmark);
+        $repository->attach($tag = TagFactory::new()->create(), $userBookmarks[0]);
+        $repository->attach($tag, $userBookmarks[1]);
+        $repository->attach($tag, BookmarkFactory::new()->create()); //Not User bookmark
 
         $this->FetchUserTagsResponse()
             ->assertOk()
             ->assertJsonCount(1, 'data')
+            ->assertJsonCount(2, 'data.0.attributes')
             ->assertJsonPath('data.0.attributes.name', $tag->name)
+            ->assertJsonPath('data.0.attributes.bookmarks_with_tag', 2)
             ->assertJsonStructure([
                 'data' => [
                     '*' => [
-                        'attributes' => ['name']
+                        'attributes' => [
+                            'name',
+                            'bookmarks_with_tag'
+                        ]
                     ]
                 ],
                 'links' => [
@@ -67,14 +74,16 @@ class FetchUserTagsTest extends TestCase
         // Passport::actingAs($user = UserFactory::new()->create());
 
         // /** @var Bookmark[] */
-        // $bookmarks = BookmarkFactory::new()->count(2)->for($user)->create();
+        // $bookmarks = BookmarkFactory::times(2)->for($user)->create();
 
         // $tags = TagFactory::new()->count(2)->create();
 
-        // (new TagRepository)->attach(TagsCollection::make([$tags[0]]), $bookmarks[0]);
-        // (new TagRepository)->attach(TagsCollection::make([$tags[1]]), $bookmarks[1]);
+        // $repository = new TagRepository;
 
-        // $this->getTestResponse()
+        // $repository->attach($tags[0], $bookmarks[0]);
+        // $repository->attach($tags[1], $bookmarks[1]);
+
+        // $this->FetchUserTagsResponse()
         //     ->assertOk()
         //     ->assertJsonCount(2, 'data')
         //     ->assertJsonPath('data.0.attributes.name', $tags[1]->name)

@@ -19,7 +19,8 @@ final class TagResource extends JsonResource
         return [
             'type' => 'tag',
             'attributes'  => [
-                'name' => $this->tag->name,
+                'name'               => $this->tag->name,
+                'bookmarks_with_tag' => $this->tag->bookmarksWithTag
             ]
         ];
     }

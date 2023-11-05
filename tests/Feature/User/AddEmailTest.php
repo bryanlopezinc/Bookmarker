@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use App\Cache\EmailVerificationCodeRepository as PendingVerifications;
 
 class AddEmailTest extends TestCase
 {
@@ -57,7 +58,10 @@ class AddEmailTest extends TestCase
 
         $this->addEmailToAccount(['email' => $this->faker->unique()->email])->assertOk();
 
-        $this->travel(6)->minutes(function () {
+        /** @var PendingVerifications */
+        $cache = app(PendingVerifications::class);
+
+        $this->travel($cache->getTtl() + 1)->seconds(function () {
             $this->addEmailToAccount(['email' => $this->faker->unique()->email])->assertOk();
         });
     }
@@ -67,7 +71,7 @@ class AddEmailTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         EmailFactory::times(3)->for($user)->create();
-  
+
         $this->addEmailToAccount(['email' => $this->faker->unique()->email])
             ->assertForbidden()
             ->assertExactJson(['message' => 'MaxEmailsLimitReached']);

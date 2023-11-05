@@ -29,7 +29,8 @@ final class ImportBookmarkRequest extends FormRequest
         };
 
         return array_merge($rules, [
-            'source' => [
+            'request_id' => ['required', 'uuid'],
+            'source'     => [
                 'required', 'string', 'filled', Rule::in([
                     self::CHROME,
                     self::POCKET,

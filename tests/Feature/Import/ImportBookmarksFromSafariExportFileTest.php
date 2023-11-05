@@ -59,6 +59,7 @@ class ImportBookmarksFromSafariExportFileTest extends ImportBookmarkBaseTest
         Passport::actingAs(UserFactory::new()->create());
 
         $this->importBookmarkResponse([
+            'request_id' => $this->faker->uuid,
             'source' => 'safariExportFile',
             'safari_html' => UploadedFile::fake()->createWithContent('file.html', file_get_contents(base_path('tests/stubs/Imports/SafariExportFile.html'))),
         ])->assertStatus(Response::HTTP_PROCESSING);

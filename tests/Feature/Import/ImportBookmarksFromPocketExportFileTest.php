@@ -40,6 +40,7 @@ class ImportBookmarksFromPocketExportFileTest extends ImportBookmarkBaseTest
         $content = file_get_contents(base_path('tests/stubs/Imports/pocketExportFile.html'));
 
         $this->importBookmarkResponse([
+            'request_id' => $this->faker->uuid,
             'source' => 'pocketExportFile',
             'pocket_export_file' => UploadedFile::fake()->createWithContent('file.html', $content),
         ])->assertStatus(Response::HTTP_PROCESSING);

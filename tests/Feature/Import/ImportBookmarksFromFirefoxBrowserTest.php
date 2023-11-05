@@ -46,6 +46,7 @@ class ImportBookmarksFromFirefoxBrowserTest extends ImportBookmarkBaseTest
         $content = file_get_contents(base_path('tests/stubs/Imports/firefox.html'));
 
         $this->importBookmarkResponse([
+            'request_id' => $this->faker->uuid,
             'source' => 'firefoxFile',
             'firefox_export_file' => UploadedFile::fake()->createWithContent('file.html', $content),
         ])->assertStatus(Response::HTTP_PROCESSING);

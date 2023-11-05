@@ -66,6 +66,7 @@ class ImportBookmarksFromInstapaperTest extends ImportBookmarkBaseTest
         ];
 
         $this->importBookmarkResponse([
+            'request_id' => $this->faker->uuid,
             'source' => 'instapaperFile',
             'instapaper_html' => UploadedFile::fake()->createWithContent('file.html', file_get_contents(base_path('tests/stubs/Imports/instapaper.html'))),
         ])->assertStatus(Response::HTTP_PROCESSING);

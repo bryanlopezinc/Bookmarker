@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
+use App\Exceptions\SecondaryEmailAlreadyVerifiedException;
 use App\Rules\TwoFACodeRule;
 use App\Services\VerifySecondaryEmailService as Service;
 use App\ValueObjects\UserId;
@@ -20,12 +21,16 @@ final class VerifySecondaryEmailController
             'verification_code' => ['required', 'string', new TwoFACodeRule()]
         ]);
 
-        $service->verify(
-            UserId::fromAuthUser()->value(),
-            $request->input('email'),
-            TwoFACode::fromString($request->input('verification_code'))
-        );
+        try {
+            $service->verify(
+                UserId::fromAuthUser()->value(),
+                $request->input('email'),
+                TwoFACode::fromString($request->input('verification_code'))
+            );
+        } catch (SecondaryEmailAlreadyVerifiedException) {
+            return new JsonResponse(status: JsonResponse::HTTP_NO_CONTENT);
+        }
 
-        return response()->json();
+        return new JsonResponse;
     }
 }

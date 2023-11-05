@@ -6,7 +6,6 @@ use App\Models\SecondaryEmail;
 use App\ValueObjects\TwoFACode;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Http\Response;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
@@ -19,11 +18,6 @@ class VerifySecondaryEmailTest extends TestCase
     protected function verifySecondaryEmail(array $parameters = []): TestResponse
     {
         return $this->postJson(route('verifySecondaryEmail'), $parameters);
-    }
-
-    protected function addEmailToAccount(array $parameters = []): TestResponse
-    {
-        return $this->postJson(route('addEmailToAccount'), $parameters);
     }
 
     public function testIsAccessibleViaPath(): void
@@ -91,7 +85,7 @@ class VerifySecondaryEmailTest extends TestCase
         return $code->value();
     }
 
-    public function testWillReturnBadRequestWhenVerificationCodeHasExpired(): void
+    public function testWillReturnNotFoundWhenVerificationCodeHasExpired(): void
     {
         $email = $this->faker->unique()->email;
 
@@ -99,16 +93,19 @@ class VerifySecondaryEmailTest extends TestCase
 
         $verificationCode = $this->get2FACode($user->id, $email);
 
-        $this->travel(6)->minutes(function () use ($verificationCode, $email) {
+        /** @var PendingVerifications */
+        $cache = app(PendingVerifications::class);
+
+        $this->travel($cache->getTtl() + 1)->seconds(function () use ($verificationCode, $email) {
             $this->verifySecondaryEmail([
                 'email'             => $email,
                 'verification_code' => (string) $verificationCode
-            ])->assertStatus(Response::HTTP_BAD_REQUEST)
+            ])->assertNotFound()
                 ->assertExactJson(['message' => 'VerificationCodeInvalidOrExpired']);
         });
     }
 
-    public function testWillReturnBadRequestWhenVerificationCodeIsNotAssignedToUser(): void
+    public function testWillReturnNotFoundWhenVerificationCodeIsNotAssignedToUser(): void
     {
         $users = UserFactory::times(2)->create();
 
@@ -120,42 +117,60 @@ class VerifySecondaryEmailTest extends TestCase
         $this->verifySecondaryEmail([
             'email'             => $email,
             'verification_code' => TwoFACode::generate()->toString()
-        ])->assertStatus(Response::HTTP_BAD_REQUEST)
+        ])->assertNotFound()
             ->assertExactJson($error = ['message' => 'VerificationCodeInvalidOrExpired']);
 
         $this->verifySecondaryEmail([
             'email'             => $email,
             'verification_code' => strval($verificationCode + 1)
-        ])->assertStatus(Response::HTTP_BAD_REQUEST)
+        ])->assertNotFound()
             ->assertExactJson($error);
 
         Passport::actingAs($users[1]);
         $this->verifySecondaryEmail([
             'email'             => $this->faker->unique()->email,
             'verification_code' => (string) $verificationCode
-        ])->assertStatus(Response::HTTP_BAD_REQUEST)
+        ])->assertNotFound()
             ->assertExactJson($error);
     }
 
-    public function testWillReturnForbiddenWhenEmailIsAlreadyVerified(): void
+    public function testWillReturnNoContentWhenEmailIsAlreadyVerified(): void
     {
         $email = $this->faker->unique()->email;
 
-        $users = UserFactory::new()->count(2)->create()->all();
+        $user = UserFactory::new()->create();
 
-        $verificationCodes = [$this->get2FACode($users[0]->id, $email), $this->get2FACode($users[1]->id, $email)];
+        $verificationCode = $this->get2FACode($user->id, $email);
 
-        Passport::actingAs($users[0]);
+        Passport::actingAs($user);
+        $this->verifySecondaryEmail($parameters = [
+            'email'             => $email,
+            'verification_code' => (string) $verificationCode
+        ])->assertOk();
+
+        $this->verifySecondaryEmail($parameters)->assertNoContent();
+        $this->verifySecondaryEmail($parameters)->assertNoContent();
+    }
+
+    public function testWillReturnNotFoundWhenEmailHasAlreadyBeenVerifiedByAnotherUser(): void
+    {
+        $email = $this->faker->unique()->email;
+
+        [$firstUser, $secondUser] = UserFactory::times(2)->create();
+
+        $verificationCodes = [$this->get2FACode($firstUser->id, $email), $this->get2FACode($secondUser->id, $email)];
+
+        Passport::actingAs($firstUser);
         $this->verifySecondaryEmail([
             'email'             => $email,
             'verification_code' => (string) $verificationCodes[0]
         ])->assertOk();
 
-        Passport::actingAs($users[1]);
+        Passport::actingAs($secondUser);
         $this->verifySecondaryEmail([
             'email'             => $email,
             'verification_code' => (string) $verificationCodes[1]
-        ])->assertForbidden()
-            ->assertExactJson(['message' => 'EmailAlreadyExists']);
+        ])->assertNotFound()
+            ->assertExactJson(['message' => 'VerificationCodeInvalidOrExpired']);
     }
 }

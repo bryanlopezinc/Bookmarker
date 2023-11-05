@@ -9,8 +9,15 @@ use Illuminate\Contracts\Cache\Repository;
 
 final class EmailVerificationCodeRepository
 {
-    public function __construct(private readonly Repository $store, private readonly int $ttl)
+    public function __construct(
+        private readonly Repository $store,
+        private readonly int $ttl
+    ) {
+    }
+
+    public function getTtl(): int
     {
+        return $this->ttl;
     }
 
     public function put(int $userID, string $email, TwoFACode $code): void
@@ -30,11 +37,6 @@ final class EmailVerificationCodeRepository
         $record = $this->getRecord($userID);
 
         return new SecondaryEmailVerificationData($record[0], $record[1]);
-    }
-
-    public function forget(int $userID): void
-    {
-        $this->store->delete($this->key($userID));
     }
 
     private function getRecord(int $userID): array

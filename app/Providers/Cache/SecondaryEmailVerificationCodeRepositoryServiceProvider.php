@@ -16,7 +16,7 @@ class SecondaryEmailVerificationCodeRepositoryServiceProvider extends ServicePro
     public function boot()
     {
         $this->app->bind(EmailVerificationCodeRepository::class, function ($app) {
-            return new EmailVerificationCodeRepository($app['cache']->store(), 300);
+            return new EmailVerificationCodeRepository($app['cache']->store(), 10_800);
         });
     }
 

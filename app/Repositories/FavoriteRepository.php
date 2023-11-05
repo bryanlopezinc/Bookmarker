@@ -25,18 +25,6 @@ final class FavoriteRepository
     }
 
     /**
-     * Check  if ANY of the given bookmarks exists in user favorites
-     */
-    public function contains(array $bookmarkIDs, int $userID): bool
-    {
-        return Favorite::where('user_id', $userID)
-            ->whereIntegerInRaw('bookmark_id', $bookmarkIDs)
-            ->get(['bookmark_id'])
-            ->pluck('bookmark_id')
-            ->isNotEmpty();
-    }
-
-    /**
      * @return Paginator<Model>
      */
     public function get(int $userId, PaginationData $pagination): Paginator

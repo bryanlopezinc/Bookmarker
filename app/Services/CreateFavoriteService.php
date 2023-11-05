@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Exceptions\BookmarkNotFoundException;
-use App\Exceptions\HttpException;
+use App\Http\CreateFavoritesResponse;
 use App\Jobs\CheckBookmarksHealth;
 use App\Models\Bookmark;
+use App\Models\Favorite;
 use App\Repositories\FavoriteRepository;
 use App\Repositories\BookmarkRepository;
-use App\ValueObjects\UserId;
 
 final class CreateFavoriteService
 {
@@ -23,15 +23,18 @@ final class CreateFavoriteService
     /**
      * @param array<int> $bookmarkIDs
      */
-    public function create(array $bookmarkIDs): void
+    public function create(array $bookmarkIDs, int $authUserId): CreateFavoritesResponse
     {
-        $userId = UserId::fromAuthUser();
-
         $bookmarks = $this->bookmarkRepository->findManyById($bookmarkIDs, ['user_id', 'id', 'url']);
 
-        $allBookmarksExists = count($bookmarkIDs) === $bookmarks->count();
+        $exists = Favorite::where('user_id', $authUserId)
+            ->whereIntegerInRaw('bookmark_id', $bookmarkIDs)
+            ->get(['bookmark_id'])
+            ->pluck('bookmark_id');
 
-        if (!$allBookmarksExists) {
+        $newFavorites = array_diff($bookmarkIDs, $exists->all());
+
+        if (count($bookmarkIDs) !== $bookmarks->count()) {
             throw new BookmarkNotFoundException;
         }
 
@@ -39,12 +42,12 @@ final class CreateFavoriteService
             BookmarkNotFoundException::throwIfDoesNotBelongToAuthUser($bookmark);
         });
 
-        if ($this->repository->contains($bookmarkIDs, $userId->value())) {
-            throw HttpException::conflict(['message' => 'BookmarksAlreadyExists']);
+        if (!empty($newFavorites)) {
+            $this->repository->createMany($newFavorites, $authUserId);
         }
 
-        $this->repository->createMany($bookmarkIDs, $userId->value());
-
         dispatch(new CheckBookmarksHealth($bookmarks));
+
+        return new CreateFavoritesResponse($newFavorites);
     }
 }

@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\CreateFavoritesResponse;
 use App\Rules\ResourceIdRule;
 use App\Services\CreateFavoriteService;
-use Illuminate\Http\JsonResponse;
+use App\ValueObjects\UserId;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 
 final class CreateFavoriteController
 {
-    public function __invoke(Request $request, CreateFavoriteService $service): JsonResponse
+    public function __invoke(Request $request, CreateFavoriteService $service): CreateFavoritesResponse
     {
         $maxBookmarks = 50;
 
@@ -21,8 +21,7 @@ final class CreateFavoriteController
             'bookmarks.*' => [new ResourceIdRule(), 'distinct:strict']
         ], ['max' => "cannot add more than {$maxBookmarks} bookmarks simultaneously"]);
 
-        $service->create($request->input('bookmarks'));
 
-        return response()->json(status: Response::HTTP_CREATED);
+        return $service->create($request->input('bookmarks'), UserId::fromAuthUser()->value());
     }
 }

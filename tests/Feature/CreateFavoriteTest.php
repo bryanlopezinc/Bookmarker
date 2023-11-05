@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Favorite;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
-use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
@@ -46,17 +45,17 @@ class CreateFavoriteTest extends TestCase
         $this->createFavoriteResponse(['bookmarks' => collect()->times(51)->implode(',')])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'bookmarks' => [
-                    'cannot add more than 50 bookmarks simultaneously'
-                ]
+                'bookmarks' => ['cannot add more than 50 bookmarks simultaneously']
             ]);
 
-        $this->createFavoriteResponse([
-            'bookmarks' => '1,1,3,4,5',
-        ])->assertJsonValidationErrors([
-            "bookmarks.0" => ["The bookmarks.0 field has a duplicate value."],
-            "bookmarks.1" => ["The bookmarks.1 field has a duplicate value."]
-        ]);
+        $this->createFavoriteResponse(['bookmarks' => '1,1,3,4,5',])
+            ->assertJsonValidationErrors([
+                "bookmarks.0" => ["The bookmarks.0 field has a duplicate value."],
+                "bookmarks.1" => ["The bookmarks.1 field has a duplicate value."]
+            ]);
+
+        $this->createFavoriteResponse(['bookmarks' => '1,2,-3,foo'])
+            ->assertJsonValidationErrors(['bookmarks.2', 'bookmarks.3']);
     }
 
     public function testAddFavorites(): void
@@ -65,7 +64,12 @@ class CreateFavoriteTest extends TestCase
 
         $bookmark = BookmarkFactory::new()->for($user)->create();
 
-        $this->createFavoriteResponse(['bookmarks' => (string) $bookmark->id])->assertCreated();
+        $this->createFavoriteResponse(['bookmarks' => (string) $bookmark->id])
+            ->assertCreated()
+            ->assertExactJson([
+                'created'  => [0 => "{$bookmark->id}"],
+                'conflict' => []
+            ]);
 
         $this->assertDatabaseHas(Favorite::class, [
             'bookmark_id' => $bookmark->id,
@@ -77,19 +81,20 @@ class CreateFavoriteTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmarks = BookmarkFactory::new()->count($amount = 5)->for($user)->create()->pluck('id');
+        $bookmarkIds = BookmarkFactory::new()->count($amount = 5)->for($user)->create()->pluck('id');
 
-        $this->createFavoriteResponse(['bookmarks' => $bookmarks->implode(',')])->assertCreated();
+        $this->createFavoriteResponse(['bookmarks' => $bookmarkIds->implode(',')])
+            ->assertCreated()
+            ->assertJsonPath('created', $bookmarkIds->map(fn (int $id) => (string) $id)->all())
+            ->assertJsonPath('conflict', []);
 
         $favorites = Favorite::query()
             ->where('user_id', $user->id)
             ->get()
-            ->tap(fn (Collection $collection) => $this->assertCount($amount, $collection))
-            ->each(function (Favorite $favorite) use ($user, $bookmarks) {
-                $this->assertTrue($bookmarks->contains($favorite->bookmark_id));
+            ->tap(fn (Collection $favorites) => $this->assertCount($amount, $favorites))
+            ->each(function (Favorite $favorite) use ($bookmarkIds) {
+                $this->assertTrue($bookmarkIds->contains($favorite->bookmark_id));
             });
-
-        $this->assertCount($amount, $favorites);
     }
 
     public function testWillCheckBookmarksHealth(): void
@@ -103,17 +108,33 @@ class CreateFavoriteTest extends TestCase
         $this->assertBookmarksHealthWillBeChecked($bookmarks->pluck('id')->all());
     }
 
-    public function testWillReturnConflictResponseWhenBookmarkExistsInFavorites(): void
+    public function testWillReturnCorrectResponseWhenBookmarkExistsInFavorites(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $bookmark = BookmarkFactory::new()->for($user)->create();
+        $userBookmarksIds = BookmarkFactory::times(3)
+            ->for($user)
+            ->create()
+            ->pluck('id')
+            ->map(fn (int $id) => (string) $id);
 
-        $this->createFavoriteResponse(['bookmarks' => (string) $bookmark->id])->assertCreated();
+        $this->createFavoriteResponse(['bookmarks' => $userBookmarksIds[0]])->assertCreated();
 
-        $this->createFavoriteResponse(['bookmarks' => (string) $bookmark->id])
-            ->assertStatus(Response::HTTP_CONFLICT)
-            ->assertExactJson(['message' => "BookmarksAlreadyExists"]);
+        $this->createFavoriteResponse(['bookmarks' => $userBookmarksIds->implode(',')])
+            ->assertCreated()
+            ->assertJsonPath('created', fn (array $created) => array_is_list($created))
+            ->assertExactJson([
+                'created'  => [$userBookmarksIds[1], $userBookmarksIds[2]],
+                'conflict' => [0 => $userBookmarksIds[0]]
+            ]);
+
+        $this->createFavoriteResponse(['bookmarks' => $userBookmarksIds->implode(',')])
+            ->assertCreated()
+            ->assertJsonPath('conflict', fn (array $created) => array_is_list($created))
+            ->assertExactJson([
+                'created'  => [],
+                'conflict' => $userBookmarksIds->all()
+            ]);
     }
 
     public function testWhenBookmarkDoesNotBelongToUser(): void
@@ -127,7 +148,7 @@ class CreateFavoriteTest extends TestCase
             ->assertExactJson(['message' => 'BookmarkNotFound']);
     }
 
-    public function testWillNotFoundWhenBookmarksDoesNotExist(): void
+    public function testWillReturnNotFoundWhenBookmarksDoesNotExist(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -135,7 +156,7 @@ class CreateFavoriteTest extends TestCase
 
         $this->createFavoriteResponse(['bookmarks' => (string) ($bookmark->id + 1)])
             ->assertNotFound()
-            ->assertExactJson([ 'message' => "BookmarkNotFound"]);
+            ->assertExactJson(['message' => "BookmarkNotFound"]);
 
         $this->assertDatabaseMissing(Favorite::class, ['user_id' => $user->id]);
     }

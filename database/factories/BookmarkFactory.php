@@ -23,7 +23,7 @@ final class BookmarkFactory extends Factory
      */
     public function definition()
     {
-        $hasher = new UrlHasher;
+        $hasher = new UrlHasher();
 
         return [
             'title'                   => $url = $this->faker->url(),

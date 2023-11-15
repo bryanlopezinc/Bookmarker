@@ -100,13 +100,14 @@ final class AcceptFolderCollaborationInviteService
         }
     }
 
-    private function notifyFolderOwner(int $inviterId, int $inviteeId, Folder $folder,): void
+    private function notifyFolderOwner(int $inviterId, int $inviteeId, Folder $folder): void
     {
         $wasInvitedByFolderOwner = $folder->user_id === $inviterId;
 
         $folderSettings = FolderSettings::fromQuery($folder->settings);
 
-        if (($folderSettings->notificationsAreDisabled() || $folderSettings->newCollaboratorNotificationIsDisabled()) ||
+        if (
+            ($folderSettings->notificationsAreDisabled() || $folderSettings->newCollaboratorNotificationIsDisabled()) ||
             (!$wasInvitedByFolderOwner && $folderSettings->onlyCollaboratorsInvitedByMeNotificationIsEnabled()) ||
             ($wasInvitedByFolderOwner && $folderSettings->onlyCollaboratorsInvitedByMeNotificationIsDisabled())
         ) {

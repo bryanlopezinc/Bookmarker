@@ -21,7 +21,7 @@ class CreateBookmarkService
 
     public function __construct(TagRepository $tagRepository = null)
     {
-        $this->tagRepository = $tagRepository ?: new TagRepository;
+        $this->tagRepository = $tagRepository ?: new TagRepository();
     }
 
     public function fromRequest(CreateOrUpdateBookmarkRequest $request): void

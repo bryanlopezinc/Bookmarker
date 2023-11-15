@@ -19,7 +19,13 @@ final class CreateUserRequest extends FormRequest
             'username'   => Username::rules(['bail', 'required', Rule::unique(User::class, 'username')]),
             'first_name' => ['required', 'filled', 'max:100'],
             'last_name'  => ['required', 'filled', 'max:100'],
-            'email'      => ['bail', 'required', 'email', Rule::unique(User::class, 'email'), Rule::unique(SecondaryEmail::class, 'email')],
+            'email'      => [
+                'bail',
+                'required',
+                'email',
+                Rule::unique(User::class, 'email'),
+                Rule::unique(SecondaryEmail::class, 'email')
+            ],
             'password'   => ['required', 'confirmed', Password::defaults()],
         ];
     }

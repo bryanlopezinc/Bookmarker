@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Enums\NotificationType;
 use Illuminate\Support\Collection;
 use App\Models\{Folder, Bookmark, User};
 use Illuminate\Database\Eloquent\Model;
@@ -100,7 +99,7 @@ class FetchNotificationResourcesRepository
         if (!empty($userIds = $this->extractIds('users'))) {
             $query->addSelect([
                 'users' => User::query()
-                    ->select(DB::raw("JSON_ARRAYAGG(JSON_OBJECT('id', id, 'first_name', first_name, 'last_name', last_name))"))
+                    ->select(DB::raw("JSON_ARRAYAGG(JSON_OBJECT('id', id, 'first_name', first_name, 'last_name', last_name))")) //phpcs:ignore
                     ->whereIntegerInRaw('id', $userIds)
             ]);
         }

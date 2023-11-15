@@ -16,9 +16,9 @@ final class UnBanUserController
 {
     public function __invoke(Request $request, FetchFolderService $service): JsonResponse
     {
-        $request->validate(['folder_id' => ['required', new ResourceIdRule]]);
+        $request->validate(['folder_id' => ['required', new ResourceIdRule()]]);
 
-        $request->validate(['user_id' => ['required', new ResourceIdRule]]);
+        $request->validate(['user_id' => ['required', new ResourceIdRule()]]);
 
         $folder = $service->find($request->integer('folder_id'), ['user_id']);
 

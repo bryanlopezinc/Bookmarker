@@ -31,6 +31,6 @@ final class VerifySecondaryEmailController
             return new JsonResponse(status: JsonResponse::HTTP_NO_CONTENT);
         }
 
-        return new JsonResponse;
+        return new JsonResponse();
     }
 }

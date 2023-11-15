@@ -13,7 +13,7 @@ final class UserNotFoundException extends RuntimeException
     public function report(): void
     {
     }
-    
+
     /**
      * Render the exception into an HTTP Response.
      */

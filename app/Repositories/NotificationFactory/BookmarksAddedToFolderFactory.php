@@ -10,7 +10,7 @@ use Illuminate\Notifications\DatabaseNotification;
 
 final class BookmarksAddedToFolderFactory implements Factory
 {
-    public function create(FetchNotificationResourcesRepository $repository, DatabaseNotification $notification): Object
+    public function create(FetchNotificationResourcesRepository $repository, DatabaseNotification $notification): object
     {
         return new BookmarksAddedToFolder(
             $repository->findFolderByID($notification->data['added_to_folder']),

@@ -21,7 +21,7 @@ final class FetchUserFoldersWhereContainsCollaboratorRepository
      */
     public function get(int $authUserId, int $collaboratorId, PaginationData $pagination): Paginator
     {
-        $folderModel = new Folder;
+        $folderModel = new Folder();
 
         $query = Folder::onlyAttributes()
             ->addSelect([

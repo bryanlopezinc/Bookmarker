@@ -41,8 +41,12 @@ final class FetchFolderCollaboratorsService
     /**
      * @return Paginator<FolderCollaborator>
      */
-    private function collaborators(int $folderID, PaginationData $pagination, ?UAC $permissions = null, ?string $collaboratorName = null): Paginator
-    {
+    private function collaborators(
+        int $folderID,
+        PaginationData $pagination,
+        ?UAC $permissions = null,
+        ?string $collaboratorName = null
+    ): Paginator {
         $model = new FolderCollaboratorPermission();
         $um = new User(); // user model
         $fpm = new FolderPermission(); // folder permission model
@@ -52,17 +56,20 @@ final class FetchFolderCollaboratorsService
             ->join($model->getTable(), $model->qualifyColumn('user_id'), '=', $um->getQualifiedKeyName())
             ->join($fpm->getTable(), $model->qualifyColumn('permission_id'), '=', $fpm->getQualifiedKeyName());
 
-        $query->when(!is_null($permissions) && !$permissions?->hasAllPermissions(), function ($query) use ($permissions) {
-            $values = collect($permissions->permissions)
-                ->map(fn (string $permission) => "'{$permission}'")
-                ->implode(',');
+        $query->when(
+            !is_null($permissions) && !$permissions?->hasAllPermissions(),
+            function ($query) use ($permissions) {
+                $values = collect($permissions->permissions)
+                    ->map(fn (string $permission) => "'{$permission}'")
+                    ->implode(',');
 
-            if ($permissions->hasOnlyReadPermission()) {
-                $query->havingRaw("JSON_ARRAY({$values}) = permissions");
-            } else {
-                $query->havingRaw("JSON_CONTAINS(permissions, JSON_ARRAY({$values}))");
+                if ($permissions->hasOnlyReadPermission()) {
+                    $query->havingRaw("JSON_ARRAY({$values}) = permissions");
+                } else {
+                    $query->havingRaw("JSON_CONTAINS(permissions, JSON_ARRAY({$values}))");
+                }
             }
-        });
+        );
 
         $query->when($permissions?->hasAllPermissions(), function ($query) use ($permissions) {
             $values = collect($permissions->all()->permissions)

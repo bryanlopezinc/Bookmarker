@@ -7,7 +7,6 @@ namespace App\Jobs;
 use App\DataTransferObjects\ImportData;
 use App\Importers\Factory;
 use App\Models\User;
-use App\Repositories\UserRepository;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;

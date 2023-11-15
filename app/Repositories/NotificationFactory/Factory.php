@@ -9,5 +9,8 @@ use Illuminate\Notifications\DatabaseNotification;
 
 interface Factory
 {
-    public function create(FetchNotificationResourcesRepository $repository, DatabaseNotification $notification): Object;
+    public function create(
+        FetchNotificationResourcesRepository $repository,
+        DatabaseNotification $notification
+    ): object;
 }

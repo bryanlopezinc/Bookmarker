@@ -21,7 +21,7 @@ final class FetchUserCollaborationsRepository
      */
     public function get(int $userID, PaginationData $pagination): Paginator
     {
-        $folderModel = new Folder;
+        $folderModel = new Folder();
 
         $query = Folder::onlyAttributes()
 

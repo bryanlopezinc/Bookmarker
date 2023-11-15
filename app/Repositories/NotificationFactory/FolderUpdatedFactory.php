@@ -10,7 +10,7 @@ use Illuminate\Notifications\DatabaseNotification;
 
 final class FolderUpdatedFactory implements Factory
 {
-    public function create(FetchNotificationResourcesRepository $repository, DatabaseNotification $notification): Object
+    public function create(FetchNotificationResourcesRepository $repository, DatabaseNotification $notification): object
     {
         return new FolderUpdated(
             $repository->findFolderByID($notification->data['folder_updated']),

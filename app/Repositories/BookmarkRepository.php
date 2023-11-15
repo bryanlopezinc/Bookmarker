@@ -45,7 +45,7 @@ class BookmarkRepository
      */
     public function fetchPossibleDuplicates(Model $bookmark, int $userID, PaginationData $pagination): Paginator
     {
-        $model = new Model;
+        $model = new Model();
 
         return Model::WithQueryOptions()
             ->addSelect([

@@ -20,7 +20,7 @@ final class FetchUserBookmarksService
      */
     public function fromRequest(Request $request): Paginator
     {
-        $model = new Model;
+        $model = new Model();
 
         $query = Model::WithQueryOptions()
             ->where('user_id', UserId::fromAuthUser()->value())

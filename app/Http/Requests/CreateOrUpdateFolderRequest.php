@@ -24,13 +24,25 @@ final class CreateOrUpdateFolderRequest extends FormRequest
                 'max:50',
                 'filled',
                 Rule::requiredIf($this->isCreateFolderRequest()),
-                Rule::when(!$this->isCreateFolderRequest(), [Rule::requiredIf(!$this->hasAny('description', 'visibility'))])
+                Rule::when(
+                    !$this->isCreateFolderRequest(),
+                    [Rule::requiredIf(!$this->hasAny('description', 'visibility'))]
+                )
             ],
             'description' => ['nullable', 'string', 'max:150'],
             'visibility'  => ['nullable', 'string', 'in:public,private'],
-            'settings'    => [Rule::when($this->isCreateFolderRequest(), ['sometimes', 'bail', 'json', 'filled', new FolderSettingsRule()])],
+            'settings'    => [
+                Rule::when(
+                    $this->isCreateFolderRequest(),
+                    ['sometimes', 'bail', 'json', 'filled', new FolderSettingsRule()]
+                )
+            ],
             'folder'      => [Rule::requiredIf(!$this->isCreateFolderRequest()), new ResourceIdRule()],
-            'password'    => [Rule::requiredIf(!$this->isCreateFolderRequest() && $this->input('visibility') === 'public'), 'filled', 'string']
+            'password'    => [
+                Rule::requiredIf(!$this->isCreateFolderRequest() && $this->input('visibility') === 'public'),
+                'filled',
+                'string'
+            ]
         ];
     }
 }

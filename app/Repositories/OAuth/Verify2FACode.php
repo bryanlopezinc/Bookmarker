@@ -31,7 +31,12 @@ final class Verify2FACode implements UserRepositoryInterface
     ) {
         $request = request();
 
-        $userEntity = $this->userRepository->getUserEntityByUserCredentials($username, $password, $grantType, $clientEntity);
+        $userEntity = $this->userRepository->getUserEntityByUserCredentials(
+            $username,
+            $password,
+            $grantType,
+            $clientEntity
+        );
 
         if (!$request->routeIs('loginUser') || !$userEntity) {
             return $userEntity;

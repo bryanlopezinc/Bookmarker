@@ -30,7 +30,7 @@ final class BookmarkNotFoundException extends RuntimeException
     public static function throwIfDoesNotBelongToAuthUser(Bookmark $bookmark): void
     {
         if ($bookmark->user_id !== UserId::fromAuthUser()->value()) {
-            throw new self;
+            throw new self();
         }
     }
 

@@ -66,7 +66,7 @@ class UserRepository
                 ->orWhere('users_emails.email', $email)
                 ->sole();
         } catch (ModelNotFoundException) {
-            throw new UserNotFoundException;
+            throw new UserNotFoundException();
         }
     }
 

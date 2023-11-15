@@ -69,13 +69,18 @@ final class AddBookmarksToFolderService
             ->map(fn (int $bookmarkID) => [
                 'bookmark_id' => $bookmarkID,
                 'folder_id'   => $folderId,
-                'visibility'  => $makeHidden->contains($bookmarkID) ? Visibility::PRIVATE->value : Visibility::PUBLIC->value
+                'visibility'  => $makeHidden->contains($bookmarkID) ?
+                                         Visibility::PRIVATE->value :
+                                         Visibility::PUBLIC->value
             ])
             ->tap(fn (Collection $data) => FolderBookmark::insert($data->all()));
     }
 
-    private function ensureCollaboratorCannotMarkBookmarksAsHidden(Request $request, Folder $folder, int $authUserId): void
-    {
+    private function ensureCollaboratorCannotMarkBookmarksAsHidden(
+        Request $request,
+        Folder $folder,
+        int $authUserId
+    ): void {
         $folderBelongsToAuthUser = $folder->user_id === $authUserId;
 
         if ($request->missing('make_hidden') || $folderBelongsToAuthUser) {
@@ -121,7 +126,7 @@ final class AddBookmarksToFolderService
     private function ensureBookmarksExistAndBelongToUser(Collection $bookmarks, array $bookmarksToAddToFolder): void
     {
         if ($bookmarks->count() !== count($bookmarksToAddToFolder)) {
-            throw new BookmarkNotFoundException;
+            throw new BookmarkNotFoundException();
         }
 
         $bookmarks->each(function (Bookmark $bookmark) {

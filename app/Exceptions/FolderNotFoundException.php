@@ -30,7 +30,7 @@ final class FolderNotFoundException extends RuntimeException
     public static function throwIfDoesNotBelongToAuthUser(Folder $folder): void
     {
         if ($folder->user_id !== UserId::fromAuthUser()->value()) {
-            throw new self;
+            throw new self();
         }
     }
 

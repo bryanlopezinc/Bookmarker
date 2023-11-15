@@ -82,7 +82,10 @@ final class UpdateFolderService
                 throw $e;
             }
 
-            $request->whenHas('visibility', fn () => throw HttpException::forbidden(['message' => 'NoUpdatePrivacyPermission']));
+            $request->whenHas(
+                'visibility',
+                fn () => throw HttpException::forbidden(['message' => 'NoUpdatePrivacyPermission'])
+            );
 
             if (!$userPermissions->canUpdateFolder()) {
                 throw HttpException::forbidden(['message' => 'NoUpdatePermission']);

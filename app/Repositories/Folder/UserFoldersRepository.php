@@ -23,7 +23,7 @@ final class UserFoldersRepository
 
         $this->addSortQuery($query, $sortCriteria);
 
-       return $query->simplePaginate($pagination->perPage(), page: $pagination->page());
+        return $query->simplePaginate($pagination->perPage(), page: $pagination->page());
     }
 
     private function addSortQuery(\Illuminate\Database\Eloquent\Builder &$query, SortCriteria $sortCriteria): void

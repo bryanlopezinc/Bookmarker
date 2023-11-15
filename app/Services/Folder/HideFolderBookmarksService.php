@@ -14,8 +14,10 @@ use App\Repositories\BookmarkRepository;
 
 final class HideFolderBookmarksService
 {
-    public function __construct(private FetchFolderService $folderRepository, private BookmarkRepository $bookmarkRepository)
-    {
+    public function __construct(
+        private FetchFolderService $folderRepository,
+        private BookmarkRepository $bookmarkRepository
+    ) {
     }
 
     public function hide(array $bookmarkIDs, int $folderID): void

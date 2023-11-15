@@ -16,6 +16,10 @@ final class BookmarkResource extends JsonResource
 
     public function toArray($request)
     {
+        $tags = $this->bookmark->tags;
+        $previewImageUrl = $this->bookmark->preview_image_url;
+        $description = $this->bookmark->description;
+
         return [
             'type'       => 'bookmark',
             'attributes' => [
@@ -23,13 +27,13 @@ final class BookmarkResource extends JsonResource
                 'title'              => $this->bookmark->title,
                 'web_page_link'      => $this->bookmark->url,
                 'has_preview_image'  => $this->bookmark->preview_image_url !== null,
-                'preview_image_url'  => $this->when($this->bookmark->preview_image_url !== null, $this->bookmark->preview_image_url),
-                'description'        => $this->when($this->bookmark->description !== null, $this->bookmark->description),
+                'preview_image_url'  => $this->when($previewImageUrl !== null, $previewImageUrl),
+                'description'        => $this->when($description !== null, $description),
                 'has_description'    => $this->bookmark->description !== null,
                 'source'             => new SourceResource($this->bookmark->source),
-                'tags'               => $this->when($this->bookmark->tags->isNotEmpty(), $this->bookmark->tags->pluck('name')->all()),
-                'has_tags'           => $this->bookmark->tags->isNotEmpty(),
-                'tags_count'         => $this->bookmark->tags->count(),
+                'tags'               => $this->when($tags->isNotEmpty(), $tags->pluck('name')->all()),
+                'has_tags'           => $tags->isNotEmpty(),
+                'tags_count'         => $tags->count(),
                 'is_healthy'         => $this->bookmark->isHealthy,
                 'is_user_favorite'   => $this->bookmark->isUserFavorite,
                 'has_duplicates'     => $this->bookmark->hasDuplicates,

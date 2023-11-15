@@ -14,7 +14,6 @@ final class CollaboratorExit
         public readonly ?Folder $folder,
         public readonly string $uuid,
         public readonly string $notifiedOn
-    )
-    {
+    ) {
     }
 }

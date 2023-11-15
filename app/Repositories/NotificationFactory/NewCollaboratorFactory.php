@@ -10,7 +10,7 @@ use Illuminate\Notifications\DatabaseNotification;
 
 final class NewCollaboratorFactory implements Factory
 {
-    public function create(FetchNotificationResourcesRepository $repository, DatabaseNotification $notification): Object
+    public function create(FetchNotificationResourcesRepository $repository, DatabaseNotification $notification): object
     {
         return new NewCollaborator(
             $repository->findUserByID($notification->data['added_by_collaborator']),

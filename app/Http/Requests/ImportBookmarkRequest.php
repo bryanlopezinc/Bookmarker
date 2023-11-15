@@ -47,7 +47,7 @@ final class ImportBookmarkRequest extends FormRequest
         return [
             'use_timestamp'       => ['nullable', 'bool'],
             'ignore_tags'         => ['nullable', 'bool'],
-            'firefox_export_file' => ['required', 'file', 'mimes:html', join(':', ['max', setting('MAX_POCKET_FILE_SIZE')])],
+            'firefox_export_file' => ['required', 'file', 'mimes:html', 'max:5000'],
         ];
     }
 
@@ -60,7 +60,7 @@ final class ImportBookmarkRequest extends FormRequest
                 join(':', ['max', setting('MAX_SAFARI_FILE_SIZE')])
             ],
             'tags' => ['nullable', 'max:15'],
-            'tags.*' => ['distinct:strict', new TagRule],
+            'tags.*' => ['distinct:strict', new TagRule()],
         ];
     }
 
@@ -69,7 +69,7 @@ final class ImportBookmarkRequest extends FormRequest
         return [
             'safari_html' => ['required', 'file', 'mimes:html', join(':', ['max', setting('MAX_SAFARI_FILE_SIZE')])],
             'tags'        => ['nullable', 'max:15'],
-            'tags.*'      => ['distinct:strict', new TagRule],
+            'tags.*'      => ['distinct:strict', new TagRule()],
         ];
     }
 
@@ -79,7 +79,7 @@ final class ImportBookmarkRequest extends FormRequest
             'use_timestamp' => ['nullable', 'bool'],
             'html'          => ['required', 'file', 'mimes:html', join(':', ['max', setting('MAX_CHROME_FILE_SIZE')])],
             'tags'          => ['nullable', 'max:15'],
-            'tags.*'        => ['distinct:strict', new TagRule],
+            'tags.*'        => ['distinct:strict', new TagRule()],
         ];
     }
 
@@ -88,7 +88,7 @@ final class ImportBookmarkRequest extends FormRequest
         return [
             'use_timestamp'      => ['nullable', 'bool'],
             'ignore_tags'        => ['nullable', 'bool'],
-            'pocket_export_file' => ['required', 'file', 'mimes:html', join(':', ['max', setting('MAX_POCKET_FILE_SIZE')])],
+            'pocket_export_file' => ['required', 'file', 'mimes:html', 'max:5000'],
         ];
     }
 }

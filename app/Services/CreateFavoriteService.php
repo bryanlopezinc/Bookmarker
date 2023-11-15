@@ -35,7 +35,7 @@ final class CreateFavoriteService
         $newFavorites = array_diff($bookmarkIDs, $exists->all());
 
         if (count($bookmarkIDs) !== $bookmarks->count()) {
-            throw new BookmarkNotFoundException;
+            throw new BookmarkNotFoundException();
         }
 
         $bookmarks->each(function (Bookmark $bookmark) {

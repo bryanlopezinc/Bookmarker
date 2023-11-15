@@ -45,12 +45,16 @@ final class SendFolderCollaborationInviteService
         $this->ensureInviteeIsNotAlreadyACollaborator($invitee, $folder);
         $this->ensureIsNotSendingInviteToABannedCollaborator($invitee, $folder);
 
-        $invitationMailSent = RateLimiter::attempt($this->key($inviter, $inviteeEmail), 1, $this->sendInvitationCallback(
-            $folder,
-            $invitee,
-            $inviter,
-            UAC::fromRequest($request, 'permissions')
-        ));
+        $invitationMailSent = RateLimiter::attempt(
+            $this->key($inviter, $inviteeEmail),
+            1,
+            $this->sendInvitationCallback(
+                $folder,
+                $invitee,
+                $inviter,
+                UAC::fromRequest($request, 'permissions')
+            )
+        );
 
         if ($invitationMailSent === false) {
             throw new ThrottleRequestsException('Too Many Requests');

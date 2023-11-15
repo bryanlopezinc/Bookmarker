@@ -18,7 +18,7 @@ final class FetchBannedCollaboratorsController
 {
     public function __invoke(Request $request, FetchFolderService $service): ResourceCollection
     {
-        $request->validate(['folder_id' => ['required', new ResourceIdRule]]);
+        $request->validate(['folder_id' => ['required', new ResourceIdRule()]]);
 
         $request->validate(PaginationData::new()->asValidationRules());
 

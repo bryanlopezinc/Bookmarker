@@ -10,7 +10,7 @@ use Illuminate\Notifications\DatabaseNotification;
 
 final class BookmarksRemovedFromFolderFactory implements Factory
 {
-    public function create(FetchNotificationResourcesRepository $repository, DatabaseNotification $notification): Object
+    public function create(FetchNotificationResourcesRepository $repository, DatabaseNotification $notification): object
     {
         return new BookmarksRemovedFromFolder(
             $repository->findFolderByID($notification->data['removed_from_folder']),

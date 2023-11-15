@@ -6,7 +6,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Exceptions\HttpException;
 use App\Exceptions\UserNotFoundException;
-use App\Http\Requests\ResetPasswordRequest;
+use App\Http\Requests\ResetPasswordRequest as Request;
 use App\Models\User;
 use Illuminate\Contracts\Auth\PasswordBroker;
 use Illuminate\Contracts\Hashing\Hasher;
@@ -14,7 +14,7 @@ use Illuminate\Http\JsonResponse;
 
 final class ResetPasswordController
 {
-    public function __invoke(ResetPasswordRequest $request, PasswordBroker $passwordBroker, Hasher $hasher): JsonResponse
+    public function __invoke(Request $request, PasswordBroker $passwordBroker, Hasher $hasher): JsonResponse
     {
         $credentials = $request->only(['email', 'password', 'token']);
 

@@ -36,7 +36,7 @@ final class FolderSettingsBuilder
             'notify_on_new_bookmark'                 => Key::NOTIFY_ON_NEW_BOOKMARK->value,
             'notify_on_bookmark_delete'              => Key::NOTIFY_ON_BOOKMARK_DELETED->value,
             'notify_on_collaborator_exit'            => Key::NOTIFY_ON_COLLABORATOR_EXIT->value,
-            'notify_on_collaborator_exit_with_write' => Key::NOTIFY_ON_COLLABORATOR_EXIT_ONLY_WHEN_HAS_WRITE_PERMISSION->value
+            'notify_on_collaborator_exit_with_write' => Key::NOTIFY_ON_COLLABORATOR_EXIT_ONLY_WHEN_HAS_WRITE_PERMISSION->value // phpcs:ignore
         ];
 
         foreach ($data as $key => $value) {

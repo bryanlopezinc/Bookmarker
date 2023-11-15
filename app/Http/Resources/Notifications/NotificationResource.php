@@ -13,7 +13,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 final class NotificationResource extends JsonResource
 {
-    public function __construct(private Object $notification)
+    public function __construct(private object $notification)
     {
         parent::__construct($notification);
     }
@@ -23,6 +23,7 @@ final class NotificationResource extends JsonResource
      */
     public function toArray($request)
     {
+        //phpcs:disable
         return match ($this->notification::class) {
             BookmarksAddedToFolder::class     => (new BookmarksAddedToFolderNotificationResource($this->notification))->toArray($request),
             CollaboratorExit::class           => (new CollaboratorExitNotificationResource($this->notification))->toArray($request),

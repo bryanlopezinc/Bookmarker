@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Readers;
 
 use App\Models\Bookmark;
-use App\ValueObjects\Url;
 
 final class Factory implements HttpClientInterface
 {

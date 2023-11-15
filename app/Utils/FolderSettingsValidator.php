@@ -17,7 +17,7 @@ final class FolderSettingsValidator
 
     public function __construct(JsonValidator $jsonValidator = null)
     {
-        $this->jsonValidator = $jsonValidator ?: new JsonValidator;
+        $this->jsonValidator = $jsonValidator ?: new JsonValidator();
 
         if (self::$jsonSchema === null) {
             self::$jsonSchema = json_encode($this->getSchema(), JSON_THROW_ON_ERROR);

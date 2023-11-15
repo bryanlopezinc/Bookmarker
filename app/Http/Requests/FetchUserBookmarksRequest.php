@@ -17,7 +17,7 @@ final class FetchUserBookmarksRequest extends FormRequest
         return [
             'source_id' => ['nullable', new ResourceIdRule()],
             'tags'      => ['nullable', 'filled', 'max:15'],
-            'tags.*'    => [new TagRule],
+            'tags.*'    => [new TagRule()],
             'untagged'  => ['nullable', 'boolean', 'filled'],
             'sort'      => ['nullable', 'string', 'filled', Rule::in(['oldest', 'newest'])],
             ...PaginationData::new()->asValidationRules()

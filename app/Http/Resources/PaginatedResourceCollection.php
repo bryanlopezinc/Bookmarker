@@ -24,7 +24,7 @@ final class PaginatedResourceCollection extends ResourceCollection
      */
     public function toArray($request)
     {
-         $this->paginator->withQueryString();
+        $this->paginator->withQueryString();
 
         $data = $this->paginator->toArray();
 

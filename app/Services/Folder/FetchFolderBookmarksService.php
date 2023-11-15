@@ -74,8 +74,12 @@ final class FetchFolderBookmarksService
     /**
      * @return Paginator<FolderBookmark>
      */
-    private function getBookmarks(int $folderId, bool $onlyPublic, ?int $authUserId, PaginationData $pagination): Paginator
-    {
+    private function getBookmarks(
+        int $folderId,
+        bool $onlyPublic,
+        ?int $authUserId,
+        PaginationData $pagination
+    ): Paginator {
         $model = new Bookmark();
         $fbm = new FolderBookmarkModel(); // FolderBookmarkModel
 

@@ -10,7 +10,7 @@ use Illuminate\Notifications\DatabaseNotification;
 
 final class CollaboratorExitFactory implements Factory
 {
-    public function create(FetchNotificationResourcesRepository $repository, DatabaseNotification $notification): Object
+    public function create(FetchNotificationResourcesRepository $repository, DatabaseNotification $notification): object
     {
         return new CollaboratorExit(
             $repository->findUserByID($notification->data['exited_by']),

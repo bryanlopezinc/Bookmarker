@@ -17,7 +17,7 @@ final class FolderPermissionsRepository
     public function getUserAccessControls(int $userID, int $folderID): UAC
     {
         return FolderCollaboratorPermission::select('folders_permissions.name')
-            ->join('folders_permissions', 'folders_collaborators_permissions.permission_id', '=', 'folders_permissions.id')
+            ->join('folders_permissions', 'folders_collaborators_permissions.permission_id', '=', 'folders_permissions.id') //phpcs:ignore
             ->where('folder_id', $folderID)
             ->where('user_id', $userID)
             ->get()

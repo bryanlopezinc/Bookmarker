@@ -39,7 +39,7 @@ trait ResolveBookmarkTags
     private function tagIsCompatible(string $tag): bool
     {
         try {
-            return (new TagRule)->passes('', $tag);
+            return (new TagRule())->passes('', $tag);
         } catch (InvalidTagException) {
             return false;
         }

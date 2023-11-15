@@ -18,7 +18,10 @@ final class FetchBannedCollaboratorsController
 {
     public function __invoke(Request $request, FetchFolderService $service): ResourceCollection
     {
-        $request->validate(['folder_id' => ['required', new ResourceIdRule()]]);
+        $request->validate([
+            'folder_id' => ['required', new ResourceIdRule()],
+            'name'      => ['sometimes', 'filled', 'string', 'max:10']
+        ]);
 
         $request->validate(PaginationData::new()->asValidationRules());
 
@@ -30,6 +33,9 @@ final class FetchBannedCollaboratorsController
 
         $bannedUsers = User::query()
             ->select(['id', 'first_name', 'last_name'])
+            ->when($request->has('name'), function ($query) use ($request) {
+                $query->where('full_name', 'like', "{$request->input('name')}%");
+            })
             ->whereIn('id', BannedCollaborator::select('user_id')->where('folder_id', $request->integer('folder_id')))
             ->simplePaginate($pagination->perPage(), [], page: $pagination->page());
 

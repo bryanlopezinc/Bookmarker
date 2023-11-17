@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use App\Cache\InviteTokensStore as Payload;
 use App\DataTransferObjects\FolderSettings;
 use App\Exceptions\FolderCollaboratorsLimitExceededException;
+use App\Exceptions\InvitationAlreadyAcceptedException;
 use App\Exceptions\UserNotFoundException;
 use App\Models\Folder;
 use App\Models\FolderPermission;
@@ -49,8 +50,6 @@ final class AcceptFolderCollaborationInviteService
         $this->ensureInvitationHasNotBeenAccepted($inviteeId, $folderId);
 
         $this->permissions->create($inviteeId, $folder->id, $this->extractPermissions($payload));
-
-        $this->inviteTokensStore->forget($token);
 
         $this->notifyFolderOwner($inviterId, $inviteeId, $folder);
     }
@@ -99,7 +98,7 @@ final class AcceptFolderCollaborationInviteService
         $access = $this->permissions->getUserAccessControls($inviteeId, $folderId);
 
         if ($access->isNotEmpty()) {
-            throw HttpException::conflict(['message' => 'Invitation already accepted']);
+            throw new InvitationAlreadyAcceptedException();
         }
     }
 

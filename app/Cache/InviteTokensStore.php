@@ -42,9 +42,4 @@ final class InviteTokensStore
     {
         return $this->repository->get($token, []);
     }
-
-    public function forget(string $token): void
-    {
-        $this->repository->forget($token);
-    }
 }

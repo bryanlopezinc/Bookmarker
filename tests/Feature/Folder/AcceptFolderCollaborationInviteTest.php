@@ -21,6 +21,7 @@ use App\Enums\FolderSettingKey;
 use App\Models\Folder;
 use App\Models\FolderSetting;
 use App\UAC;
+use Database\Factories\FolderCollaboratorPermissionFactory;
 use Illuminate\Testing\Assert as PHPUnit;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -180,6 +181,33 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
             throw $e;
         }
+    }
+
+    #[Test]
+    public function willReturnCreatedWhenInviteHasAlreadyBeenAccepted(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$user, $invitee] = UserFactory::new()->count(2)->create();
+
+        $folder = FolderFactory::new()->for($user)->create();
+
+        FolderCollaboratorPermissionFactory::new()
+            ->user($invitee->id)
+            ->folder($folder->id)
+            ->inviteUser()
+            ->create();
+
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $user->id,
+            $invitee->id,
+            $folder->id,
+            UAC::all()
+        );
+
+        $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
+        $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
     }
 
     public function testWillReturnNotFoundWhenFolderHasBeenDeleted(): void

@@ -15,17 +15,30 @@ use Laravel\Passport\Bridge\UserRepository;
 class AppServiceProvider extends ServiceProvider
 {
     /**
+     * Register any application services.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        if ($this->app->environment('local')) {
+            $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
+            $this->app->register(TelescopeServiceProvider::class);
+        }
+    }
+
+    /**
      * Bootstrap any application services.
      *
      * @return void
      */
     public function boot()
     {
+        Model::preventLazyLoading($this->app->environment('local', 'testing'));
+
         if ($this->app->environment('testing')) {
             Http::preventStrayRequests();
         }
-
-        Model::preventLazyLoading($this->app->environment('local', 'testing'));
 
         $this->app->bind(UserRepository::class, function () {
             return new Verify2FACode(
@@ -35,10 +48,6 @@ class AppServiceProvider extends ServiceProvider
                 app(User2FACodeRepository::class)
             );
         });
-
-        if ($this->app->environment('local')) {
-            $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
-        }
 
         Relation::enforceMorphMap([
             'user' => \App\Models\User::class

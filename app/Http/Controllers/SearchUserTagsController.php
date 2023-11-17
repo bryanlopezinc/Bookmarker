@@ -15,7 +15,7 @@ final class SearchUserTagsController
     {
         $request->validate(['tag' => ['required', new TagRule()]]);
 
-        $data = $tagsRepository->search($request->input('tag'), auth('api')->id(), 50)
+        $data = $tagsRepository->search($request->input('tag'), auth()->id(), 50)
             ->map(fn (string $tag) => ['name' => $tag])
             ->all();
 

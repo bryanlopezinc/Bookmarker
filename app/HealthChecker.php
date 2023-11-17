@@ -18,9 +18,9 @@ final class HealthChecker
     }
 
     /**
-     * @param iterable<Bookmark> $bookmarks
+     * @param array<Bookmark> $bookmarks
      */
-    public function ping(iterable $bookmarks): void
+    public function ping(array $bookmarks): void
     {
         $bookmarks = collect($bookmarks);
 

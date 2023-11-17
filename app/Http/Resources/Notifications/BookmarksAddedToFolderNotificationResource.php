@@ -31,13 +31,13 @@ final class BookmarksAddedToFolderNotificationResource extends JsonResource
                 'folder_exists'       => $folder !== null,
                 'bookmarks_count'     => count($bookmarks),
                 'notified_on'         => $this->notification->notifiedOn,
-                'by_collaborator'     => $this->when($collaborator !== null, fn () => [
-                    'id'   => $collaborator->id,
-                    'name' => $collaborator->full_name,
+                'by_collaborator'     => $this->when($collaborator !== null, [
+                    'id'   => $collaborator?->id,
+                    'name' => $collaborator?->full_name,
                 ]),
-                'folder'             => $this->when($folder !== null, fn () => [
-                    'name' => $folder->name,
-                    'id'   => $folder->id
+                'folder'             => $this->when($folder !== null, [
+                    'name' => $folder?->name,
+                    'id'   => $folder?->id
                 ]),
                 'bookmarks' => array_map(fn (Bookmark $bookmark) => [
                     'title' => $bookmark->title

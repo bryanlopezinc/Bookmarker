@@ -19,6 +19,7 @@ final class FolderUpdatedNotificationResource extends JsonResource
     public function toArray($request)
     {
         $updatedBy = $this->notification->collaborator;
+
         $folder = $this->notification->folder;
 
         return [
@@ -29,13 +30,13 @@ final class FolderUpdatedNotificationResource extends JsonResource
                 'collaborator_exists' => $updatedBy !== null,
                 'folder_exists'       => $folder !== null,
                 'notified_on'         => $this->notification->notifiedOn,
-                'collaborator'        => $this->when($updatedBy !== null, fn () => [
-                    'id'   => $updatedBy->id,
-                    'name' => $updatedBy->full_name,
+                'collaborator'        => $this->when($updatedBy !== null, [
+                    'id'   => $updatedBy?->id,
+                    'name' => $updatedBy?->full_name,
                 ]),
-                'folder'              => $this->when($folder !== null, fn () => [
-                    'name' => $folder->name,
-                    'id'   => $folder->id
+                'folder'              => $this->when($folder !== null, [
+                    'name' => $folder?->name,
+                    'id'   => $folder?->id
                 ]),
             ]
         ];

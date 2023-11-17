@@ -28,6 +28,8 @@ final class CheckBookmarksHealth implements ShouldQueue
 
     public function handle(HealthChecker $healthChecker): void
     {
-        $healthChecker->ping($this->bookmarks);
+        $healthChecker->ping(
+            collect($this->bookmarks)->all()
+        );
     }
 }

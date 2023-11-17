@@ -15,6 +15,8 @@ final class FetchFolderBookmarksController
 {
     public function __invoke(Request $request, FetchFolderBookmarksService $service): PaginatedResourceCollection
     {
+        $authUser = auth();
+
         $request->validate([
             'folder_id' => ['required', new ResourceIdRule()],
             ...PaginationData::new()->asValidationRules()
@@ -23,7 +25,7 @@ final class FetchFolderBookmarksController
         $result = $service->fetch(
             $request->integer('folder_id'),
             PaginationData::fromRequest($request),
-            auth('api')->id()
+            $authUser->check() ? (int) $authUser->id() : null
         );
 
         return new PaginatedResourceCollection($result, FolderBookmarkResource::class);

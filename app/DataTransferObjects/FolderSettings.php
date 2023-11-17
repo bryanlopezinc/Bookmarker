@@ -25,7 +25,7 @@ final class FolderSettings implements Arrayable
         $this->ensureIsValid();
     }
 
-    public static function fromQuery(iterable $result): self
+    public static function fromQuery(array $result): self
     {
         return new self(
             collect($result)

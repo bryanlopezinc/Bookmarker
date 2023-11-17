@@ -28,12 +28,12 @@ final class CollaboratorExitNotificationResource extends JsonResource
                 'collaborator_exists' => $collaboratorThatLeft !== null,
                 'folder_exists'       => $folder !== null,
                 'notified_on'         => $this->notification->notifiedOn,
-                'collaborator'        => $this->when($collaboratorThatLeft !== null, fn () => [
-                    'name' => $collaboratorThatLeft->full_name, // @phpstan-ignore-line
+                'collaborator'        => $this->when($collaboratorThatLeft !== null, [
+                    'name' => $collaboratorThatLeft?->full_name,
                 ]),
-                'folder' => $this->when($folder !== null, fn () => [
-                    'name' => $folder->name, // @phpstan-ignore-line
-                    'id'   => $folder->id // @phpstan-ignore-line
+                'folder' => $this->when($folder !== null, [
+                    'name' => $folder?->name,
+                    'id'   => $folder?->id
                 ]),
             ]
         ];

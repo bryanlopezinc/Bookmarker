@@ -29,7 +29,8 @@ final class NotificationResource extends JsonResource
             CollaboratorExit::class           => (new CollaboratorExitNotificationResource($this->notification))->toArray($request),
             BookmarksRemovedFromFolder::class => (new FolderBookmarksRemovedNotificationResource($this->notification))->toArray($request),
             FolderUpdated::class              => (new FolderUpdatedNotificationResource($this->notification))->toArray($request),
-            NewCollaborator::class            => (new NewCollaboratorNotificationResource($this->notification))->toArray($request)
+            NewCollaborator::class            => (new NewCollaboratorNotificationResource($this->notification))->toArray($request),
+            default => throw new \Exception('A resource has not been defined for notification ' . $this->notification::class)
         };
     }
 }

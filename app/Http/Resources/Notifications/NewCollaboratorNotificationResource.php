@@ -30,17 +30,17 @@ final class NewCollaboratorNotificationResource extends JsonResource
                 'folder_exists'           => $folder !== null,
                 'new_collaborator_exists' => $newCollaborator !== null,
                 'notified_on'             => $this->notification->notifiedOn,
-                'collaborator'            => $this->when($collaborator !== null, fn () => [
-                    'id'   => $collaborator->id,
-                    'name' => $collaborator->full_name,
+                'collaborator'            => $this->when($collaborator !== null, [
+                    'id'   => $collaborator?->id,
+                    'name' => $collaborator?->full_name,
                 ]),
-                'folder'  => $this->when($folder !== null, fn () => [
-                    'name' => $folder->name,
-                    'id'  => $folder->id
+                'folder'  => $this->when($folder !== null, [
+                    'name' => $folder?->name,
+                    'id'  => $folder?->id
                 ]),
-                'new_collaborator' => $this->when($newCollaborator !== null, fn () => [
-                    'id'   => $newCollaborator->id,
-                    'name' => $newCollaborator->full_name,
+                'new_collaborator' => $this->when($newCollaborator !== null, [
+                    'id'   => $newCollaborator?->id,
+                    'name' => $newCollaborator?->full_name,
                 ]),
             ]
         ];

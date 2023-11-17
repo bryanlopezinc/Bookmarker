@@ -36,7 +36,7 @@ final class DefaultClient implements HttpClientInterface
             return $this->emptyResponse($bookmark);
         }
 
-        $this->dOMReader->loadHTML($response->body(), $resolvedUrl = new Url($response->effectiveUri()));
+        $this->dOMReader->loadHTML($response->body(), $resolvedUrl = new Url((string)$response->effectiveUri()));
 
         return BookmarkMetaData::fromArray([
             'title'        => $this->dOMReader->getPageTitle(),

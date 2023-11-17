@@ -52,7 +52,7 @@ class HealthCheckerTest extends TestCase
             }));
 
         $checker = new HealthChecker($repository);
-        $checker->ping($bookmarks);
+        $checker->ping($bookmarks->all());
 
         Http::assertSentCount(3);
     }

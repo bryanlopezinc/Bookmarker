@@ -181,16 +181,19 @@ class AddBookmarksToFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $folderID = FolderFactory::new()->for($user)->create()->id;
+        $folder = FolderFactory::new()->for($user)->create();
 
-        /** @var AddBookmarksToFolderService */
-        $service = app(AddBookmarksToFolderService::class);
+        Folder::retrieved(function (Folder $retrieved) use ($folder) {
+            if ($retrieved->id !== $folder->id) {
+                return;
+            }
 
-        $service->add($folderID, BookmarkFactory::times(200)->create()->pluck('id')->all());
+            $retrieved->bookmarksCount = 200;
+        });
 
         $this->addBookmarksToFolderResponse([
             'bookmarks' => (string) BookmarkFactory::new()->for($user)->create()->id,
-            'folder'    => $folderID,
+            'folder'    => $folder->id,
         ])
             ->assertForbidden()
             ->assertExactJson(['message' => 'folderBookmarksLimitReached']);

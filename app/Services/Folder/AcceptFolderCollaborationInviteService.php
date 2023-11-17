@@ -11,6 +11,7 @@ use App\Repositories\Folder\FolderPermissionsRepository;
 use Illuminate\Http\Request;
 use App\Cache\InviteTokensStore as Payload;
 use App\DataTransferObjects\FolderSettings;
+use App\Exceptions\FolderCollaboratorsLimitExceededException;
 use App\Exceptions\UserNotFoundException;
 use App\Models\Folder;
 use App\Models\FolderPermission;
@@ -37,11 +38,13 @@ final class AcceptFolderCollaborationInviteService
             $payload[Payload::FOLDER_ID]  ?? null,
         ];
 
-        $this->ensureInvitationTokenIsValid($payload);
+        $this->ensureInviteTokenIsValid($payload);
 
         $this->ensureUsersStillExist($inviterId, $inviteeId);
 
-        $folder = $this->folderRepository->find($folderId, ['id', 'user_id', 'settings']);
+        $folder = $this->folderRepository->find($folderId, ['id', 'user_id', 'settings', 'collaboratorsCount']);
+
+        FolderCollaboratorsLimitExceededException::throwIfExceeded($folder->collaboratorsCount);
 
         $this->ensureInvitationHasNotBeenAccepted($inviteeId, $folderId);
 
@@ -52,7 +55,7 @@ final class AcceptFolderCollaborationInviteService
         $this->notifyFolderOwner($inviterId, $inviteeId, $folder);
     }
 
-    private function ensureInvitationTokenIsValid(array $data): void
+    private function ensureInviteTokenIsValid(array $data): void
     {
         if (empty($data)) {
             throw HttpException::notFound(['message' => 'InvitationNotFoundOrExpired']);

@@ -10,7 +10,6 @@ use App\Models\FolderPermission as Permission;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Http\Response;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
@@ -19,9 +18,11 @@ use Laravel\Passport\Database\Factories\ClientFactory;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 use App\Enums\FolderSettingKey;
+use App\Models\Folder;
 use App\Models\FolderSetting;
 use App\UAC;
 use Illuminate\Testing\Assert as PHPUnit;
+use PHPUnit\Framework\Attributes\Test;
 
 class AcceptFolderCollaborationInviteTest extends TestCase
 {
@@ -256,6 +257,32 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             ->assertExactJson(['message' => 'UserNotFound']);
 
         $this->assertDatabaseMissing(FolderCollaboratorPermission::class, ['folder_id' => $folder->id,]);
+    }
+
+    #[Test]
+    public function willReturnForbiddenWhenFolderHas_1000_collaborators(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$user, $invitee] = UserFactory::new()->count(2)->create();
+
+        $folder = FolderFactory::new()->for($user)->create();
+
+        Folder::retrieved(function (Folder $retrieved) {
+            $retrieved->collaboratorsCount = 1000;
+        });
+
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $user->id,
+            $invitee->id,
+            $folder->id,
+            UAC::all()
+        );
+
+        $this->acceptInviteResponse(['invite_hash' => $id])
+            ->assertForbidden()
+            ->assertExactJson(['message' => 'MaxCollaboratorsLimitReached']);
     }
 
     public function testWillNotNotifyFolderOwnerWhenInvitationWasSentByFolderOwner(): void

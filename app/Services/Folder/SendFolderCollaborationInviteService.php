@@ -8,6 +8,7 @@ use App\Cache\InviteTokensStore;
 use App\Exceptions\FolderNotFoundException;
 use App\Models\{BannedCollaborator, Folder, User};
 use App\Exceptions\HttpException;
+use App\Exceptions\FolderCollaboratorsLimitExceededException;
 use App\Http\Requests\SendFolderCollaborationInviteRequest as Request;
 use App\Mail\FolderCollaborationInviteMail as InvitationMail;
 use App\Repositories\Folder\FolderPermissionsRepository;
@@ -31,14 +32,16 @@ final class SendFolderCollaborationInviteService
     {
         // Clone the auth user to a new instance to prevent errors
         // when trying to serialize accessToken model during tests
-        $inviter = new User($request->user('api')->toArray()); // @phpstan-ignore-line
+        $inviter = new User($request->user()->toArray()); // @phpstan-ignore-line
 
-        $folder = $this->folderRepository->find($request->integer('folder_id'), ['id', 'user_id', 'name']);
+        $folder = $this->folderRepository->find($request->integer('folder_id'), ['id', 'user_id', 'name', 'collaboratorsCount']);
 
         $invitee = $this->userRepository->findByEmailOrSecondaryEmail(
             $inviteeEmail = $request->input('email'),
             ['email', 'id']
         );
+
+        FolderCollaboratorsLimitExceededException::throwIfExceeded($folder->collaboratorsCount);
 
         $this->ensureUserHasPermissionToPerformAction($folder, $inviter, $request);
         $this->ensureIsNotSendingInvitationSelf($inviteeEmail, $inviter);
@@ -46,7 +49,7 @@ final class SendFolderCollaborationInviteService
         $this->ensureIsNotSendingInviteToABannedCollaborator($invitee, $folder);
 
         $invitationMailSent = RateLimiter::attempt(
-            $this->key($inviter, $inviteeEmail),
+            "invites:{$inviter->id}:{$inviteeEmail}",
             1,
             $this->sendInvitationCallback(
                 $folder,
@@ -98,11 +101,6 @@ final class SendFolderCollaborationInviteService
                 ]);
             }
         }
-    }
-
-    private function key(User $inviter, string $inviteeEmail): string
-    {
-        return implode(':', ['f-col-invites', $inviter->id, $inviteeEmail]);
     }
 
     private function sendInvitationCallback(Folder $folder, User $invitee, User $inviter, UAC $permissions): \Closure

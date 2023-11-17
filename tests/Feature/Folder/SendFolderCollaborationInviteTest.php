@@ -15,7 +15,9 @@ use App\Mail\FolderCollaborationInviteMail;
 use Database\Factories\FolderCollaboratorPermissionFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use App\Models\BannedCollaborator;
+use App\Models\Folder;
 use Database\Factories\EmailFactory;
+use PHPUnit\Framework\Attributes\Test;
 
 class SendFolderCollaborationInviteTest extends TestCase
 {
@@ -200,6 +202,36 @@ class SendFolderCollaborationInviteTest extends TestCase
         $this->travel(62)->seconds(function () use ($parameters) {
             $this->sendInviteResponse($parameters)->assertOk(); //same user with same email
         });
+    }
+
+    #[Test]
+    public function willReturnForbiddenWhenFolderHas_1000_collaborators(): void
+    {
+        [$folderOwner, $collaborator, $invitee] = UserFactory::times(3)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        FolderCollaboratorPermissionFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->inviteUser()
+            ->create();
+
+        Folder::retrieved(function (Folder $retrieved) {
+            $retrieved->collaboratorsCount = 1000;
+        });
+
+        Passport::actingAs($folderOwner);
+        $this->sendInviteResponse($params = [
+            'email'     => $invitee->email,
+            'folder_id' => $folder->id,
+        ])->assertForbidden()
+            ->assertExactJson($expectation = ['message' => 'MaxCollaboratorsLimitReached']);
+
+        Passport::actingAs($collaborator);
+        $this->sendInviteResponse($params)
+            ->assertForbidden()
+            ->assertExactJson($expectation);
     }
 
     public function testSendInviteToPrimaryEmail(): void

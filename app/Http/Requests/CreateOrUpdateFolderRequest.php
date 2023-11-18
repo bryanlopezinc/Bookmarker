@@ -19,30 +19,45 @@ final class CreateOrUpdateFolderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'  => [
-                'string',
-                'max:50',
-                'filled',
-                Rule::requiredIf($this->isCreateFolderRequest()),
-                Rule::when(
-                    !$this->isCreateFolderRequest(),
-                    [Rule::requiredIf(!$this->hasAny('description', 'visibility'))]
-                )
-            ],
+            'name'        => $this->folderNameRules(),
             'description' => ['nullable', 'string', 'max:150'],
             'visibility'  => ['nullable', 'string', 'in:public,private'],
-            'settings'    => [
-                Rule::when(
-                    $this->isCreateFolderRequest(),
-                    ['sometimes', 'bail', 'json', 'filled', new FolderSettingsRule()]
-                )
-            ],
+            'settings'    => $this->folderSettingsRules(),
             'folder'      => [Rule::requiredIf(!$this->isCreateFolderRequest()), new ResourceIdRule()],
-            'password'    => [
-                Rule::requiredIf(!$this->isCreateFolderRequest() && $this->input('visibility') === 'public'),
-                'filled',
-                'string'
-            ]
+            'password'    => $this->passwordRules()
+        ];
+    }
+
+    private function folderNameRules(): array
+    {
+        return [
+            'string',
+            'max:50',
+            'filled',
+            Rule::requiredIf($this->isCreateFolderRequest()),
+            Rule::when(
+                !$this->isCreateFolderRequest(),
+                [Rule::requiredIf(!$this->hasAny('description', 'visibility'))]
+            )
+        ];
+    }
+
+    private function passwordRules(): array
+    {
+        return [
+            'filled',
+            'string',
+            Rule::requiredIf(!$this->isCreateFolderRequest() && $this->input('visibility') === 'public'),
+        ];
+    }
+
+    private function folderSettingsRules(): array
+    {
+        return [
+            Rule::when(
+                $this->isCreateFolderRequest(),
+                ['sometimes', 'bail', 'json', 'filled', new FolderSettingsRule()]
+            )
         ];
     }
 }

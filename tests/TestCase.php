@@ -29,9 +29,7 @@ abstract class TestCase extends BaseTestCase
 
     final protected function assertRouteIsAccessibleViaPath(string $path, string $routeName): void
     {
-        //Throw RouteNotFoundException if route name is not defined.
-        route($routeName);
-
+        $this->assertTrue(Route::has($routeName));
         $this->assertEquals(Route::getRoutes()->getByName($routeName)->uri(), $path);
     }
 }

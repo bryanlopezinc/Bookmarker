@@ -37,6 +37,12 @@ class FetchMutedCollaboratorsTest extends TestCase
     }
 
     #[Test]
+    public function uri(): void
+    {
+        $this->assertRouteIsAccessibleViaPath('v1/folders/mute', 'fetchMutedCollaborator');
+    }
+
+    #[Test]
     public function willReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
         $this->fetchMuteCollaboratorsResponse()->assertUnauthorized();

@@ -5,6 +5,7 @@ namespace Tests\Feature\Folder;
 use App\Models\Favorite;
 use App\Models\FolderPermission;
 use App\Services\Folder\AddBookmarksToFolderService;
+use App\Services\Folder\MuteCollaboratorService;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
@@ -12,6 +13,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Laravel\Passport\Passport;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\AssertValidPaginationData;
 use Tests\TestCase;
 use Tests\Traits\WillCheckBookmarksHealth;
@@ -338,5 +340,25 @@ class FetchFolderBookmarksTest extends TestCase
         $this->folderBookmarksResponse(['folder_id' => $folder->id, 'token_type' => 'client'])
             ->assertNotFound()
             ->assertExactJson(['message' => 'FolderNotFound']);
+    }
+
+    #[Test]
+    public function willNotIncludeBookmarksFromMutedCollaborators(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+
+        /** @var MuteCollaboratorService */
+        $muteCollaboratorService = app(MuteCollaboratorService::class);
+
+        $bookmark = BookmarkFactory::new()->for($collaborator)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->addBookmarksToFolder->add($folder->id, $bookmark->id);
+        $muteCollaboratorService->mute($folder->id, $collaborator->id, $folderOwner->id);
+
+        $this->loginUser($folderOwner);
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
     }
 }

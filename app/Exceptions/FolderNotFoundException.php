@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Exceptions;
 
 use App\Models\Folder;
-use App\ValueObjects\UserId;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
@@ -29,7 +28,15 @@ final class FolderNotFoundException extends RuntimeException
      */
     public static function throwIfDoesNotBelongToAuthUser(Folder $folder): void
     {
-        if ($folder->user_id !== UserId::fromAuthUser()->value()) {
+        self::throwIf($folder->user_id !== auth()->id());
+    }
+
+    /**
+     * @throws self
+     */
+    public static function throwIf(bool $condition): void
+    {
+        if ($condition) {
             throw new self();
         }
     }

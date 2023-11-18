@@ -13,6 +13,7 @@ use App\Models\Bookmark;
 use App\Models\Favorite;
 use App\Models\Folder;
 use App\Models\FolderBookmark as FolderBookmarkModel;
+use App\Models\MutedCollaborator;
 use App\PaginationData;
 use Illuminate\Pagination\Paginator;
 use App\Repositories\Folder\FolderPermissionsRepository;
@@ -97,6 +98,13 @@ final class FetchFolderBookmarksService
                 ]);
             })
             ->where('folder_id', $folderId)
+            ->whereNotExists(function (&$query) use ($model, $folderId) {
+                $query = MutedCollaborator::query()
+                    ->select('id')
+                    ->whereRaw("user_id = {$model->qualifyColumn('user_id')}")
+                    ->where('folder_id', $folderId)
+                    ->getQuery();
+            })
             ->latest($fbm->getQualifiedKeyName())
             ->simplePaginate($pagination->perPage(), [], page: $pagination->page());
 

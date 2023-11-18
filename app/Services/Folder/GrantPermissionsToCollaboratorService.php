@@ -6,21 +6,22 @@ namespace App\Services\Folder;
 
 use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
+use App\Models\Folder;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\UAC;
 use App\ValueObjects\UserId;
 
 final class GrantPermissionsToCollaboratorService
 {
-    public function __construct(
-        private FetchFolderService $folderRepository,
-        private FolderPermissionsRepository $permissions
-    ) {
+    public function __construct(private FolderPermissionsRepository $permissions)
+    {
     }
 
     public function grant(int $collaboratorId, int $folderId, UAC $permissions): void
     {
-        $folder = $this->folderRepository->find($folderId, ['id', 'user_id']);
+        $folder = Folder::query()->find($folderId, ['id', 'user_id']);
+
+        FolderNotFoundException::throwIf(!$folder);
 
         $currentPermissions = $this->permissions->getUserAccessControls($collaboratorId, $folderId);
 

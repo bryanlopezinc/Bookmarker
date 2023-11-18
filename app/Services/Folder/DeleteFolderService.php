@@ -12,10 +12,6 @@ use Illuminate\Database\Eloquent\Collection;
 
 final class DeleteFolderService
 {
-    public function __construct(private FetchFolderService $folderRepository)
-    {
-    }
-
     public function delete(int $folderID): void
     {
         $this->deleteFolder($folderID);
@@ -31,7 +27,9 @@ final class DeleteFolderService
 
     private function deleteFolder(int $folderID, bool $recursive = false): void
     {
-        $folder = $this->folderRepository->find($folderID, ['id', 'user_id']);
+        $folder = Folder::query()->find($folderID, ['id', 'user_id']);
+
+        FolderNotFoundException::throwIf(!$folder);
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 

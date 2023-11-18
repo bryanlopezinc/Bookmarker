@@ -14,19 +14,18 @@ use App\UAC;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Pagination\Paginator;
 use App\Http\Requests\FetchFolderCollaboratorsRequest as Request;
+use App\Models\Folder;
 
 final class FetchFolderCollaboratorsService
 {
-    public function __construct(private FetchFolderService $folderRepository)
-    {
-    }
-
     /**
      * @return Paginator<FolderCollaborator>
      */
     public function fromRequest(Request $request): Paginator
     {
-        $folder = $this->folderRepository->find($request->integer('folder_id'), ['id', 'user_id']);
+        $folder = Folder::query()->find($request->integer('folder_id'), ['id', 'user_id']);
+
+        FolderNotFoundException::throwIf(!$folder);
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Folder;
 
-use App\Exceptions\InvitationAlreadyAcceptedException;
 use App\Services\Folder\AcceptFolderCollaborationInviteService as Service;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,14 +15,8 @@ final class AcceptFolderCollaborationInviteController
     {
         $request->validate(['invite_hash' => ['required', 'uuid']]);
 
-        $ok = response()->json(status: Response::HTTP_CREATED);
+        $service->fromRequest($request);
 
-        try {
-            $service->fromRequest($request);
-        } catch (InvitationAlreadyAcceptedException) {
-            return $ok;
-        }
-
-        return $ok;
+        return response()->json(status: Response::HTTP_CREATED);
     }
 }

@@ -11,6 +11,7 @@ use App\Exceptions\HttpException;
 use App\Exceptions\FolderCollaboratorsLimitExceededException;
 use App\Http\Requests\SendFolderCollaborationInviteRequest as Request;
 use App\Mail\FolderCollaborationInviteMail as InvitationMail;
+use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\Repositories\UserRepository;
 use App\UAC;
@@ -21,7 +22,6 @@ use Illuminate\Support\Str;
 final class SendFolderCollaborationInviteService
 {
     public function __construct(
-        private FetchFolderService $folderRepository,
         private UserRepository $userRepository,
         private FolderPermissionsRepository $permissions,
         private InviteTokensStore $inviteTokensStore
@@ -34,7 +34,11 @@ final class SendFolderCollaborationInviteService
         // when trying to serialize accessToken model during tests
         $inviter = new User($request->user()->toArray()); // @phpstan-ignore-line
 
-        $folder = $this->folderRepository->find($request->integer('folder_id'), ['id', 'user_id', 'name', 'collaboratorsCount']);
+        $folder = Folder::onlyAttributes(['id', 'user_id', 'name', 'collaboratorsCount'])
+            ->tap(new WhereFolderOwnerExists())
+            ->find($request->integer('folder_id'));
+
+        FolderNotFoundException::throwIf(!$folder);
 
         $invitee = $this->userRepository->findByEmailOrSecondaryEmail(
             $inviteeEmail = $request->input('email'),

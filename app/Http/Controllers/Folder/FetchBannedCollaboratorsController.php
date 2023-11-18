@@ -8,15 +8,15 @@ use App\Exceptions\FolderNotFoundException;
 use App\Http\Resources\BannedCollaboratorResource;
 use App\Http\Resources\PaginatedResourceCollection as ResourceCollection;
 use App\Models\BannedCollaborator;
+use App\Models\Folder;
 use App\Models\User;
 use App\PaginationData;
 use App\Rules\ResourceIdRule;
-use App\Services\Folder\FetchFolderService;
 use Illuminate\Http\Request;
 
 final class FetchBannedCollaboratorsController
 {
-    public function __invoke(Request $request, FetchFolderService $service): ResourceCollection
+    public function __invoke(Request $request): ResourceCollection
     {
         $request->validate([
             'folder_id' => ['required', new ResourceIdRule()],
@@ -25,9 +25,11 @@ final class FetchBannedCollaboratorsController
 
         $request->validate(PaginationData::new()->asValidationRules());
 
-        $folder = $service->find($request->integer('folder_id'), ['user_id']);
+        $folder = Folder::query()->find($request->integer('folder_id'), ['user_id']);
 
         $pagination = PaginationData::fromRequest($request);
+
+        FolderNotFoundException::throwIf(!$folder);
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 

@@ -16,15 +16,15 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class RevokeFolderCollaboratorPermissionsService
 {
-    public function __construct(
-        private FolderPermissionsRepository $permissions,
-        private FetchFolderService $folderRepository
-    ) {
+    public function __construct(private FolderPermissionsRepository $permissions)
+    {
     }
 
     public function revokePermissions(int $collaboratorID, int $folderID, UAC $revokePermissions): void
     {
-        $folder = $this->folderRepository->find($folderID, ['id', 'user_id']);
+        $folder = Folder::query()->find($folderID, ['id', 'user_id']);
+
+        FolderNotFoundException::throwIf(!$folder);
 
         $collaboratorPermissions = $this->permissions->getUserAccessControls($collaboratorID, $folderID);
 

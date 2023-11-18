@@ -9,20 +9,21 @@ use App\Exceptions\BookmarkNotFoundException;
 use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
 use App\Models\Bookmark;
+use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Repositories\BookmarkRepository;
 
 final class HideFolderBookmarksService
 {
-    public function __construct(
-        private FetchFolderService $folderRepository,
-        private BookmarkRepository $bookmarkRepository
-    ) {
+    public function __construct(private BookmarkRepository $bookmarkRepository)
+    {
     }
 
     public function hide(array $bookmarkIDs, int $folderID): void
     {
-        $folder = $this->folderRepository->find($folderID, ['id', 'user_id']);
+        $folder = Folder::query()->find($folderID, ['id', 'user_id']);
+
+        FolderNotFoundException::throwIf(!$folder);
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 

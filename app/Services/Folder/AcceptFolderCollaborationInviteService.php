@@ -12,10 +12,12 @@ use Illuminate\Http\Request;
 use App\Cache\InviteTokensStore as Payload;
 use App\DataTransferObjects\FolderSettings;
 use App\Exceptions\FolderCollaboratorsLimitExceededException;
-use App\Exceptions\InvitationAlreadyAcceptedException;
+use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\UserNotFoundException;
 use App\Models\Folder;
+use App\Models\FolderCollaboratorPermission;
 use App\Models\FolderPermission;
+use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Models\User;
 use App\Notifications\NewCollaboratorNotification as Notification;
 
@@ -24,7 +26,6 @@ final class AcceptFolderCollaborationInviteService
     public function __construct(
         private FolderPermissionsRepository $permissions,
         private InviteTokensStore $inviteTokensStore,
-        private FetchFolderService $folderRepository
     ) {
     }
 
@@ -43,11 +44,23 @@ final class AcceptFolderCollaborationInviteService
 
         $this->ensureUsersStillExist($inviterId, $inviteeId);
 
-        $folder = $this->folderRepository->find($folderId, ['id', 'user_id', 'settings', 'collaboratorsCount']);
+        $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'collaboratorsCount'])
+            ->tap(new WhereFolderOwnerExists())
+            ->addSelect([
+                'collaborator' => FolderCollaboratorPermission::select('id')
+                    ->where('folder_id', $folderId)
+                    ->where('user_id', $inviteeId)
+                    ->limit(1)
+            ])
+            ->find($folderId);
+
+        FolderNotFoundException::throwIf(!$folder);
 
         FolderCollaboratorsLimitExceededException::throwIfExceeded($folder->collaboratorsCount);
 
-        $this->ensureInvitationHasNotBeenAccepted($inviteeId, $folderId);
+        if ($folder->collaborator !== null) {
+            return;
+        }
 
         $this->permissions->create($inviteeId, $folder->id, $this->extractPermissions($payload));
 
@@ -90,15 +103,6 @@ final class AcceptFolderCollaborationInviteService
 
         if ($users->count() !== 2) {
             throw new UserNotFoundException();
-        }
-    }
-
-    private function ensureInvitationHasNotBeenAccepted(int $inviteeId, int $folderId): void
-    {
-        $access = $this->permissions->getUserAccessControls($inviteeId, $folderId);
-
-        if ($access->isNotEmpty()) {
-            throw new InvitationAlreadyAcceptedException();
         }
     }
 

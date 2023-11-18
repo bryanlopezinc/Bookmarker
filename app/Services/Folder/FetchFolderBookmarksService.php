@@ -14,6 +14,7 @@ use App\Models\Favorite;
 use App\Models\Folder;
 use App\Models\FolderBookmark as FolderBookmarkModel;
 use App\Models\MutedCollaborator;
+use App\Models\Scopes\WhereFolderOwnerExists;
 use App\PaginationData;
 use Illuminate\Pagination\Paginator;
 use App\Repositories\Folder\FolderPermissionsRepository;
@@ -21,10 +22,8 @@ use Illuminate\Support\Collection;
 
 final class FetchFolderBookmarksService
 {
-    public function __construct(
-        private FetchFolderService $folderRepository,
-        private FolderPermissionsRepository $permissions
-    ) {
+    public function __construct(private FolderPermissionsRepository $permissions)
+    {
     }
 
     /**
@@ -32,7 +31,11 @@ final class FetchFolderBookmarksService
      */
     public function fetch(int $folderId, PaginationData $pagination, ?int $authUserId): Paginator
     {
-        $folder = $this->folderRepository->find($folderId, ['id', 'user_id', 'visibility']);
+        $folder = Folder::query()
+            ->tap(new WhereFolderOwnerExists())
+            ->find($folderId, ['id', 'user_id', 'visibility']);
+
+        FolderNotFoundException::throwIf(!$folder);
 
         $fetchOnlyPublicBookmarks = (!$authUserId || $folder->user_id !== $authUserId);
 

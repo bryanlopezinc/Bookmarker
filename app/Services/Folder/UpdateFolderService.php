@@ -10,6 +10,7 @@ use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
 use App\Http\Requests\CreateOrUpdateFolderRequest as Request;
 use App\Models\Folder;
+use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Models\User;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use Illuminate\Support\Facades\Hash;
@@ -20,7 +21,6 @@ use Illuminate\Validation\ValidationException;
 final class UpdateFolderService
 {
     public function __construct(
-        private FetchFolderService $folderRepository,
         private FolderPermissionsRepository $permissions,
         private NotificationRepository $notifications,
     ) {
@@ -32,10 +32,11 @@ final class UpdateFolderService
      */
     public function fromRequest(Request $request): void
     {
-        $folder = $this->folderRepository->find(
-            $request->integer('folder'),
-            ['id', 'user_id', 'name', 'description', 'visibility', 'settings']
-        );
+        $folder = Folder::onlyAttributes(['id', 'user_id', 'name', 'description', 'visibility', 'settings'])
+            ->tap(new WhereFolderOwnerExists())
+            ->find($request->integer('folder'));
+
+        FolderNotFoundException::throwIf(!$folder);
 
         $authUser = auth('api')->user();
 

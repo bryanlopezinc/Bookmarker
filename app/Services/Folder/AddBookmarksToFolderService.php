@@ -16,6 +16,7 @@ use App\Jobs\CheckBookmarksHealth;
 use App\Models\Bookmark;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
+use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Models\User;
 use App\Notifications\BookmarksAddedToFolderNotification as Notification;
 use App\Repositories\Folder\FolderPermissionsRepository;
@@ -26,7 +27,6 @@ use Illuminate\Support\Collection;
 final class AddBookmarksToFolderService
 {
     public function __construct(
-        private FetchFolderService $repository,
         private BookmarkRepository $bookmarksRepository,
         private FolderPermissionsRepository $permissions,
     ) {
@@ -38,7 +38,11 @@ final class AddBookmarksToFolderService
         $folderId = $request->integer('folder');
         $bookmarkIds = $request->collect('bookmarks')->map(fn (string $id) => (int) $id)->all();
 
-        $folder = $this->repository->find($folderId, ['id', 'user_id', 'bookmarks_count', 'settings']);
+        $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'bookmarks_count'])
+            ->tap(new WhereFolderOwnerExists())
+            ->find($folderId);
+
+        FolderNotFoundException::throwIf(!$folder);
 
         $bookmarks = $this->bookmarksRepository->findManyById($bookmarkIds, ['user_id', 'id', 'url']);
 
@@ -70,8 +74,8 @@ final class AddBookmarksToFolderService
                 'bookmark_id' => $bookmarkID,
                 'folder_id'   => $folderId,
                 'visibility'  => $makeHidden->contains($bookmarkID) ?
-                                         Visibility::PRIVATE->value :
-                                         Visibility::PUBLIC->value
+                    Visibility::PRIVATE->value :
+                    Visibility::PUBLIC->value
             ])
             ->tap(fn (Collection $data) => FolderBookmark::insert($data->all()));
     }

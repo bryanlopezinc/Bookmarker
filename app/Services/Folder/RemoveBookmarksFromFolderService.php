@@ -10,6 +10,7 @@ use App\Exceptions\HttpException;
 use App\Models\Bookmark;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
+use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\ValueObjects\UserId;
 use App\Notifications\BookmarksRemovedFromFolderNotification as Notification;
@@ -20,7 +21,6 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 final class RemoveBookmarksFromFolderService
 {
     public function __construct(
-        private FetchFolderService $repository,
         private FolderPermissionsRepository $permissions,
         private NotificationRepository $notifications
     ) {
@@ -30,7 +30,11 @@ final class RemoveBookmarksFromFolderService
     {
         $authUserId = UserId::fromAuthUser()->value();
 
-        $folder = $this->repository->find($folderID, ['id', 'user_id', 'settings', 'updated_at']);
+        $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'updated_at'])
+            ->tap(new WhereFolderOwnerExists())
+            ->find($folderID);
+
+        FolderNotFoundException::throwIf(!$folder);
 
         $folderBookmarks = FolderBookmark::query()
             ->where('folder_id', $folder->id)

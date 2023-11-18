@@ -8,6 +8,7 @@ use App\DataTransferObjects\FolderSettings;
 use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
+use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Notifications\CollaboratorExitNotification;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\Repositories\NotificationRepository;
@@ -17,7 +18,6 @@ use App\ValueObjects\UserId;
 final class LeaveFolderCollaborationService
 {
     public function __construct(
-        private FetchFolderService $folderRepository,
         private FolderPermissionsRepository $permissionsRepository,
         private NotificationRepository $notifications
     ) {
@@ -25,7 +25,11 @@ final class LeaveFolderCollaborationService
 
     public function leave(int $folderID): void
     {
-        $folder = $this->folderRepository->find($folderID, ['id', 'user_id', 'settings']);
+        $folder = Folder::onlyAttributes(['id', 'user_id', 'settings'])
+            ->tap(new WhereFolderOwnerExists())
+            ->find($folderID);
+
+        FolderNotFoundException::throwIf(!$folder);
 
         $collaboratorPermissions = $this->permissionsRepository->getUserAccessControls(
             $collaboratorID = UserId::fromAuthUser()->value(),

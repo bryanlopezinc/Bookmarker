@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Folder;
 
 use App\Exceptions\FolderNotFoundException;
+use App\Models\Folder;
 use App\Models\MutedCollaborator;
 use App\Models\User;
 use App\PaginationData;
@@ -12,16 +13,14 @@ use Illuminate\Pagination\Paginator;
 
 final class FetchMutedCollaboratorsService
 {
-    public function __construct(private FetchFolderService $folderRepository)
-    {
-    }
-
     /**
      * @return Paginator<User>
      */
     public function __invoke(int $folderId, PaginationData $pagination, ?string $collaboratorName = null): Paginator
     {
-        $folder = $this->folderRepository->find($folderId, ['id', 'user_id']);
+        $folder = Folder::query()->find($folderId, ['id', 'user_id']);
+
+        FolderNotFoundException::throwIf(!$folder);
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 

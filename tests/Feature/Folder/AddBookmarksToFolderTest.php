@@ -3,10 +3,12 @@
 namespace Tests\Feature\Folder;
 
 use App\Enums\FolderSettingKey;
+use App\Enums\Permission;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Models\FolderSetting;
 use App\Services\Folder\AddBookmarksToFolderService;
+use App\Services\Folder\ToggleFolderCollaborationRestriction;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
@@ -17,6 +19,7 @@ use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\WillCheckBookmarksHealth;
 
@@ -416,5 +419,46 @@ class AddBookmarksToFolderTest extends TestCase
         ])->assertCreated();
 
         Notification::assertNothingSent();
+    }
+
+    #[Test]
+    public function onlyFolderOwnerCanAddBookmarksWhenAddBookmarksActionIsDisabled(): void
+    {
+        /** @var ToggleFolderCollaborationRestriction */
+        $updateCollaboratorActionService = app(ToggleFolderCollaborationRestriction::class);
+
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+
+        $collaboratorBookmarks = BookmarkFactory::times(2)->for($collaborator)->create();
+        $folderOwnerBookmark = BookmarkFactory::new()->for($folderOwner)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        FolderCollaboratorPermissionFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->addBookmarksPermission()
+            ->create();
+
+        //Assert collaborator can add bookmark when disabled action is not addBookmarks action
+        $updateCollaboratorActionService->update($folder->id, Permission::INVITE_USER, false);
+        $this->loginUser($collaborator);
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => (string) $collaboratorBookmarks[0]->id,
+            'folder'    => $folder->id
+        ])->assertCreated();
+
+        $updateCollaboratorActionService->update($folder->id, Permission::ADD_BOOKMARKS, false);
+        $this->loginUser($folderOwner);
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => (string) $folderOwnerBookmark->id,
+            'folder'    => $folder->id
+        ])->assertCreated();
+
+        $this->loginUser($collaborator);
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => (string) $collaboratorBookmarks[1]->id,
+            'folder'    => $folder->id
+        ])->assertForbidden()
+            ->assertExactJson(['message' => 'AddBookmarksActionDisabled']);
     }
 }

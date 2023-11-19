@@ -6,7 +6,9 @@ namespace App\Services\Folder;
 
 use App\DataTransferObjects\FolderSettings;
 use App\Enums\FolderBookmarkVisibility as Visibility;
+use App\Enums\Permission;
 use App\Exceptions\BookmarkNotFoundException;
+use App\Exceptions\FolderActionDisabledException;
 use App\Exceptions\FolderNotFoundException;
 use App\Repositories\BookmarkRepository;
 use App\ValueObjects\UserId;
@@ -16,6 +18,7 @@ use App\Jobs\CheckBookmarksHealth;
 use App\Models\Bookmark;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
+use App\Models\Scopes\DisabledActionScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Models\User;
 use App\Notifications\BookmarksAddedToFolderNotification as Notification;
@@ -40,6 +43,7 @@ final class AddBookmarksToFolderService
 
         $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'bookmarks_count'])
             ->tap(new WhereFolderOwnerExists())
+            ->tap(new DisabledActionScope(Permission::ADD_BOOKMARKS))
             ->find($folderId);
 
         FolderNotFoundException::throwIf(!$folder);
@@ -98,6 +102,10 @@ final class AddBookmarksToFolderService
 
     private function ensureUserHasPermissionToPerformAction(Folder $folder, int $authUserId): void
     {
+        if ($folder->actionIsDisable && $folder->user_id !== $authUserId) {
+            throw new FolderActionDisabledException(Permission::ADD_BOOKMARKS);
+        }
+
         try {
             FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
         } catch (FolderNotFoundException $e) {

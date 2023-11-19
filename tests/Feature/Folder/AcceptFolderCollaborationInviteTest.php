@@ -6,7 +6,7 @@ namespace Tests\Feature\Folder;
 
 use App\Cache\InviteTokensStore;
 use App\Models\FolderCollaboratorPermission;
-use App\Models\FolderPermission as Permission;
+use App\Enums\Permission;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -19,6 +19,7 @@ use Laravel\Passport\Passport;
 use Tests\TestCase;
 use App\Enums\FolderSettingKey;
 use App\Models\Folder;
+use App\Models\FolderPermission;
 use App\Models\FolderSetting;
 use App\UAC;
 use Database\Factories\FolderCollaboratorPermissionFactory;
@@ -111,9 +112,9 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
         });
 
-        $this->assertWillAcceptInvite([Permission::INVITE], function (Collection $savedPermissions) {
+        $this->assertWillAcceptInvite([Permission::INVITE_USER], function (Collection $savedPermissions) {
             $this->assertCount(2, $savedPermissions);
-            $this->assertTrue($savedPermissions->containsStrict(Permission::INVITE));
+            $this->assertTrue($savedPermissions->containsStrict(Permission::INVITE_USER));
             $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
         });
 
@@ -136,7 +137,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $this->assertTrue($savedPermissions->containsStrict(Permission::ADD_BOOKMARKS));
             $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
             $this->assertTrue($savedPermissions->containsStrict(Permission::UPDATE_FOLDER));
-            $this->assertTrue($savedPermissions->containsStrict(Permission::INVITE));
+            $this->assertTrue($savedPermissions->containsStrict(Permission::INVITE_USER));
         });
     }
 
@@ -149,7 +150,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         if (in_array('*', $permissions)) {
-            $permissions = UAC::all()->permissions;
+            $permissions = UAC::all()->toArray();
         }
 
         $this->tokenStore->store(
@@ -160,27 +161,19 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             new UAC($permissions)
         );
 
-        try {
-            $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
+        $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
 
-            $savedPermissions = FolderCollaboratorPermission::query()->where([
-                'folder_id' => $folder->id,
-                'user_id' => $invitee->id,
-            ])->get();
+        $savedPermissions = FolderCollaboratorPermission::query()->where([
+            'folder_id' => $folder->id,
+            'user_id' => $invitee->id,
+        ])->get();
 
-            $savedPermissionsTypes = Permission::query()
-                ->findMany($savedPermissions->pluck('permission_id')->all(), ['name'])
-                ->pluck('name');
+        $savedPermissionsTypes = FolderPermission::query()
+            ->findMany($savedPermissions->pluck('permission_id')->all(), ['name'])
+            ->pluck('name')
+            ->map(fn (string $name) => Permission::from($name));
 
-            $assertion($savedPermissionsTypes);
-        } catch (\Throwable $e) {
-            $this->appendMessageToException(
-                '******** EXPECTATION FAILED FOR REQUEST WITH PERMISSIONS : ' . implode(',', $permissions) . ' ********',
-                $e
-            );
-
-            throw $e;
-        }
+        $assertion($savedPermissionsTypes);
     }
 
     #[Test]

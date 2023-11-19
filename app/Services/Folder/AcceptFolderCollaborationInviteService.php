@@ -11,12 +11,12 @@ use App\Repositories\Folder\FolderPermissionsRepository;
 use Illuminate\Http\Request;
 use App\Cache\InviteTokensStore as Payload;
 use App\DataTransferObjects\FolderSettings;
+use App\Enums\Permission;
 use App\Exceptions\FolderCollaboratorsLimitExceededException;
 use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\UserNotFoundException;
 use App\Models\Folder;
 use App\Models\FolderCollaboratorPermission;
-use App\Models\FolderPermission;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Models\User;
 use App\Notifications\NewCollaboratorNotification as Notification;
@@ -76,22 +76,19 @@ final class AcceptFolderCollaborationInviteService
 
     private function extractPermissions(array $payload): UAC
     {
-        $assignedPermissions = $payload[Payload::PERMISSIONS];
+        $defaultPermissions = new UAC([Permission::VIEW_BOOKMARKS]);
 
-        $defaultPermissions = new UAC([FolderPermission::VIEW_BOOKMARKS]);
-
-        $permissionsSetByFolderOwner = new UAC($assignedPermissions);
+        $permissionsSetByFolderOwner = new UAC($payload[Payload::PERMISSIONS]);
 
         if ($permissionsSetByFolderOwner->isEmpty()) {
             return $defaultPermissions;
         }
 
-        return new UAC(
-            collect($permissionsSetByFolderOwner->permissions)
-                ->merge($defaultPermissions->permissions)
-                ->unique()
-                ->all()
-        );
+        return $defaultPermissions
+            ->toCollection()
+            ->merge($permissionsSetByFolderOwner)
+            ->unique()
+            ->pipe(fn ($collection) => new UAC($collection->all()));
     }
 
     private function ensureUsersStillExist(int $inviterId, int $inviteeId): void

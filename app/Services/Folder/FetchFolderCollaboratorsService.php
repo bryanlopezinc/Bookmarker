@@ -58,7 +58,7 @@ final class FetchFolderCollaboratorsService
         $query->when(
             !is_null($permissions) && !$permissions?->hasAllPermissions(),
             function ($query) use ($permissions) {
-                $values = collect($permissions->permissions)
+                $values = $permissions->toCollection()
                     ->map(fn (string $permission) => "'{$permission}'")
                     ->implode(',');
 
@@ -71,7 +71,7 @@ final class FetchFolderCollaboratorsService
         );
 
         $query->when($permissions?->hasAllPermissions(), function ($query) use ($permissions) {
-            $values = collect($permissions->all()->permissions)
+            $values = $permissions->toCollection()
                 ->map(fn (string $permission) => "'{$permission}'")
                 ->implode(',');
 

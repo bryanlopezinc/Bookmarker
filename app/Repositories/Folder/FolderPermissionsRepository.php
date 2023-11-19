@@ -30,7 +30,7 @@ final class FolderPermissionsRepository
         $createdAt = now();
 
         FolderPermission::select('id')
-            ->whereIn('name', $folderPermissions->permissions)
+            ->whereIn('name', $folderPermissions->toArray())
             ->get()
             ->pluck('id')
             ->map(fn (int $permissionID) => [

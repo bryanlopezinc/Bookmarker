@@ -61,10 +61,11 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
             Route::post('hide', F\HideFolderBookmarksController::class)->middleware(StringToArray::keys('bookmarks'))->name('hideFolderBookmarks');
         });
 
+        Route::patch('collaborators/actions', [F\UpdateFolderController::class, 'updateAction'])->name('updateFolderCollaboratorActions');
         Route::get('collaborators', F\FetchFolderCollaboratorsController::class)->middleware(StringToArray::keys('permissions'))->name('fetchFolderCollaborators');
         Route::delete('collaborators', F\RemoveCollaboratorController::class)->name('deleteFolderCollaborator');
-        Route::delete('collaborators/revoke_permissions', F\RevokeFolderCollaboratorPermissionsController::class)->middleware([StringToArray::keys('permissions')])->name('revokePermissions');
-        Route::patch('collaborators/grant', F\GrantPermissionsToCollaboratorController::class)->middleware([StringToArray::keys('permissions')])->name('grantPermission');
+        Route::delete('collaborators/permissions', F\RevokeFolderCollaboratorPermissionsController::class)->middleware([StringToArray::keys('permissions')])->name('revokePermissions');
+        Route::patch('collaborators/permissions', F\GrantPermissionsToCollaboratorController::class)->middleware([StringToArray::keys('permissions')])->name('grantPermission');
         Route::post('invite', F\SendFolderCollaborationInviteController::class)->middleware([StringToArray::keys('permissions')])->name('sendFolderCollaborationInvite');
 
         Route::get('banned', F\FetchBannedCollaboratorsController::class)->name('fetchBannedCollaborator');

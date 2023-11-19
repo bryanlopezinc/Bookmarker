@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder;
 
+use App\Enums\Permission;
 use App\Models\FolderCollaboratorPermission;
 use App\Models\FolderPermission;
 use Database\Factories\FolderCollaboratorPermissionFactory;
@@ -22,7 +23,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/folders/collaborators/revoke_permissions', 'revokePermissions');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/collaborators/permissions', 'revokePermissions');
     }
 
     public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
@@ -268,7 +269,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
         $this->assertDatabaseHas(FolderCollaboratorPermission::class, [
             'folder_id' => $folderID,
             'user_id' => $collaborator->id,
-            'permission_id' => FolderPermission::query()->where('name', FolderPermission::DELETE_BOOKMARKS)->sole()->id
+            'permission_id' => FolderPermission::query()->where('name', Permission::DELETE_BOOKMARKS->value)->sole()->id
         ]);
     }
 

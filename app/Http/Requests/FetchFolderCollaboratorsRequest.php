@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use App\Models\FolderPermission;
+use App\Enums\Permission;
 use App\PaginationData;
 use App\Rules\ResourceIdRule;
 use App\UAC;
@@ -65,7 +65,7 @@ final class FetchFolderCollaboratorsRequest extends FormRequest
         }
 
         if ($this->validated('permissions.0') === 'readOnly') {
-            return new UAC([FolderPermission::VIEW_BOOKMARKS]);
+            return new UAC([Permission::VIEW_BOOKMARKS]);
         }
 
         return UAC::fromRequest($this, 'permissions');

@@ -23,7 +23,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/folders/collaborators/grant', 'grantPermission');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/collaborators/permissions', 'grantPermission');
     }
 
     public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void

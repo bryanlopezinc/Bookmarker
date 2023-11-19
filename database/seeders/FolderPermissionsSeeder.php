@@ -2,20 +2,13 @@
 
 namespace Database\Seeders;
 
+use App\Enums\Permission;
 use App\Models\FolderPermission;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 
 class FolderPermissionsSeeder extends Seeder
 {
-    private const PERMISSIONS = [
-        'viewBookmarks',
-        'addBookmarks',
-        'deleteBookmarks',
-        'inviteUser',
-        'updateFolder'
-    ];
-
     /**
      * Seed the application's database.
      *
@@ -25,7 +18,9 @@ class FolderPermissionsSeeder extends Seeder
     {
         $seeded = FolderPermission::all(['name'])->pluck('name');
 
-        collect(self::PERMISSIONS)
+        collect(Permission::cases())
+            ->map
+            ->value
             ->filter(fn (string $permission) => $seeded->doesntContain($permission))
             ->map(fn (string $permission) => [
                 'name' => $permission,

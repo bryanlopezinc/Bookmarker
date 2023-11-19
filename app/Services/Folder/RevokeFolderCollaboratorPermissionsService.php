@@ -39,7 +39,7 @@ final class RevokeFolderCollaboratorPermissionsService
         FolderCollaboratorPermission::query()
             ->where('folder_id', $folderID)
             ->where('user_id', $collaboratorID)
-            ->whereIn('permission_id', FolderPermission::select('id')->whereIn('name', $revokePermissions->permissions))
+            ->whereIn('permission_id', FolderPermission::select('id')->whereIn('name', $revokePermissions->toArray()))
             ->delete();
     }
 

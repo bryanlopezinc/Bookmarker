@@ -4,61 +4,81 @@ declare(strict_types=1);
 
 namespace App;
 
-use App\Models\FolderPermission as Model;
+use App\Enums\Permission;
 use Countable;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 /**
  * Permission a user has to a folder resource.
  */
-final class UAC implements Countable
+final class UAC implements Countable, Arrayable
 {
-    private const VALID = [
-        Model::VIEW_BOOKMARKS,
-        Model::ADD_BOOKMARKS,
-        Model::DELETE_BOOKMARKS,
-        Model::INVITE,
-        Model::UPDATE_FOLDER
-    ];
+    /**
+     * @var Collection<string>
+     */
+    private readonly Collection $permissions;
 
     /**
-     * @param array<string> $permissions
+     * @param array<Permission|string> $permissions
      */
-    public function __construct(public readonly array $permissions)
+    public function __construct(array $permissions)
     {
-        $isUnique = count(array_unique($permissions)) === count($permissions);
+        $this->permissions = $this->resolvePermissions($permissions);
 
-        foreach ($permissions as $permission) {
-            if (!in_array($permission, self::VALID, true)) {
-                throw new \Exception('Invalid permission type ' . $permission, 1_600);
-            }
-        }
+        $this->validate();
+    }
+
+    private function resolvePermissions(array $permissions): Collection
+    {
+        return collect($permissions)->map(function (string|Permission $permission) {
+            return is_string($permission) ?
+                Permission::from($permission)->value :
+                $permission->value;
+        });
+    }
+
+    private function validate(): void
+    {
+        $isUnique = $this->permissions->unique()->count() === $this->permissions->count();
 
         if (!$isUnique) {
-            throw new \Exception('Permissions contains duplicate values : ' . implode(',', $permissions), 1_601);
+            throw new \Exception('Permissions contains duplicate values', 1_601);
         }
     }
 
-    public static function fromRequest(Request $request, string $key): self
+    /**
+     * @return array<string>
+     */
+    public function toArray(): array
     {
-        if (in_array('*', $request->input($key, []), true)) {
-            return new self(self::VALID);
+        return $this->permissions->all();
+    }
+
+    public function toCollection(): Collection
+    {
+        return $this->permissions;
+    }
+
+    public static function fromRequest(Request $request, string $key): UAC
+    {
+        $permissions = $request->input($key, []);
+
+        if (in_array('*', $permissions, true)) {
+            return new UAC(self::all()->permissions->all());
         }
 
-        $permissions = [];
+        $permissions = collect($permissions)->map(function (string $permission) {
+            return match ($permission) {
+                'addBookmarks'    => Permission::ADD_BOOKMARKS,
+                'removeBookmarks' => Permission::DELETE_BOOKMARKS,
+                'inviteUser'      => Permission::INVITE_USER,
+                'updateFolder'    => Permission::UPDATE_FOLDER
+            };
+        });
 
-        $translation = [
-            'addBookmarks'    => Model::ADD_BOOKMARKS,
-            'removeBookmarks' => Model::DELETE_BOOKMARKS,
-            'inviteUser'      => Model::INVITE,
-            'updateFolder'    => Model::UPDATE_FOLDER
-        ];
-
-        foreach ($request->input($key, []) as $permission) {
-            $permissions[] = $translation[$permission];
-        }
-
-        return new self($permissions);
+        return new UAc($permissions->all());
     }
 
     /**
@@ -66,47 +86,36 @@ final class UAC implements Countable
      */
     public function toJsonResponse(): array
     {
-        $response = [];
+        $permissions = $this->permissions
+            ->filter(fn (string $permission) => $permission !== Permission::VIEW_BOOKMARKS->value)
+            ->map(function (string $permission) {
+                return match ($permission) {
+                    Permission::ADD_BOOKMARKS->value     => 'addBookmarks',
+                    Permission::DELETE_BOOKMARKS->value  => 'removeBookmarks',
+                    Permission::INVITE_USER->value       => 'inviteUsers',
+                    Permission::UPDATE_FOLDER->value     => 'updateFolder',
+                };
+            });
 
-        $translation = [
-            Model::ADD_BOOKMARKS     => 'addBookmarks',
-            Model::DELETE_BOOKMARKS  => 'removeBookmarks',
-            Model::INVITE            => 'inviteUsers',
-            Model::UPDATE_FOLDER     => 'updateFolder',
-        ];
-
-        foreach ($this->permissions as $permission) {
-            if ($permission === Model::VIEW_BOOKMARKS) {
-                continue;
-            }
-
-            $response[] = $translation[$permission];
-        }
-
-        return $response;
+        return $permissions->all();
     }
 
-    public static function all(): self
+    public static function all(): UAc
     {
-        return new self(self::VALID);
+        return new UAc(Permission::cases());
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function count(): int
     {
-        return count($this->permissions);
+        return $this->permissions->count();
     }
 
     public function hasAllPermissions(): bool
     {
-        return count($this) === count((new self(self::VALID)));
-    }
-
-    /**
-     * Create a new instance from an unserialize payload.
-     */
-    public static function fromUnSerialized(array $unserialize): self
-    {
-        return new self($unserialize);
+        return $this->count() === count(self::all());
     }
 
     /**
@@ -114,17 +123,17 @@ final class UAC implements Countable
      */
     public function serialize(): array
     {
-        return $this->permissions;
+        return $this->permissions->all();
     }
 
     public function isEmpty(): bool
     {
-        return empty($this->permissions);
+        return $this->permissions->isEmpty();
     }
 
     public function isNotEmpty(): bool
     {
-        return !$this->isEmpty();
+        return $this->permissions->isNotEmpty();
     }
 
     public function containsAll(UAC $uac): bool
@@ -133,8 +142,8 @@ final class UAC implements Countable
             return false;
         }
 
-        foreach ($uac->permissions as $action) {
-            if (!$this->hasPermissionTo($action)) {
+        foreach ($uac->permissions as $permission) {
+            if ($this->permissions->doesntContain($permission)) {
                 return false;
             }
         }
@@ -144,8 +153,8 @@ final class UAC implements Countable
 
     public function containsAny(UAC $uac): bool
     {
-        foreach ($uac->permissions as $action) {
-            if ($this->hasPermissionTo($action)) {
+        foreach ($uac->permissions as $permission) {
+            if ($this->permissions->contains($permission)) {
                 return true;
             }
         }
@@ -155,31 +164,26 @@ final class UAC implements Countable
 
     public function canAddBookmarks(): bool
     {
-        return $this->hasPermissionTo(Model::ADD_BOOKMARKS);
+        return $this->permissions->contains(Permission::ADD_BOOKMARKS->value);
     }
 
     public function canRemoveBookmarks(): bool
     {
-        return $this->hasPermissionTo(Model::DELETE_BOOKMARKS);
+        return $this->permissions->contains(Permission::DELETE_BOOKMARKS->value);
     }
 
     public function canInviteUser(): bool
     {
-        return $this->hasPermissionTo(Model::INVITE);
+        return $this->permissions->contains(Permission::INVITE_USER->value);
     }
 
     public function canUpdateFolder(): bool
     {
-        return $this->hasPermissionTo(Model::UPDATE_FOLDER);
+        return $this->permissions->contains(Permission::UPDATE_FOLDER->value);
     }
 
     public function hasOnlyReadPermission(): bool
     {
-        return $this->hasPermissionTo(Model::VIEW_BOOKMARKS) && count($this->permissions) === 1;
-    }
-
-    private function hasPermissionTo(string $action): bool
-    {
-        return in_array($action, $this->permissions, true);
+        return $this->permissions->contains(Permission::VIEW_BOOKMARKS->value) && $this->permissions->count() === 1;
     }
 }

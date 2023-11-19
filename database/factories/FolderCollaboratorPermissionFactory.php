@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\Permission;
 use App\Models\FolderCollaboratorPermission;
 use App\Models\FolderPermission;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -58,35 +59,35 @@ final class FolderCollaboratorPermissionFactory extends Factory
     public function viewBookmarksPermission(): self
     {
         return $this->state([
-            'permission_id' => static::$permissionTypes->where('name', FolderPermission::VIEW_BOOKMARKS)->sole()->id
+            'permission_id' => static::$permissionTypes->where('name', Permission::VIEW_BOOKMARKS->value)->sole()->id
         ]);
     }
 
     public function inviteUser(): self
     {
         return $this->state([
-            'permission_id' => static::$permissionTypes->where('name', FolderPermission::INVITE)->sole()->id
+            'permission_id' => static::$permissionTypes->where('name', Permission::INVITE_USER->value)->sole()->id
         ]);
     }
 
     public function addBookmarksPermission(): self
     {
         return $this->state([
-            'permission_id' => static::$permissionTypes->where('name', FolderPermission::ADD_BOOKMARKS)->sole()->id
+            'permission_id' => static::$permissionTypes->where('name', Permission::ADD_BOOKMARKS->value)->sole()->id
         ]);
     }
 
     public function removeBookmarksPermission(): self
     {
         return $this->state([
-            'permission_id' => static::$permissionTypes->where('name', FolderPermission::DELETE_BOOKMARKS)->sole()->id
+            'permission_id' => static::$permissionTypes->where('name', Permission::DELETE_BOOKMARKS->value)->sole()->id
         ]);
     }
 
     public function updateFolderPermission(): self
     {
         return $this->state([
-            'permission_id' => static::$permissionTypes->where('name', FolderPermission::UPDATE_FOLDER)->sole()->id
+            'permission_id' => static::$permissionTypes->where('name', Permission::UPDATE_FOLDER->value)->sole()->id
         ]);
     }
 }

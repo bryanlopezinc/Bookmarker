@@ -105,10 +105,6 @@ final class AddBookmarksToFolderService
     {
         $folderBelongsToAuthUser = $folder->user_id === auth()->id();
 
-        if ($folder->actionIsDisable && !$folderBelongsToAuthUser) {
-            throw new FolderActionDisabledException(Permission::ADD_BOOKMARKS);
-        }
-
         try {
             FolderNotFoundException::throwIf(!$folderBelongsToAuthUser);
         } catch (FolderNotFoundException $e) {
@@ -116,6 +112,10 @@ final class AddBookmarksToFolderService
 
             if ($userFolderAccess->isEmpty()) {
                 throw $e;
+            }
+
+            if ($folder->actionIsDisable) {
+                throw new FolderActionDisabledException(Permission::ADD_BOOKMARKS);
             }
 
             if (!$userFolderAccess->canAddBookmarks()) {

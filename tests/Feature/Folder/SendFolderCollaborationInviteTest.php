@@ -523,7 +523,7 @@ class SendFolderCollaborationInviteTest extends TestCase
     }
 
     #[Test]
-    public function onlyFolderOwnerCanSendInvitesFolderWhenActionIsDisabled(): void
+    public function willReturnCorrectResponseWhenActionsIsDisabled(): void
     {
         /** @var ToggleFolderCollaborationRestriction */
         $updateCollaboratorActionService = app(ToggleFolderCollaborationRestriction::class);
@@ -543,11 +543,17 @@ class SendFolderCollaborationInviteTest extends TestCase
         $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->id])->assertOk();
 
         $updateCollaboratorActionService->update($folder->id, Permission::INVITE_USER, false);
-        $this->sendInviteResponse(['email' => $otherInvitee->email, 'folder_id' => $folder->id])
+
+        $this->sendInviteResponse($query = ['email' => $otherInvitee->email, 'folder_id' => $folder->id])
             ->assertForbidden()
             ->assertExactJson(['message' => 'InviteUserActionDisabled']);
 
+        //when user is not a collaborator
+        $this->loginUser(UserFactory::new()->create());
+        $this->sendInviteResponse($query)->assertNotFound();
+
+
         $this->loginUser($folderOwner);
-        $this->sendInviteResponse(['email' => $otherInvitee->email, 'folder_id' => $folder->id])->assertOk();
+        $this->sendInviteResponse($query)->assertOk();
     }
 }

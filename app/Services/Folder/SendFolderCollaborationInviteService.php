@@ -78,16 +78,16 @@ final class SendFolderCollaborationInviteService
         $folderBelongsToAuthUser = $folder->user_id === auth()->id();
 
         try {
-            if ($folder->actionIsDisable && !$folderBelongsToAuthUser) {
-                throw new FolderActionDisabledException(Permission::INVITE_USER);
-            }
-
             FolderNotFoundException::throwIf(!$folderBelongsToAuthUser);
         } catch (FolderNotFoundException $e) {
             $userFolderPermissions = $this->permissions->getUserAccessControls($inviter->id, $folder->id);
 
             if ($userFolderPermissions->isEmpty()) {
                 throw $e;
+            }
+
+            if ($folder->actionIsDisable) {
+                throw new FolderActionDisabledException(Permission::INVITE_USER);
             }
 
             if (!$userFolderPermissions->canInviteUser()) {

@@ -74,10 +74,6 @@ final class RemoveBookmarksFromFolderService
     {
         $folderBelongsToAuthUser = $folder->user_id === auth()->id();
 
-        if ($folder->actionIsDisable && !$folderBelongsToAuthUser) {
-            throw new FolderActionDisabledException(Permission::DELETE_BOOKMARKS);
-        }
-
         try {
             FolderNotFoundException::throwIf(!$folderBelongsToAuthUser);
         } catch (FolderNotFoundException $e) {
@@ -85,6 +81,10 @@ final class RemoveBookmarksFromFolderService
 
             if ($accessControls->isEmpty()) {
                 throw $e;
+            }
+
+            if ($folder->actionIsDisable) {
+                throw new FolderActionDisabledException(Permission::DELETE_BOOKMARKS);
             }
 
             if (!$accessControls->canRemoveBookmarks()) {

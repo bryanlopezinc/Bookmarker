@@ -81,10 +81,6 @@ final class UpdateFolderService
     {
         $folderBelongsToAuthUser = $folder->user_id === auth()->id();
 
-        if ($folder->actionIsDisable && !$folderBelongsToAuthUser) {
-            throw new FolderActionDisabledException(Permission::UPDATE_FOLDER);
-        }
-
         try {
             FolderNotFoundException::throwIf(!$folderBelongsToAuthUser);
         } catch (FolderNotFoundException $e) {
@@ -94,10 +90,13 @@ final class UpdateFolderService
                 throw $e;
             }
 
-            $request->whenHas(
-                'visibility',
-                fn () => throw HttpException::forbidden(['message' => 'NoUpdatePrivacyPermission'])
-            );
+            if ($folder->actionIsDisable) {
+                throw new FolderActionDisabledException(Permission::UPDATE_FOLDER);
+            }
+
+            if ($request->has('visibility')) {
+                throw HttpException::forbidden(['message' => 'NoUpdatePrivacyPermission']);
+            }
 
             if (!$userPermissions->canUpdateFolder()) {
                 throw new PermissionDeniedException(Permission::UPDATE_FOLDER);

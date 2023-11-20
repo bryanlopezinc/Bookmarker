@@ -376,7 +376,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
     }
 
     #[Test]
-    public function onlyFolderOwnerCanRemoveBookmarksWhenActionIsDisabled(): void
+    public function willReturnCorrectResponseWhenActionsIsDisabled(): void
     {
         /** @var ToggleFolderCollaborationRestriction */
         $updateCollaboratorActionService = app(ToggleFolderCollaborationRestriction::class);
@@ -405,16 +405,16 @@ class RemoveBookmarksFromFolderTest extends TestCase
         ])->assertOk();
 
         $updateCollaboratorActionService->update($folder->id, Permission::DELETE_BOOKMARKS, false);
-        $this->removeFolderBookmarksResponse([
-            'bookmarks' => $bookmarks[1]->id,
-            'folder'    => $folder->id
-        ])->assertForbidden()
+
+        $this->removeFolderBookmarksResponse($query = ['bookmarks' => $bookmarks[1]->id, 'folder' => $folder->id])
+            ->assertForbidden()
             ->assertExactJson(['message' => 'RemoveBookmarksActionDisabled']);
 
+        //when user is not a collaborator
+        $this->loginUser(UserFactory::new()->create());
+        $this->removeFolderBookmarksResponse($query)->assertNotFound();
+
         $this->loginUser($folderOwner);
-        $this->removeFolderBookmarksResponse([
-            'bookmarks' => $bookmarks[1]->id,
-            'folder'    => $folder->id
-        ])->assertOk();
+        $this->removeFolderBookmarksResponse($query)->assertOk();
     }
 }

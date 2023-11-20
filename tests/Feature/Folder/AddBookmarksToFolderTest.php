@@ -422,7 +422,7 @@ class AddBookmarksToFolderTest extends TestCase
     }
 
     #[Test]
-    public function onlyFolderOwnerCanAddBookmarksWhenAddBookmarksActionIsDisabled(): void
+    public function willReturnCorrectResponseWhenActionsIsDisabled(): void
     {
         /** @var ToggleFolderCollaborationRestriction */
         $updateCollaboratorActionService = app(ToggleFolderCollaborationRestriction::class);
@@ -448,11 +448,16 @@ class AddBookmarksToFolderTest extends TestCase
         ])->assertCreated();
 
         $updateCollaboratorActionService->update($folder->id, Permission::ADD_BOOKMARKS, false);
+
         $this->loginUser($folderOwner);
-        $this->addBookmarksToFolderResponse([
+        $this->addBookmarksToFolderResponse($query = [
             'bookmarks' => (string) $folderOwnerBookmark->id,
             'folder'    => $folder->id
         ])->assertCreated();
+
+        //when user is not a collaborator
+        $this->loginUser(UserFactory::new()->create());
+        $this->addBookmarksToFolderResponse($query)->assertNotFound();
 
         $this->loginUser($collaborator);
         $this->addBookmarksToFolderResponse([

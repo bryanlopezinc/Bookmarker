@@ -488,7 +488,7 @@ class UpdateFolderTest extends TestCase
     }
 
     #[Test]
-    public function onlyFolderOwnerCanUpdateFolderWhenActionIsDisabled(): void
+    public function willReturnCorrectResponseWhenUpdateFolderActionsIsDisabled(): void
     {
         /** @var ToggleFolderCollaborationRestriction */
         $updateCollaboratorActionService = app(ToggleFolderCollaborationRestriction::class);
@@ -508,9 +508,14 @@ class UpdateFolderTest extends TestCase
         $this->updateFolderResponse(['name' => $this->faker->word, 'folder' => $folder->id])->assertOk();
 
         $updateCollaboratorActionService->update($folder->id, Permission::UPDATE_FOLDER, false);
+
         $this->updateFolderResponse(['name' => $this->faker->word, 'folder' => $folder->id])
             ->assertForbidden()
             ->assertExactJson(['message' => 'UpdateFolderActionDisabled']);
+
+        //when user is not a collaborator
+        $this->loginUser(UserFactory::new()->create());
+        $this->updateFolderResponse(['name' => $this->faker->word, 'folder' => $folder->id])->assertNotFound();
 
         $this->loginUser($folderOwner);
         $this->updateFolderResponse(['name' => $this->faker->word, 'folder' => $folder->id])->assertOk();

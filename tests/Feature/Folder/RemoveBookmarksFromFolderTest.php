@@ -8,6 +8,7 @@ use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Models\FolderSetting;
 use App\Services\Folder\AddBookmarksToFolderService;
+use App\Services\Folder\MuteCollaboratorService;
 use App\Services\Folder\ToggleFolderCollaborationRestriction;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderCollaboratorPermissionFactory;
@@ -371,6 +372,34 @@ class RemoveBookmarksFromFolderTest extends TestCase
             'bookmarks' => $bookmarkIDs->all(),
             'folder'    => $folderID
         ])->assertOk();
+
+        Notification::assertNothingSent();
+    }
+
+    #[Test]
+    public function willNotNotifyFolderOwnerWhenCollaboratorIsMuted(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
+        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
+
+        $this->addBookmarksToFolder($bookmarkIDs->all(), $folderID);
+
+        FolderCollaboratorPermissionFactory::new()
+            ->user($collaborator->id)
+            ->folder($folderID)
+            ->removeBookmarksPermission()
+            ->create();
+
+        /** @var MuteCollaboratorService */
+        $muteCollaboratorService = app(MuteCollaboratorService::class);
+
+        $muteCollaboratorService->mute($folderID, $collaborator->id, $folderOwner->id);
+
+        Notification::fake();
+
+        $this->loginUser($collaborator);
+        $this->removeFolderBookmarksResponse(['bookmarks' => $bookmarkIDs->all(), 'folder' => $folderID])->assertOk();
 
         Notification::assertNothingSent();
     }

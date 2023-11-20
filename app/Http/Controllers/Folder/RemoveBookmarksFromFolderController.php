@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Folder;
 
 use App\Rules\ResourceIdRule;
-use App\Services\Folder\RemoveBookmarksFromFolderService as Service;
+use App\Services\Folder\RemoveFolderBookmarksService as Service;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

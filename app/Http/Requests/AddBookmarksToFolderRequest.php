@@ -22,6 +22,14 @@ final class AddBookmarksToFolderRequest extends FormRequest
     }
 
     /**
+     * @return array<int>
+     */
+    public function getBookmarkIds(): array
+    {
+        return $this->collect('bookmarks')->map(fn (string $id) => (int) $id)->all();
+    }
+
+    /**
      * Configure the validator instance.
      *
      * @param  \Illuminate\Validation\Validator  $validator

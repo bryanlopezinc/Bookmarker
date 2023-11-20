@@ -17,6 +17,7 @@ use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\UserNotFoundException;
 use App\Models\Folder;
 use App\Models\FolderCollaboratorPermission;
+use App\Models\Scopes\IsMutedUserScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Models\User;
 use App\Notifications\NewCollaboratorNotification as Notification;
@@ -46,8 +47,9 @@ final class AcceptFolderCollaborationInviteService
 
         $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'collaboratorsCount'])
             ->tap(new WhereFolderOwnerExists())
+            ->tap(new IsMutedUserScope($inviterId))
             ->addSelect([
-                'collaborator' => FolderCollaboratorPermission::select('id')
+                'collaboratorExists' => FolderCollaboratorPermission::select('id')
                     ->where('folder_id', $folderId)
                     ->where('user_id', $inviteeId)
                     ->limit(1)
@@ -58,7 +60,7 @@ final class AcceptFolderCollaborationInviteService
 
         FolderCollaboratorsLimitExceededException::throwIfExceeded($folder->collaboratorsCount);
 
-        if ($folder->collaborator !== null) {
+        if ($folder->collaboratorExists) {
             return;
         }
 
@@ -112,7 +114,8 @@ final class AcceptFolderCollaborationInviteService
         if (
             ($folderSettings->notificationsAreDisabled() || $folderSettings->newCollaboratorNotificationIsDisabled()) ||
             (!$wasInvitedByFolderOwner && $folderSettings->onlyCollaboratorsInvitedByMeNotificationIsEnabled()) ||
-            ($wasInvitedByFolderOwner && $folderSettings->onlyCollaboratorsInvitedByMeNotificationIsDisabled())
+            ($wasInvitedByFolderOwner && $folderSettings->onlyCollaboratorsInvitedByMeNotificationIsDisabled()) ||
+            $folder->collaboratorIsMuted
         ) {
             return;
         }

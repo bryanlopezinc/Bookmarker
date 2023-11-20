@@ -21,6 +21,7 @@ use App\Enums\FolderSettingKey;
 use App\Models\Folder;
 use App\Models\FolderPermission;
 use App\Models\FolderSetting;
+use App\Services\Folder\MuteCollaboratorService;
 use App\UAC;
 use Database\Factories\FolderCollaboratorPermissionFactory;
 use Illuminate\Testing\Assert as PHPUnit;
@@ -469,5 +470,34 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
 
         Notification::assertSentTimes(\App\Notifications\NewCollaboratorNotification::class, 1);
+    }
+
+    #[Test]
+    public function willNotNotifyFolderOwnerWhenCollaboratorIsMuted(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
+
+        $folder = FolderFactory::new()->create();
+
+        /** @var MuteCollaboratorService */
+        $muteCollaboratorService = app(MuteCollaboratorService::class);
+
+        $muteCollaboratorService->mute($folder->id, $collaborator->id, $folder->user_id);
+
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $collaborator->id,
+            $invitee->id,
+            $folder->id,
+            new UAC([Permission::VIEW_BOOKMARKS])
+        );
+
+        Notification::fake();
+
+        $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
+
+        Notification::assertNothingSent();
     }
 }

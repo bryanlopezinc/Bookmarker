@@ -13,6 +13,7 @@ use App\Exceptions\FolderNotFoundException;
 use App\Repositories\BookmarkRepository;
 use App\ValueObjects\UserId;
 use App\Exceptions\HttpException as HttpException;
+use App\Exceptions\PermissionDeniedException;
 use App\Http\Requests\AddBookmarksToFolderRequest as Request;
 use App\Jobs\CheckBookmarksHealth;
 use App\Models\Bookmark;
@@ -102,12 +103,14 @@ final class AddBookmarksToFolderService
 
     private function ensureUserHasPermissionToPerformAction(Folder $folder, int $authUserId): void
     {
-        if ($folder->actionIsDisable && $folder->user_id !== $authUserId) {
+        $folderBelongsToAuthUser = $folder->user_id === auth()->id();
+
+        if ($folder->actionIsDisable && !$folderBelongsToAuthUser) {
             throw new FolderActionDisabledException(Permission::ADD_BOOKMARKS);
         }
 
         try {
-            FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
+            FolderNotFoundException::throwIf(!$folderBelongsToAuthUser);
         } catch (FolderNotFoundException $e) {
             $userFolderAccess = $this->permissions->getUserAccessControls($authUserId, $folder->id);
 
@@ -116,9 +119,7 @@ final class AddBookmarksToFolderService
             }
 
             if (!$userFolderAccess->canAddBookmarks()) {
-                throw new HttpResponseException(
-                    response()->json(['message' => 'NoAddBookmarkPermission'], 403)
-                );
+                throw new PermissionDeniedException(Permission::ADD_BOOKMARKS);
             }
         }
     }

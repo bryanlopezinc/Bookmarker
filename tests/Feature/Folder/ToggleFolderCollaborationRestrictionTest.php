@@ -5,13 +5,15 @@ namespace Tests\Feature\Folder;
 use App\Models\FolderDisabledAction;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
 class ToggleFolderCollaborationRestrictionTest extends TestCase
 {
-    protected function updateFolderResponse(array $parameters = []): TestResponse
+    public function updateFolderResponse(array $parameters = []): TestResponse
     {
         return $this->patchJson(
             route('updateFolderCollaboratorActions'),
@@ -40,9 +42,22 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['folder_id']);
 
+        //assert at least one parameter must be present
+        $this->updateFolderResponse(['folder_id' => 2])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['addBookmarks']);
+
         $this->updateFolderResponse(['addBookmarks' => 'foo'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['addBookmarks']);
+
+        $this->updateFolderResponse(['inviteUser' => 'foo'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['inviteUser']);
+
+        $this->updateFolderResponse(['updateFolder' => 'foo'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['updateFolder']);
     }
 
     #[Test]
@@ -52,25 +67,195 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $updateFolderResponse = function (array $query) use ($folder) {
-            $query['folder_id'] = (string) $folder->id;
-            return $this->updateFolderResponse($query);
-        };
+        $this->toggleRestriction(
+            folderId: $folder->id,
+            id: null,
+            assertions: [
+                'Will return ok when restriction is already enabled' => [
+                    'data' => ['addBookmarks' => true],
+                    'expectation' => function (Collection $disabledActions) {
+                        $this->assertCount(0, $disabledActions);
+                    }
+                ],
 
-        $updateFolderResponse(['addBookmarks' => true])->assertOk();
-        $this->assertDatabaseMissing(FolderDisabledAction::class, ['folder_id' => $folder->id]);
+                'Will enable restrictions' => [
+                    'data' => ['addBookmarks' => false],
+                    'expectation' => function (Collection $disabledActions) {
+                        $this->assertCount(1, $disabledActions);
+                        $this->assertEquals($disabledActions->first()->action, 'ADD_BOOKMARKS');
+                    }
+                ],
 
-        $updateFolderResponse(['addBookmarks' => false])->assertOk();
-        $this->assertDatabaseHas(FolderDisabledAction::class, $data = [
-            'folder_id' => $folder->id,
-            'action'    => 'ADD_BOOKMARKS',
-        ]);
+                'Will return ok when restriction is already enabled' => [
+                    'data' => ['addBookmarks' => false],
+                    'expectation' => function (Collection $disabledActions) {
+                        $this->assertCount(1, $disabledActions);
+                        $this->assertEquals($disabledActions->first()->action, 'ADD_BOOKMARKS');
+                    }
+                ],
 
-        $updateFolderResponse(['addBookmarks' => false])->assertOk();
-        $this->assertDatabaseHas(FolderDisabledAction::class, $data);
+                'Will disable restriction' => [
+                    'data' => ['addBookmarks' => true],
+                    'expectation' => function (Collection $disabledActions) {
+                        $this->assertCount(0, $disabledActions);
+                    }
+                ],
+            ]
+        );
+    }
 
-        $updateFolderResponse(['addBookmarks' => true])->assertOk();
-        $this->assertDatabaseMissing(FolderDisabledAction::class, ['folder_id' => $folder->id]);
+    protected function toggleRestriction(array $assertions, int $folderId, string $id = null)
+    {
+        if ($id) {
+            $assertions = Arr::only($assertions, $id);
+        }
+
+        foreach ($assertions as $test) {
+            $response = $this->updateFolderResponse(array_merge(['folder_id' => $folderId], $test['data']));
+            $response->assertOk();
+
+            $disabledAction = FolderDisabledAction::where('folder_id', $folderId)->get();
+
+            foreach (Arr::wrap($test['expectation']) as $expectation) {
+                $expectation($disabledAction, $response);
+            }
+        }
+
+        if ($id) {
+            $this->markTestIncomplete('Some toggle bookmarks assertions were not made');
+        }
+    }
+
+    #[Test]
+    public function toggleRemoveBookmarks(): void
+    {
+        $this->loginUser($user = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->for($user)->create();
+
+        $this->toggleRestriction(
+            folderId: $folder->id,
+            id: null,
+            assertions: [
+                'Will return ok when restriction is already enabled' => [
+                    'data' => ['removeBookmarks' => true],
+                    'expectation' => function (Collection $disabledActions) {
+                        $this->assertCount(0, $disabledActions);
+                    }
+                ],
+
+                'Will enable restrictions' => [
+                    'data' => ['removeBookmarks' => false],
+                    'expectation' => function (Collection $disabledActions) {
+                        $this->assertCount(1, $disabledActions);
+                        $this->assertEquals($disabledActions->first()->action, 'DELETE_BOOKMARKS');
+                    }
+                ],
+
+                'Will return ok when restriction is already enabled' => [
+                    'data' => ['removeBookmarks' => false],
+                    'expectation' => function (Collection $disabledActions) {
+                        $this->assertCount(1, $disabledActions);
+                        $this->assertEquals($disabledActions->first()->action, 'DELETE_BOOKMARKS');
+                    }
+                ],
+
+                'Will disable restriction' => [
+                    'data' => ['removeBookmarks' => true],
+                    'expectation' => function (Collection $disabledActions) {
+                        $this->assertCount(0, $disabledActions);
+                    }
+                ],
+            ]
+        );
+    }
+
+    #[Test]
+    public function toggleInviteUser(): void
+    {
+        $this->loginUser($user = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->for($user)->create();
+
+        $this->toggleRestriction(
+            folderId: $folder->id,
+            id: null,
+            assertions: [
+                'Will return ok when restriction is already enabled' => [
+                    'data' => ['inviteUser' => true],
+                    'expectation' => function (Collection $disabledActions) {
+                        $this->assertCount(0, $disabledActions);
+                    }
+                ],
+
+                'Will enable restrictions' => [
+                    'data' => ['inviteUser' => false],
+                    'expectation' => function (Collection $disabledActions) {
+                        $this->assertCount(1, $disabledActions);
+                        $this->assertEquals($disabledActions->first()->action, 'INVITE_USER');
+                    }
+                ],
+
+                'Will return ok when restriction is already enabled' => [
+                    'data' => ['inviteUser' => false],
+                    'expectation' => function (Collection $disabledActions) {
+                        $this->assertCount(1, $disabledActions);
+                        $this->assertEquals($disabledActions->first()->action, 'INVITE_USER');
+                    }
+                ],
+
+                'Will disable restriction' => [
+                    'data' => ['inviteUser' => true],
+                    'expectation' => function (Collection $disabledActions) {
+                        $this->assertCount(0, $disabledActions);
+                    }
+                ],
+            ]
+        );
+    }
+
+    #[Test]
+    public function toggleUpdateFolder(): void
+    {
+        $this->loginUser($user = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->for($user)->create();
+
+        $this->toggleRestriction(
+            folderId: $folder->id,
+            id: null,
+            assertions: [
+                'Will return ok when restriction is already enabled' => [
+                    'data' => ['updateFolder' => true],
+                    'expectation' => function (Collection $disabledActions) {
+                        $this->assertCount(0, $disabledActions);
+                    }
+                ],
+
+                'Will enable restrictions' => [
+                    'data' => ['updateFolder' => false],
+                    'expectation' => function (Collection $disabledActions) {
+                        $this->assertCount(1, $disabledActions);
+                        $this->assertEquals($disabledActions->first()->action, 'UPDATE_FOLDER');
+                    }
+                ],
+
+                'Will return ok when restriction is already enabled' => [
+                    'data' => ['updateFolder' => false],
+                    'expectation' => function (Collection $disabledActions) {
+                        $this->assertCount(1, $disabledActions);
+                        $this->assertEquals($disabledActions->first()->action, 'UPDATE_FOLDER');
+                    }
+                ],
+
+                'Will disable restriction' => [
+                    'data' => ['updateFolder' => true],
+                    'expectation' => function (Collection $disabledActions) {
+                        $this->assertCount(0, $disabledActions);
+                    }
+                ],
+            ]
+        );
     }
 
     #[Test]
@@ -80,7 +265,7 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
 
         $folderId = FolderFactory::new()->create()->id;
 
-        $this->updateFolderResponse(['folder_id' => $folderId, 'action' => 'addBookmarks'])->assertNotFound();
+        $this->updateFolderResponse(['folder_id' => $folderId, 'addBookmarks' => false])->assertNotFound();
 
         $this->assertDatabaseMissing(FolderDisabledAction::class, ['folder_id' => $folderId]);
     }
@@ -92,7 +277,7 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
 
         $folder = FolderFactory::new()->create();
 
-        $this->updateFolderResponse(['folder_id' => $folder->id + 1, 'action' => 'addBookmarks'])->assertNotFound();
+        $this->updateFolderResponse(['folder_id' => $folder->id + 1, 'addBookmarks' => false])->assertNotFound();
 
         $this->assertDatabaseMissing(FolderDisabledAction::class, ['folder_id' => $folder->id + 1]);
     }

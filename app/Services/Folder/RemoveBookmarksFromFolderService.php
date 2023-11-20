@@ -5,18 +5,21 @@ declare(strict_types=1);
 namespace App\Services\Folder;
 
 use App\DataTransferObjects\FolderSettings;
+use App\Enums\Permission;
+use App\Exceptions\FolderActionDisabledException;
 use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
+use App\Exceptions\PermissionDeniedException;
 use App\Models\Bookmark;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
+use App\Models\Scopes\DisabledActionScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\ValueObjects\UserId;
 use App\Notifications\BookmarksRemovedFromFolderNotification as Notification;
 use App\Repositories\NotificationRepository;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class RemoveBookmarksFromFolderService
 {
@@ -32,6 +35,7 @@ final class RemoveBookmarksFromFolderService
 
         $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'updated_at'])
             ->tap(new WhereFolderOwnerExists())
+            ->tap(new DisabledActionScope(Permission::DELETE_BOOKMARKS))
             ->find($folderID);
 
         FolderNotFoundException::throwIf(!$folder);
@@ -68,8 +72,14 @@ final class RemoveBookmarksFromFolderService
 
     private function ensureUserCanPerformAction(Folder $folder, int $authUserId): void
     {
+        $folderBelongsToAuthUser = $folder->user_id === auth()->id();
+
+        if ($folder->actionIsDisable && !$folderBelongsToAuthUser) {
+            throw new FolderActionDisabledException(Permission::DELETE_BOOKMARKS);
+        }
+
         try {
-            FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
+            FolderNotFoundException::throwIf(!$folderBelongsToAuthUser);
         } catch (FolderNotFoundException $e) {
             $accessControls = $this->permissions->getUserAccessControls($authUserId, $folder->id);
 
@@ -78,9 +88,7 @@ final class RemoveBookmarksFromFolderService
             }
 
             if (!$accessControls->canRemoveBookmarks()) {
-                throw new HttpResponseException(
-                    response()->json(['message' => 'NoRemoveBookmarksPermission'], 403)
-                );
+                throw new PermissionDeniedException(Permission::DELETE_BOOKMARKS);
             }
         }
     }

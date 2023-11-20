@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Folder;
 
+use App\Enums\Permission;
 use Tests\TestCase;
 use Illuminate\Support\Str;
 use Illuminate\Http\Response;
@@ -16,6 +17,7 @@ use Database\Factories\FolderCollaboratorPermissionFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use App\Models\BannedCollaborator;
 use App\Models\Folder;
+use App\Services\Folder\ToggleFolderCollaborationRestriction;
 use Database\Factories\EmailFactory;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -450,16 +452,7 @@ class SendFolderCollaborationInviteTest extends TestCase
             $parameters['permissions'] = implode(',', $permissions);
         }
 
-        try {
-            $this->sendInviteResponse($parameters)->assertOk();
-        } catch (\Throwable $e) {
-            $this->appendMessageToException(
-                '******** EXPECTATION FAILED FOR REQUEST WITH ID : ' . $testID . ' ********',
-                $e
-            );
-
-            throw $e;
-        }
+        $this->sendInviteResponse($parameters)->assertOk();
     }
 
     public function testCollaborator_cannot_send_invites_when_folder_owner_has_deleted_account(): void
@@ -527,5 +520,34 @@ class SendFolderCollaborationInviteTest extends TestCase
             'folder_id' => $folder->id,
         ])->assertForbidden()
             ->assertExactJson($error);
+    }
+
+    #[Test]
+    public function onlyFolderOwnerCanSendInvitesFolderWhenActionIsDisabled(): void
+    {
+        /** @var ToggleFolderCollaborationRestriction */
+        $updateCollaboratorActionService = app(ToggleFolderCollaborationRestriction::class);
+
+        [$collaborator, $folderOwner, $invitee, $otherInvitee] = UserFactory::new()->count(4)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        FolderCollaboratorPermissionFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->inviteUser()
+            ->create();
+
+        //Assert collaborator can update when disabled action is not invite user action
+        $updateCollaboratorActionService->update($folder->id, Permission::UPDATE_FOLDER, false);
+        $this->loginUser($collaborator);
+        $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->id])->assertOk();
+
+        $updateCollaboratorActionService->update($folder->id, Permission::INVITE_USER, false);
+        $this->sendInviteResponse(['email' => $otherInvitee->email, 'folder_id' => $folder->id])
+            ->assertForbidden()
+            ->assertExactJson(['message' => 'InviteUserActionDisabled']);
+
+        $this->loginUser($folderOwner);
+        $this->sendInviteResponse(['email' => $otherInvitee->email, 'folder_id' => $folder->id])->assertOk();
     }
 }

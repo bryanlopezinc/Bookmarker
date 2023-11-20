@@ -4,8 +4,10 @@ namespace Tests\Feature\Folder;
 
 use App\Enums\FolderSettingKey;
 use App\Enums\FolderVisibility;
+use App\Enums\Permission;
 use App\Models\Folder;
 use App\Models\FolderSetting;
+use App\Services\Folder\ToggleFolderCollaborationRestriction;
 use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -17,6 +19,7 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 use Illuminate\Testing\Assert as PHPUnit;
+use PHPUnit\Framework\Attributes\Test;
 
 class UpdateFolderTest extends TestCase
 {
@@ -482,5 +485,34 @@ class UpdateFolderTest extends TestCase
         ])->assertOk();
 
         Notification::assertNothingSent();
+    }
+
+    #[Test]
+    public function onlyFolderOwnerCanUpdateFolderWhenActionIsDisabled(): void
+    {
+        /** @var ToggleFolderCollaborationRestriction */
+        $updateCollaboratorActionService = app(ToggleFolderCollaborationRestriction::class);
+
+        [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        FolderCollaboratorPermissionFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->updateFolderPermission()
+            ->create();
+
+        //Assert collaborator can update when disabled action is not remove bookmark action
+        $updateCollaboratorActionService->update($folder->id, Permission::INVITE_USER, false);
+        $this->loginUser($collaborator);
+        $this->updateFolderResponse(['name' => $this->faker->word, 'folder' => $folder->id])->assertOk();
+
+        $updateCollaboratorActionService->update($folder->id, Permission::UPDATE_FOLDER, false);
+        $this->updateFolderResponse(['name' => $this->faker->word, 'folder' => $folder->id])
+            ->assertForbidden()
+            ->assertExactJson(['message' => 'UpdateFolderActionDisabled']);
+
+        $this->loginUser($folderOwner);
+        $this->updateFolderResponse(['name' => $this->faker->word, 'folder' => $folder->id])->assertOk();
     }
 }

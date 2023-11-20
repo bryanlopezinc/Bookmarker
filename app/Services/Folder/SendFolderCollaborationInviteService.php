@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace App\Services\Folder;
 
 use App\Cache\InviteTokensStore;
+use App\Enums\Permission;
+use App\Exceptions\FolderActionDisabledException;
 use App\Exceptions\FolderNotFoundException;
 use App\Models\{BannedCollaborator, Folder, User};
 use App\Exceptions\HttpException;
 use App\Exceptions\FolderCollaboratorsLimitExceededException;
+use App\Exceptions\PermissionDeniedException;
 use App\Http\Requests\SendFolderCollaborationInviteRequest as Request;
 use App\Mail\FolderCollaborationInviteMail as InvitationMail;
+use App\Models\Scopes\DisabledActionScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Repositories\Folder\FolderPermissionsRepository;
 use App\Repositories\UserRepository;
@@ -36,6 +40,7 @@ final class SendFolderCollaborationInviteService
 
         $folder = Folder::onlyAttributes(['id', 'user_id', 'name', 'collaboratorsCount'])
             ->tap(new WhereFolderOwnerExists())
+            ->tap(new DisabledActionScope(Permission::INVITE_USER))
             ->find($request->integer('folder_id'));
 
         FolderNotFoundException::throwIf(!$folder);
@@ -70,8 +75,14 @@ final class SendFolderCollaborationInviteService
 
     private function ensureUserHasPermissionToPerformAction(Folder $folder, User $inviter, Request $request): void
     {
+        $folderBelongsToAuthUser = $folder->user_id === auth()->id();
+
         try {
-            FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
+            if ($folder->actionIsDisable && !$folderBelongsToAuthUser) {
+                throw new FolderActionDisabledException(Permission::INVITE_USER);
+            }
+
+            FolderNotFoundException::throwIf(!$folderBelongsToAuthUser);
         } catch (FolderNotFoundException $e) {
             $userFolderPermissions = $this->permissions->getUserAccessControls($inviter->id, $folder->id);
 
@@ -80,13 +91,11 @@ final class SendFolderCollaborationInviteService
             }
 
             if (!$userFolderPermissions->canInviteUser()) {
-                throw HttpException::forbidden(['message' => 'NoSendInvitePermission']);
+                throw new PermissionDeniedException(Permission::INVITE_USER);
             }
 
             if ($request->filled('permissions')) {
-                throw HttpException::forbidden([
-                    'message' => 'CollaboratorCannotSendInviteWithPermissions'
-                ]);
+                throw HttpException::forbidden(['message' => 'CollaboratorCannotSendInviteWithPermissions']);
             }
         }
     }

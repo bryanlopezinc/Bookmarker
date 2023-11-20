@@ -6,10 +6,14 @@ namespace App\Services\Folder;
 
 use App\DataTransferObjects\FolderSettings;
 use App\Enums\FolderVisibility;
+use App\Enums\Permission;
+use App\Exceptions\FolderActionDisabledException;
 use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
+use App\Exceptions\PermissionDeniedException;
 use App\Http\Requests\CreateOrUpdateFolderRequest as Request;
 use App\Models\Folder;
+use App\Models\Scopes\DisabledActionScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Models\User;
 use App\Repositories\Folder\FolderPermissionsRepository;
@@ -34,11 +38,12 @@ final class UpdateFolderService
     {
         $folder = Folder::onlyAttributes(['id', 'user_id', 'name', 'description', 'visibility', 'settings'])
             ->tap(new WhereFolderOwnerExists())
+            ->tap(new DisabledActionScope(Permission::UPDATE_FOLDER))
             ->find($request->integer('folder'));
 
         FolderNotFoundException::throwIf(!$folder);
 
-        $authUser = auth('api')->user();
+        $authUser = auth()->user();
 
         $this->ensureUserCanUpdateFolder($folder, $request, $authUser->getAuthIdentifier());
 
@@ -74,8 +79,14 @@ final class UpdateFolderService
 
     private function ensureUserCanUpdateFolder(Folder $folder, Request $request, int $authUserId): void
     {
+        $folderBelongsToAuthUser = $folder->user_id === auth()->id();
+
+        if ($folder->actionIsDisable && !$folderBelongsToAuthUser) {
+            throw new FolderActionDisabledException(Permission::UPDATE_FOLDER);
+        }
+
         try {
-            FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
+            FolderNotFoundException::throwIf(!$folderBelongsToAuthUser);
         } catch (FolderNotFoundException $e) {
             $userPermissions = $this->permissions->getUserAccessControls($authUserId, $folder->id);
 
@@ -89,7 +100,7 @@ final class UpdateFolderService
             );
 
             if (!$userPermissions->canUpdateFolder()) {
-                throw HttpException::forbidden(['message' => 'NoUpdatePermission']);
+                throw new PermissionDeniedException(Permission::UPDATE_FOLDER);
             }
         }
     }

@@ -11,14 +11,4 @@ enum Permission: string
     case DELETE_BOOKMARKS = 'DELETE_BOOKMARKS';
     case INVITE_USER      = 'INVITE_USER';
     case UPDATE_FOLDER    = 'UPDATE_FOLDER';
-
-    public function asHttpExceptionMessage(): string
-    {
-        return match ($this) {
-            self::ADD_BOOKMARKS    => 'AddBookmarksActionDisabled',
-            self::DELETE_BOOKMARKS => 'RemoveBookmarksActionDisabled',
-            self::INVITE_USER      => 'InviteUserActionDisabled',
-            self::UPDATE_FOLDER    => 'UpdateFolderActionDisabled'
-        };
-    }
 }

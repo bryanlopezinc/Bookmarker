@@ -9,7 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
 
-final class FolderActionDisabledException extends RuntimeException
+final class PermissionDeniedException extends RuntimeException
 {
     public function __construct(private readonly Permission $permission)
     {
@@ -25,10 +25,10 @@ final class FolderActionDisabledException extends RuntimeException
     public function render(Request $request): JsonResponse
     {
         $message = match ($this->permission) {
-            Permission::ADD_BOOKMARKS    => 'AddBookmarksActionDisabled',
-            Permission::DELETE_BOOKMARKS => 'RemoveBookmarksActionDisabled',
-            Permission::INVITE_USER      => 'InviteUserActionDisabled',
-            Permission::UPDATE_FOLDER    => 'UpdateFolderActionDisabled'
+            Permission::UPDATE_FOLDER    => 'NoUpdatePermission',
+            Permission::DELETE_BOOKMARKS => 'NoRemoveBookmarksPermission',
+            Permission::ADD_BOOKMARKS    => 'NoAddBookmarkPermission',
+            Permission::INVITE_USER      => 'NoSendInvitePermission'
         };
 
         return new JsonResponse(['message' => $message], JsonResponse::HTTP_FORBIDDEN);

@@ -3,19 +3,23 @@
 namespace Tests\Feature\Folder;
 
 use App\Enums\FolderSettingKey;
+use App\Enums\Permission;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Models\FolderSetting;
 use App\Services\Folder\AddBookmarksToFolderService;
+use App\Services\Folder\ToggleFolderCollaborationRestriction;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class RemoveBookmarksFromFolderTest extends TestCase
@@ -25,7 +29,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
     protected function removeFolderBookmarksResponse(array $parameters = []): TestResponse
     {
         if (array_key_exists('bookmarks', $parameters)) {
-            $parameters['bookmarks'] = implode(',', $parameters['bookmarks']);
+            $parameters['bookmarks'] = implode(',', Arr::wrap($parameters['bookmarks']));
         }
 
         return $this->deleteJson(route('removeBookmarksFromFolder'), $parameters);
@@ -369,5 +373,48 @@ class RemoveBookmarksFromFolderTest extends TestCase
         ])->assertOk();
 
         Notification::assertNothingSent();
+    }
+
+    #[Test]
+    public function onlyFolderOwnerCanRemoveBookmarksWhenActionIsDisabled(): void
+    {
+        /** @var ToggleFolderCollaborationRestriction */
+        $updateCollaboratorActionService = app(ToggleFolderCollaborationRestriction::class);
+
+        /** @var AddBookmarksToFolderService */
+        $addBooksService = app(AddBookmarksToFolderService::class);
+
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $bookmarks = BookmarkFactory::times(2)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $addBooksService->add($folder->id, $bookmarks->pluck('id')->all());
+
+        FolderCollaboratorPermissionFactory::new()
+            ->user($collaborator->id)
+            ->folder($folder->id)
+            ->removeBookmarksPermission()
+            ->create();
+
+        //Assert collaborator can remove bookmark when disabled action is not remove bookmark action
+        $updateCollaboratorActionService->update($folder->id, Permission::INVITE_USER, false);
+        $this->loginUser($collaborator);
+        $this->removeFolderBookmarksResponse([
+            'bookmarks' => $bookmarks[0]->id,
+            'folder'    => $folder->id
+        ])->assertOk();
+
+        $updateCollaboratorActionService->update($folder->id, Permission::DELETE_BOOKMARKS, false);
+        $this->removeFolderBookmarksResponse([
+            'bookmarks' => $bookmarks[1]->id,
+            'folder'    => $folder->id
+        ])->assertForbidden()
+            ->assertExactJson(['message' => 'RemoveBookmarksActionDisabled']);
+
+        $this->loginUser($folderOwner);
+        $this->removeFolderBookmarksResponse([
+            'bookmarks' => $bookmarks[1]->id,
+            'folder'    => $folder->id
+        ])->assertOk();
     }
 }

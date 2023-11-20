@@ -9,7 +9,6 @@ use App\Http\Requests\UpdateCollaboratorActionRequest as Request;
 use App\Models\Folder;
 use App\Models\FolderDisabledAction as Model;
 use App\Enums\Permission;
-use Illuminate\Http\Resources\MissingValue;
 use Illuminate\Support\Collection;
 
 final class ToggleFolderCollaborationRestriction
@@ -50,10 +49,15 @@ final class ToggleFolderCollaborationRestriction
     private function mapActions(Request $request): Collection
     {
         $actions = [
-            Permission::ADD_BOOKMARKS->value => $request->boolean('addBookmarks', new MissingValue())
+            Permission::ADD_BOOKMARKS->value    => $request->validated('addBookmarks', null),
+            Permission::DELETE_BOOKMARKS->value => $request->validated('removeBookmarks', null),
+            Permission::INVITE_USER->value      => $request->validated('inviteUser', null),
+            Permission::UPDATE_FOLDER->value    => $request->validated('updateFolder', null)
         ];
 
-        return collect($actions)->filter(fn ($value) => !$value instanceof MissingValue);
+        return collect($actions)
+            ->reject(fn ($value) => $value === null)
+            ->map(fn ($value) => boolval($value));
     }
 
     public function update(int $folderId, Permission $permission, bool $enable): void

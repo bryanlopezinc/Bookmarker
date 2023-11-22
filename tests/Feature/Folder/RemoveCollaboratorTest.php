@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Tests\Feature\Folder;
 
 use App\Models\BannedCollaborator;
+use App\Models\FolderCollaborator;
 use App\Models\FolderCollaboratorPermission;
-use Database\Factories\FolderCollaboratorPermissionFactory;
+use App\Repositories\Folder\CollaboratorPermissionsRepository;
+use App\Repositories\Folder\CollaboratorRepository;
+use App\UAC;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -14,7 +17,7 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 
-class RemoveFolderCollaboratorTest extends TestCase
+class RemoveCollaboratorTest extends TestCase
 {
     use WithFaker;
 
@@ -117,15 +120,20 @@ class RemoveFolderCollaboratorTest extends TestCase
 
     public function testRemoveCollaborator(): void
     {
-        [$user, $collaborator] = UserFactory::times(2)->create();
-        $folder = FolderFactory::new()->for($user)->create();
-        $folderCollaboratorPermissionFactory = FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id);
+        [$folderOwner, $collaborator, $otherCollaborator] = UserFactory::times(3)->create();
 
-        $folderCollaboratorPermissionFactory->viewBookmarksPermission()->create();
-        $folderCollaboratorPermissionFactory->addBookmarksPermission()->create();
-        $folderCollaboratorPermissionFactory->removeBookmarksPermission()->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        Passport::actingAs($user);
+        $collaboratorRepository = new CollaboratorRepository;
+        $collaboratorPermissionsRepository = new CollaboratorPermissionsRepository;
+
+        $collaboratorPermissionsRepository->create($collaborator->id, $folder->id, UAC::all());
+        $collaboratorPermissionsRepository->create($otherCollaborator->id, $folder->id, UAC::all());
+
+        $collaboratorRepository->create($folder->id, $collaborator->id, $folderOwner->id);
+        $collaboratorRepository->create($folder->id, $otherCollaborator->id, $folderOwner->id);
+
+        $this->loginUser($folderOwner);
         $this->deleteCollaboratorResponse([
             'user_id'   => $collaborator->id,
             'folder_id' => $folder->id
@@ -136,18 +144,33 @@ class RemoveFolderCollaboratorTest extends TestCase
             'folder_id' => $folder->id
         ]);
 
+        $this->assertDatabaseMissing(FolderCollaborator::class, [
+            'collaborator_id' => $collaborator->id,
+            'folder_id' => $folder->id
+        ]);
+
         $this->assertDatabaseMissing(BannedCollaborator::class, [
             'user_id'   => $collaborator->id,
             'folder_id' => $folder->id
         ]);
+
+        $this->assertDatabaseHas(FolderCollaboratorPermission::class, [
+            'user_id'   => $otherCollaborator->id,
+            'folder_id' => $folder->id
+        ]);
+
+        $this->assertDatabaseHas(FolderCollaborator::class, [
+            'collaborator_id' => $otherCollaborator->id,
+            'folder_id' => $folder->id
+        ]);
     }
 
-    public function testRemoveAndBanCollaborator(): void
+    public function testBanCollaborator(): void
     {
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->create();
+        (new CollaboratorRepository)->create($folder->id, $collaborator->id, $folderOwner->id);
 
         Passport::actingAs($folderOwner);
         $this->deleteCollaboratorResponse([
@@ -158,26 +181,6 @@ class RemoveFolderCollaboratorTest extends TestCase
 
         $this->assertDatabaseHas(BannedCollaborator::class, [
             'user_id'   => $collaborator->id,
-            'folder_id' => $folder->id
-        ]);
-    }
-
-    public function testWillNotRemoveOtherCollaborators(): void
-    {
-        $users = UserFactory::times(3)->create();
-        $folder = FolderFactory::new()->for($users[0])->create();
-
-        FolderCollaboratorPermissionFactory::new()->user($users[1]->id)->folder($folder->id)->create();
-        FolderCollaboratorPermissionFactory::new()->user($users[2]->id)->folder($folder->id)->create();
-
-        Passport::actingAs($users[0]);
-        $this->deleteCollaboratorResponse([
-            'user_id'   => $users[1]->id,
-            'folder_id' => $folder->id
-        ])->assertOk();
-
-        $this->assertDatabaseHas(FolderCollaboratorPermission::class, [
-            'user_id'   => $users[2]->id,
             'folder_id' => $folder->id
         ]);
     }

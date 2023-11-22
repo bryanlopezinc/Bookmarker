@@ -10,8 +10,8 @@ use App\Models\FolderSetting;
 use App\Services\Folder\AddBookmarksToFolderService;
 use App\Services\Folder\MuteCollaboratorService;
 use App\Services\Folder\ToggleFolderCollaborationRestriction;
+use App\UAC;
 use Database\Factories\BookmarkFactory;
-use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -22,11 +22,14 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\CreatesCollaboration;
 use Tests\Traits\WillCheckBookmarksHealth;
 
 class AddBookmarksToFolderTest extends TestCase
 {
-    use WithFaker, WillCheckBookmarksHealth;
+    use WithFaker,
+        WillCheckBookmarksHealth,
+        CreatesCollaboration;
 
     protected function addBookmarksToFolderResponse(array $parameters = []): TestResponse
     {
@@ -142,11 +145,7 @@ class AddBookmarksToFolderTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->addBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         Passport::actingAs($collaborator);
         $this->addBookmarksToFolderResponse([
@@ -165,13 +164,14 @@ class AddBookmarksToFolderTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
-        $folderAccessFactory = FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id);
         $collaboratorBookmark = BookmarkFactory::new()->for($collaborator)->create();
 
-        $folderAccessFactory->updateFolderPermission()->create();
-        $folderAccessFactory->removeBookmarksPermission()->create();
-        $folderAccessFactory->viewBookmarksPermission()->create();
-        $folderAccessFactory->inviteUser()->create();
+        $permissions = UAC::all()
+            ->toCollection()
+            ->reject(Permission::ADD_BOOKMARKS->value)
+            ->all();
+
+        $this->CreateCollaborationRecord($collaborator, $folder, $permissions);
 
         Passport::actingAs($collaborator);
         $this->addBookmarksToFolderResponse([
@@ -247,11 +247,7 @@ class AddBookmarksToFolderTest extends TestCase
 
         $bookmarkIds = BookmarkFactory::new()->count(3)->for($collaborator)->create()->pluck('id');
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->addBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         Passport::actingAs($collaborator);
         $this->addBookmarksToFolderResponse([
@@ -348,11 +344,7 @@ class AddBookmarksToFolderTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->addBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         $folderOwner->delete();
 
@@ -370,11 +362,7 @@ class AddBookmarksToFolderTest extends TestCase
         $bookmarks = BookmarkFactory::new()->count(3)->for($collaborator)->create()->pluck('id');
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->addBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         FolderSetting::create([
             'key'       => FolderSettingKey::ENABLE_NOTIFICATIONS->value,
@@ -399,11 +387,7 @@ class AddBookmarksToFolderTest extends TestCase
         $bookmarks = BookmarkFactory::new()->count(3)->for($collaborator)->create()->pluck('id');
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->addBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         FolderSetting::create([
             'key'       => FolderSettingKey::NOTIFY_ON_NEW_BOOKMARK->value,
@@ -432,11 +416,7 @@ class AddBookmarksToFolderTest extends TestCase
         /** @var MuteCollaboratorService */
         $muteCollaboratorService = app(MuteCollaboratorService::class);
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->addBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         $muteCollaboratorService->mute($folder->id, $collaborator->id, $folderOwner->id);
 
@@ -460,11 +440,7 @@ class AddBookmarksToFolderTest extends TestCase
         $folderOwnerBookmark = BookmarkFactory::new()->for($folderOwner)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->addBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         //Assert collaborator can add bookmark when disabled action is not addBookmarks action
         $updateCollaboratorActionService->update($folder->id, Permission::INVITE_USER, false);

@@ -4,16 +4,19 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder\Mute;
 
+use App\Enums\Permission;
 use App\Models\MutedCollaborator;
-use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\CreatesCollaboration;
 
 class MuteCollaboratorTest extends TestCase
 {
+    use CreatesCollaboration;
+
     protected function muteCollaboratorResponse(array $parameters = []): TestResponse
     {
         foreach (['folder_id', 'collaborator_id'] as $key) {
@@ -61,11 +64,7 @@ class MuteCollaboratorTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->addBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         $this->loginUser($folderOwner);
         $this->muteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
@@ -84,11 +83,7 @@ class MuteCollaboratorTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->addBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         $this->loginUser($folderOwner);
         $this->muteCollaboratorResponse($query = ['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])

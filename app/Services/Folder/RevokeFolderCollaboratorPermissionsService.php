@@ -7,16 +7,13 @@ namespace App\Services\Folder;
 use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
-use App\Models\FolderCollaboratorPermission;
-use App\Models\FolderPermission;
-use App\Repositories\Folder\FolderPermissionsRepository;
+use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\UAC;
-use App\ValueObjects\UserId;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class RevokeFolderCollaboratorPermissionsService
 {
-    public function __construct(private FolderPermissionsRepository $permissions)
+    public function __construct(private CollaboratorPermissionsRepository $permissions)
     {
     }
 
@@ -26,9 +23,9 @@ final class RevokeFolderCollaboratorPermissionsService
 
         FolderNotFoundException::throwIf(!$folder);
 
-        $collaboratorPermissions = $this->permissions->getUserAccessControls($collaboratorID, $folderID);
+        $collaboratorPermissions = $this->permissions->all($collaboratorID, $folderID);
 
-        $this->ensureIsNotPerformingActionOnSelf($collaboratorID, $authUserId = UserId::fromAuthUser()->value());
+        $this->ensureIsNotPerformingActionOnSelf($collaboratorID, $authUserId = auth()->id());
 
         $this->ensureUserHasPermissionToPerformAction($folder, $authUserId);
 
@@ -36,11 +33,7 @@ final class RevokeFolderCollaboratorPermissionsService
 
         $this->ensureCollaboratorHasPermissions($collaboratorPermissions, $revokePermissions);
 
-        FolderCollaboratorPermission::query()
-            ->where('folder_id', $folderID)
-            ->where('user_id', $collaboratorID)
-            ->whereIn('permission_id', FolderPermission::select('id')->whereIn('name', $revokePermissions->toArray()))
-            ->delete();
+        $this->permissions->delete($collaboratorID, $folderID, $revokePermissions);
     }
 
     private function ensureUserHasPermissionToPerformAction(Folder $folder, int $authUserId): void
@@ -48,7 +41,7 @@ final class RevokeFolderCollaboratorPermissionsService
         try {
             FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
         } catch (FolderNotFoundException $e) {
-            $userFolderAccess = $this->permissions->getUserAccessControls($authUserId, $folder->id);
+            $userFolderAccess = $this->permissions->all($authUserId, $folder->id);
 
             if ($userFolderAccess->isEmpty()) {
                 throw $e;

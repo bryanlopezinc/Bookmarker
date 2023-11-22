@@ -19,17 +19,18 @@ use Laravel\Passport\Passport;
 use Tests\TestCase;
 use App\Enums\FolderSettingKey;
 use App\Models\Folder;
+use App\Models\FolderCollaborator;
 use App\Models\FolderPermission;
 use App\Models\FolderSetting;
 use App\Services\Folder\MuteCollaboratorService;
 use App\UAC;
-use Database\Factories\FolderCollaboratorPermissionFactory;
 use Illuminate\Testing\Assert as PHPUnit;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Traits\CreatesCollaboration;
 
 class AcceptFolderCollaborationInviteTest extends TestCase
 {
-    use WithFaker;
+    use WithFaker, CreatesCollaboration;
 
     protected InviteTokensStore $tokenStore;
 
@@ -91,6 +92,31 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         $this->acceptInviteResponse(['invite_hash' => $this->faker->uuid])
             ->assertNotFound()
             ->assertExactJson(['message' => 'InvitationNotFoundOrExpired']);
+    }
+
+    #[Test]
+    public function acceptInvite(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $folderOwner->id,
+            $invitee->id,
+            $folder->id,
+            new UAC(Permission::ADD_BOOKMARKS)
+        );
+
+        $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
+
+        $savedRecord = FolderCollaborator::where('folder_id', $folder->id)->first();
+
+        $this->assertEquals($invitee->id, $savedRecord->collaborator_id);
+        $this->assertEquals($folderOwner->id, $savedRecord->invited_by);
     }
 
     public function testAcceptInviteWithPermissions(): void
@@ -164,10 +190,11 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
 
-        $savedPermissions = FolderCollaboratorPermission::query()->where([
-            'folder_id' => $folder->id,
-            'user_id' => $invitee->id,
-        ])->get();
+        $savedPermissions = FolderCollaboratorPermission::query()
+            ->where([
+                'folder_id' => $folder->id,
+                'user_id' => $invitee->id,
+            ])->get();
 
         $savedPermissionsTypes = FolderPermission::query()
             ->findMany($savedPermissions->pluck('permission_id')->all(), ['name'])
@@ -186,11 +213,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($invitee->id)
-            ->folder($folder->id)
-            ->inviteUser()
-            ->create();
+        $this->CreateCollaborationRecord($invitee, $folder);
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,

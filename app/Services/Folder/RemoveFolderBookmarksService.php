@@ -16,7 +16,7 @@ use App\Models\FolderBookmark;
 use App\Models\Scopes\DisabledActionScope;
 use App\Models\Scopes\IsMutedUserScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
-use App\Repositories\Folder\FolderPermissionsRepository;
+use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\Notifications\BookmarksRemovedFromFolderNotification as Notification;
 use App\Repositories\NotificationRepository;
 use Illuminate\Database\Eloquent\Collection;
@@ -24,7 +24,7 @@ use Illuminate\Database\Eloquent\Collection;
 final class RemoveFolderBookmarksService
 {
     public function __construct(
-        private FolderPermissionsRepository $permissions,
+        private CollaboratorPermissionsRepository $permissions,
         private NotificationRepository $notifications
     ) {
     }
@@ -78,7 +78,7 @@ final class RemoveFolderBookmarksService
         try {
             FolderNotFoundException::throwIf(!$folderBelongsToAuthUser);
         } catch (FolderNotFoundException $e) {
-            $accessControls = $this->permissions->getUserAccessControls($authUserId, $folder->id);
+            $accessControls = $this->permissions->all($authUserId, $folder->id);
 
             if ($accessControls->isEmpty()) {
                 throw $e;

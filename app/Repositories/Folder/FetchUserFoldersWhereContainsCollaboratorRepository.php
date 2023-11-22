@@ -6,6 +6,7 @@ namespace App\Repositories\Folder;
 
 use App\DataTransferObjects\UserCollaboration;
 use App\Models\Folder;
+use App\Models\FolderCollaborator;
 use App\Models\FolderPermission;
 use App\PaginationData;
 use Illuminate\Pagination\Paginator;
@@ -34,13 +35,13 @@ final class FetchUserFoldersWhereContainsCollaboratorRepository
                             ->where('user_id', $collaboratorId)
                     )
             ])
-            ->whereIn(
-                'id',
-                FolderCollaboratorPermission::select('folder_id')
-                    ->where('user_id', $collaboratorId)
-                    ->distinct('folder_id')
-            )
             ->where('user_id', $authUserId)
+            ->whereExists(function (&$query) use ($collaboratorId) {
+                $query = FolderCollaborator::query()
+                    ->where('collaborator_id', $collaboratorId)
+                    ->whereRaw("folder_id = folders.id")
+                    ->getQuery();
+            })
             ->whereExists(function (&$query) use ($collaboratorId) {
                 $query = User::select('id')->where('id', $collaboratorId)->getQuery();
             });

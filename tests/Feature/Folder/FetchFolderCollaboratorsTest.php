@@ -3,21 +3,19 @@
 namespace Tests\Feature\Folder;
 
 use App\Enums\Permission;
-use App\Models\FolderCollaboratorPermission;
-use App\Models\FolderPermission;
-use App\Models\User;
-use App\Repositories\Folder\FolderPermissionsRepository;
 use App\UAC;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse as Response;
 use Laravel\Passport\Passport;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\AssertValidPaginationData;
 use Tests\TestCase;
+use Tests\Traits\CreatesCollaboration;
 
 class FetchFolderCollaboratorsTest extends TestCase
 {
-    use AssertValidPaginationData;
+    use AssertValidPaginationData, CreatesCollaboration;
 
     protected function fetchCollaboratorsResponse(array $parameters = []): Response
     {
@@ -78,7 +76,7 @@ class FetchFolderCollaboratorsTest extends TestCase
         $userFolder = FolderFactory::new()->for($user)->create();
         $collaborator = UserFactory::new()->create();
 
-        $this->createUserFolderAccess($collaborator, $userFolder->id, FolderPermission::all(['name'])->pluck('name')->all());
+        $this->CreateCollaborationRecord($collaborator, $userFolder, UAC::all()->toArray());
 
         $this->fetchCollaboratorsResponse(['folder_id' => $userFolder->id])
             ->assertOk()
@@ -88,6 +86,7 @@ class FetchFolderCollaboratorsTest extends TestCase
             ->assertJsonPath('data.0.type', 'folderCollaborator')
             ->assertJsonPath('data.0.attributes.id', $collaborator->id)
             ->assertJsonPath('data.0.attributes.name', $collaborator->first_name . ' ' . $collaborator->last_name)
+            ->assertJsonPath('data.0.attributes.permissions', UAC::all()->toJsonResponse())
             ->assertJsonStructure([
                 'data' => [
                     '*' => [
@@ -102,6 +101,26 @@ class FetchFolderCollaboratorsTest extends TestCase
             ]);
     }
 
+    #[Test]
+    public function willOrderResultByLatest(): void
+    {
+        $this->loginUser($folderOwner = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+        $collaborators = UserFactory::times(3)->create();
+
+        $this->CreateCollaborationRecord($collaborators[0], $folder, Permission::ADD_BOOKMARKS);
+        $this->CreateCollaborationRecord($collaborators[1], $folder, Permission::ADD_BOOKMARKS);
+        $this->CreateCollaborationRecord($collaborators[2], $folder, Permission::ADD_BOOKMARKS);
+
+        $this->fetchCollaboratorsResponse(['folder_id' => $folder->id])
+            ->assertOk()
+            ->assertJsonCount(3, 'data')
+            ->assertJsonPath('data.0.attributes.id', $collaborators[2]->id)
+            ->assertJsonPath('data.1.attributes.id', $collaborators[1]->id)
+            ->assertJsonPath('data.2.attributes.id', $collaborators[0]->id);
+    }
+
     public function testWillReturnOnlyCollaboratorsWithSpecifiedName(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
@@ -114,13 +133,14 @@ class FetchFolderCollaboratorsTest extends TestCase
             )
             ->create();
 
-        $folderID = FolderFactory::new()->for($user)->create()->id;
+        $folder = FolderFactory::new()->for($user)->create();
+        $otherFolder = FolderFactory::new()->create();
 
-        $this->createUserFolderAccess($collaborators[0], $folderID, Permission::VIEW_BOOKMARKS->value);
-        $this->createUserFolderAccess($collaborators[1], $folderID - 1, Permission::ADD_BOOKMARKS->value);
-        $this->createUserFolderAccess($collaborators[2], $folderID, Permission::VIEW_BOOKMARKS->value);
+        $this->CreateCollaborationRecord($collaborators[0], $folder, Permission::VIEW_BOOKMARKS);
+        $this->CreateCollaborationRecord($collaborators[1], $otherFolder, Permission::ADD_BOOKMARKS);
+        $this->CreateCollaborationRecord($collaborators[2], $folder, Permission::VIEW_BOOKMARKS);
 
-        $this->fetchCollaboratorsResponse(['folder_id' => $folderID, 'name' => 'bryan'])
+        $this->fetchCollaboratorsResponse(['folder_id' => $folder->id, 'name' => 'bryan'])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.attributes.id', $collaborators[0]->id);
@@ -131,64 +151,57 @@ class FetchFolderCollaboratorsTest extends TestCase
         Passport::actingAs($user = UserFactory::new()->create());
 
         $collaborators = UserFactory::times(7)->create();
-        $folderID = FolderFactory::new()->for($user)->create()->id;
+        $folder = FolderFactory::new()->for($user)->create();
 
-        $this->createUserFolderAccess($collaborators[0], $folderID, FolderPermission::all(['name'])->pluck('name')->all());
-        $this->createUserFolderAccess($collaborators[1], $folderID, Permission::ADD_BOOKMARKS->value);
-        $this->createUserFolderAccess($collaborators[2], $folderID, Permission::VIEW_BOOKMARKS->value);
-        $this->createUserFolderAccess($collaborators[3], $folderID, Permission::INVITE_USER->value);
-        $this->createUserFolderAccess($collaborators[4], $folderID, Permission::DELETE_BOOKMARKS->value);
-        $this->createUserFolderAccess($collaborators[5], $folderID, Permission::UPDATE_FOLDER->value);
-        $this->createUserFolderAccess($collaborators[6], $folderID, [Permission::INVITE_USER->value, Permission::ADD_BOOKMARKS->value]);
+        $this->CreateCollaborationRecord($collaborators[0], $folder, UAC::all()->toArray());
+        $this->CreateCollaborationRecord($collaborators[1], $folder, Permission::ADD_BOOKMARKS);
+        $this->CreateCollaborationRecord($collaborators[2], $folder, Permission::VIEW_BOOKMARKS);
+        $this->CreateCollaborationRecord($collaborators[3], $folder, Permission::INVITE_USER);
+        $this->CreateCollaborationRecord($collaborators[4], $folder, Permission::DELETE_BOOKMARKS);
+        $this->CreateCollaborationRecord($collaborators[5], $folder, Permission::UPDATE_FOLDER);
+        $this->CreateCollaborationRecord($collaborators[6], $folder, [Permission::INVITE_USER, Permission::ADD_BOOKMARKS]);
 
-        $this->fetchCollaboratorsResponse(['folder_id' => $folderID, 'permissions' => 'addBookmarks,inviteUser'])
+        $this->fetchCollaboratorsResponse(['folder_id' => $folder->id, 'permissions' => 'addBookmarks,inviteUser'])
             ->assertOk()
             ->assertJsonCount(2, 'data')
             ->assertJsonCount(4, 'data.0.attributes.permissions')
-            ->assertJsonPath('data.0.attributes.id', $collaborators[0]->id)
-            ->assertJsonPath('data.1.attributes.id', $collaborators[6]->id);
+            ->assertJsonPath('data.0.attributes.id', $collaborators[6]->id)
+            ->assertJsonPath('data.1.attributes.id', $collaborators[0]->id);
 
-        $this->fetchCollaboratorsResponse(['folder_id' => $folderID, 'permissions' => 'addBookmarks'])
+        $this->fetchCollaboratorsResponse(['folder_id' => $folder->id, 'permissions' => 'addBookmarks'])
             ->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJsonCount(4, 'data.0.attributes.permissions')
-            ->assertJsonPath('data.0.attributes.id', $collaborators[0]->id)
+            ->assertJsonPath('data.0.attributes.id', $collaborators[6]->id)
             ->assertJsonPath('data.1.attributes.id', $collaborators[1]->id)
-            ->assertJsonPath('data.2.attributes.id', $collaborators[6]->id);
+            ->assertJsonPath('data.2.attributes.id', $collaborators[0]->id);
 
-        $this->fetchCollaboratorsResponse(['folder_id' => $folderID, 'permissions' => 'inviteUser'])
+        $this->fetchCollaboratorsResponse(['folder_id' => $folder->id, 'permissions' => 'inviteUser'])
             ->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJsonCount(4, 'data.0.attributes.permissions')
-            ->assertJsonPath('data.0.attributes.id', $collaborators[0]->id)
+            ->assertJsonPath('data.0.attributes.id', $collaborators[6]->id)
             ->assertJsonPath('data.1.attributes.id', $collaborators[3]->id)
-            ->assertJsonPath('data.2.attributes.id', $collaborators[6]->id);
+            ->assertJsonPath('data.2.attributes.id', $collaborators[0]->id);
 
-        $this->fetchCollaboratorsResponse(['folder_id' => $folderID, 'permissions' => 'updateFolder'])
+        $this->fetchCollaboratorsResponse(['folder_id' => $folder->id, 'permissions' => 'updateFolder'])
             ->assertOk()
             ->assertJsonCount(2, 'data')
             ->assertJsonCount(4, 'data.0.attributes.permissions')
-            ->assertJsonPath('data.0.attributes.id', $collaborators[0]->id)
-            ->assertJsonPath('data.1.attributes.id', $collaborators[5]->id);
+            ->assertJsonPath('data.0.attributes.id', $collaborators[5]->id)
+            ->assertJsonPath('data.1.attributes.id', $collaborators[0]->id);
 
-        $this->fetchCollaboratorsResponse(['folder_id' => $folderID, 'permissions' => 'removeBookmarks'])
+        $this->fetchCollaboratorsResponse(['folder_id' => $folder->id, 'permissions' => 'removeBookmarks'])
             ->assertOk()
             ->assertJsonCount(2, 'data')
             ->assertJsonCount(4, 'data.0.attributes.permissions')
-            ->assertJsonPath('data.0.attributes.id', $collaborators[0]->id)
-            ->assertJsonPath('data.1.attributes.id', $collaborators[4]->id);
+            ->assertJsonPath('data.0.attributes.id', $collaborators[4]->id)
+            ->assertJsonPath('data.1.attributes.id', $collaborators[0]->id);
 
-        $this->fetchCollaboratorsResponse(['folder_id' => $folderID, 'permissions' => 'readOnly'])
+        $this->fetchCollaboratorsResponse(['folder_id' => $folder->id, 'permissions' => 'readOnly'])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.attributes.id', $collaborators[2]->id);
-    }
-
-    private function createUserFolderAccess(User $collaborator, int $folderID, string|array $permission): void
-    {
-        $repository = new FolderPermissionsRepository;
-
-        $repository->create($collaborator->id, $folderID, new UAC((array)$permission));
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotBelongToUser(): void
@@ -225,7 +238,7 @@ class FetchFolderCollaboratorsTest extends TestCase
         [$user, $collaborator] = UserFactory::times(2)->create();
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->createUserFolderAccess($collaborator, $folder->id, Permission::ADD_BOOKMARKS->value);
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         $collaborator->delete();
 
@@ -239,14 +252,14 @@ class FetchFolderCollaboratorsTest extends TestCase
     {
         $users = UserFactory::new()->count(3)->create();
 
-        $firstFolder = FolderFactory::new()->for($users[0])->create()->id;
-        $secondFolder = FolderFactory::new()->for($users[1])->create()->id;
+        $firstFolder = FolderFactory::new()->for($users[0])->create();
+        $secondFolder = FolderFactory::new()->for($users[1])->create();
 
-        $this->createUserFolderAccess($users[2], $firstFolder, Permission::ADD_BOOKMARKS->value);
-        $this->createUserFolderAccess($users[2], $secondFolder, Permission::ADD_BOOKMARKS->value);
+        $this->CreateCollaborationRecord($users[2], $firstFolder, Permission::ADD_BOOKMARKS);
+        $this->CreateCollaborationRecord($users[2], $secondFolder, Permission::ADD_BOOKMARKS);
 
         Passport::actingAs($users[0]);
-        $this->fetchCollaboratorsResponse(['folder_id' => $firstFolder])
+        $this->fetchCollaboratorsResponse(['folder_id' => $firstFolder->id])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.attributes.id', $users[2]->id);

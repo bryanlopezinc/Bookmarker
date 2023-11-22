@@ -13,17 +13,18 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Testing\TestResponse;
 use Database\Factories\FolderFactory;
 use App\Mail\FolderCollaborationInviteMail;
-use Database\Factories\FolderCollaboratorPermissionFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use App\Models\BannedCollaborator;
 use App\Models\Folder;
 use App\Services\Folder\ToggleFolderCollaborationRestriction;
+use App\UAC;
 use Database\Factories\EmailFactory;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Traits\CreatesCollaboration;
 
 class SendFolderCollaborationInviteTest extends TestCase
 {
-    use WithFaker;
+    use WithFaker, CreatesCollaboration;
 
     protected function tearDown(): void
     {
@@ -94,10 +95,8 @@ class SendFolderCollaborationInviteTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->sendInviteResponse([
-            'email'     => $this->faker->unique()->email,
-            'folder_id' => $folder->id
-        ])->assertNotFound()
+        $this->sendInviteResponse(['email' => $this->faker->unique()->email, 'folder_id' => $folder->id])
+            ->assertNotFound()
             ->assertExactJson(['message' => 'UserNotFound']);
     }
 
@@ -132,26 +131,17 @@ class SendFolderCollaborationInviteTest extends TestCase
         $folder = FolderFactory::new()->for($folderOwner)->create();
         $inviteeSecondaryEmail = EmailFactory::new()->for($invitee)->create();
 
-        FolderCollaboratorPermissionFactory::new()->user($invitee->id)->folder($folder->id)->create();
-
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)->inviteUser()
-            ->folder($folder->id)
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
+        $this->CreateCollaborationRecord($invitee, $folder);
 
         Passport::actingAs($folderOwner);
-        $this->sendInviteResponse([
-            'email'     => $invitee->email,
-            'folder_id' => $folder->id,
-        ])->assertStatus(Response::HTTP_CONFLICT)
+        $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->id])
+            ->assertStatus(Response::HTTP_CONFLICT)
             ->assertExactJson($error = ['message' => "UserAlreadyACollaborator"]);
 
-        $this->sendInviteResponse([
-            'email'     => $inviteeSecondaryEmail->email,
-            'folder_id' => $folder->id,
-        ])->assertStatus(Response::HTTP_CONFLICT)
+        $this->sendInviteResponse(['email' => $inviteeSecondaryEmail->email, 'folder_id' => $folder->id])
+            ->assertStatus(Response::HTTP_CONFLICT)
             ->assertExactJson($error);
-
 
         Passport::actingAs($collaborator);
         $this->sendInviteResponse([
@@ -169,9 +159,9 @@ class SendFolderCollaborationInviteTest extends TestCase
 
     public function testCanOnlySendOneInvitePerMinuteToSameEmail(): void
     {
-        [$user, $invitee, $secondInvitee] = UserFactory::new()->count(3)->create();
+        [$folderOwner, $invitee, $secondInvitee] = UserFactory::new()->count(3)->create();
 
-        $folder = FolderFactory::new()->for($user)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         SecondaryEmail::query()->create([
             'email'       => $inviteeSecondaryEmail = $this->faker->unique()->email,
@@ -179,30 +169,24 @@ class SendFolderCollaborationInviteTest extends TestCase
             'verified_at' => now()
         ]);
 
-        Passport::actingAs($user);
-        $this->sendInviteResponse($parameters = [
-            'email'     => $invitee->email,
-            'folder_id' => $folder->id,
-        ])->assertOk();
+        Passport::actingAs($folderOwner);
+        $this->sendInviteResponse($parameters = ['email' => $invitee->email, 'folder_id' => $folder->id])->assertOk();
 
-        //same user with same email
-        $this->sendInviteResponse($parameters)->assertStatus(Response::HTTP_TOO_MANY_REQUESTS);
-        $this->sendInviteResponse($parameters)->assertStatus(Response::HTTP_TOO_MANY_REQUESTS);
+        $this->sendInviteResponse($parameters)
+            ->assertTooManyRequests()
+            ->assertJsonPath('retry-after', 60);
 
-        //same user different email
-        $this->sendInviteResponse([
-            'email'     => $inviteeSecondaryEmail,
-            'folder_id' => $folder->id,
-        ])->assertOk();
+        $this->sendInviteResponse($parameters)->assertTooManyRequests();
 
-        //different user
-        $this->sendInviteResponse([
-            'email'     => $secondInvitee->email,
-            'folder_id' => $folder->id,
-        ])->assertOk();
+        //Assert will not rate limit user when sending invite to invitee secondary email
+        $this->sendInviteResponse(['email' => $inviteeSecondaryEmail, 'folder_id' => $folder->id,])->assertOk();
 
-        $this->travel(62)->seconds(function () use ($parameters) {
-            $this->sendInviteResponse($parameters)->assertOk(); //same user with same email
+        //Assert will not rate limit user when sending invite to different user
+        $this->sendInviteResponse(['email' => $secondInvitee->email, 'folder_id' => $folder->id])->assertOk();
+
+        //Assert user can send invite to same email after 60 seconds
+        $this->travel(61)->seconds(function () use ($parameters) {
+            $this->sendInviteResponse($parameters)->assertOk();
         });
     }
 
@@ -213,11 +197,7 @@ class SendFolderCollaborationInviteTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->inviteUser()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
 
         Folder::retrieved(function (Folder $retrieved) {
             $retrieved->collaboratorsCount = 1000;
@@ -286,93 +266,69 @@ class SendFolderCollaborationInviteTest extends TestCase
             'verified_at' => now()
         ]);
 
-        $this->sendInviteResponse([
-            'email'     => $secondaryEmail,
-            'folder_id' => $folder->id,
-        ])->assertOk();
+        $this->sendInviteResponse(['email' => $secondaryEmail, 'folder_id' => $folder->id])->assertOk();
     }
 
-    public function testWillReturnForbiddenWhenFolderOwnerIsSendingInviteToSelf(): void
+    public function testWillReturnForbiddenWhenSendingInviteToSelf(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        [$folderOwner, $collaborator] = UserFactory::times(2)->create();
 
-        $folder = FolderFactory::new()->for($user)->create();
-        $secondaryEmail = EmailFactory::new()->for($user)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+        $folderOwnerSecondaryEmail = EmailFactory::new()->for($folderOwner)->create();
+        $collaboratorSecondaryEmail = EmailFactory::new()->for($collaborator)->create();
 
-        $this->sendInviteResponse([
-            'email'     => $user->email,
-            'folder_id' => $folder->id,
-        ])->assertForbidden()
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
+
+        $this->loginUser($folderOwner);
+        $this->sendInviteResponse(['email' => $folderOwner->email, 'folder_id' => $folder->id])
+            ->assertForbidden()
             ->assertExactJson($error = ['message' => 'CannotSendInviteToSelf']);
 
-        $this->sendInviteResponse([
-            'email'     => $secondaryEmail->email,
-            'folder_id' => $folder->id,
-        ])->assertForbidden()
+        $this->sendInviteResponse(['email' => $folderOwnerSecondaryEmail->email, 'folder_id' => $folder->id])
+            ->assertForbidden()
+            ->assertExactJson($error);
+
+
+        $this->loginUser($collaborator);
+        $this->sendInviteResponse(['email' => $collaborator->email, 'folder_id' => $folder->id])
+            ->assertForbidden()
+            ->assertExactJson($error);
+
+        $this->sendInviteResponse(['email' => $collaboratorSecondaryEmail->email, 'folder_id' => $folder->id])
+            ->assertForbidden()
             ->assertExactJson($error);
     }
 
-    public function testWillReturnForbiddenWhenCollaboratorIsSendingInviteToSelf(): void
+    public function testWillReturnOkWhenInviterIsACollaborator(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        [$folderOwner, $invitee, $collaborator] = UserFactory::times(3)->create();
 
-        $folder = FolderFactory::new()->create();
-        $secondaryEmail = EmailFactory::new()->for($user)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($user->id)
-            ->folder($folder->id)
-            ->inviteUser()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
 
-        $this->sendInviteResponse([
-            'email'     => $user->email,
-            'folder_id' => $folder->id,
-        ])->assertForbidden()
-            ->assertExactJson($error = ['message' => 'CannotSendInviteToSelf']);
-
-        $this->sendInviteResponse([
-            'email'     => $secondaryEmail->email,
-            'folder_id' => $folder->id,
-        ])->assertForbidden()
-            ->assertExactJson($error);
-    }
-
-    public function testUserWithPermissionCanSendInvite(): void
-    {
-        [$collaboratorWithInviteUserPermission, $invitee, $user] = UserFactory::times(3)->create();
-
-        $folder = FolderFactory::new()->for($user)->create();
-
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaboratorWithInviteUserPermission->id)
-            ->folder($folder->id)
-            ->inviteUser()
-            ->create();
-
-        Passport::actingAs($collaboratorWithInviteUserPermission);
+        $this->loginUser($collaborator);
         $this->sendInviteResponse([
             'email'     => $invitee->email,
-            'folder_id' => $folder->id,
+            'folder_id' => $folder->id
         ])->assertOk();
     }
 
     public function testWillReturnForbiddenWhenCollaboratorDoesNotHaveSendInvitePermission(): void
     {
         [$folderOwner, $collaborator, $invitee] = UserFactory::new()->count(3)->create();
-        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
-        $folderAccessFactory = FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        $folderAccessFactory->updateFolderPermission()->create();
-        $folderAccessFactory->addBookmarksPermission()->create();
-        $folderAccessFactory->viewBookmarksPermission()->create();
-        $folderAccessFactory->removeBookmarksPermission()->create();
+        $permissions = UAC::all()
+            ->toCollection()
+            ->reject(Permission::INVITE_USER->value)
+            ->all();
 
-        Passport::actingAs($collaborator);
-        $this->sendInviteResponse([
-            'email'     => $invitee->email,
-            'folder_id' => $folderID,
-        ])->assertForbidden()
+        $this->CreateCollaborationRecord($collaborator, $folder, $permissions);
+
+        $this->loginUser($collaborator);
+        $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->id])
+            ->assertForbidden()
             ->assertExactJson(['message' => 'NoSendInvitePermission']);
     }
 
@@ -383,39 +339,27 @@ class SendFolderCollaborationInviteTest extends TestCase
         $folder = FolderFactory::new()->for($folderOwner)->create();
         $folderOwnerSecondaryEmail = EmailFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->inviteUser()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
 
         Passport::actingAs($collaborator);
-        $this->sendInviteResponse([
-            'email'    => $folderOwner->email,
-            'folder_id' => $folder->id,
-        ])->assertStatus(Response::HTTP_CONFLICT)
+        $this->sendInviteResponse(['email' => $folderOwner->email, 'folder_id' => $folder->id])
+            ->assertStatus(Response::HTTP_CONFLICT)
             ->assertExactJson($error = ['message' => 'UserAlreadyACollaborator']);
 
-        $this->sendInviteResponse([
-            'email'    => $folderOwnerSecondaryEmail->email,
-            'folder_id' => $folder->id,
-        ])->assertStatus(Response::HTTP_CONFLICT)
+        $this->sendInviteResponse(['email' => $folderOwnerSecondaryEmail->email, 'folder_id' => $folder->id])
+            ->assertStatus(Response::HTTP_CONFLICT)
             ->assertExactJson($error);
     }
 
     public function testWillReturnForbiddenWhenCollaboratorIsSendingInviteWithPermissions(): void
     {
-        [$collaboratorWithInviteUserPermission, $invitee, $user] = UserFactory::times(3)->create();
+        [$collaborator, $invitee, $folderOwner] = UserFactory::times(3)->create();
 
-        $folder = FolderFactory::new()->for($user)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaboratorWithInviteUserPermission->id)
-            ->folder($folder->id)
-            ->inviteUser()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
 
-        Passport::actingAs($collaboratorWithInviteUserPermission);
+        Passport::actingAs($collaborator);
         $this->sendInviteResponse([
             'email'       => $invitee->email,
             'folder_id'   => $folder->id,
@@ -426,16 +370,16 @@ class SendFolderCollaborationInviteTest extends TestCase
 
     public function testSendInviteWithPermissions(): void
     {
-        $this->assertCanSendInviteWithPermissions(['*'], 50);
-        $this->assertCanSendInviteWithPermissions(['addBookmarks'], 2);
-        $this->assertCanSendInviteWithPermissions(['removeBookmarks'], 3);
-        $this->assertCanSendInviteWithPermissions(['inviteUser'], 31);
-        $this->assertCanSendInviteWithPermissions(['updateFolder'], 32);
-        $this->assertCanSendInviteWithPermissions(['addBookmarks', 'removeBookmarks'], 4);
-        $this->assertCanSendInviteWithPermissions(['addBookmarks', 'removeBookmarks', 'inviteUser'], 14);
+        $this->assertCanSendInviteWithPermissions(['*']);
+        $this->assertCanSendInviteWithPermissions(['addBookmarks']);
+        $this->assertCanSendInviteWithPermissions(['removeBookmarks']);
+        $this->assertCanSendInviteWithPermissions(['inviteUser']);
+        $this->assertCanSendInviteWithPermissions(['updateFolder']);
+        $this->assertCanSendInviteWithPermissions(['addBookmarks', 'removeBookmarks']);
+        $this->assertCanSendInviteWithPermissions(['addBookmarks', 'removeBookmarks', 'inviteUser']);
     }
 
-    private function assertCanSendInviteWithPermissions(array $permissions, int $testID): void
+    private function assertCanSendInviteWithPermissions(array $permissions): void
     {
         [$user, $invitee] = UserFactory::new()->count(2)->create();
 
@@ -461,11 +405,7 @@ class SendFolderCollaborationInviteTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->inviteUser()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
 
         $folderOwner->delete();
 
@@ -489,11 +429,7 @@ class SendFolderCollaborationInviteTest extends TestCase
             'user_id'   => $bannedCollaborator->id
         ]);
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->inviteUser()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
 
         Passport::actingAs($collaborator);
         $this->sendInviteResponse([
@@ -531,11 +467,7 @@ class SendFolderCollaborationInviteTest extends TestCase
         [$collaborator, $folderOwner, $invitee, $otherInvitee] = UserFactory::new()->count(4)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->inviteUser()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
 
         //Assert collaborator can update when disabled action is not invite user action
         $updateCollaboratorActionService->update($folder->id, Permission::UPDATE_FOLDER, false);

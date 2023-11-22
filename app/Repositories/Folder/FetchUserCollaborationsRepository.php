@@ -6,11 +6,12 @@ namespace App\Repositories\Folder;
 
 use App\DataTransferObjects\UserCollaboration;
 use App\Models\Folder;
+use App\Models\FolderCollaborator;
 use App\Models\FolderPermission;
 use App\PaginationData;
 use Illuminate\Pagination\Paginator;
 use App\Models\FolderCollaboratorPermission;
-use App\Models\User;
+use App\Models\Scopes\WhereFolderOwnerExists;
 use App\UAC;
 use Illuminate\Support\Facades\DB;
 
@@ -24,7 +25,7 @@ final class FetchUserCollaborationsRepository
         $folderModel = new Folder();
 
         $query = Folder::onlyAttributes()
-
+            ->tap(new WhereFolderOwnerExists())
             ->addSelect([
                 'permissions' => FolderPermission::query()
                     ->select(DB::raw("JSON_ARRAYAGG(name)"))
@@ -35,18 +36,10 @@ final class FetchUserCollaborationsRepository
                             ->where('user_id', $userID)
                     )
             ])
-
-            ->whereIn(
-                'id',
-                FolderCollaboratorPermission::select('folder_id')
-                    ->where('user_id', $userID)
-                    ->distinct('folder_id')
-            )
-
-            ->whereExists(function (&$query) use ($folderModel) {
-                $query = User::query()
-                    ->select('id')
-                    ->whereRaw("id = {$folderModel->qualifyColumn('user_id')}")
+            ->whereExists(function (&$query) use ($folderModel, $userID) {
+                $query = FolderCollaborator::query()
+                    ->where('collaborator_id', $userID)
+                    ->whereRaw("folder_id = {$folderModel->getQualifiedKeyName()}")
                     ->getQuery();
             });
 

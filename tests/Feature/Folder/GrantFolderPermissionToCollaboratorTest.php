@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Folder;
 
-use App\Repositories\Folder\FolderPermissionsRepository as Repository;
-use Database\Factories\FolderCollaboratorPermissionFactory;
+use App\Enums\Permission;
+use App\Repositories\Folder\CollaboratorPermissionsRepository as Repository;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -11,10 +11,11 @@ use Illuminate\Http\Response;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Tests\Traits\CreatesCollaboration;
 
 class GrantFolderPermissionToCollaboratorTest extends TestCase
 {
-    use WithFaker;
+    use WithFaker, CreatesCollaboration;
 
     protected function grantPermissionsResponse(array $parameters = []): TestResponse
     {
@@ -65,11 +66,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->viewBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder);
 
         Passport::actingAs($folderOwner);
         $this->grantPermissionsResponse([
@@ -78,7 +75,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
             'permissions' => 'inviteUser'
         ])->assertOk();
 
-        $collaboratorPermissions = (new Repository)->getUserAccessControls($collaborator->id, $folder->id);
+        $collaboratorPermissions = (new Repository)->all($collaborator->id, $folder->id);
 
         $this->assertTrue($collaboratorPermissions->canInviteUser());
 
@@ -91,11 +88,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->viewBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder);
 
         Passport::actingAs($folderOwner);
         $this->grantPermissionsResponse([
@@ -104,7 +97,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
             'permissions' => 'inviteUser,addBookmarks'
         ])->assertOk();
 
-        $collaboratorPermissions = (new Repository)->getUserAccessControls($collaborator->id, $folder->id);
+        $collaboratorPermissions = (new Repository)->all($collaborator->id, $folder->id);
 
         $this->assertTrue($collaboratorPermissions->canInviteUser());
         $this->assertTrue($collaboratorPermissions->canAddBookmarks());
@@ -141,11 +134,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->addBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         Passport::actingAs($folderOwner);
         $this->grantPermissionsResponse([

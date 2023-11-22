@@ -8,20 +8,14 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
 
-final class UserNotFoundException extends RuntimeException
+final class TooManyInvitesException extends RuntimeException
 {
-    public function report(): void
+    public function __construct(private readonly int $retryAfterSeconds)
     {
     }
 
-    /**
-     * @throws self
-     */
-    public static function throwIf(bool $condition): void
+    public function report(): void
     {
-        if ($condition) {
-            throw new self();
-        }
     }
 
     /**
@@ -30,8 +24,8 @@ final class UserNotFoundException extends RuntimeException
     public function render(Request $request): JsonResponse
     {
         return new JsonResponse(
-            ['message' => 'UserNotFound'],
-            JsonResponse::HTTP_NOT_FOUND
+            ['message' => 'TooManyRequests', 'retry-after' => $this->retryAfterSeconds],
+            JsonResponse::HTTP_TOO_MANY_REQUESTS
         );
     }
 }

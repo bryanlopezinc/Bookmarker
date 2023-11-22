@@ -8,6 +8,7 @@ use App\Enums\Permission;
 use Countable;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
 /**
@@ -23,9 +24,9 @@ final class UAC implements Countable, Arrayable
     /**
      * @param array<Permission|string> $permissions
      */
-    public function __construct(array $permissions)
+    public function __construct(array|Permission|string $permissions)
     {
-        $this->permissions = $this->resolvePermissions($permissions);
+        $this->permissions = $this->resolvePermissions(Arr::wrap($permissions));
 
         $this->validate();
     }
@@ -88,6 +89,7 @@ final class UAC implements Countable, Arrayable
     {
         $permissions = $this->permissions
             ->filter(fn (string $permission) => $permission !== Permission::VIEW_BOOKMARKS->value)
+            ->values()
             ->map(function (string $permission) {
                 return match ($permission) {
                     Permission::ADD_BOOKMARKS->value     => 'addBookmarks',

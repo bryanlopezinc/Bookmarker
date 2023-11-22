@@ -6,16 +6,18 @@ namespace Tests\Feature\Folder;
 
 use App\Enums\Permission;
 use App\Models\FolderCollaboratorPermission;
-use App\Models\FolderPermission;
-use Database\Factories\FolderCollaboratorPermissionFactory;
+use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Tests\Traits\CreatesCollaboration;
 
 class RevokeCollaboratorPermissionsTest extends TestCase
 {
+    use CreatesCollaboration;
+
     private function revokePermissionsResponse(array $parameters = []): TestResponse
     {
         return $this->deleteJson(route('revokePermissions'), $parameters);
@@ -90,28 +92,28 @@ class RevokeCollaboratorPermissionsTest extends TestCase
     {
         $users = UserFactory::times(3)->create();
 
-        $folderID = FolderFactory::new()->create()->id;
+        $folder = FolderFactory::new()->create();
 
-        FolderCollaboratorPermissionFactory::new()->user($users[1]->id)->folder($folderID)->create();
-        FolderCollaboratorPermissionFactory::new()->user($users[2]->id)->folder($folderID)->addBookmarksPermission()->create();
+        $this->CreateCollaborationRecord($users[1], $folder);
+        $this->CreateCollaborationRecord($users[2], $folder, Permission::ADD_BOOKMARKS);
 
         Passport::actingAs($users[1]);
         $this->revokePermissionsResponse([
             'user_id'     => $users[2]->id,
-            'folder_id'   => $folderID,
+            'folder_id'   => $folder->id,
             'permissions' => 'addBookmarks'
         ])->assertForbidden()
             ->assertExactJson($error = ['message' => 'NoRevokePermissionPermission']);
 
         $this->revokePermissionsResponse([
             'user_id'     => $users[0]->id,
-            'folder_id'   => $folderID,
+            'folder_id'   => $folder->id,
             'permissions' => 'addBookmarks'
         ])->assertForbidden()
             ->assertExactJson($error);
 
         $this->assertDatabaseHas(FolderCollaboratorPermission::class, [
-            'folder_id' => $folderID,
+            'folder_id' => $folder->id,
             'user_id'   => $users[2]->id,
         ]);
     }
@@ -166,7 +168,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         Passport::actingAs($user);
-        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id)->addBookmarksPermission()->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         $this->revokePermissionsResponse([
             'user_id'     => $collaborator->id,
@@ -178,120 +180,119 @@ class RevokeCollaboratorPermissionsTest extends TestCase
 
     public function testRevokeAddBookmarksPermission(): void
     {
-        [$user, $collaborator] = UserFactory::times(2)->create();
+        [$folderOwner, $collaborator] = UserFactory::times(2)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        $folderID = FolderFactory::new()->for($user)->create()->id;
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folderID)
-            ->addBookmarksPermission()
-            ->create();
-
-        Passport::actingAs($user);
+        Passport::actingAs($folderOwner);
         $this->revokePermissionsResponse([
-            'user_id'     => $collaborator->id,
-            'folder_id'   => $folderID,
+            'user_id'    => $collaborator->id,
+            'folder_id'  => $folder->id,
             'permissions' => 'addBookmarks'
         ])->assertOk();
 
-        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
-            'folder_id' => $folderID,
-            'user_id'   => $collaborator->id,
-        ]);
+        $permissions = (new CollaboratorPermissionsRepository)->all($collaborator->id, $folder->id);
+
+        $this->assertFalse($permissions->canAddBookmarks());
     }
 
     public function testRevokeRemoveBookmarksPermission(): void
     {
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
-        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID)->removeBookmarksPermission()->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::DELETE_BOOKMARKS);
 
         Passport::actingAs($folderOwner);
         $this->revokePermissionsResponse([
             'user_id'    => $collaborator->id,
-            'folder_id'  => $folderID,
+            'folder_id'  => $folder->id,
             'permissions' => 'removeBookmarks'
         ])->assertOk();
+
+        $permissions = (new CollaboratorPermissionsRepository)->all($collaborator->id, $folder->id);
+
+        $this->assertFalse($permissions->canRemoveBookmarks());
     }
 
     public function testRevokeInviteUserPermission(): void
     {
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
-        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID)->inviteUser()->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
 
         Passport::actingAs($folderOwner);
         $this->revokePermissionsResponse([
             'user_id' => $collaborator->id,
-            'folder_id' => $folderID,
+            'folder_id' => $folder->id,
             'permissions' => 'inviteUser'
         ])->assertOk();
+
+        $permissions = (new CollaboratorPermissionsRepository)->all($collaborator->id, $folder->id);
+
+        $this->assertFalse($permissions->canInviteUser());
     }
 
     public function testRevokeMultiplePermissions(): void
     {
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
-        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID)->inviteUser()->create();
-        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID)->addBookmarksPermission()->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, [Permission::ADD_BOOKMARKS, Permission::INVITE_USER]);
 
         Passport::actingAs($folderOwner);
         $this->revokePermissionsResponse([
             'user_id' => $collaborator->id,
-            'folder_id' => $folderID,
+            'folder_id' => $folder->id,
             'permissions' => 'inviteUser,addBookmarks'
         ])->assertOk();
+
+        $permissions = (new CollaboratorPermissionsRepository)->all($collaborator->id, $folder->id);
+
+        $this->assertFalse($permissions->canAddBookmarks());
+        $this->assertFalse($permissions->canInviteUser());
     }
 
-    public function testWillNotRevokeCollaboratorsOtherPermissions(): void
+    public function testWillNotRevokeOtherCollaboratorPermissions(): void
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
 
-        $folderID = FolderFactory::new()->for($user)->create()->id;
+        $folder = FolderFactory::new()->for($user)->create();
 
-        $factory = FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID);
-
-        $factory->addBookmarksPermission()->create();
-        $factory->inviteUser()->create();
-        $factory->removeBookmarksPermission()->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, [Permission::ADD_BOOKMARKS, Permission::INVITE_USER]);
 
         Passport::actingAs($user);
         $this->revokePermissionsResponse([
             'user_id'     => $collaborator->id,
-            'folder_id'   => $folderID,
-            'permissions' => 'addBookmarks,inviteUser'
+            'folder_id'   => $folder->id,
+            'permissions' => 'addBookmarks'
         ])->assertOk();
 
-        $this->assertDatabaseHas(FolderCollaboratorPermission::class, [
-            'folder_id' => $folderID,
-            'user_id' => $collaborator->id,
-            'permission_id' => FolderPermission::query()->where('name', Permission::DELETE_BOOKMARKS->value)->sole()->id
-        ]);
+        $permissions = (new CollaboratorPermissionsRepository)->all($collaborator->id, $folder->id);
+
+        $this->assertTrue($permissions->canInviteUser());
     }
 
     public function testWillNotAffectOtherCollaboratorsPermissions(): void
     {
         $users = UserFactory::times(3)->create();
 
-        $folderID = FolderFactory::new()->for($users[0])->create()->id;
+        $folder = FolderFactory::new()->for($users[0])->create();
 
-        FolderCollaboratorPermissionFactory::new()->user($users[1]->id)->folder($folderID)->addBookmarksPermission()->create();
-        FolderCollaboratorPermissionFactory::new()->user($users[2]->id)->folder($folderID)->addBookmarksPermission()->create();
+        $this->CreateCollaborationRecord($users[1], $folder, Permission::ADD_BOOKMARKS);
+        $this->CreateCollaborationRecord($users[2], $folder, Permission::ADD_BOOKMARKS);
 
         Passport::actingAs($users[0]);
         $this->revokePermissionsResponse([
             'user_id'     => $users[1]->id,
-            'folder_id'   => $folderID,
+            'folder_id'   => $folder->id,
             'permissions' => 'addBookmarks'
         ])->assertOk();
 
-        $this->assertDatabaseHas(FolderCollaboratorPermission::class, [
-            'folder_id' => $folderID,
-            'user_id' => $users[2]->id,
-        ]);
+        $permissions = (new CollaboratorPermissionsRepository)->all($users[2]->id, $folder->id);
+
+        $this->assertTrue($permissions->isNotEmpty());
     }
 }

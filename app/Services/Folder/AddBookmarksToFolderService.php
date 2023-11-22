@@ -22,7 +22,7 @@ use App\Models\Scopes\DisabledActionScope;
 use App\Models\Scopes\IsMutedUserScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Notifications\BookmarksAddedToFolderNotification as Notification;
-use App\Repositories\Folder\FolderPermissionsRepository;
+use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\Repositories\NotificationRepository;
 use App\ValueObjects\FolderStorage;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -32,7 +32,7 @@ final class AddBookmarksToFolderService
 {
     public function __construct(
         private BookmarkRepository $bookmarksRepository,
-        private FolderPermissionsRepository $permissions,
+        private CollaboratorPermissionsRepository $permissions,
         private NotificationRepository $notifications
     ) {
     }
@@ -110,7 +110,7 @@ final class AddBookmarksToFolderService
         try {
             FolderNotFoundException::throwIf(!$folderBelongsToAuthUser);
         } catch (FolderNotFoundException $e) {
-            $userFolderAccess = $this->permissions->getUserAccessControls($authUserId, $folder->id);
+            $userFolderAccess = $this->permissions->all($authUserId, $folder->id);
 
             if ($userFolderAccess->isEmpty()) {
                 throw $e;

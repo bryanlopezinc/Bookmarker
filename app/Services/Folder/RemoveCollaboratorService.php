@@ -8,25 +8,23 @@ use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
 use App\Models\BannedCollaborator;
 use App\Models\Folder;
-use App\Models\FolderCollaboratorPermission;
-use App\Repositories\Folder\FolderPermissionsRepository;
+use App\Models\Scopes\UserIsCollaboratorScope;
+use App\Repositories\Folder\CollaboratorPermissionsRepository;
+use App\Repositories\Folder\CollaboratorRepository;
 use App\ValueObjects\UserId;
 
 final class RemoveCollaboratorService
 {
-    public function __construct(private FolderPermissionsRepository $permissions)
-    {
+    public function __construct(
+        private CollaboratorPermissionsRepository $permissions,
+        private CollaboratorRepository $collaboratorRepository
+    ) {
     }
 
     public function revokeUserAccess(int $folderID, int $collaboratorID, bool $banCollaborator): void
     {
         $folder = Folder::query()
-            ->addSelect([
-                'collaborator' => FolderCollaboratorPermission::select('id')
-                    ->where('folder_id', $folderID)
-                    ->where('user_id', $collaboratorID)
-                    ->limit(1)
-            ])
+            ->tap(new UserIsCollaboratorScope($collaboratorID))
             ->find($folderID, ['id', 'user_id']);
 
         FolderNotFoundException::throwIf(!$folder);
@@ -35,11 +33,13 @@ final class RemoveCollaboratorService
 
         $this->ensureIsNotRemovingSelf($collaboratorID, UserId::fromAuthUser()->value());
 
-        if (!$folder->collaborator) {
+        if (!$folder->userIsCollaborator) {
             throw HttpException::notFound(['message' => 'UserNotACollaborator']);
         }
 
-        $this->permissions->removeCollaborator($collaboratorID, $folderID);
+        $this->collaboratorRepository->delete($folderID, $collaboratorID);
+
+        $this->permissions->delete($collaboratorID, $folderID);
 
         if ($banCollaborator) {
             BannedCollaborator::query()->create([

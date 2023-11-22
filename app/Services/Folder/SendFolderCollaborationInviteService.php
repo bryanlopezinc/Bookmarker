@@ -8,26 +8,25 @@ use App\Cache\InviteTokensStore;
 use App\Enums\Permission;
 use App\Exceptions\FolderActionDisabledException;
 use App\Exceptions\FolderNotFoundException;
-use App\Models\{BannedCollaborator, Folder, User};
+use App\Models\{BannedCollaborator, Folder, FolderCollaborator, User};
 use App\Exceptions\HttpException;
 use App\Exceptions\FolderCollaboratorsLimitExceededException;
 use App\Exceptions\PermissionDeniedException;
+use App\Exceptions\TooManyInvitesException;
+use App\Exceptions\UserNotFoundException;
 use App\Http\Requests\SendFolderCollaborationInviteRequest as Request;
 use App\Mail\FolderCollaborationInviteMail as InvitationMail;
 use App\Models\Scopes\DisabledActionScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
-use App\Repositories\Folder\FolderPermissionsRepository;
-use App\Repositories\UserRepository;
+use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\UAC;
-use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Support\Facades\{RateLimiter, Mail};
 use Illuminate\Support\Str;
 
 final class SendFolderCollaborationInviteService
 {
     public function __construct(
-        private UserRepository $userRepository,
-        private FolderPermissionsRepository $permissions,
+        private CollaboratorPermissionsRepository $permissions,
         private InviteTokensStore $inviteTokensStore
     ) {
     }
@@ -38,39 +37,75 @@ final class SendFolderCollaborationInviteService
         // when trying to serialize accessToken model during tests
         $inviter = new User($request->user()->toArray()); // @phpstan-ignore-line
 
-        $folder = Folder::onlyAttributes(['id', 'user_id', 'name', 'collaboratorsCount'])
+        $inviteeEmail = $request->input('email');
+
+        $rateLimiterKey = "invites:{$inviter->id}:{$inviteeEmail}";
+
+        $invitationSent = RateLimiter::attempt(
+            key: $rateLimiterKey,
+            maxAttempts: 1,
+            callback: function () use ($request, $inviteeEmail, $inviter) {
+                $folder = $this->fetchFolderAndAttributesForValidation($request->integer('folder_id'), $inviteeEmail);
+
+                $this->validateAction($folder, $inviter, $request);
+
+                $this->sendInvitation(
+                    $folder,
+                    $folder->inviteeId,
+                    $inviteeEmail,
+                    $inviter,
+                    UAC::fromRequest($request, 'permissions')
+                );
+            }
+        );
+
+        if (!$invitationSent) {
+            throw new TooManyInvitesException(
+                RateLimiter::availableIn($rateLimiterKey)
+            );
+        }
+    }
+
+    private function fetchFolderAndAttributesForValidation(int $folderId, string $inviteeEmail): ?Folder
+    {
+        return Folder::onlyAttributes(['id', 'user_id', 'name', 'collaboratorsCount'])
             ->tap(new WhereFolderOwnerExists())
             ->tap(new DisabledActionScope(Permission::INVITE_USER))
-            ->find($request->integer('folder_id'));
+            ->addSelect([
+                'inviteeId' => User::select('users.id')
+                    ->leftJoin('users_emails', 'users.id', '=', 'users_emails.user_id')
+                    ->where('users.email', $inviteeEmail)
+                    ->orWhere('users_emails.email', $inviteeEmail)
+            ])
+            ->addSelect([
+                'collaboratorExists' => FolderCollaborator::select('id')
+                    ->whereColumn('folder_id', 'folders.id')
+                    ->whereColumn('folders_collaborators.collaborator_id', 'inviteeId')
+            ])
+            ->addSelect([
+                'inviteeIsBanned' => BannedCollaborator::query()
+                    ->select('id')
+                    ->whereColumn('folder_id', 'folders.id')
+                    ->whereColumn('user_id', 'inviteeId')
+            ])
+            ->find($folderId);
+    }
 
+    private function validateAction(?Folder $folder, User $inviter, Request $request): void
+    {
         FolderNotFoundException::throwIf(!$folder);
 
-        $invitee = $this->userRepository->findByEmailOrSecondaryEmail(
-            $inviteeEmail = $request->input('email'),
-            ['email', 'id']
-        );
+        $this->ensureUserHasPermissionToPerformAction($folder, $inviter, $request);
+
+        UserNotFoundException::throwIf(!$folder->inviteeId);
 
         FolderCollaboratorsLimitExceededException::throwIfExceeded($folder->collaboratorsCount);
 
-        $this->ensureUserHasPermissionToPerformAction($folder, $inviter, $request);
-        $this->ensureIsNotSendingInvitationSelf($inviteeEmail, $inviter);
-        $this->ensureInviteeIsNotAlreadyACollaborator($invitee, $folder);
-        $this->ensureIsNotSendingInviteToABannedCollaborator($invitee, $folder);
+        $this->ensureIsNotSendingInvitationSelf($folder->inviteeId, $inviter);
 
-        $invitationMailSent = RateLimiter::attempt(
-            "invites:{$inviter->id}:{$inviteeEmail}",
-            1,
-            $this->sendInvitationCallback(
-                $folder,
-                $invitee,
-                $inviter,
-                UAC::fromRequest($request, 'permissions')
-            )
-        );
+        $this->ensureInviteeIsNotAlreadyACollaborator($folder);
 
-        if ($invitationMailSent === false) {
-            throw new ThrottleRequestsException('Too Many Requests');
-        }
+        $this->ensureIsNotSendingInviteToABannedCollaborator($folder);
     }
 
     private function ensureUserHasPermissionToPerformAction(Folder $folder, User $inviter, Request $request): void
@@ -80,7 +115,7 @@ final class SendFolderCollaborationInviteService
         try {
             FolderNotFoundException::throwIf(!$folderBelongsToAuthUser);
         } catch (FolderNotFoundException $e) {
-            $userFolderPermissions = $this->permissions->getUserAccessControls($inviter->id, $folder->id);
+            $userFolderPermissions = $this->permissions->all($inviter->id, $folder->id);
 
             if ($userFolderPermissions->isEmpty()) {
                 throw $e;
@@ -100,58 +135,41 @@ final class SendFolderCollaborationInviteService
         }
     }
 
-    private function ensureIsNotSendingInvitationSelf(string $inviteeEmail, User $inviter): void
+    private function ensureIsNotSendingInvitationSelf(?int $inviteeId, User $inviter): void
     {
-        $inviterPrimaryAndSecondaryEmails = array_merge(
-            [$inviter->email],
-            $this->userRepository->getUserSecondaryEmails($inviter->id)
+        if ($inviteeId === $inviter->id) {
+            throw HttpException::forbidden(['message' => 'CannotSendInviteToSelf']);
+        }
+    }
+
+    private function sendInvitation(
+        Folder $folder,
+        int $inviteeId,
+        string $inviteeEmail,
+        User $inviter,
+        UAC $permissions
+    ): void {
+        $this->inviteTokensStore->store(
+            $token = (string) Str::uuid(),
+            $inviter->id,
+            $inviteeId,
+            $folder->id,
+            $permissions
         );
 
-        foreach ($inviterPrimaryAndSecondaryEmails as $inviterEmail) {
-            if ($inviterEmail === $inviteeEmail) {
-                throw HttpException::forbidden([
-                    'message' => 'CannotSendInviteToSelf'
-                ]);
-            }
+        Mail::to($inviteeEmail)->later(5, new InvitationMail($inviter, $folder, $token));
+    }
+
+    private function ensureInviteeIsNotAlreadyACollaborator(Folder $folder): void
+    {
+        if ($folder->collaboratorExists || $folder->inviteeId === $folder->user_id) {
+            throw HttpException::conflict(['message' => 'UserAlreadyACollaborator']);
         }
     }
 
-    private function sendInvitationCallback(Folder $folder, User $invitee, User $inviter, UAC $permissions): \Closure
+    private function ensureIsNotSendingInviteToABannedCollaborator(Folder $folder): void
     {
-        return function () use ($folder, $invitee, $inviter, $permissions) {
-            $this->inviteTokensStore->store(
-                $token = (string) Str::uuid(),
-                $inviter->id,
-                $invitee->id,
-                $folder->id,
-                $permissions
-            );
-
-            Mail::to($invitee->email)->later(20, new InvitationMail($inviter, $folder, $token));
-        };
-    }
-
-    private function ensureInviteeIsNotAlreadyACollaborator(User $invitee, Folder $folder): void
-    {
-        $inviteeIsFolderOwner = $invitee->id === $folder->user_id;
-
-        $inviteeIsACollaborator = $this->permissions->getUserAccessControls($invitee->id, $folder->id)->isNotEmpty();
-
-        if ($inviteeIsACollaborator || $inviteeIsFolderOwner) {
-            throw HttpException::conflict([
-                'message' => 'UserAlreadyACollaborator'
-            ]);
-        }
-    }
-
-    private function ensureIsNotSendingInviteToABannedCollaborator(User $invitee, Folder $folder): void
-    {
-        $isBanned = BannedCollaborator::query()->where([
-            'folder_id' => $folder->id,
-            'user_id'   => $invitee->id
-        ])->exists();
-
-        if ($isBanned) {
+        if ($folder->inviteeIsBanned) {
             throw HttpException::forbidden(['message' => 'UserBanned']);
         }
     }

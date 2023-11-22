@@ -2,12 +2,11 @@
 
 namespace Tests\Feature\Folder;
 
+use App\Enums\Permission;
 use App\Models\Favorite;
-use App\Models\FolderPermission;
 use App\Services\Folder\AddBookmarksToFolderService;
 use App\Services\Folder\MuteCollaboratorService;
 use Database\Factories\BookmarkFactory;
-use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
@@ -16,12 +15,14 @@ use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\AssertValidPaginationData;
 use Tests\TestCase;
+use Tests\Traits\CreatesCollaboration;
 use Tests\Traits\WillCheckBookmarksHealth;
 
 class FetchFolderBookmarksTest extends TestCase
 {
     use WillCheckBookmarksHealth,
-        AssertValidPaginationData;
+        AssertValidPaginationData,
+        CreatesCollaboration;
 
     private AddBookmarksToFolderService $addBookmarksToFolder;
 
@@ -117,55 +118,35 @@ class FetchFolderBookmarksTest extends TestCase
             ->assertJsonPath('data.1.attributes.id', $bookmarks[0]->id);
     }
 
-    public function testUserWithAnyPermissionCanViewBookmarks(): void
+    #[Test]
+    public function userWithAnyPermissionCanViewBookmarks(): void
     {
-        $this->assertUserWithPermissionCanPerformAction(function (FolderCollaboratorPermissionFactory $factory) {
-            return $factory->addBookmarksPermission();
-        });
-
-        $this->assertUserWithPermissionCanPerformAction(function (FolderCollaboratorPermissionFactory $factory) {
-            return $factory->viewBookmarksPermission();
-        });
-
-        $this->assertUserWithPermissionCanPerformAction(function (FolderCollaboratorPermissionFactory $factory) {
-            return $factory->removeBookmarksPermission();
-        });
-
-        $this->assertUserWithPermissionCanPerformAction(function (FolderCollaboratorPermissionFactory $factory) {
-            return $factory->inviteUser();
-        });
-
-        $this->assertUserWithPermissionCanPerformAction(function (FolderCollaboratorPermissionFactory $factory) {
-            return $factory->updateFolderPermission();
-        });
-    }
-
-    private function assertUserWithPermissionCanPerformAction(\Closure $permission): void
-    {
-        [$user, $folderOwner] = UserFactory::new()->count(2)->create();
-
-        Passport::actingAs($user);
-
+        $folderOwner = UserFactory::new()->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        /** @var FolderCollaboratorPermissionFactory */
-        $factory = $permission(FolderCollaboratorPermissionFactory::new()->user($user->id)->folder($folder->id));
+        $collaborator = UserFactory::new()->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::VIEW_BOOKMARKS);
+        $this->loginUser($collaborator);
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
 
-        $factory = $factory->create();
+        $collaborator = UserFactory::new()->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
+        $this->loginUser($collaborator);
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
 
-        try {
-            $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
-        } catch (\Throwable $e) {
-            $message = sprintf(
-                '********* Failed asserting that user with permission [%s] can view folder bookmarks ******* ',
-                FolderPermission::query()->whereKey($factory->permission_id)->sole(['name'])->name
-            );
+        $collaborator = UserFactory::new()->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::DELETE_BOOKMARKS);
+        $this->loginUser($collaborator);
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
 
-            $this->appendMessageToException($message, $e);
+        $collaborator = UserFactory::new()->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
+        $this->loginUser($collaborator);
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
 
-            throw $e;
-        }
-
+        $collaborator = UserFactory::new()->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER);
+        $this->loginUser($collaborator);
         $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
     }
 
@@ -222,11 +203,7 @@ class FetchFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->viewBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder);
 
         $folderOwner->delete();
 
@@ -243,11 +220,7 @@ class FetchFolderBookmarksTest extends TestCase
         $folder = FolderFactory::new()->for($folderOwner)->create();
         $collaboratorBookmark = BookmarkFactory::new()->for($collaborator)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->addBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         $this->addBookmarksToFolder->add($folder->id, $collaboratorBookmark->id);
         Favorite::create(['user_id' => $collaborator->id, 'bookmark_id' => $collaboratorBookmark->id]);
@@ -287,10 +260,7 @@ class FetchFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->for($users[0])->private()->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($users[1]->id)
-            ->folder($folder->id)
-            ->create();
+        $this->CreateCollaborationRecord($users[1], $folder);
 
         Passport::actingAs($users[1]);
         $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
@@ -305,10 +275,7 @@ class FetchFolderBookmarksTest extends TestCase
 
         $this->addBookmarksToFolder->add($folder->id, $bookmarks->pluck('id')->all(), [$bookmarks[0]->id]);
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($users[1]->id)
-            ->folder($folder->id)
-            ->create();
+        $this->CreateCollaborationRecord($users[1], $folder);
 
         Passport::actingAs($users[1]);
         $this->folderBookmarksResponse(['folder_id' => $folder->id])

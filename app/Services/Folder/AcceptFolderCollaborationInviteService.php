@@ -7,7 +7,7 @@ namespace App\Services\Folder;
 use App\Cache\InviteTokensStore;
 use App\Exceptions\HttpException;
 use App\UAC;
-use App\Repositories\Folder\FolderPermissionsRepository;
+use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use Illuminate\Http\Request;
 use App\Cache\InviteTokensStore as Payload;
 use App\DataTransferObjects\FolderSettings;
@@ -16,23 +16,26 @@ use App\Exceptions\FolderCollaboratorsLimitExceededException;
 use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\UserNotFoundException;
 use App\Models\Folder;
-use App\Models\FolderCollaboratorPermission;
 use App\Models\Scopes\IsMutedUserScope;
+use App\Models\Scopes\UserIsCollaboratorScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Models\User;
 use App\Notifications\NewCollaboratorNotification as Notification;
+use App\Repositories\Folder\CollaboratorRepository;
 
 final class AcceptFolderCollaborationInviteService
 {
     public function __construct(
-        private FolderPermissionsRepository $permissions,
+        private CollaboratorPermissionsRepository $permissions,
         private InviteTokensStore $inviteTokensStore,
+        private CollaboratorRepository $collaboratorRepository
     ) {
     }
 
     public function fromRequest(Request $request): void
     {
         $token = $request->input('invite_hash');
+
         $payload = $this->inviteTokensStore->get($token);
 
         [$inviterId, $inviteeId, $folderId] = [
@@ -48,21 +51,18 @@ final class AcceptFolderCollaborationInviteService
         $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'collaboratorsCount'])
             ->tap(new WhereFolderOwnerExists())
             ->tap(new IsMutedUserScope($inviterId))
-            ->addSelect([
-                'collaboratorExists' => FolderCollaboratorPermission::select('id')
-                    ->where('folder_id', $folderId)
-                    ->where('user_id', $inviteeId)
-                    ->limit(1)
-            ])
+            ->tap(new UserIsCollaboratorScope($inviteeId, 'inviteeIsACollaborator'))
             ->find($folderId);
 
         FolderNotFoundException::throwIf(!$folder);
 
         FolderCollaboratorsLimitExceededException::throwIfExceeded($folder->collaboratorsCount);
 
-        if ($folder->collaboratorExists) {
+        if ($folder->inviteeIsACollaborator) {
             return;
         }
+
+        $this->collaboratorRepository->create($folder->id, $inviteeId, $inviterId);
 
         $this->permissions->create($inviteeId, $folder->id, $this->extractPermissions($payload));
 

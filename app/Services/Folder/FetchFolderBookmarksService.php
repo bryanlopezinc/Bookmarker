@@ -14,18 +14,14 @@ use App\Models\Favorite;
 use App\Models\Folder;
 use App\Models\FolderBookmark as FolderBookmarkModel;
 use App\Models\MutedCollaborator;
+use App\Models\Scopes\UserIsCollaboratorScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\PaginationData;
 use Illuminate\Pagination\Paginator;
-use App\Repositories\Folder\FolderPermissionsRepository;
 use Illuminate\Support\Collection;
 
 final class FetchFolderBookmarksService
 {
-    public function __construct(private FolderPermissionsRepository $permissions)
-    {
-    }
-
     /**
      * @return Paginator<FolderBookmark>
      */
@@ -33,6 +29,7 @@ final class FetchFolderBookmarksService
     {
         $folder = Folder::query()
             ->tap(new WhereFolderOwnerExists())
+            ->when($authUserId, fn ($query) => $query->tap(new UserIsCollaboratorScope($authUserId)))
             ->find($folderId, ['id', 'user_id', 'visibility']);
 
         FolderNotFoundException::throwIf(!$folder);
@@ -62,7 +59,7 @@ final class FetchFolderBookmarksService
             try {
                 FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
             } catch (FolderNotFoundException $e) {
-                if ($this->permissions->getUserAccessControls($authUserId, $folder->id)->isEmpty()) {
+                if (!$folder->userIsCollaborator) {
                     throw $e;
                 }
 

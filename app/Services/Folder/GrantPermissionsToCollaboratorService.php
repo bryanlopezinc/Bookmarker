@@ -7,13 +7,13 @@ namespace App\Services\Folder;
 use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
-use App\Repositories\Folder\FolderPermissionsRepository;
+use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\UAC;
 use App\ValueObjects\UserId;
 
 final class GrantPermissionsToCollaboratorService
 {
-    public function __construct(private FolderPermissionsRepository $permissions)
+    public function __construct(private CollaboratorPermissionsRepository $permissions)
     {
     }
 
@@ -23,7 +23,7 @@ final class GrantPermissionsToCollaboratorService
 
         FolderNotFoundException::throwIf(!$folder);
 
-        $currentPermissions = $this->permissions->getUserAccessControls($collaboratorId, $folderId);
+        $currentPermissions = $this->permissions->all($collaboratorId, $folderId);
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 

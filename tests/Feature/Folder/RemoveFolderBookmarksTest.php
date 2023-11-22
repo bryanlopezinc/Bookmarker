@@ -10,8 +10,8 @@ use App\Models\FolderSetting;
 use App\Services\Folder\AddBookmarksToFolderService;
 use App\Services\Folder\MuteCollaboratorService;
 use App\Services\Folder\ToggleFolderCollaborationRestriction;
+use App\UAC;
 use Database\Factories\BookmarkFactory;
-use Database\Factories\FolderCollaboratorPermissionFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -22,10 +22,11 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\CreatesCollaboration;
 
-class RemoveBookmarksFromFolderTest extends TestCase
+class RemoveFolderBookmarksTest extends TestCase
 {
-    use WithFaker;
+    use WithFaker, CreatesCollaboration;
 
     protected function removeFolderBookmarksResponse(array $parameters = []): TestResponse
     {
@@ -176,23 +177,19 @@ class RemoveBookmarksFromFolderTest extends TestCase
         [$folderOwner, $user] = UserFactory::new()->count(2)->create();
 
         $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
-        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         Passport::actingAs($folderOwner);
 
-        $this->addBookmarksToFolder($bookmarkIDs->all(), $folderID);
+        $this->addBookmarksToFolder($bookmarkIDs->all(), $folder->id);
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($user->id)
-            ->folder($folderID)
-            ->removeBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($user, $folder, Permission::DELETE_BOOKMARKS);
 
         Passport::actingAs($user);
 
         $this->removeFolderBookmarksResponse([
             'bookmarks' => $bookmarkIDs->all(),
-            'folder' => $folderID
+            'folder' => $folder->id
         ])->assertOk();
     }
 
@@ -200,21 +197,22 @@ class RemoveBookmarksFromFolderTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
-        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
-        $folderAccessFactory = FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folderID);
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        $folderAccessFactory->updateFolderPermission()->create();
-        $folderAccessFactory->addBookmarksPermission()->create();
-        $folderAccessFactory->viewBookmarksPermission()->create();
-        $folderAccessFactory->inviteUser()->create();
+        $permissions = UAC::all()
+            ->toCollection()
+            ->reject(Permission::DELETE_BOOKMARKS->value)
+            ->all();
+
+        $this->CreateCollaborationRecord($collaborator, $folder, $permissions);
 
         Passport::actingAs($folderOwner);
-        $this->addBookmarksToFolder($bookmarkIDs->all(), $folderID);
+        $this->addBookmarksToFolder($bookmarkIDs->all(), $folder->id);
 
         Passport::actingAs($collaborator);
         $this->removeFolderBookmarksResponse([
             'bookmarks' => $bookmarkIDs->all(),
-            'folder'    => $folderID
+            'folder'    => $folder->id
         ])->assertForbidden()
             ->assertExactJson(['message' => 'NoRemoveBookmarksPermission']);
     }
@@ -247,11 +245,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->removeBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::DELETE_BOOKMARKS);
 
         $folderOwner->delete();
 
@@ -285,26 +279,22 @@ class RemoveBookmarksFromFolderTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
-        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         Passport::actingAs($folderOwner);
-        $this->addBookmarksToFolder($bookmarkIDs->all(), $folderID);
+        $this->addBookmarksToFolder($bookmarkIDs->all(), $folder->id);
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folderID)
-            ->removeBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::DELETE_BOOKMARKS);
 
         Passport::actingAs($collaborator);
         $this->removeFolderBookmarksResponse([
             'bookmarks' => $bookmarkIDs->all(),
-            'folder' => $folderID
+            'folder' => $folder->id
         ])->assertOk();
 
         $notificationData = DatabaseNotification::query()->where('notifiable_id', $folderOwner->id)->sole(['data'])->data;
 
-        $this->assertEquals($folderID, $notificationData['removed_from_folder']);
+        $this->assertEquals($folder->id, $notificationData['removed_from_folder']);
         $this->assertEquals($collaborator->id, $notificationData['removed_by']);
 
         foreach ($notificationData['bookmarks_removed'] as $bookmarkID) {
@@ -316,29 +306,25 @@ class RemoveBookmarksFromFolderTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
-        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderSetting::create([
             'key'       => FolderSettingKey::ENABLE_NOTIFICATIONS->value,
             'value'     => false,
-            'folder_id' => $folderID
+            'folder_id' => $folder->id
         ]);
 
         Passport::actingAs($folderOwner);
-        $this->addBookmarksToFolder($bookmarkIDs->all(), $folderID);
+        $this->addBookmarksToFolder($bookmarkIDs->all(), $folder->id);
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folderID)
-            ->removeBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::DELETE_BOOKMARKS);
 
         Notification::fake();
 
         Passport::actingAs($collaborator);
         $this->removeFolderBookmarksResponse([
             'bookmarks' => $bookmarkIDs->all(),
-            'folder'    => $folderID
+            'folder'    => $folder->id
         ])->assertOk();
 
         Notification::assertNothingSent();
@@ -348,29 +334,25 @@ class RemoveBookmarksFromFolderTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
-        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         FolderSetting::create([
             'key'       => FolderSettingKey::NOTIFY_ON_BOOKMARK_DELETED->value,
             'value'     => false,
-            'folder_id' => $folderID
+            'folder_id' => $folder->id
         ]);
 
         Passport::actingAs($folderOwner);
-        $this->addBookmarksToFolder($bookmarkIDs->all(), $folderID);
+        $this->addBookmarksToFolder($bookmarkIDs->all(), $folder->id);
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folderID)
-            ->removeBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::DELETE_BOOKMARKS);
 
         Notification::fake();
 
         Passport::actingAs($collaborator);
         $this->removeFolderBookmarksResponse([
             'bookmarks' => $bookmarkIDs->all(),
-            'folder'    => $folderID
+            'folder'    => $folder->id
         ])->assertOk();
 
         Notification::assertNothingSent();
@@ -381,25 +363,21 @@ class RemoveBookmarksFromFolderTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
-        $folderID = FolderFactory::new()->for($folderOwner)->create()->id;
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        $this->addBookmarksToFolder($bookmarkIDs->all(), $folderID);
+        $this->addBookmarksToFolder($bookmarkIDs->all(), $folder->id);
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folderID)
-            ->removeBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::DELETE_BOOKMARKS);
 
         /** @var MuteCollaboratorService */
         $muteCollaboratorService = app(MuteCollaboratorService::class);
 
-        $muteCollaboratorService->mute($folderID, $collaborator->id, $folderOwner->id);
+        $muteCollaboratorService->mute($folder->id, $collaborator->id, $folderOwner->id);
 
         Notification::fake();
 
         $this->loginUser($collaborator);
-        $this->removeFolderBookmarksResponse(['bookmarks' => $bookmarkIDs->all(), 'folder' => $folderID])->assertOk();
+        $this->removeFolderBookmarksResponse(['bookmarks' => $bookmarkIDs->all(), 'folder' => $folder->id])->assertOk();
 
         Notification::assertNothingSent();
     }
@@ -419,11 +397,7 @@ class RemoveBookmarksFromFolderTest extends TestCase
 
         $addBooksService->add($folder->id, $bookmarks->pluck('id')->all());
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->removeBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::DELETE_BOOKMARKS);
 
         //Assert collaborator can remove bookmark when disabled action is not remove bookmark action
         $updateCollaboratorActionService->update($folder->id, Permission::INVITE_USER, false);

@@ -69,12 +69,12 @@ final class Folder extends Model
 
         $builder->when($attributes->has('collaboratorsCount') || $attributes->isEmpty(), function ($query) {
             $query->addSelect([
-                'collaboratorsCount' => FolderCollaboratorPermission::query()
-                    ->selectRaw('COUNT(DISTINCT user_id)')
+                'collaboratorsCount' => FolderCollaborator::query()
+                    ->selectRaw('COUNT(*)')
                     ->whereRaw("folder_id = {$this->getQualifiedKeyName()}")
                     ->whereExists(function (&$query) {
                         $query = User::query()
-                            ->whereRaw("id = folders_collaborators_permissions.user_id")
+                            ->whereRaw('id = folders_collaborators.collaborator_id')
                             ->getQuery();
                     })
             ]);

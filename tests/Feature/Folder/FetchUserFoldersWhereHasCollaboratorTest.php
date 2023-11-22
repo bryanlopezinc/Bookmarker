@@ -2,17 +2,19 @@
 
 namespace Tests\Feature\Folder;
 
-use Database\Factories\FolderCollaboratorPermissionFactory;
+use App\Enums\Permission;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\Feature\AssertValidPaginationData;
 use Tests\TestCase;
+use Tests\Traits\CreatesCollaboration;
 
 class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
 {
-    use AssertValidPaginationData;
+    use AssertValidPaginationData,
+        CreatesCollaboration;
 
     protected function whereHasCollaboratorsResponse(array $parameters = []): TestResponse
     {
@@ -54,17 +56,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
 
         $folders = FolderFactory::times(2)->for($users[1])->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($users[0]->id)
-            ->folder($folders[0]->id)
-            ->inviteUser()
-            ->create();
-
-        FolderCollaboratorPermissionFactory::new()
-            ->user($users[0]->id)
-            ->folder($folders[0]->id)
-            ->addBookmarksPermission()
-            ->create();
+        $this->CreateCollaborationRecord($users[0], $folders[0], [Permission::INVITE_USER, Permission::ADD_BOOKMARKS]);
 
         Passport::actingAs($users[1]);
         $this->whereHasCollaboratorsResponse(['collaborator_id' => $users[0]->id])
@@ -111,8 +103,6 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
 
         $collaborator = $users[0];
 
-        $factory = FolderCollaboratorPermissionFactory::new()->user($collaborator->id);
-
         $folders = FolderFactory::times(2)
             ->sequence(
                 ['user_id' => $users[1]->id],
@@ -120,9 +110,8 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
             )
             ->create();
 
-        //is a collaborator in both folders
-        $factory->folder($folders[0]->id)->create();
-        $factory->folder($folders[1]->id)->create();
+        $this->CreateCollaborationRecord($collaborator, $folders[0]);
+        $this->CreateCollaborationRecord($collaborator, $folders[1]);
 
         Passport::actingAs($users[1]);
         $this->whereHasCollaboratorsResponse(['collaborator_id' => $collaborator->id])
@@ -151,7 +140,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
         [$user, $collaborator] = UserFactory::times(2)->create();
         $userFolder = FolderFactory::new()->for($user)->create();
 
-        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($userFolder->id)->create();
+        $this->CreateCollaborationRecord($collaborator, $userFolder);
 
         Passport::actingAs($user);
         $this->whereHasCollaboratorsResponse($query = ['collaborator_id' => $collaborator->id])
@@ -168,7 +157,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
         [$user, $collaborator] = UserFactory::times(2)->create();
         $userFolder = FolderFactory::new()->for($user)->create();
 
-        FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($userFolder->id)->create();
+        $this->CreateCollaborationRecord($collaborator, $userFolder);
 
         Passport::actingAs($user);
         $this->whereHasCollaboratorsResponse([

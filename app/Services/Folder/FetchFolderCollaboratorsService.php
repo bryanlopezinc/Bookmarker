@@ -6,15 +6,15 @@ namespace App\Services\Folder;
 
 use App\DataTransferObjects\FolderCollaborator;
 use App\Exceptions\FolderNotFoundException;
-use App\Models\FolderCollaboratorPermission;
+use App\Models\FolderCollaboratorPermission as CollaboratorPermission;
 use App\Models\FolderPermission;
 use App\Models\User;
 use App\PaginationData;
 use App\UAC;
-use Illuminate\Database\Query\Expression;
 use Illuminate\Pagination\Paginator;
 use App\Http\Requests\FetchFolderCollaboratorsRequest as Request;
 use App\Models\Folder;
+use Illuminate\Support\Facades\DB;
 
 final class FetchFolderCollaboratorsService
 {
@@ -46,45 +46,50 @@ final class FetchFolderCollaboratorsService
         ?UAC $permissions = null,
         ?string $collaboratorName = null
     ): Paginator {
-        $model = new FolderCollaboratorPermission();
-        $um = new User(); // user model
-        $fpm = new FolderPermission(); // folder permission model
+        $collaboratorPermissions = CollaboratorPermission::query()
+            ->whereColumn('user_id', 'users.id')
+            ->whereColumn('folder_id', 'folders_collaborators.folder_id');
 
         $query = User::query()
-            ->select([$um->getQualifiedKeyName(), 'full_name', new Expression('JSON_ARRAYAGG(name) as permissions')])
-            ->join($model->getTable(), $model->qualifyColumn('user_id'), '=', $um->getQualifiedKeyName())
-            ->join($fpm->getTable(), $model->qualifyColumn('permission_id'), '=', $fpm->getQualifiedKeyName());
+            ->select(['users.id', 'full_name'])
+            ->join('folders_collaborators', 'folders_collaborators.collaborator_id', '=', 'users.id')
+            ->addSelect([
+                'permissions' => FolderPermission::select(DB::raw('JSON_ARRAYAGG(name) as permissions'))
+                    ->whereExists(function (&$query) use ($collaboratorPermissions) {
+                        $query = $collaboratorPermissions->getQuery();
+                    })
+            ]);
 
-        $query->when(
-            !is_null($permissions) && !$permissions?->hasAllPermissions(),
-            function ($query) use ($permissions) {
-                $values = $permissions->toCollection()
-                    ->map(fn (string $permission) => "'{$permission}'")
-                    ->implode(',');
+        if ($permissions) {
+            $query->whereExists(function (&$query) use ($permissions, $collaboratorPermissions) {
+                $builder = $collaboratorPermissions
+                    ->select('user_id')
+                    ->groupBy('user_id');
+
+                if ($permissions->hasAllPermissions()) {
+                    $builder->havingRaw("COUNT(*) = {$permissions->count()}");
+                }
 
                 if ($permissions->hasOnlyReadPermission()) {
-                    $query->havingRaw("JSON_ARRAY({$values}) = permissions");
-                } else {
-                    $query->havingRaw("JSON_CONTAINS(permissions, JSON_ARRAY({$values}))");
+                    $builder->havingRaw("COUNT(*) = 1");
                 }
-            }
-        );
 
-        $query->when($permissions?->hasAllPermissions(), function ($query) use ($permissions) {
-            $values = $permissions->toCollection()
-                ->map(fn (string $permission) => "'{$permission}'")
-                ->implode(',');
+                if (!$permissions->hasOnlyReadPermission()) {
+                    $builder->whereIn('permission_id', FolderPermission::select('id')->whereIn('name', $permissions->toArray()))
+                        ->havingRaw("COUNT(*) = {$permissions->count()}");
+                }
 
-            $query->havingRaw("JSON_ARRAY({$values}) = permissions");
-        });
+                $query = $builder->getQuery();
+            });
+        }
 
-        $query->when($collaboratorName, function ($query) use ($collaboratorName) {
+        if ($collaboratorName) {
             $query->where('full_name', 'like', "{$collaboratorName}%");
-        });
+        }
 
         /** @var Paginator */
-        $result = $query->groupBy(['users.id', 'full_name'])
-            ->where('folder_id', $folderID)
+        $result = $query->where('folders_collaborators.folder_id', $folderID)
+            ->latest('folders_collaborators.id')
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
 
         return $result->setCollection(

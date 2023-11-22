@@ -2,20 +2,21 @@
 
 namespace Tests\Feature;
 
+use App\Enums\Permission;
 use App\Models\Folder;
-use App\Models\FolderCollaboratorPermission;
-use App\Models\FolderPermission;
-use Database\Factories\FolderCollaboratorPermissionFactory;
+use App\Models\User;
+use App\UAC;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\AssertableJsonString;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Tests\Traits\CreatesCollaboration;
 
 class FetchUserCollaborationsTest extends TestCase
 {
-    use AssertValidPaginationData;
+    use AssertValidPaginationData, CreatesCollaboration;
 
     protected function userCollaborationsResponse(array $parameters = []): TestResponse
     {
@@ -66,16 +67,7 @@ class FetchUserCollaborationsTest extends TestCase
         /** @var Folder */
         $folder = FolderFactory::new()->create();
 
-        $permissions = FolderPermission::all(['id'])
-            ->pluck(['id'])
-            ->map(fn (int $permissionId) => [
-                'folder_id'     => $folder->id,
-                'user_id'       => $user->id,
-                'permission_id' => $permissionId,
-                'created_at'    => now()
-            ]);
-
-        FolderCollaboratorPermission::insert($permissions->all());
+        $this->createCollaboration($user, $folder, UAC::all()->toArray());
 
         Passport::actingAs($user);
         $this->userCollaborationsResponse()
@@ -83,13 +75,7 @@ class FetchUserCollaborationsTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.attributes.id', $folder->id)
             ->assertJsonPath('data.0.type', 'userCollaboration')
-            ->assertJsonPath('data.0.attributes.permissions', function (array $permissions) {
-                $this->assertContains('inviteUsers', $permissions);
-                $this->assertContains('addBookmarks', $permissions);
-                $this->assertContains('removeBookmarks', $permissions);
-                $this->assertContains('updateFolder', $permissions);
-                return true;
-            })
+            ->assertJsonPath('data.0.attributes.permissions', UAC::all()->toJsonResponse())
             ->collect('data')
             ->each(function (array $data) {
                 (new AssertableJsonString($data))
@@ -117,6 +103,16 @@ class FetchUserCollaborationsTest extends TestCase
             });
     }
 
+    private function createCollaboration(
+        User $collaborator,
+        Folder $folder,
+        Permission|array $permissions = [],
+        int $inviter = null
+    ): void {
+
+        $this->CreateCollaborationRecord($collaborator, $folder, $permissions, $inviter);
+    }
+
     public function testWillReturnEmptyResponseWhenUserIsNotACollaboratorInAnyFolder(): void
     {
         Passport::actingAs(UserFactory::new()->create());
@@ -126,20 +122,12 @@ class FetchUserCollaborationsTest extends TestCase
             ->assertJsonCount(0, 'data');
     }
 
-    public function testWillReturnEmptyResponseWhenFolderIsDeletedByOwner(): void
+    public function testWillReturnEmptyResponseWhenFolderIsDeleted(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->create();
-
-        Passport::actingAs($collaborator);
-        $this->userCollaborationsResponse()
-            ->assertOk()
-            ->assertJsonCount(1, 'data');
+        $this->createCollaboration($collaborator, $folder);
 
         $folder->delete();
 
@@ -154,17 +142,8 @@ class FetchUserCollaborationsTest extends TestCase
         $collaborator = UserFactory::new()->create();
         $folders = FolderFactory::new()->count(2)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folders->first()->id)
-            ->addBookmarksPermission()
-            ->create();
-
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folders->last()->id)
-            ->inviteUser()
-            ->create();
+        $this->createCollaboration($collaborator, $folders->first(), Permission::ADD_BOOKMARKS);
+        $this->createCollaboration($collaborator, $folders->last(), Permission::INVITE_USER);
 
         Passport::actingAs($collaborator);
         $this->userCollaborationsResponse()
@@ -175,20 +154,11 @@ class FetchUserCollaborationsTest extends TestCase
 
     public function testWillReturnOnlyUserRecords(): void
     {
-        [$collaborator, $anotherCollaborator] = UserFactory::new()->count(2)->create();
+        [$collaborator, $otherCollaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->addBookmarksPermission()
-            ->create();
-
-        FolderCollaboratorPermissionFactory::new()
-            ->user($anotherCollaborator->id)
-            ->folder($folder->id)
-            ->inviteUser()
-            ->create();
+        $this->createCollaboration($collaborator, $folder, Permission::ADD_BOOKMARKS);
+        $this->createCollaboration($otherCollaborator, $folder);
 
         Passport::actingAs($collaborator);
         $this->userCollaborationsResponse()
@@ -202,9 +172,7 @@ class FetchUserCollaborationsTest extends TestCase
         $collaborator = UserFactory::new()->create();
         $folder = FolderFactory::new()->create();
 
-        $factory = FolderCollaboratorPermissionFactory::new()->user($collaborator->id)->folder($folder->id);
-        $factory->addBookmarksPermission()->create();
-        $factory->inviteUser()->create();
+        $this->createCollaboration($collaborator, $folder, [Permission::INVITE_USER, Permission::ADD_BOOKMARKS]);
 
         Passport::actingAs($collaborator);
         $this->userCollaborationsResponse()
@@ -218,15 +186,7 @@ class FetchUserCollaborationsTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->create();
-
-        Passport::actingAs($collaborator);
-        $this->userCollaborationsResponse()
-            ->assertOk()
-            ->assertJsonCount(1, 'data');
+        $this->createCollaboration($collaborator, $folder);
 
         $folderOwner->delete();
 
@@ -241,11 +201,7 @@ class FetchUserCollaborationsTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderCollaboratorPermissionFactory::new()
-            ->user($collaborator->id)
-            ->folder($folder->id)
-            ->inviteUser()
-            ->create();
+        $this->createCollaboration($collaborator, $folder, Permission::INVITE_USER);
 
         Passport::actingAs($collaborator);
         $this->userCollaborationsResponse(['fields' => 'id,name,storage.items_count,permissions'])

@@ -3,7 +3,6 @@
 namespace Tests\Feature\Folder;
 
 use App\Models\Folder as Model;
-use App\Repositories\Folder\FolderPermissionsRepository;
 use App\Services\Folder\AddBookmarksToFolderService;
 use App\UAC;
 use Database\Factories\BookmarkFactory;
@@ -13,9 +12,12 @@ use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Tests\Traits\CreatesCollaboration;
 
 class FetchFolderTest extends TestCase
 {
+    use CreatesCollaboration;
+
     protected function fetchFolderResponse(array $parameters = []): TestResponse
     {
         if (array_key_exists('id', $parameters)) {
@@ -125,8 +127,8 @@ class FetchFolderTest extends TestCase
         /** @var Model */
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        (new FolderPermissionsRepository)->create($users[0]->id, $folder->id, UAC::all());
-        (new FolderPermissionsRepository)->create($users[1]->id, $folder->id, UAC::all());
+        $this->CreateCollaborationRecord($users[0], $folder, UAC::all()->toArray());
+        $this->CreateCollaborationRecord($users[1], $folder, UAC::all()->toArray());
 
         $this->fetchFolderResponse(['id' => $folder->id])
             ->assertOk()

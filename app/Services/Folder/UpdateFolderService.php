@@ -16,7 +16,7 @@ use App\Models\Folder;
 use App\Models\Scopes\DisabledActionScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Models\User;
-use App\Repositories\Folder\FolderPermissionsRepository;
+use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use Illuminate\Support\Facades\Hash;
 use App\Notifications\FolderUpdatedNotification as Notification;
 use App\Repositories\NotificationRepository;
@@ -25,7 +25,7 @@ use Illuminate\Validation\ValidationException;
 final class UpdateFolderService
 {
     public function __construct(
-        private FolderPermissionsRepository $permissions,
+        private CollaboratorPermissionsRepository $permissions,
         private NotificationRepository $notifications,
     ) {
     }
@@ -84,7 +84,7 @@ final class UpdateFolderService
         try {
             FolderNotFoundException::throwIf(!$folderBelongsToAuthUser);
         } catch (FolderNotFoundException $e) {
-            $userPermissions = $this->permissions->getUserAccessControls($authUserId, $folder->id);
+            $userPermissions = $this->permissions->all($authUserId, $folder->id);
 
             if ($userPermissions->isEmpty()) {
                 throw $e;

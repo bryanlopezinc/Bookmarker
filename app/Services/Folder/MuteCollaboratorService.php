@@ -8,24 +8,17 @@ use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
 use App\Exceptions\UserNotFoundException;
 use App\Models\Folder;
-use App\Models\FolderCollaboratorPermission;
 use App\Models\MutedCollaborator;
+use App\Models\Scopes\IsMutedUserScope;
+use App\Models\Scopes\UserIsCollaboratorScope;
 
 final class MuteCollaboratorService
 {
     public function __invoke(int $folderId, int $collaboratorId, int $authUserId): void
     {
         $folder = Folder::onlyAttributes(['user_id'])
-            ->addSelect([
-                'collaboratorId' => FolderCollaboratorPermission::select('user_id')
-                    ->where('folder_id', $folderId)
-                    ->where('user_id', $collaboratorId),
-            ])
-            ->addSelect([
-                'collaboratorIsMuted' => MutedCollaborator::select('id')
-                    ->where('user_id', $collaboratorId)
-                    ->where('folder_id', $folderId)
-            ])
+            ->tap(new UserIsCollaboratorScope($collaboratorId))
+            ->tap(new IsMutedUserScope($collaboratorId))
             ->whereKey($folderId)
             ->first();
 
@@ -37,7 +30,7 @@ final class MuteCollaboratorService
             throw HttpException::forbidden(['message' => 'CannotMuteSelf']);
         }
 
-        if (!$folder->collaboratorId) {
+        if (!$folder->userIsCollaborator) {
             throw new UserNotFoundException();
         }
 
@@ -45,11 +38,7 @@ final class MuteCollaboratorService
             return;
         }
 
-        MutedCollaborator::query()->create([
-            'folder_id' => $folderId,
-            'user_id'   => $collaboratorId,
-            'muted_by'  => $authUserId
-        ]);
+        $this->mute($folderId, $collaboratorId, $authUserId);
     }
 
     public function mute(int $folderId, int|array $collaborators, int $mutedBy): void

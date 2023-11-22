@@ -4,22 +4,23 @@ declare(strict_types=1);
 
 namespace App\Repositories\Folder;
 
-use App\Models\FolderCollaboratorPermission;
+use App\Models\FolderCollaboratorPermission as Model;
 use App\UAC;
 use App\Models\FolderPermission;
 use Illuminate\Support\Collection;
 
-final class FolderPermissionsRepository
+final class CollaboratorPermissionsRepository
 {
-    /**
-     * Get the Permissions a user has to a folder.
-     */
-    public function getUserAccessControls(int $userID, int $folderID): UAC
+    public function all(int $userID, int $folderID): UAC
     {
-        return FolderCollaboratorPermission::select('folders_permissions.name')
-            ->join('folders_permissions', 'folders_collaborators_permissions.permission_id', '=', 'folders_permissions.id') //phpcs:ignore
-            ->where('folder_id', $folderID)
+        $permissionIdsQuery = Model::query()
+            ->select('permission_id')
             ->where('user_id', $userID)
+            ->where('folder_id', $folderID);
+
+        return FolderPermission::query()
+            ->select('name')
+            ->whereIn('id', $permissionIdsQuery)
             ->get()
             ->pluck('name')
             ->pipe(fn (Collection $permissionNames) => new UAC($permissionNames->all()));
@@ -40,15 +41,22 @@ final class FolderPermissionsRepository
                 'created_at'    => $createdAt
             ])
             ->tap(function (Collection $records) {
-                FolderCollaboratorPermission::insert($records->all());
+                Model::insert($records->all());
             });
     }
 
-    public function removeCollaborator(int $collaboratorID, int $folderID): void
+    public function delete(int $collaboratorID, int $folderID, UAC $permissions = null): void
     {
-        FolderCollaboratorPermission::query()
+        $query = Model::query()
             ->where('folder_id', $folderID)
-            ->where('user_id', $collaboratorID)
-            ->delete();
+            ->where('user_id', $collaboratorID);
+
+        if ($permissions) {
+            $subQuery = FolderPermission::select('id')->whereIn('name', $permissions->toArray());
+
+            $query->whereIn('permission_id', $subQuery);
+        }
+
+        $query->delete();
     }
 }

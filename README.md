@@ -1,6 +1,6 @@
 # Enterprise-Grade Bookmark Management Solution
 
-[![CI](https://github.com/bryanlopezinc/Bookmarker/actions/workflows/tests.yml/badge.svg)](https://github.com/bryanlopezinc/Bookmarker/actions/workflows/tests.yml)
+[![Tests](https://github.com/bryanlopezinc/Bookmarker/actions/workflows/tests.yml/badge.svg)](https://github.com/bryanlopezinc/Bookmarker/actions/workflows/tests.yml)
 
 *Elevate your bookmarking experience with the Supercharged Bookmark Manager.*
 

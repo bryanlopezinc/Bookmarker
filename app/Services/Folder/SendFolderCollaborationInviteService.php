@@ -121,16 +121,16 @@ final class SendFolderCollaborationInviteService
                 throw $e;
             }
 
-            if ($folder->actionIsDisable) {
-                throw new FolderActionDisabledException(Permission::INVITE_USER);
-            }
-
             if (!$userFolderPermissions->canInviteUser()) {
                 throw new PermissionDeniedException(Permission::INVITE_USER);
             }
 
             if ($request->filled('permissions')) {
                 throw HttpException::forbidden(['message' => 'CollaboratorCannotSendInviteWithPermissions']);
+            }
+
+            if ($folder->actionIsDisable) {
+                throw new FolderActionDisabledException(Permission::INVITE_USER);
             }
         }
     }

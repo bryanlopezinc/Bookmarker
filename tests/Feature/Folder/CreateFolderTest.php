@@ -4,7 +4,6 @@ namespace Tests\Feature\Folder;
 
 use App\DataTransferObjects\FolderSettings;
 use App\DataTransferObjects\FolderSettings as FS;
-use App\Enums\FolderVisibility;
 use App\Models\Folder;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -61,12 +60,11 @@ class CreateFolderTest extends TestCase
             'description' => $description = $this->faker->sentence
         ])->assertCreated();
 
-        /** @var Folder */
         $folder = Folder::query()->where('user_id', $user->id)->sole();
 
         $this->assertEquals($name, $folder->name);
         $this->assertEquals($description, $folder->description);
-        $this->assertTrue(FolderVisibility::from($folder->visibility)->isPublic());
+        $this->assertTrue($folder->visibility->isPublic());
         $this->assertTrue($folder->created_at->isSameMinute());
         $this->assertTrue($folder->updated_at->isSameMinute());
     }
@@ -77,7 +75,6 @@ class CreateFolderTest extends TestCase
 
         $this->createFolderResponse(['name' => $this->faker->word])->assertCreated();
 
-        /** @var Folder */
         $folder = Folder::query()->where('user_id', $user->id)->sole();
 
         $this->assertNull($folder->description);
@@ -87,30 +84,22 @@ class CreateFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->createFolderResponse([
-            'name'       => $this->faker->word,
-            'visibility' => 'public'
-        ])->assertCreated();
+        $this->createFolderResponse(['name' => $this->faker->word, 'visibility' => 'public'])->assertCreated();
 
-        /** @var Folder */
         $folder = Folder::where('user_id', $user->id)->first();
 
-        $this->assertTrue(FolderVisibility::from($folder->visibility)->isPublic());
+        $this->assertTrue($folder->visibility->isPublic());
     }
 
     public function testCreatePrivateFolder(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->createFolderResponse([
-            'name'       => $this->faker->word,
-            'visibility' => 'private'
-        ])->assertCreated();
+        $this->createFolderResponse(['name' => $this->faker->word, 'visibility' => 'private'])->assertCreated();
 
-        /** @var Folder */
         $folder = Folder::where('user_id', $user->id)->first();
 
-        $this->assertTrue(FolderVisibility::from($folder->visibility)->isPrivate());
+        $this->assertTrue($folder->visibility->isPrivate());
     }
 
     public function testCreateFolderWithNotifications(): void

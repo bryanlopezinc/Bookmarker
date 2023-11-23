@@ -66,7 +66,7 @@ final class UpdateFolderService
 
         $visibility = $request->input('visibility');
 
-        $folderVisibility = FolderVisibility::from($folder->visibility);
+        $folderVisibility = $folder->visibility;
 
         if ($visibility === 'public' && $folderVisibility->isPublic()) {
             throw $exception;
@@ -90,16 +90,20 @@ final class UpdateFolderService
                 throw $e;
             }
 
-            if ($folder->actionIsDisable) {
-                throw new FolderActionDisabledException(Permission::UPDATE_FOLDER);
-            }
-
             if ($request->has('visibility')) {
                 throw HttpException::forbidden(['message' => 'NoUpdatePrivacyPermission']);
             }
 
+            if ($request->has('discussion_mode')) {
+                throw HttpException::forbidden(['message' => 'NoUpdateDiscussionStatePermission']);
+            }
+
             if (!$userPermissions->canUpdateFolder()) {
                 throw new PermissionDeniedException(Permission::UPDATE_FOLDER);
+            }
+
+            if ($folder->actionIsDisable) {
+                throw new FolderActionDisabledException(Permission::UPDATE_FOLDER);
             }
         }
     }
@@ -115,7 +119,7 @@ final class UpdateFolderService
         }
 
         if ($request->has('visibility')) {
-            $folder->visibility = (string) FolderVisibility::fromRequest($request)->value;
+            $folder->visibility = FolderVisibility::fromRequest($request);
         }
 
         $updatedFolder = clone $folder;

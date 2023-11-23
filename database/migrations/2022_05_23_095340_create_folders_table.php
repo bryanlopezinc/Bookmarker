@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('folders', function (Blueprint $table) {
             $table->id();
-            $table->enum('visibility', [2, 3])->index();
+            $table->unsignedTinyInteger('visibility')->index();
             $table->foreignId('user_id')->index();
             $table->string('description', 150)->nullable();
             $table->string('name', 50)->index();

@@ -24,7 +24,7 @@ final class CreateOrUpdateFolderRequest extends FormRequest
             'visibility'  => ['nullable', 'string', 'in:public,private'],
             'settings'    => $this->folderSettingsRules(),
             'folder'      => [Rule::requiredIf(!$this->isCreateFolderRequest()), new ResourceIdRule()],
-            'password'    => $this->passwordRules()
+            'password'    => $this->passwordRules(),
         ];
     }
 

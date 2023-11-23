@@ -59,46 +59,57 @@ class UpdateFolderTest extends TestCase
 
         $this->updateFolderResponse(['description' => str_repeat('f', 151)])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'description' => 'The description must not be greater than 150 characters.'
-            ]);
+            ->assertJsonValidationErrors(['description' => 'The description must not be greater than 150 characters.']);
     }
 
     public function testWillReturnUnprocessableWhenVisibilityIsPublicAndPasswordIsMissing(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->updateFolderResponse([
-            'folder'      => 33,
-            'visibility'  => 'public'
-        ])
+        $this->updateFolderResponse(['folder' => 33, 'visibility' => 'public'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['password']);
     }
 
-    public function testUpdateFolder(): void
+    public function testUpdateName(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        /** @var Folder */
-        $model = FolderFactory::new()->for($user)->create();
+        $folder = FolderFactory::new()->for($user)->create();
 
-        $this->updateFolderResponse([
-            'name'        => $name = $this->faker->word,
-            'description' => $description = $this->faker->sentence,
-            'folder'      => $model->id
-        ])->assertOk();
-
-        /** @var Folder */
-        $folder = Folder::query()->whereKey($model->id)->first();
-
-        $this->assertEquals($name, $folder->name);
-        $this->assertEquals($description, $folder->description);
-        $this->assertTrue(FolderVisibility::from($folder->visibility)->isPublic());
-        $this->assertEquals($model->created_at->timestamp, $folder->created_at->timestamp);
+        $name = $this->faker->word;
+        $this->updateFolderResponse(['name' => $name, 'folder' => $folder->id])->assertOk();
+        $this->assertUpdated($folder, ['name' => $name]);
     }
 
-    public function testMakeFolderPublic(): void
+    private function assertUpdated(Folder $original, array $attributes): void
+    {
+        $folder = Folder::query()->find($original->id);
+
+        $folder->offsetUnset('updated_at');
+        $original->offsetUnset('updated_at');
+
+        $this->assertEquals(
+            array_diff_assoc($folder->toArray(), $original->toArray()),
+            $attributes
+        );
+    }
+
+    public function testUpdateDescription(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->for($user)->create();
+
+        $description = $this->faker->sentence;
+        $this->updateFolderResponse(['description' => $description, 'folder' => $folder->id])->assertOk();
+        $this->assertUpdated($folder, ['description' => $description]);
+
+        $this->updateFolderResponse(['description' => null, 'folder' => $folder->id])->assertOk();
+        $this->assertUpdated($folder, ['description' => null]);
+    }
+
+    public function testUpdatePrivacyToBePublic(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
@@ -107,27 +118,21 @@ class UpdateFolderTest extends TestCase
         $this->updateFolderResponse([
             'visibility' => 'public',
             'folder'     => $folder->id,
-            'name'       => $this->faker->word,
             'password'   => 'password'
         ])->assertOk();
 
-        $this->assertEquals(
-            FolderVisibility::PUBLIC,
-            FolderVisibility::from(Folder::whereKey($folder->id)->first()->visibility)
-        );
+        $this->assertUpdated($folder, ['visibility' => FolderVisibility::PUBLIC->value]);
     }
 
-    public function testWillNotRequirePasswordWhenMakingFolderPrivate(): void
+    public function testUpdatePrivacyToBePrivate(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->updateFolderResponse([
-            'visibility' => 'private',
-            'folder'     => $folder->id,
-            'name'       => $this->faker->word,
-        ])->assertOk();
+        $this->updateFolderResponse(['visibility' => 'private', 'folder' => $folder->id])->assertOk();
+
+        $this->assertUpdated($folder, ['visibility' => FolderVisibility::PRIVATE->value]);
     }
 
     public function testWillReturnConflictWhenMakingPublicFolderPublic(): void
@@ -172,91 +177,6 @@ class UpdateFolderTest extends TestCase
             'password'   => 'I forgot my password please let me in'
         ])->assertForbidden()
             ->assertExactJson(['message' => 'InvalidPassword']);
-    }
-
-    public function testUpdateDescriptionToBeBlank(): void
-    {
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        /** @var Folder */
-        $model = FolderFactory::new()->for($user)->create();
-
-        $this->updateFolderResponse([
-            'description' => '',
-            'folder'      => $model->id
-        ])->assertOk();
-
-        /** @var Folder */
-        $folder = Folder::query()->whereKey($model->id)->first();
-
-        $this->assertEquals($model->name, $folder->name);
-        $this->assertNull($folder->description);
-        $this->assertTrue(FolderVisibility::from($folder->visibility)->isPublic());
-        $this->assertEquals($model->created_at->timestamp, $folder->created_at->timestamp);
-    }
-
-    public function testUpdateOnlyPrivacy(): void
-    {
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        /** @var Folder */
-        $model = FolderFactory::new()->for($user)->private()->create();
-
-        $this->updateFolderResponse([
-            'visibility' => 'public',
-            'folder'     => $model->id,
-            'password'   => 'password'
-        ])->assertOk();
-
-        /** @var Folder */
-        $folder = Folder::query()->whereKey($model->id)->first();
-
-        $this->assertEquals($model->name, $folder->name);
-        $this->assertEquals($folder->description, $model->description);
-        $this->assertTrue(FolderVisibility::from($folder->visibility)->isPublic());
-        $this->assertEquals($model->created_at->timestamp, $folder->created_at->timestamp);
-    }
-
-    public function testUpdateOnlyDescription(): void
-    {
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        /** @var Folder */
-        $model = FolderFactory::new()->for($user)->create();
-
-        $this->updateFolderResponse([
-            'description' => $description = $this->faker->sentence,
-            'folder'      => $model->id
-        ])->assertOk();
-
-        /** @var Folder */
-        $folder = Folder::query()->whereKey($model->id)->first();
-
-        $this->assertEquals($model->name, $folder->name);
-        $this->assertEquals($description, $folder->description);
-        $this->assertTrue(FolderVisibility::from($folder->visibility)->isPublic());
-        $this->assertEquals($model->created_at->timestamp, $folder->created_at->timestamp);
-    }
-
-    public function testUpdateOnlyName(): void
-    {
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        /** @var Folder */
-        $model = FolderFactory::new()->for($user)->create();
-
-        $this->updateFolderResponse([
-            'name' => $name = $this->faker->word,
-            'folder' => $model->id
-        ])->assertOk();
-
-        /** @var Folder */
-        $folder = Folder::query()->whereKey($model->id)->first();
-
-        $this->assertEquals($name, $folder->name);
-        $this->assertEquals($folder->description, $model->description);
-        $this->assertTrue(FolderVisibility::from($folder->visibility)->isPublic());
-        $this->assertEquals($model->created_at->timestamp, $folder->created_at->timestamp);
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotBelongToUser(): void

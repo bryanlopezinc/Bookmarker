@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\FolderVisibility;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\DB;
  * @property string|null $description
  * @property string $name
  * @property array $settings
- * @property int $visibility
+ * @property FolderVisibility $visibility
  * @property int $user_id
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
@@ -39,8 +40,8 @@ final class Folder extends Model
      * {@inheritdoc}
      */
     protected $casts = [
-        'visibility' => 'int',
-        'settings'   => 'array',
+        'visibility'       => FolderVisibility::class,
+        'settings'         => 'array',
     ];
 
     public function user(): BelongsTo

@@ -6,7 +6,6 @@ namespace App\Services\Folder;
 
 use App\DataTransferObjects\FolderBookmark;
 use App\Enums\FolderBookmarkVisibility;
-use App\Enums\FolderVisibility;
 use App\Exceptions\FolderNotFoundException;
 use App\Jobs\CheckBookmarksHealth;
 use App\Models\Bookmark;
@@ -67,7 +66,7 @@ final class FetchFolderBookmarksService
             }
         }
 
-        if (FolderVisibility::from($folder->visibility)->isPrivate()) {
+        if ($folder->visibility->isPrivate()) {
             throw new FolderNotFoundException();
         }
     }

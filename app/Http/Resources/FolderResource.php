@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
-use App\Enums\FolderVisibility;
 use App\Models\Folder;
 use App\ValueObjects\FolderStorage;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -32,7 +31,7 @@ final class FolderResource extends JsonResource
                 'description'         => $this->when($this->folder->description !== null, $this->folder->description),
                 'date_created'        => $this->folder->created_at->toDateTimeString(),
                 'last_updated'        => $this->folder->updated_at->toDateTimeString(),
-                'visibility'          => FolderVisibility::from($this->folder->visibility)->toWord(),
+                'visibility'          => $this->folder->visibility->toWord(),
                 'collaborators_count' => $this->folder->collaboratorsCount,
                 'storage' => [
                     'items_count'     => $storage->total,

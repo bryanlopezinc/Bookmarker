@@ -21,7 +21,7 @@ final class CreateFolderService
             'description' => $request->validated('description'),
             'name'        => $request->validated('name'),
             'user_id'     => UserId::fromAuthUser()->value(),
-            'visibility'  => (string) FolderVisibility::fromRequest($request)->value,
+            'visibility'  => FolderVisibility::fromRequest($request),
         ]);
 
         collect($this->buildSettings($request))

@@ -23,15 +23,15 @@ final class FolderFactory extends Factory
     public function definition()
     {
         return [
-            'name'        => $this->faker->word,
-            'description' => $this->faker->sentence,
-            'user_id'     => UserFactory::new(),
-            'visibility'  => (string) FolderVisibility::PUBLIC->value,
+            'name'             => $this->faker->word,
+            'description'      => $this->faker->sentence,
+            'user_id'          => UserFactory::new(),
+            'visibility'       => FolderVisibility::PUBLIC,
         ];
     }
 
     public function private(): self
     {
-        return $this->state(['visibility' => (string) FolderVisibility::PRIVATE->value]);
+        return $this->state(['visibility' => FolderVisibility::PRIVATE]);
     }
 }

@@ -308,6 +308,18 @@ class SendFolderCollaborationInviteTest extends TestCase
             ->assertExactJson($error);
     }
 
+    #[Test]
+    public function willReturnForbiddenWhenFolderIsPrivate(): void
+    {
+        [$user, $invitee] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->for($user)->private()->create();
+
+        Passport::actingAs($user);
+        $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->id])
+            ->assertForbidden()
+            ->assertExactJson(['message' => 'CannotAddCollaboratorsToPrivateFolder']);
+    }
+
     public function testWillReturnOkWhenInviterIsACollaborator(): void
     {
         [$folderOwner, $invitee, $collaborator] = UserFactory::times(3)->create();

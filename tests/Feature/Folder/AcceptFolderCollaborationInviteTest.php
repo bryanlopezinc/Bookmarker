@@ -20,7 +20,7 @@ use Laravel\Passport\Passport;
 use Tests\TestCase;
 use App\Models\Folder;
 use App\Models\FolderCollaborator;
-use App\Models\FolderPermission;
+use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\Services\Folder\MuteCollaboratorService;
 use App\UAC;
 use Illuminate\Testing\Assert as PHPUnit;
@@ -94,7 +94,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
     }
 
     #[Test]
-    public function acceptInvite(): void
+    public function whenFolderVisibilityIsPublic(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
@@ -118,56 +118,61 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         $this->assertEquals($folderOwner->id, $savedRecord->invited_by);
     }
 
+    #[Test]
+    public function whenFolderVisibilityIsCollaboratorsOnly(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
+
+        $folder = FolderFactory::new()->visibleToCollaboratorsOnly()->for($folderOwner)->create();
+
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $folderOwner->id,
+            $invitee->id,
+            $folder->id,
+            new UAC(Permission::ADD_BOOKMARKS)
+        );
+
+        $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
+    }
+
+    #[Test]
+    public function whenFolderVisibilityIsPrivate(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
+
+        $folder = FolderFactory::new()->private()->for($folderOwner)->create();
+
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $folderOwner->id,
+            $invitee->id,
+            $folder->id,
+            new UAC(Permission::ADD_BOOKMARKS)
+        );
+
+        $this->acceptInviteResponse(['invite_hash' => $id])
+            ->assertForbidden()
+            ->assertExactJson(['message' => 'PrivateFolder']);
+    }
+
     public function testAcceptInviteWithPermissions(): void
     {
         //Will give only view-bookmarks permission if no permissions were specified
-        $this->assertWillAcceptInvite([], function (Collection $savedPermissions) {
-            $this->assertCount(1, $savedPermissions);
-            $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
-        });
-
-        $this->assertWillAcceptInvite([Permission::ADD_BOOKMARKS], function (Collection $savedPermissions) {
-            $this->assertCount(2, $savedPermissions);
-            $this->assertTrue($savedPermissions->containsStrict(Permission::ADD_BOOKMARKS));
-            $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
-        });
-
-        $this->assertWillAcceptInvite([Permission::DELETE_BOOKMARKS], function (Collection $savedPermissions) {
-            $this->assertCount(2, $savedPermissions);
-            $this->assertTrue($savedPermissions->containsStrict(Permission::DELETE_BOOKMARKS));
-            $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
-        });
-
-        $this->assertWillAcceptInvite([Permission::INVITE_USER], function (Collection $savedPermissions) {
-            $this->assertCount(2, $savedPermissions);
-            $this->assertTrue($savedPermissions->containsStrict(Permission::INVITE_USER));
-            $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
-        });
-
-        $this->assertWillAcceptInvite([Permission::UPDATE_FOLDER], function (Collection $savedPermissions) {
-            $this->assertCount(2, $savedPermissions);
-            $this->assertTrue($savedPermissions->containsStrict(Permission::UPDATE_FOLDER));
-            $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
-        });
-
-        $this->assertWillAcceptInvite([Permission::DELETE_BOOKMARKS, Permission::ADD_BOOKMARKS], function (Collection $savedPermissions) {
-            $this->assertCount(3, $savedPermissions);
-            $this->assertTrue($savedPermissions->containsStrict(Permission::DELETE_BOOKMARKS));
-            $this->assertTrue($savedPermissions->containsStrict(Permission::ADD_BOOKMARKS));
-            $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
-        });
-
-        $this->assertWillAcceptInvite(['*'], function (Collection $savedPermissions) {
-            $this->assertCount(5, $savedPermissions);
-            $this->assertTrue($savedPermissions->containsStrict(Permission::DELETE_BOOKMARKS));
-            $this->assertTrue($savedPermissions->containsStrict(Permission::ADD_BOOKMARKS));
-            $this->assertTrue($savedPermissions->containsStrict(Permission::VIEW_BOOKMARKS));
-            $this->assertTrue($savedPermissions->containsStrict(Permission::UPDATE_FOLDER));
-            $this->assertTrue($savedPermissions->containsStrict(Permission::INVITE_USER));
-        });
+        $this->assertAcceptInvite([]);
+        $this->assertAcceptInvite([Permission::ADD_BOOKMARKS]);
+        $this->assertAcceptInvite([Permission::DELETE_BOOKMARKS]);
+        $this->assertAcceptInvite([Permission::INVITE_USER]);
+        $this->assertAcceptInvite([Permission::UPDATE_FOLDER]);
+        $this->assertAcceptInvite([Permission::DELETE_BOOKMARKS, Permission::ADD_BOOKMARKS]);
+        $this->assertAcceptInvite(['*']);
     }
 
-    private function assertWillAcceptInvite(array $permissions, \Closure $assertion): void
+    private function assertAcceptInvite(array $permissions): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
@@ -184,23 +189,14 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $user->id,
             $invitee->id,
             $folder->id,
-            new UAC($permissions)
+            $permissions = new UAC($permissions)
         );
 
         $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
 
-        $savedPermissions = FolderCollaboratorPermission::query()
-            ->where([
-                'folder_id' => $folder->id,
-                'user_id' => $invitee->id,
-            ])->get();
+        $savedPermissions = (new CollaboratorPermissionsRepository)->all($invitee->id, $folder->id);
 
-        $savedPermissionsTypes = FolderPermission::query()
-            ->findMany($savedPermissions->pluck('permission_id')->all(), ['name'])
-            ->pluck('name')
-            ->map(fn (string $name) => Permission::from($name));
-
-        $assertion($savedPermissionsTypes);
+        $this->assertEquals(array_diff($permissions->toArray(), $savedPermissions->toArray()), []);
     }
 
     #[Test]

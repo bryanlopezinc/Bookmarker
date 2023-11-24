@@ -54,20 +54,22 @@ final class FetchFolderBookmarksService
 
     private function ensureUserCanViewFolderBookmarks(?int $authUserId, Folder $folder): void
     {
-        if ($authUserId) {
-            try {
-                FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
-            } catch (FolderNotFoundException $e) {
-                if (!$folder->userIsCollaborator) {
-                    throw $e;
-                }
-
-                return;
-            }
+        if ($folder->visibility->isPublic()) {
+            return;
         }
 
-        if ($folder->visibility->isPrivate()) {
+        if (!$authUserId && !$folder->visibility->isPublic()) {
             throw new FolderNotFoundException();
+        }
+
+        try {
+            FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
+        } catch (FolderNotFoundException $e) {
+            if (!$folder->userIsCollaborator) {
+                throw $e;
+            }
+
+            return;
         }
     }
 

@@ -9,6 +9,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CreateFolderTest extends TestCase
@@ -89,6 +90,18 @@ class CreateFolderTest extends TestCase
         $folder = Folder::where('user_id', $user->id)->first();
 
         $this->assertTrue($folder->visibility->isPublic());
+    }
+
+    #[Test]
+    public function createCollaboratorOnlyFolder(): void
+    {
+        $this->loginUser($user = UserFactory::new()->create());
+
+        $this->createFolderResponse(['name' => $this->faker->word, 'visibility' => 'collaborators'])->assertCreated();
+
+        $folder = Folder::where('user_id', $user->id)->first();
+
+        $this->assertTrue($folder->visibility->isVisibleToCollaboratorsOnly());
     }
 
     public function testCreatePrivateFolder(): void
@@ -191,19 +204,12 @@ class CreateFolderTest extends TestCase
             'settings' => $settings
         ])->assertCreated();
 
-        $settings = $this->fetchUserFolderSettings($user->id);
-
-        $this->assertTrue(
-            $assertion($settings),
-        );
-    }
-
-    private function fetchUserFolderSettings(int $userId): FolderSettings
-    {
-        return Folder::onlyAttributes()
-            ->where('user_id', $userId)
+        $settings = Folder::onlyAttributes()
+            ->where('user_id', $user->id)
             ->first()
             ->settings;
+
+        $this->assertTrue($assertion($settings));
     }
 
     public function testWillReturnUnprocessableWhenFolderSettingsIsInValid(): void

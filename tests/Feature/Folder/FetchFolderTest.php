@@ -11,6 +11,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\CreatesCollaboration;
 
@@ -151,6 +152,19 @@ class FetchFolderTest extends TestCase
         $this->fetchFolderResponse(['id' => $folder->id])
             ->assertOk()
             ->assertJsonPath('data.attributes.visibility', 'private');
+    }
+
+    #[Test]
+    public function whenFolderIsCollaboratorsOnly(): void
+    {
+        $this->loginUser($user = UserFactory::new()->create());
+
+        /** @var Model */
+        $folder = FolderFactory::new()->for($user)->visibleToCollaboratorsOnly()->create();
+
+        $this->fetchFolderResponse(['id' => $folder->id])
+            ->assertOk()
+            ->assertJsonPath('data.attributes.visibility', 'collaborators');
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotExists(): void

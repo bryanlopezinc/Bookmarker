@@ -47,7 +47,8 @@ final class AcceptFolderCollaborationInviteService
 
         $this->ensureUsersStillExist($inviterId, $inviteeId);
 
-        $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'collaboratorsCount'])
+        /** @var Folder */
+        $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'collaboratorsCount', 'visibility'])
             ->tap(new WhereFolderOwnerExists())
             ->tap(new IsMutedUserScope($inviterId))
             ->tap(new UserIsCollaboratorScope($inviteeId, 'inviteeIsACollaborator'))
@@ -56,6 +57,10 @@ final class AcceptFolderCollaborationInviteService
         FolderNotFoundException::throwIf(!$folder);
 
         FolderCollaboratorsLimitExceededException::throwIfExceeded($folder->collaboratorsCount);
+
+        if ($folder->visibility->isPrivate()) {
+            throw HttpException::forbidden(['message' => 'PrivateFolder']);
+        }
 
         if ($folder->inviteeIsACollaborator) {
             return;

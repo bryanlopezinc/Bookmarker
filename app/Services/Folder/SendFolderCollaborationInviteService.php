@@ -68,7 +68,7 @@ final class SendFolderCollaborationInviteService
 
     private function fetchFolderAndAttributesForValidation(int $folderId, string $inviteeEmail): ?Folder
     {
-        return Folder::onlyAttributes(['id', 'user_id', 'name', 'collaboratorsCount'])
+        return Folder::onlyAttributes(['id', 'user_id', 'name', 'collaboratorsCount', 'visibility'])
             ->tap(new WhereFolderOwnerExists())
             ->tap(new DisabledActionScope(Permission::INVITE_USER))
             ->addSelect([
@@ -114,6 +114,10 @@ final class SendFolderCollaborationInviteService
 
         try {
             FolderNotFoundException::throwIf(!$folderBelongsToAuthUser);
+
+            if ($folder->visibility->isPrivate()) {
+                throw HttpException::forbidden(['message' => 'CannotAddCollaboratorsToPrivateFolder']);
+            }
         } catch (FolderNotFoundException $e) {
             $userFolderPermissions = $this->permissions->all($inviter->id, $folder->id);
 

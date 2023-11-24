@@ -8,23 +8,26 @@ use Illuminate\Http\Request;
 
 enum FolderVisibility: int
 {
-    case PUBLIC  = 2;
-    case PRIVATE = 3;
+    case PUBLIC        = 2;
+    case PRIVATE       = 3;
+    case COLLABORATORS = 4;
 
     public static function fromRequest(Request $request, string $key = 'visibility'): self
     {
         return match ($request->input($key)) {
-            default   => self::PUBLIC,
-            'public'  => self::PUBLIC,
-            'private' => self::PRIVATE
+            default         => self::PUBLIC,
+            'public'        => self::PUBLIC,
+            'private'       => self::PRIVATE,
+            'collaborators' => self::COLLABORATORS
         };
     }
 
     public function toWord(): string
     {
         return match ($this) {
-            self::PRIVATE => 'private',
-            self::PUBLIC  => 'public'
+            self::PRIVATE       => 'private',
+            self::PUBLIC        => 'public',
+            self::COLLABORATORS => 'collaborators'
         };
     }
 
@@ -38,11 +41,8 @@ enum FolderVisibility: int
         return $this == self::PRIVATE;
     }
 
-    /**
-     * @return array<int>
-     */
-    public static function values(): array
+    public function isVisibleToCollaboratorsOnly(): bool
     {
-        return array_column(self::cases(), 'value');
+        return $this == self::COLLABORATORS;
     }
 }

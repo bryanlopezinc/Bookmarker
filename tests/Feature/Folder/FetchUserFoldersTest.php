@@ -196,12 +196,14 @@ class FetchUserFoldersTest extends TestCase
 
         FolderFactory::new()->for($user)->create();
         FolderFactory::new()->for($user)->private()->create();
+        FolderFactory::new()->for($user)->visibleToCollaboratorsOnly()->create();
 
         $this->userFoldersResponse([])
             ->assertOk()
-            ->assertJsonCount(2, 'data')
-            ->assertJsonPath('data.0.attributes.visibility', 'private')
-            ->assertJsonPath('data.1.attributes.visibility', 'public');
+            ->assertJsonCount(3, 'data')
+            ->assertJsonPath('data.0.attributes.visibility', 'collaborators')
+            ->assertJsonPath('data.1.attributes.visibility', 'private')
+            ->assertJsonPath('data.2.attributes.visibility', 'public');
     }
 
     public function testCanRequestPartialResource(): void

@@ -74,9 +74,8 @@ class LeaveFolderCollaborationTest extends TestCase
     public function testWillReturnNotFoundWhenUserIsNotACollaborator(): void
     {
         Passport::actingAs(UserFactory::new()->create());
-        $this->leaveFolderCollaborationResponse([
-            'folder_id' =>  FolderFactory::new()->create()->id
-        ])->assertNotFound()
+        $this->leaveFolderCollaborationResponse(['folder_id' =>  FolderFactory::new()->create()->id])
+            ->assertNotFound()
             ->assertExactJson(['message' => 'FolderNotFound']);
     }
 
@@ -93,9 +92,8 @@ class LeaveFolderCollaborationTest extends TestCase
     {
         Passport::actingAs($folderOwner = UserFactory::new()->create());
 
-        $this->leaveFolderCollaborationResponse([
-            'folder_id' =>  FolderFactory::new()->for($folderOwner)->create()->id
-        ])->assertForbidden()
+        $this->leaveFolderCollaborationResponse(['folder_id' =>  FolderFactory::new()->for($folderOwner)->create()->id])
+            ->assertForbidden()
             ->assertExactJson(['message' => 'CannotExitOwnFolder']);
     }
 

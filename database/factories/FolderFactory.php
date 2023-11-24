@@ -38,6 +38,11 @@ final class FolderFactory extends Factory
         return $this->state(['visibility' => FolderVisibility::PRIVATE]);
     }
 
+    public function visibleToCollaboratorsOnly(): self
+    {
+        return $this->state(['visibility' => FolderVisibility::COLLABORATORS]);
+    }
+
     public function settings(FolderSettingsBuilder $settings): self
     {
         return $this->state(['settings' => $settings->build()]);

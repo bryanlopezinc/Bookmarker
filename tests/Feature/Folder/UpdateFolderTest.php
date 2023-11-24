@@ -117,59 +117,68 @@ class UpdateFolderTest extends TestCase
         $this->assertUpdated($folder, ['description' => null]);
     }
 
-    public function testUpdatePrivacyToBePublic(): void
+    public function testUpdateVisibility(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
         $folder = FolderFactory::new()->for($user)->private()->create();
-
         $this->updateFolderResponse([
             'visibility' => 'public',
             'folder'     => $folder->id,
             'password'   => 'password'
         ])->assertOk();
-
         $this->assertUpdated($folder, ['visibility' => FolderVisibility::PUBLIC->value]);
-    }
-
-    public function testUpdatePrivacyToBePrivate(): void
-    {
-        Passport::actingAs($user = UserFactory::new()->create());
 
         $folder = FolderFactory::new()->for($user)->create();
-
         $this->updateFolderResponse(['visibility' => 'private', 'folder' => $folder->id])->assertOk();
-
         $this->assertUpdated($folder, ['visibility' => FolderVisibility::PRIVATE->value]);
+
+        $folder = FolderFactory::new()->for($user)->create();
+        $this->updateFolderResponse(['visibility' => 'collaborators', 'folder' => $folder->id])->assertOk();
+        $this->assertUpdated($folder, ['visibility' => FolderVisibility::COLLABORATORS->value]);
     }
 
-    public function testWillReturnConflictWhenMakingPublicFolderPublic(): void
+    public function testWillReturnConflictWhenThereIsFolderVisibilityConflict(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
         $folder = FolderFactory::new()->for($user)->create();
-
         $this->updateFolderResponse([
             'visibility' => 'public',
             'folder'     => $folder->id,
-            'name'       => $this->faker->word,
             'password'   => 'password'
+        ])->assertStatus(Response::HTTP_CONFLICT)
+            ->assertExactJson(['message' => 'DuplicateVisibilityState']);
+
+        $folder = FolderFactory::new()->for($user)->private()->create();
+        $this->updateFolderResponse([
+            'visibility' => 'private',
+            'folder'     => $folder->id,
+        ])->assertStatus(Response::HTTP_CONFLICT)
+            ->assertExactJson(['message' => 'DuplicateVisibilityState']);
+
+        $folder = FolderFactory::new()->for($user)->visibleToCollaboratorsOnly()->create();
+        $this->updateFolderResponse([
+            'visibility' => 'collaborators',
+            'folder'     => $folder->id,
         ])->assertStatus(Response::HTTP_CONFLICT)
             ->assertExactJson(['message' => 'DuplicateVisibilityState']);
     }
 
-    public function testWillReturnConflictWhenMakingPrivateFolderPrivate(): void
+    #[Test]
+    public function willReturnForbiddenWhenUpdatingFolderWithCollaboratorsVisibilityToPrivate(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $folderOwner = UserFactory::new()->create();
 
-        $folder = FolderFactory::new()->for($user)->private()->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        $this->updateFolderResponse([
-            'visibility' => 'private',
-            'folder'     => $folder->id,
-            'name'       => $this->faker->word,
-        ])->assertStatus(Response::HTTP_CONFLICT)
-            ->assertExactJson(['message' => 'DuplicateVisibilityState']);
+        $this->CreateCollaborationRecord(UserFactory::new()->create(), $folder);
+        $this->CreateCollaborationRecord(UserFactory::new()->create(), $folder);
+
+        $this->loginUser($folderOwner);
+        $this->updateFolderResponse(['visibility' => 'private', 'folder' => $folder->id])
+            ->assertForbidden()
+            ->assertExactJson(['message' => 'CannotMakeFolderWithCollaboratorsPrivate']);
     }
 
     public function testWillReturnForbiddenWhenPasswordDoesNotMatch(): void
@@ -248,7 +257,7 @@ class UpdateFolderTest extends TestCase
             ->assertExactJson(['message' => 'NoUpdatePermission']);
     }
 
-    public function testWillReturnForbiddenWhenCollaboratorIsUpdatingPrivacy(): void
+    public function testWillReturnForbiddenWhenCollaboratorIsUpdatingVisibility(): void
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->private()->create();

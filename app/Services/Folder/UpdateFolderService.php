@@ -12,6 +12,7 @@ use App\Exceptions\HttpException;
 use App\Exceptions\PermissionDeniedException;
 use App\Http\Requests\CreateOrUpdateFolderRequest as Request;
 use App\Models\Folder;
+use App\Models\FolderCollaborator;
 use App\Models\Scopes\DisabledActionScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Models\User;
@@ -35,9 +36,17 @@ final class UpdateFolderService
      */
     public function fromRequest(Request $request): void
     {
-        $folder = Folder::onlyAttributes(['id', 'user_id', 'name', 'description', 'visibility', 'settings'])
+        $folder = Folder::onlyAttributes(['id', 'user_id', 'name', 'description', 'visibility', 'settings',])
             ->tap(new WhereFolderOwnerExists())
             ->tap(new DisabledActionScope(Permission::UPDATE_FOLDER))
+            //we could query for collaborators count but no need to count
+            //rows when we could do a simple select.
+            ->addSelect([
+                'hasCollaborators' => FolderCollaborator::query()
+                    ->select('id')
+                    ->whereColumn('folder_id', 'folders.id')
+                    ->limit(1)
+            ])
             ->find($request->integer('folder'));
 
         FolderNotFoundException::throwIf(!$folder);
@@ -46,9 +55,9 @@ final class UpdateFolderService
 
         $this->ensureUserCanUpdateFolder($folder, $request, $authUser->getAuthIdentifier());
 
-        $this->confirmPasswordBeforeUpdatingPrivacy($request, $authUser);
-
         $this->ensureNoVisibilityConflict($folder, $request);
+
+        $this->confirmPasswordBeforeUpdatingPrivacy($request, $authUser);
 
         $updatedFolder = $this->performUpdate($request, $folder);
 
@@ -61,18 +70,8 @@ final class UpdateFolderService
             return;
         }
 
-        $exception = HttpException::conflict(['message' => 'DuplicateVisibilityState']);
-
-        $visibility = $request->input('visibility');
-
-        $folderVisibility = $folder->visibility;
-
-        if ($visibility === 'public' && $folderVisibility->isPublic()) {
-            throw $exception;
-        }
-
-        if ($visibility === 'private' && $folderVisibility->isPrivate()) {
-            throw $exception;
+        if (FolderVisibility::fromRequest($request) == $folder->visibility) {
+            throw HttpException::conflict(['message' => 'DuplicateVisibilityState']);
         }
     }
 
@@ -82,6 +81,10 @@ final class UpdateFolderService
 
         try {
             FolderNotFoundException::throwIf(!$folderBelongsToAuthUser);
+
+            if ($folder->hasCollaborators && FolderVisibility::fromRequest($request)->isPrivate()) {
+                throw HttpException::forbidden(['message' => 'CannotMakeFolderWithCollaboratorsPrivate']);
+            }
         } catch (FolderNotFoundException $e) {
             $userPermissions = $this->permissions->all($authUserId, $folder->id);
 
@@ -91,10 +94,6 @@ final class UpdateFolderService
 
             if ($request->has('visibility')) {
                 throw HttpException::forbidden(['message' => 'NoUpdatePrivacyPermission']);
-            }
-
-            if ($request->has('discussion_mode')) {
-                throw HttpException::forbidden(['message' => 'NoUpdateDiscussionStatePermission']);
             }
 
             if (!$userPermissions->canUpdateFolder()) {
@@ -130,7 +129,7 @@ final class UpdateFolderService
 
     private function confirmPasswordBeforeUpdatingPrivacy(Request $request, User $authUser): void
     {
-        if ($request->missing('visibility') || $request->input('visibility') === 'private') {
+        if ($request->missing('visibility') || $request->input('visibility') !== 'public') {
             return;
         }
 

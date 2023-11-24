@@ -53,5 +53,5 @@ jobs:
     - name: Run tests
       run: php artisan test
 
-    - name: Run pint (without changing files)
+    - name: Coding standard (Run pint without changing files)
       run: ./vendor/bin/pint --test

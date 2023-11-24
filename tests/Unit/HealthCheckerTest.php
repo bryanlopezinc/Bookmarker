@@ -9,6 +9,7 @@ use App\HealthCheckResult;
 use Database\Factories\BookmarkFactory;
 use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class HealthCheckerTest extends TestCase
@@ -64,6 +65,20 @@ class HealthCheckerTest extends TestCase
 
         $checker = new HealthChecker($repository);
         $checker->ping([]);
+    }
+
+    #[Test]
+    public function WillNotMakeHttpRequestIfAllBookmarksHaveBeenRecentlyChecked(): void
+    {
+        Http::fake();
+
+        $repository = $this->getMockBuilder(BookmarksHealthRepositoryInterface::class)->getMock();
+        $repository->expects($this->once())->method('whereNotRecentlyChecked')->willReturn([]);
+
+        $checker = new HealthChecker($repository);
+        $checker->ping([BookmarkFactory::new()->make(['id' => 550])]);
+
+        Http::assertNothingSent();
     }
 
     public function testWillNotUpdateDataIfAllBookmarksHaveBeenRecentlyChecked(): void

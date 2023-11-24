@@ -8,8 +8,8 @@ use App\Contracts\BookmarksHealthRepositoryInterface;
 
 final class TestBookmarksHealthRepository implements BookmarksHealthRepositoryInterface
 {
-    /** @var array<int,bool> */
-    private static $requestedBookmarkIDs = [];
+    /** @var array<int> */
+    public static $bookmarkIds = [];
 
     public function __construct(private BookmarksHealthRepositoryInterface $baseRepository)
     {
@@ -19,24 +19,15 @@ final class TestBookmarksHealthRepository implements BookmarksHealthRepositoryIn
     }
 
     /**
-     * Get all the bookmark ids that will be checked by the health checker
-     *
-     * @return array<int>
-     */
-    public static function requestedBookmarkIDs(): array
-    {
-        return array_keys(static::$requestedBookmarkIDs);
-    }
-
-    /**
      * {@inheritdoc}
      */
     public function whereNotRecentlyChecked(array $bookmarkIDs): array
     {
         $whereNotRecentlyChecked = $this->baseRepository->whereNotRecentlyChecked($bookmarkIDs);
 
-        collect($whereNotRecentlyChecked)
-            ->each(fn (int $bookmarkID) => static::$requestedBookmarkIDs[$bookmarkID] = true);
+        foreach ($whereNotRecentlyChecked as $bookmarkId) {
+            self::$bookmarkIds[] = $bookmarkId;
+        }
 
         return [];
     }

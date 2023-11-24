@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Folder;
 
 use App\Cache\InviteTokensStore;
+use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Models\FolderCollaboratorPermission;
 use App\Enums\Permission;
 use Database\Factories\FolderFactory;
@@ -17,11 +18,9 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
-use App\Enums\FolderSettingKey;
 use App\Models\Folder;
 use App\Models\FolderCollaborator;
 use App\Models\FolderPermission;
-use App\Models\FolderSetting;
 use App\Services\Folder\MuteCollaboratorService;
 use App\UAC;
 use Illuminate\Testing\Assert as PHPUnit;
@@ -386,13 +385,9 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
 
-        $folder = FolderFactory::new()->create();
-
-        FolderSetting::create([
-            'key'       => FolderSettingKey::ENABLE_NOTIFICATIONS->value,
-            'value'     => false,
-            'folder_id' => $folder->id
-        ]);
+        $folder = FolderFactory::new()
+            ->settings(FolderSettingsBuilder::new()->disableNotifications())
+            ->create();
 
         Notification::fake();
 
@@ -414,13 +409,12 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->create();
 
-        FolderSetting::create([
-            'key'       => FolderSettingKey::NEW_COLLABORATOR_NOTIFICATION->value,
-            'value'     => false,
-            'folder_id' => $folder->id
-        ]);
+        $settings = FolderSettingsBuilder::new()
+            ->disableNewCollaboratorNotification()
+            ->enableOnlyCollaboratorsInvitedByMeNotification();
+
+        $folder = FolderFactory::new()->settings($settings)->create();
 
         Notification::fake();
 
@@ -443,13 +437,9 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
 
-        $folder = FolderFactory::new()->create();
-
-        FolderSetting::create([
-            'key'       => FolderSettingKey::ONLY_COLLABORATOR_INVITED_BY_USER_NOTIFICATION->value,
-            'value'     => true,
-            'folder_id' => $folder->id
-        ]);
+        $folder = FolderFactory::new()
+            ->settings(FolderSettingsBuilder::new()->enableOnlyCollaboratorsInvitedByMeNotification())
+            ->create();
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
@@ -472,13 +462,10 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
 
-        $folder = FolderFactory::new()->for($folderOwner)->create();
-
-        FolderSetting::create([
-            'key'       => FolderSettingKey::ONLY_COLLABORATOR_INVITED_BY_USER_NOTIFICATION->value,
-            'value'     => true,
-            'folder_id' => $folder->id
-        ]);
+        $folder = FolderFactory::new()
+            ->for($folderOwner)
+            ->settings(FolderSettingsBuilder::new()->enableOnlyCollaboratorsInvitedByMeNotification())
+            ->create();
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,

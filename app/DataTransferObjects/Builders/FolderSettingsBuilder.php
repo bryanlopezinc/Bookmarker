@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects\Builders;
 
-use App\DataTransferObjects\FolderSettings;
+use App\ValueObjects\FolderSettings;
 use App\Enums\FolderSettingKey as Key;
 
 final class FolderSettingsBuilder
@@ -24,19 +24,24 @@ final class FolderSettingsBuilder
         return $this->attributes;
     }
 
+    public static function new(): FolderSettingsBuilder
+    {
+        return new FolderSettingsBuilder;
+    }
+
     public static function fromRequest(array $data): self
     {
         $settings = [];
 
         $map = [
-            'enable_notifications'                   => Key::ENABLE_NOTIFICATIONS->value,
-            'notify_on_new_collaborator'             => Key::NEW_COLLABORATOR_NOTIFICATION->value,
-            'notify_on_new_collaborator_by_user'     => Key::ONLY_COLLABORATOR_INVITED_BY_USER_NOTIFICATION->value,
-            'notify_on_update'                       => Key::NOTIFy_ON_UPDATE->value,
-            'notify_on_new_bookmark'                 => Key::NOTIFY_ON_NEW_BOOKMARK->value,
-            'notify_on_bookmark_delete'              => Key::NOTIFY_ON_BOOKMARK_DELETED->value,
-            'notify_on_collaborator_exit'            => Key::NOTIFY_ON_COLLABORATOR_EXIT->value,
-            'notify_on_collaborator_exit_with_write' => Key::NOTIFY_ON_COLLABORATOR_EXIT_ONLY_WHEN_HAS_WRITE_PERMISSION->value // phpcs:ignore
+            'enable_notifications'                   => Key::ENABLE_NOTIFICATIONS,
+            'notify_on_new_collaborator'             => Key::NEW_COLLABORATOR_NOTIFICATION,
+            'notify_on_new_collaborator_by_user'     => Key::ONLY_COLLABORATOR_INVITED_BY_USER_NOTIFICATION,
+            'notify_on_update'                       => Key::NOTIFy_ON_UPDATE,
+            'notify_on_new_bookmark'                 => Key::NOTIFY_ON_NEW_BOOKMARK,
+            'notify_on_bookmark_delete'              => Key::NOTIFY_ON_BOOKMARK_DELETED,
+            'notify_on_collaborator_exit'            => Key::NOTIFY_ON_COLLABORATOR_EXIT,
+            'notify_on_collaborator_exit_with_write' => Key::NOTIFY_ON_COLLABORATOR_EXIT_ONLY_WHEN_HAS_WRITE_PERMISSION // phpcs:ignore
         ];
 
         foreach ($data as $key => $value) {
@@ -49,7 +54,7 @@ final class FolderSettingsBuilder
 
     public function enableNotifications(bool $enable = true): self
     {
-        $this->attributes[Key::ENABLE_NOTIFICATIONS->value] = $enable;
+        $this->attributes[Key::ENABLE_NOTIFICATIONS] = $enable;
 
         return $this;
     }
@@ -61,7 +66,7 @@ final class FolderSettingsBuilder
 
     public function enableFolderUpdatedNotification(bool $enable = true): self
     {
-        $this->attributes[Key::NOTIFy_ON_UPDATE->value] = $enable;
+        $this->attributes[Key::NOTIFy_ON_UPDATE] = $enable;
 
         return $this;
     }
@@ -73,7 +78,7 @@ final class FolderSettingsBuilder
 
     public function enableNewBookmarksNotification(bool $enable = true): self
     {
-        $this->attributes[Key::NOTIFY_ON_NEW_BOOKMARK->value] = $enable;
+        $this->attributes[Key::NOTIFY_ON_NEW_BOOKMARK] = $enable;
 
         return $this;
     }
@@ -85,7 +90,7 @@ final class FolderSettingsBuilder
 
     public function enableBookmarksRemovedNotification(bool $notify = true): self
     {
-        $this->attributes[Key::NOTIFY_ON_BOOKMARK_DELETED->value] = $notify;
+        $this->attributes[Key::NOTIFY_ON_BOOKMARK_DELETED] = $notify;
 
         return $this;
     }
@@ -97,7 +102,7 @@ final class FolderSettingsBuilder
 
     public function enableNewCollaboratorNotification(bool $enable = true): self
     {
-        $this->attributes[Key::NEW_COLLABORATOR_NOTIFICATION->value] = $enable;
+        $this->attributes[Key::NEW_COLLABORATOR_NOTIFICATION] = $enable;
 
         return $this;
     }
@@ -109,14 +114,14 @@ final class FolderSettingsBuilder
 
     public function enableOnlyCollaboratorsInvitedByMeNotification(bool $enable = true): self
     {
-        $this->attributes[Key::ONLY_COLLABORATOR_INVITED_BY_USER_NOTIFICATION->value] = $enable;
+        $this->attributes[Key::ONLY_COLLABORATOR_INVITED_BY_USER_NOTIFICATION] = $enable;
 
         return $this;
     }
 
     public function enableCollaboratorExitNotification(bool $enable = true): self
     {
-        $this->attributes[Key::NOTIFY_ON_COLLABORATOR_EXIT->value] = $enable;
+        $this->attributes[Key::NOTIFY_ON_COLLABORATOR_EXIT] = $enable;
 
         return $this;
     }
@@ -128,7 +133,7 @@ final class FolderSettingsBuilder
 
     public function enableOnlyCollaboratorWithWritePermissionNotification(bool $enable = true): self
     {
-        $this->attributes[Key::NOTIFY_ON_COLLABORATOR_EXIT_ONLY_WHEN_HAS_WRITE_PERMISSION->value] = $enable;
+        $this->attributes[Key::NOTIFY_ON_COLLABORATOR_EXIT_ONLY_WHEN_HAS_WRITE_PERMISSION] = $enable;
 
         return $this;
     }

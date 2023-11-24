@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
-use App\DataTransferObjects\FolderSettings;
 use App\Enums\FolderBookmarkVisibility as Visibility;
 use App\Enums\Permission;
 use App\Exceptions\BookmarkNotFoundException;
@@ -164,7 +163,7 @@ final class AddBookmarksToFolderService
     {
         $collaboratorID = auth()->id();
 
-        $settings = FolderSettings::fromQuery($folder->settings);
+        $settings = $folder->settings;
 
         if (
             $collaboratorID === $folder->user_id ||

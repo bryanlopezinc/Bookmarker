@@ -184,7 +184,7 @@ final class UAC implements Countable, Arrayable
         return $this->permissions->contains(Permission::UPDATE_FOLDER->value);
     }
 
-    public function hasOnlyReadPermission(): bool
+    public function isReadOnly(): bool
     {
         return $this->permissions->contains(Permission::VIEW_BOOKMARKS->value) && $this->permissions->count() === 1;
     }

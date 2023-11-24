@@ -2,11 +2,10 @@
 
 namespace Tests\Feature\Folder;
 
-use App\Enums\FolderSettingKey;
+use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Enums\FolderVisibility;
 use App\Enums\Permission;
 use App\Models\Folder;
-use App\Models\FolderSetting;
 use App\Services\Folder\ToggleFolderCollaborationRestriction;
 use App\UAC;
 use Database\Factories\FolderFactory;
@@ -14,6 +13,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
@@ -84,15 +84,23 @@ class UpdateFolderTest extends TestCase
 
     private function assertUpdated(Folder $original, array $attributes): void
     {
-        $folder = Folder::query()->find($original->id);
+        $updated = Folder::query()->find($original->id);
 
-        $folder->offsetUnset('updated_at');
+        $updated->offsetUnset('updated_at');
         $original->offsetUnset('updated_at');
 
+        $originalToArray = $original->toArray();
+        $updatedToArray = $updated->toArray();
+
         $this->assertEquals(
-            array_diff_assoc($folder->toArray(), $original->toArray()),
+            Arr::only($updatedToArray, $difference = array_keys($attributes)),
             $attributes
         );
+
+        Arr::forget($updatedToArray, $difference);
+        Arr::forget($originalToArray, $difference);
+
+        $this->assertEquals($originalToArray, $updatedToArray);
     }
 
     public function testUpdateDescription(): void
@@ -338,13 +346,11 @@ class UpdateFolderTest extends TestCase
     public function testWillNotSendNotificationsWhenNotificationsIsDisabled(): void
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderSetting::create([
-            'key'       => FolderSettingKey::ENABLE_NOTIFICATIONS->value,
-            'value'     => false,
-            'folder_id' => $folder->id
-        ]);
+        $folder = FolderFactory::new()
+            ->for($folderOwner)
+            ->settings(FolderSettingsBuilder::new()->disableNotifications())
+            ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER);
 
@@ -363,13 +369,11 @@ class UpdateFolderTest extends TestCase
     public function testWillNotSendNotificationsWhenFolderUpdatedNotificationsIsDisabled(): void
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderSetting::create([
-            'key'       => FolderSettingKey::NOTIFy_ON_UPDATE->value,
-            'value'     => false,
-            'folder_id' => $folder->id
-        ]);
+        $folder = FolderFactory::new()
+            ->for($folderOwner)
+            ->settings(FolderSettingsBuilder::new()->disableFolderUpdatedNotification())
+            ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER);
 

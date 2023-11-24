@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
-use App\DataTransferObjects\FolderSettings;
 use App\Enums\FolderVisibility;
 use App\Enums\Permission;
 use App\Exceptions\FolderActionDisabledException;
@@ -146,7 +145,7 @@ final class UpdateFolderService
             return;
         }
 
-        $settings = FolderSettings::fromQuery($folder->settings);
+        $settings = $folder->settings;
 
         if (
             $settings->notificationsAreDisabled() ||

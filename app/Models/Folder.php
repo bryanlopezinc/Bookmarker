@@ -7,15 +7,16 @@ namespace App\Models;
 use App\Enums\FolderVisibility;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use App\ValueObjects\FolderSettings;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use Illuminate\Support\Facades\DB;
 
 /**
  * @property int $id
  * @property string|null $description
  * @property string $name
- * @property array $settings
+ * @property FolderSettings $settings
  * @property FolderVisibility $visibility
  * @property int $user_id
  * @property \Carbon\Carbon $created_at
@@ -39,14 +40,19 @@ final class Folder extends Model
     /**
      * {@inheritdoc}
      */
-    protected $casts = [
-        'visibility'       => FolderVisibility::class,
-        'settings'         => 'array',
-    ];
+    protected $casts = ['visibility' => FolderVisibility::class];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    protected function settings(): Attribute
+    {
+        return new Attribute(
+            get: fn (?string $json) => FolderSettings::make($json),
+            set: fn ($value) => FolderSettings::make($value)->toJson()
+        );
     }
 
     /**
@@ -64,7 +70,7 @@ final class Folder extends Model
 
         if (!$attributes->isEmpty()) {
             $builder->addSelect(
-                $this->qualifyColumns($attributes->except(['bookmarks_count', 'settings', 'collaboratorsCount'])->all())
+                $this->qualifyColumns($attributes->except(['bookmarks_count', 'collaboratorsCount'])->all())
             );
         }
 
@@ -91,14 +97,6 @@ final class Folder extends Model
                             ->whereRaw('id = folders_bookmarks.bookmark_id')
                             ->getQuery();
                     })
-            ]);
-        });
-
-        $builder->when($attributes->has('settings') || $attributes->isEmpty(), function ($query) {
-            $query->addSelect([
-                'settings' => FolderSetting::query()
-                    ->select(DB::raw("ifNULL(JSON_ARRAYAGG(JSON_OBJECT('key', `key`, 'value', `value`)), '{}')"))
-                    ->whereRaw("folder_id = {$this->qualifyColumn('id')}")
             ]);
         });
 

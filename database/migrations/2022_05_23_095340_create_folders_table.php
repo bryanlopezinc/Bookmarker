@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -19,9 +20,14 @@ return new class extends Migration
             $table->foreignId('user_id')->index();
             $table->string('description', 150)->nullable();
             $table->string('name', 50)->index();
+            $table->json('settings');
             $table->timestamps();
             $table->index('updated_at');
         });
+
+        DB::statement(<<<SQL
+            ALTER TABLE folders ADD CONSTRAINT valid_settings CHECK (JSON_VALID(`settings`))
+        SQL);
     }
 
     /**

@@ -2,11 +2,10 @@
 
 namespace Tests\Feature\Folder;
 
-use App\Enums\FolderSettingKey;
+use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Enums\Permission;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
-use App\Models\FolderSetting;
 use App\Services\Folder\AddBookmarksToFolderService;
 use App\Services\Folder\MuteCollaboratorService;
 use App\Services\Folder\ToggleFolderCollaborationRestriction;
@@ -306,13 +305,11 @@ class RemoveFolderBookmarksTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
-        $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderSetting::create([
-            'key'       => FolderSettingKey::ENABLE_NOTIFICATIONS->value,
-            'value'     => false,
-            'folder_id' => $folder->id
-        ]);
+        $folder = FolderFactory::new()
+            ->for($folderOwner)
+            ->settings(FolderSettingsBuilder::new()->disableNotifications())
+            ->create();
 
         Passport::actingAs($folderOwner);
         $this->addBookmarksToFolder($bookmarkIDs->all(), $folder->id);
@@ -334,13 +331,11 @@ class RemoveFolderBookmarksTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
-        $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        FolderSetting::create([
-            'key'       => FolderSettingKey::NOTIFY_ON_BOOKMARK_DELETED->value,
-            'value'     => false,
-            'folder_id' => $folder->id
-        ]);
+        $folder = FolderFactory::new()
+            ->for($folderOwner)
+            ->settings(FolderSettingsBuilder::new()->disableBookmarksRemovedNotification())
+            ->create();
 
         Passport::actingAs($folderOwner);
         $this->addBookmarksToFolder($bookmarkIDs->all(), $folder->id);

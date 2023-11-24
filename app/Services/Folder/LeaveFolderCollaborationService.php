@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
-use App\DataTransferObjects\FolderSettings;
+use App\ValueObjects\FolderSettings;
 use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
@@ -58,13 +58,19 @@ final class LeaveFolderCollaborationService
 
     private function notifyFolderOwner(int $collaborator, Folder $folder, UAC $collaboratorPermissions): void
     {
-        $folderNotificationSettings = FolderSettings::fromQuery($folder->settings);
+        $folderNotificationSettings = $folder->settings;
+
+        if ($folderNotificationSettings->notificationsAreDisabled()) {
+            return;
+        }
+
+        if ($folderNotificationSettings->collaboratorExitNotificationIsDisabled()) {
+            return;
+        }
 
         if (
-            $folderNotificationSettings->notificationsAreDisabled() ||
-            $folderNotificationSettings->collaboratorExitNotificationIsDisabled() ||
-            ($collaboratorPermissions->hasOnlyReadPermission() &&
-                $folderNotificationSettings->onlyCollaboratorWithWritePermissionNotificationIsEnabled())
+            $collaboratorPermissions->isReadOnly() &&
+            $folderNotificationSettings->onlyCollaboratorWithWritePermissionNotificationIsEnabled()
         ) {
             return;
         }

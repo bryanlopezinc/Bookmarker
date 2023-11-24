@@ -2,11 +2,10 @@
 
 namespace Tests\Feature\Folder;
 
-use App\Enums\FolderSettingKey;
+use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Enums\Permission;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
-use App\Models\FolderSetting;
 use App\Services\Folder\AddBookmarksToFolderService;
 use App\Services\Folder\MuteCollaboratorService;
 use App\Services\Folder\ToggleFolderCollaborationRestriction;
@@ -360,15 +359,13 @@ class AddBookmarksToFolderTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarks = BookmarkFactory::new()->count(3)->for($collaborator)->create()->pluck('id');
-        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $folder = FolderFactory::new()
+            ->for($folderOwner)
+            ->settings(FolderSettingsBuilder::new()->disableNotifications())
+            ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
-
-        FolderSetting::create([
-            'key'       => FolderSettingKey::ENABLE_NOTIFICATIONS->value,
-            'value'     => false,
-            'folder_id' => $folder->id
-        ]);
 
         Notification::fake();
 
@@ -385,15 +382,13 @@ class AddBookmarksToFolderTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarks = BookmarkFactory::new()->count(3)->for($collaborator)->create()->pluck('id');
-        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $folder = FolderFactory::new()
+            ->for($folderOwner)
+            ->settings(FolderSettingsBuilder::new()->disableNewBookmarksNotification())
+            ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
-
-        FolderSetting::create([
-            'key'       => FolderSettingKey::NOTIFY_ON_NEW_BOOKMARK->value,
-            'value'     => false,
-            'folder_id' => $folder->id
-        ]);
 
         Notification::fake();
 

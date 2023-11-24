@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
-use App\DataTransferObjects\FolderSettings;
 use App\Enums\Permission;
 use App\Exceptions\FolderActionDisabledException;
 use App\Exceptions\FolderNotFoundException;
@@ -103,7 +102,7 @@ final class RemoveFolderBookmarksService
 
     private function notifyFolderOwner(array $bookmarkIDs, Folder $folder, int $authUserId): void
     {
-        $folderSettings = FolderSettings::fromQuery($folder->settings);
+        $folderSettings = $folder->settings;
 
         if (
             $authUserId === $folder->user_id                          ||

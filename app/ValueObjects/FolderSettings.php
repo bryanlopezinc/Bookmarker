@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\DataTransferObjects;
+namespace App\ValueObjects;
 
 use App\Enums\FolderSettingKey as Key;
 use App\Utils\FolderSettingsValidator;
@@ -11,27 +11,26 @@ use Illuminate\Contracts\Support\Arrayable;
 final class FolderSettings implements Arrayable
 {
     /**
-     * @var array<string,mixed> $settings
-     */
-    private array $settings;
-
-    /**
      * @param array<string,mixed> $settings
      */
-    public function __construct(array $settings)
+    public function __construct(private array $settings)
     {
         $this->settings = $settings;
 
         $this->ensureIsValid();
     }
 
-    public static function fromQuery(array $result): self
+    public static function make(string|FolderSettings|array $settings = null): FolderSettings
     {
-        return new self(
-            collect($result)
-                ->mapWithKeys(fn (array $setting) => [$setting['key'] => boolval($setting['value'])])
-                ->all()
-        );
+        if (is_string($settings)) {
+            $settings = json_decode($settings, true, flags: JSON_THROW_ON_ERROR);
+        }
+
+        if ($settings instanceof FolderSettings) {
+            $settings = $settings->toArray();
+        }
+
+        return new FolderSettings($settings ?? []);
     }
 
     private function ensureIsValid(): void
@@ -43,13 +42,25 @@ final class FolderSettings implements Arrayable
         $validator = new FolderSettingsValidator();
 
         $validator->validate($this);
+    }
 
-        $validator->ensureValidState($this);
+    public function toJson(): string
+    {
+        return json_encode($this->toArray(), JSON_THROW_ON_ERROR);
     }
 
     public function notificationsAreEnabled(): bool
     {
-        return $this->settings[key::ENABLE_NOTIFICATIONS->value] ?? true;
+        return $this->get(key::ENABLE_NOTIFICATIONS);
+    }
+
+    private function get(string $key, mixed $default = true): mixed
+    {
+        if (!array_key_exists($key, $this->settings)) {
+            return $default;
+        }
+
+        return $this->settings[$key];
     }
 
     public function notificationsAreDisabled(): bool
@@ -59,7 +70,7 @@ final class FolderSettings implements Arrayable
 
     public function newCollaboratorNotificationIsEnabled(): bool
     {
-        return $this->settings[key::NEW_COLLABORATOR_NOTIFICATION->value] ?? true;
+        return $this->get(key::NEW_COLLABORATOR_NOTIFICATION);
     }
 
     public function newCollaboratorNotificationIsDisabled(): bool
@@ -72,7 +83,7 @@ final class FolderSettings implements Arrayable
      */
     public function onlyCollaboratorsInvitedByMeNotificationIsEnabled(): bool
     {
-        return $this->settings[key::ONLY_COLLABORATOR_INVITED_BY_USER_NOTIFICATION->value] ?? false;
+        return $this->get(key::ONLY_COLLABORATOR_INVITED_BY_USER_NOTIFICATION, false);
     }
 
     public function onlyCollaboratorsInvitedByMeNotificationIsDisabled(): bool
@@ -82,7 +93,7 @@ final class FolderSettings implements Arrayable
 
     public function folderUpdatedNotificationIsEnabled(): bool
     {
-        return $this->settings[key::NOTIFy_ON_UPDATE->value] ?? true;
+        return $this->get(key::NOTIFy_ON_UPDATE);
     }
 
     public function folderUpdatedNotificationIsDisabled(): bool
@@ -92,7 +103,7 @@ final class FolderSettings implements Arrayable
 
     public function newBookmarksNotificationIsEnabled(): bool
     {
-        return $this->settings[key::NOTIFY_ON_NEW_BOOKMARK->value] ?? true;
+        return $this->get(key::NOTIFY_ON_NEW_BOOKMARK);
     }
 
     public function newBookmarksNotificationIsDisabled(): bool
@@ -102,7 +113,7 @@ final class FolderSettings implements Arrayable
 
     public function bookmarksRemovedNotificationIsEnabled(): bool
     {
-        return $this->settings[key::NOTIFY_ON_BOOKMARK_DELETED->value] ?? true;
+        return $this->get(key::NOTIFY_ON_BOOKMARK_DELETED);
     }
 
     public function bookmarksRemovedNotificationIsDisabled(): bool
@@ -112,7 +123,7 @@ final class FolderSettings implements Arrayable
 
     public function collaboratorExitNotificationIsEnabled(): bool
     {
-        return $this->settings[key::NOTIFY_ON_COLLABORATOR_EXIT->value] ?? true;
+        return $this->get(key::NOTIFY_ON_COLLABORATOR_EXIT);
     }
 
     public function collaboratorExitNotificationIsDisabled(): bool
@@ -125,7 +136,7 @@ final class FolderSettings implements Arrayable
      */
     public function onlyCollaboratorWithWritePermissionNotificationIsEnabled(): bool
     {
-        return $this->settings[key::NOTIFY_ON_COLLABORATOR_EXIT_ONLY_WHEN_HAS_WRITE_PERMISSION->value] ?? false;
+        return $this->get(key::NOTIFY_ON_COLLABORATOR_EXIT_ONLY_WHEN_HAS_WRITE_PERMISSION, false);
     }
 
     /**

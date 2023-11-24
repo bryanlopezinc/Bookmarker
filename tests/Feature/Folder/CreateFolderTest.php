@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Folder;
 
-use App\DataTransferObjects\FolderSettings;
-use App\DataTransferObjects\FolderSettings as FS;
+use App\ValueObjects\FolderSettings;
+use App\ValueObjects\FolderSettings as FS;
 use App\Models\Folder;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -200,17 +200,15 @@ class CreateFolderTest extends TestCase
 
     private function fetchUserFolderSettings(int $userId): FolderSettings
     {
-        $settings = Folder::onlyAttributes()
+        return Folder::onlyAttributes()
             ->where('user_id', $userId)
             ->first()
             ->settings;
-
-        return FolderSettings::fromQuery($settings);
     }
 
     public function testWillReturnUnprocessableWhenFolderSettingsIsInValid(): void
     {
-        Passport::actingAs(UserFactory::new()->make());
+        Passport::actingAs(UserFactory::new()->create());
 
         $this->createFolderResponse(['settings' => 'foo'])
             ->assertUnprocessable()
@@ -237,25 +235,6 @@ class CreateFolderTest extends TestCase
                 'notify_on_bookmark_delete'                => 'foo',
                 'notify_on_collaborator_exit'              => 'foo',
                 'N-notify_on_collaborator_exit_with_write' => 'foo'
-            ]
-        ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['settings']);
-
-        //Assert N-onlyNewCollaboratorsByMe setting cannot be true when N-newCollaborator value is false.
-        $this->createFolderResponse([
-            'name' => $this->faker->word,
-            'settings' => [
-                'notify_on_new_collaborator'        => false,
-                'notify_on_new_collaborator_by_user' => true,
-            ]
-        ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['settings']);
-
-        //Assert N-collaboratorExitOnlyHasWritePermission setting cannot be true when N-collaboratorExit value is false.
-        $this->createFolderResponse([
-            'settings' => [
-                'notify_on_collaborator_exit' => false,
-                'notify_on_collaborator_exit_with_write' => true
             ]
         ])->assertUnprocessable()
             ->assertJsonValidationErrors(['settings']);

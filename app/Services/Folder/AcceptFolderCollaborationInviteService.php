@@ -10,7 +10,6 @@ use App\UAC;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use Illuminate\Http\Request;
 use App\Cache\InviteTokensStore as Payload;
-use App\DataTransferObjects\FolderSettings;
 use App\Enums\Permission;
 use App\Exceptions\FolderCollaboratorsLimitExceededException;
 use App\Exceptions\FolderNotFoundException;
@@ -109,14 +108,21 @@ final class AcceptFolderCollaborationInviteService
     {
         $wasInvitedByFolderOwner = $folder->user_id === $inviterId;
 
-        $folderSettings = FolderSettings::fromQuery($folder->settings);
+        $settings = $folder->settings;
 
-        if (
-            ($folderSettings->notificationsAreDisabled() || $folderSettings->newCollaboratorNotificationIsDisabled()) ||
-            (!$wasInvitedByFolderOwner && $folderSettings->onlyCollaboratorsInvitedByMeNotificationIsEnabled()) ||
-            ($wasInvitedByFolderOwner && $folderSettings->onlyCollaboratorsInvitedByMeNotificationIsDisabled()) ||
-            $folder->collaboratorIsMuted
-        ) {
+        if ($settings->notificationsAreDisabled() || $settings->newCollaboratorNotificationIsDisabled()) {
+            return;
+        }
+
+        if (!$wasInvitedByFolderOwner && $settings->onlyCollaboratorsInvitedByMeNotificationIsEnabled()) {
+            return;
+        }
+
+        if ($wasInvitedByFolderOwner && $settings->onlyCollaboratorsInvitedByMeNotificationIsDisabled()) {
+            return;
+        }
+
+        if ($folder->collaboratorIsMuted) {
             return;
         }
 

@@ -5,32 +5,22 @@ declare(strict_types=1);
 namespace App\Services\Folder;
 
 use App\DataTransferObjects\Builders\FolderSettingsBuilder as Builder;
+use App\ValueObjects\FolderSettings;
 use App\Enums\FolderVisibility;
 use App\Http\Requests\CreateOrUpdateFolderRequest as Request;
 use App\Models\Folder;
-use App\Models\FolderSetting;
-use App\ValueObjects\UserId;
-use Illuminate\Support\Collection;
 
 final class CreateFolderService
 {
     public function __invoke(Request $request): void
     {
-        /** @var Folder */
-        $folder = Folder::create([
+        Folder::create([
             'description' => $request->validated('description'),
             'name'        => $request->validated('name'),
-            'user_id'     => UserId::fromAuthUser()->value(),
+            'user_id'     => auth()->id(),
             'visibility'  => FolderVisibility::fromRequest($request),
+            'settings'    => new FolderSettings($this->buildSettings($request))
         ]);
-
-        collect($this->buildSettings($request))
-            ->map(fn (mixed $value, string $key) => [
-                'key'       => $key,
-                'value'     => $value,
-                'folder_id' => $folder->id
-            ])
-            ->whenNotEmpty(fn (Collection $collection) => FolderSetting::insert($collection->all()));
     }
 
     private function buildSettings(Request $request): array

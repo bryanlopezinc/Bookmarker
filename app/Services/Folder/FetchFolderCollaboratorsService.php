@@ -70,11 +70,11 @@ final class FetchFolderCollaboratorsService
                     $builder->havingRaw("COUNT(*) = {$permissions->count()}");
                 }
 
-                if ($permissions->hasOnlyReadPermission()) {
+                if ($permissions->isReadOnly()) {
                     $builder->havingRaw("COUNT(*) = 1");
                 }
 
-                if (!$permissions->hasOnlyReadPermission()) {
+                if (!$permissions->isReadOnly()) {
                     $builder->whereIn('permission_id', FolderPermission::select('id')->whereIn('name', $permissions->toArray()))
                         ->havingRaw("COUNT(*) = {$permissions->count()}");
                 }

@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -60,7 +61,7 @@ final class Bookmark extends Model
         'hasDuplicates'           => 'bool',
         'resolved_at'             => 'datetime',
         'created_at'              => 'datetime',
-        'updated_at'              => 'datetime'
+        'updated_at'              => 'datetime',
     ];
 
     public function getSourceAttribute(): Source
@@ -78,13 +79,17 @@ final class Bookmark extends Model
         return $model;
     }
 
-    public function getIsHealthyAttribute(?int $value): ?bool
+    protected function isHealthy(): Attribute
     {
-        if (!array_key_exists('isHealthy', $this->attributes)) {
-            return boolval($value);
-        }
+        return new Attribute(
+            get: function (?int $statusCode) {
+                if ($statusCode === null) {
+                    return true;
+                }
 
-        return $value === null ? true : boolval($value);
+                return $statusCode >= 200 && $statusCode < 300;
+            },
+        );
     }
 
     public function user(): BelongsTo
@@ -182,7 +187,7 @@ final class Bookmark extends Model
 
         return $builder->addSelect([
             'isHealthy' => BookmarkHealth::query()
-                ->select('is_healthy')
+                ->select('status_code')
                 ->whereRaw("bookmark_id = {$this->qualifyColumn('id')}")
         ]);
     }

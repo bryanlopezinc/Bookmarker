@@ -22,7 +22,7 @@ final class BookmarkHealthFactory extends Factory
     public function definition()
     {
         return [
-            'is_healthy' => true,
+            'status_code' => 200,
             'last_checked' => today()
         ];
     }
@@ -30,7 +30,7 @@ final class BookmarkHealthFactory extends Factory
     public function unHealthy(): self
     {
         return $this->state([
-            'is_healthy' => false,
+            'status_code' => 404,
         ]);
     }
 

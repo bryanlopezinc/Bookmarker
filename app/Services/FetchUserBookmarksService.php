@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\Paginator;
 use App\Http\Requests\FetchUserBookmarksRequest as Request;
 use App\Models\BookmarkHealth;
+use Illuminate\Http\Response;
 
 final class FetchUserBookmarksService
 {
@@ -52,7 +53,7 @@ final class FetchUserBookmarksService
             $query->whereExists(function (&$query) use ($model) {
                 $query = BookmarkHealth::query()
                     ->select('id')
-                    ->where('is_healthy', false)
+                    ->whereBetween('status_code', [Response::HTTP_BAD_REQUEST, Response::HTTP_UNAVAILABLE_FOR_LEGAL_REASONS])
                     ->whereRaw("bookmark_id = {$model->qualifyColumn('id')}")
                     ->getQuery();
             });

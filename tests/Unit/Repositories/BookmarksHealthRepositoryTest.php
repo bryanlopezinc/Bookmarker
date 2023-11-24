@@ -51,7 +51,7 @@ class BookmarksHealthRepositoryTest extends TestCase
         $time = now()->toDateString();
 
         //first bookmarkID was healthy.
-        BookmarkHealthFactory::new()->create(['bookmark_id' => $first]);
+        BookmarkHealthFactory::new()->create(['bookmark_id' => $first, 'last_checked' => now()->subWeek()]);
 
         (new BookmarksHealthRepository)->update([
             new HealthCheckResult($first, new Response(new Psr7Response(404))),
@@ -62,20 +62,20 @@ class BookmarksHealthRepositoryTest extends TestCase
         /** @var array<BookmarkHealth> */
         $records = BookmarkHealth::query()
             ->whereIn('bookmark_id', [$first, $second, $third])
-            ->get(['is_healthy', 'last_checked']);
+            ->get(['status_code', 'last_checked']);
 
         $this->assertEquals($records[0]->getAttributes(), [
-            'is_healthy'   => false,
+            'status_code'  => 404,
             'last_checked' => $time
         ]);
 
         $this->assertEquals($records[1]->getAttributes(), [
-            'is_healthy'   => true,
+            'status_code'  => 200,
             'last_checked' => $time
         ]);
 
         $this->assertEquals($records[2]->getAttributes(), [
-            'is_healthy'   => true,
+            'status_code'  => 200,
             'last_checked' => $time
         ]);
     }

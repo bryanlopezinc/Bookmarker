@@ -15,8 +15,8 @@ return new class extends Migration
     {
         Schema::create('bookmarks_health', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('bookmark_id')->unique()->constrained('bookmarks')->cascadeOnDelete();
-            $table->boolean('is_healthy')->index();
+            $table->foreignId('bookmark_id')->unique();
+            $table->unsignedSmallInteger('status_code')->index();
             $table->date('last_checked')->index();
             $table->timestamp('created_at')->useCurrent();
         });

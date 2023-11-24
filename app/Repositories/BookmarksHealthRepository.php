@@ -7,7 +7,6 @@ namespace App\Repositories;
 use App\Contracts\BookmarksHealthRepositoryInterface;
 use App\HealthCheckResult;
 use App\Models\BookmarkHealth;
-use Illuminate\Support\Collection;
 
 final class BookmarksHealthRepository implements BookmarksHealthRepositoryInterface
 {
@@ -39,19 +38,16 @@ final class BookmarksHealthRepository implements BookmarksHealthRepositoryInterf
      */
     public function update(array $records): void
     {
-        $lastChecked = now();
+        $updateData = array_map(
+            array: $records,
+            callback: function (HealthCheckResult $result) {
+                return [
+                    'status_code' => $result->response->status(),
+                    'bookmark_id' => $result->bookmarkID
+                ];
+            }
+        );
 
-        collect($records)
-            ->tap(function (Collection $collection) {
-                $bookmarkIDs = $collection->map(fn (HealthCheckResult $result) => $result->bookmarkID)->all();
-
-                BookmarkHealth::whereIn('bookmark_id', $bookmarkIDs)->delete();
-            })
-            ->map(fn (HealthCheckResult $result) => [
-                'bookmark_id'  => $result->bookmarkID,
-                'is_healthy'   => $result->response->status() !== 404,
-                'last_checked' => $lastChecked
-            ])
-            ->tap(fn (Collection $collection) => BookmarkHealth::insert($collection->all()));
+        BookmarkHealth::query()->upsert($updateData, 'bookmark_id', ['status_code']);
     }
 }

@@ -26,7 +26,7 @@ final class FolderSettingsBuilder
 
     public static function new(): FolderSettingsBuilder
     {
-        return new FolderSettingsBuilder;
+        return new FolderSettingsBuilder();
     }
 
     public static function fromRequest(array $data): self

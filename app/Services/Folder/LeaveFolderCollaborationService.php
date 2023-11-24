@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
-use App\ValueObjects\FolderSettings;
 use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
 use App\Models\Folder;

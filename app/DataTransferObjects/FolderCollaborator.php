@@ -9,7 +9,10 @@ use App\UAC;
 
 final class FolderCollaborator
 {
-    public function __construct(public readonly User $user, public readonly UAC $permissions)
-    {
+    public function __construct(
+        public readonly User $user,
+        public readonly UAC $permissions,
+        public readonly ?User $wasInvitedBy
+    ) {
     }
 }

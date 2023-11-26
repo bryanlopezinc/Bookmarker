@@ -67,7 +67,7 @@ final class UAC implements Countable, Arrayable
         $permissions = $request->input($key, []);
 
         if (in_array('*', $permissions, true)) {
-            return new UAC(self::all()->permissions->all());
+            return self::all();
         }
 
         $permissions = collect($permissions)->map(function (string $permission) {

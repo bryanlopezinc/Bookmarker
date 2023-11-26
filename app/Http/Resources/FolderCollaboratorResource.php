@@ -9,9 +9,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 final class FolderCollaboratorResource extends JsonResource
 {
-    public function __construct(private readonly FolderCollaborator $folderCollaborator)
+    public function __construct(private readonly FolderCollaborator $collaborator)
     {
-        parent::__construct($folderCollaborator);
     }
 
     /**
@@ -19,12 +18,24 @@ final class FolderCollaboratorResource extends JsonResource
      */
     public function toArray($request)
     {
+        $inviterExists = $this->collaborator->wasInvitedBy !== null;
+
+        $wasInvitedByAuthUser = $this->collaborator->wasInvitedBy?->id === auth()->id();
+
         return [
             'type' => 'folderCollaborator',
             'attributes' => [
-                'id'          => $this->folderCollaborator->user->id,
-                'name'        => $this->folderCollaborator->user->full_name,
-                'permissions' => $this->folderCollaborator->permissions->toJsonResponse()
+                'id'          => $this->collaborator->user->id,
+                'name'        => $this->collaborator->user->full_name,
+                'permissions' => $this->collaborator->permissions->toJsonResponse(),
+                'added_by'    => [
+                    'exists'       => $inviterExists,
+                    'is_auth_user' => $wasInvitedByAuthUser,
+                    'user'         => $this->when($inviterExists && !$wasInvitedByAuthUser, [
+                        'id'   =>  $this->collaborator->wasInvitedBy?->id,
+                        'name' => $this->collaborator->wasInvitedBy?->full_name
+                    ])
+                ]
             ]
         ];
     }

@@ -7,7 +7,6 @@ use App\UAC;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse as Response;
-use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\AssertValidPaginationData;
 use Tests\TestCase;
@@ -34,7 +33,7 @@ class FetchFolderCollaboratorsTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->assertValidPaginationData($this, 'fetchFolderCollaborators');
 
@@ -57,11 +56,8 @@ class FetchFolderCollaboratorsTest extends TestCase
                 ]
             ]);
 
-        //Assert cannot request collaborators with view_only permissions and any other permission
-        $this->fetchCollaboratorsResponse([
-            'folder_id' => 4,
-            'permissions' => 'readOnly,addBookmarks'
-        ])->assertUnprocessable()
+        $this->fetchCollaboratorsResponse(['folder_id' => 4, 'permissions' => 'readOnly,addBookmarks'])
+            ->assertUnprocessable()
             ->assertJsonValidationErrors(['permissions' => 'Cannot request collaborator with only view permissions with any other permission']);
 
         $this->fetchCollaboratorsResponse(['name' => str_repeat('A', 11), 'folder_id' => 4])
@@ -69,9 +65,10 @@ class FetchFolderCollaboratorsTest extends TestCase
             ->assertJsonValidationErrors(['name' => 'The name must not be greater than 10 characters.']);
     }
 
-    public function testFetchCollaborators(): void
+    #[Test]
+    public function whenCollaboratorWasAddedByAuthUser(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $userFolder = FolderFactory::new()->for($user)->create();
         $collaborator = UserFactory::new()->create();
@@ -81,8 +78,11 @@ class FetchFolderCollaboratorsTest extends TestCase
         $this->fetchCollaboratorsResponse(['folder_id' => $userFolder->id])
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonCount(3, 'data.0.attributes')
+            ->assertJsonCount(4, 'data.0.attributes')
             ->assertJsonCount(4, 'data.0.attributes.permissions')
+            ->assertJsonCount(2, 'data.0.attributes.added_by')
+            ->assertJsonPath('data.0.attributes.added_by.exists', true)
+            ->assertJsonPath('data.0.attributes.added_by.is_auth_user', true)
             ->assertJsonPath('data.0.type', 'folderCollaborator')
             ->assertJsonPath('data.0.attributes.id', $collaborator->id)
             ->assertJsonPath('data.0.attributes.name', $collaborator->first_name . ' ' . $collaborator->last_name)
@@ -94,11 +94,71 @@ class FetchFolderCollaboratorsTest extends TestCase
                         'attributes' => [
                             'id',
                             'name',
-                            'permissions'
+                            'permissions',
+                            'added_by' => [
+                                'exists',
+                                'is_auth_user',
+                            ]
                         ]
                     ],
                 ]
             ]);
+    }
+
+    #[Test]
+    public function whenCollaboratorWasNotAddedByAuthUser(): void
+    {
+        [$folderOwner, $invitee, $collaborator] = UserFactory::times(3)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->CreateCollaborationRecord($invitee, $folder, inviter: $collaborator->id);
+
+        $this->loginUser($folderOwner);
+        $this->fetchCollaboratorsResponse(['folder_id' => $folder->id])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonCount(3, 'data.0.attributes.added_by')
+            ->assertJsonPath('data.0.attributes.added_by.exists', true)
+            ->assertJsonPath('data.0.attributes.added_by.is_auth_user', false)
+            ->assertJsonPath('data.0.attributes.added_by.user.id', $collaborator->id)
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'attributes' => [
+                            'added_by' => [
+                                'exists',
+                                'is_auth_user',
+                                'user' => [
+                                    'id',
+                                    'name',
+                                ]
+                            ]
+                        ]
+                    ],
+                ]
+            ]);
+    }
+
+    #[Test]
+    public function whenInviterNoLongerExists(): void
+    {
+        [$folderOwner, $invitee, $collaborator] = UserFactory::times(3)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->CreateCollaborationRecord($invitee, $folder, [], $collaborator->id);
+
+        $collaborator->delete();
+
+        $this->loginUser($folderOwner);
+        $this->fetchCollaboratorsResponse(['folder_id' => $folder->id])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonCount(2, 'data.0.attributes.added_by')
+            ->assertJsonPath('data.0.attributes.added_by.exists', false)
+            ->assertJsonPath('data.0.attributes.added_by.is_auth_user', false)
+            ->assertJsonCount(2, 'data.0.attributes.added_by');
     }
 
     #[Test]
@@ -123,7 +183,7 @@ class FetchFolderCollaboratorsTest extends TestCase
 
     public function testWillReturnOnlyCollaboratorsWithSpecifiedName(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $collaborators = UserFactory::times(3)
             ->sequence(
@@ -148,7 +208,7 @@ class FetchFolderCollaboratorsTest extends TestCase
 
     public function testWillReturnOnlyCollaboratorsWithSpecifiedPermissions(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         [
             $hasAllPermissions,
@@ -215,7 +275,7 @@ class FetchFolderCollaboratorsTest extends TestCase
 
     public function testWillReturnNotFoundWhenFolderDoesNotBelongToUser(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->fetchCollaboratorsResponse(['folder_id' => FolderFactory::new()->create()->id])
             ->assertNotFound()
@@ -224,7 +284,7 @@ class FetchFolderCollaboratorsTest extends TestCase
 
     public function testWillReturnNotFoundWhenFolderDoesNotExists(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $folder = FolderFactory::new()->create();
 
@@ -233,7 +293,7 @@ class FetchFolderCollaboratorsTest extends TestCase
 
     public function testWillReturnEmptyResponseWhenFolderHasNoCollaborators(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $userFolder = FolderFactory::new()->for($user)->create();
 
@@ -251,7 +311,7 @@ class FetchFolderCollaboratorsTest extends TestCase
 
         $collaborator->delete();
 
-        Passport::actingAs($user);
+        $this->loginUser($user);
         $this->fetchCollaboratorsResponse(['folder_id' => $folder->id])
             ->assertOk()
             ->assertJsonCount(0, 'data');
@@ -267,7 +327,7 @@ class FetchFolderCollaboratorsTest extends TestCase
         $this->CreateCollaborationRecord($users[2], $firstFolder, Permission::ADD_BOOKMARKS);
         $this->CreateCollaborationRecord($users[2], $secondFolder, Permission::ADD_BOOKMARKS);
 
-        Passport::actingAs($users[0]);
+        $this->loginUser($users[0]);
         $this->fetchCollaboratorsResponse(['folder_id' => $firstFolder->id])
             ->assertOk()
             ->assertJsonCount(1, 'data')

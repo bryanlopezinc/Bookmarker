@@ -14,7 +14,6 @@ use App\UAC;
 use Illuminate\Pagination\Paginator;
 use App\Http\Requests\FetchFolderCollaboratorsRequest as Request;
 use App\Models\Folder;
-use Illuminate\Support\Facades\DB;
 
 final class FetchFolderCollaboratorsService
 {
@@ -43,10 +42,10 @@ final class FetchFolderCollaboratorsService
     private function collaborators(
         int $folderID,
         PaginationData $pagination,
-        ?UAC $permissions = null,
+        UAC $permissions = null,
         ?string $collaboratorName = null
     ): Paginator {
-        $collaboratorPermissions = CollaboratorPermission::query()
+        $collaboratorPermissionsQuery = CollaboratorPermission::query()
             ->whereColumn('user_id', 'users.id')
             ->whereColumn('folder_id', 'folders_collaborators.folder_id');
 
@@ -54,15 +53,19 @@ final class FetchFolderCollaboratorsService
             ->select(['users.id', 'full_name'])
             ->join('folders_collaborators', 'folders_collaborators.collaborator_id', '=', 'users.id')
             ->addSelect([
-                'permissions' => FolderPermission::select(DB::raw('JSON_ARRAYAGG(name) as permissions'))
-                    ->whereExists(function (&$query) use ($collaboratorPermissions) {
-                        $query = $collaboratorPermissions->getQuery();
-                    })
+                'permissions' => FolderPermission::query()
+                    ->selectRaw('JSON_ARRAYAGG(name)')
+                    ->whereExists(function (&$query) use ($collaboratorPermissionsQuery) {
+                        $query = $collaboratorPermissionsQuery->getQuery();
+                    }),
+                'wasInvitedBy' => User::query()
+                    ->selectRaw("JSON_OBJECT('id', id, 'full_name', full_name)")
+                    ->whereColumn('id', 'folders_collaborators.invited_by')
             ]);
 
         if ($permissions) {
-            $query->whereExists(function (&$query) use ($permissions, $collaboratorPermissions) {
-                $builder = $collaboratorPermissions
+            $query->whereExists(function (&$query) use ($permissions, $collaboratorPermissionsQuery) {
+                $builder = $collaboratorPermissionsQuery
                     ->select('user_id')
                     ->groupBy('user_id');
 
@@ -75,8 +78,9 @@ final class FetchFolderCollaboratorsService
                 }
 
                 if (!$permissions->isReadOnly()) {
-                    $builder->whereIn('permission_id', FolderPermission::select('id')->whereIn('name', $permissions->toArray()))
-                        ->havingRaw("COUNT(*) = {$permissions->count()}");
+                    $permissionsQuery = FolderPermission::select('id')->whereIn('name', $permissions->toArray());
+
+                    $builder->whereIn('permission_id', $permissionsQuery)->havingRaw("COUNT(*) = {$permissions->count()}");
                 }
 
                 $query = $builder->getQuery();
@@ -92,19 +96,20 @@ final class FetchFolderCollaboratorsService
             ->latest('folders_collaborators.id')
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
 
-        return $result->setCollection(
-            $result->map($this->createCollaboratorFn())
-        );
+        return $result->setCollection($result->map($this->createCollaboratorFn()));
     }
 
     private function createCollaboratorFn(): \Closure
     {
         return function (User $model) {
-            $model->mergeCasts(['permissions' => 'array']);
+            $model->mergeCasts(['permissions' => 'json', 'wasInvitedBy' => 'json']);
+
+            $wasInvitedBy = $model->wasInvitedBy;
 
             return new FolderCollaborator(
                 $model,
-                new UAC($model->permissions)
+                new UAC($model->permissions),
+                $wasInvitedBy ? new User($wasInvitedBy) : null
             );
         };
     }

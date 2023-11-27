@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder\Mute;
 
+use App\Filesystem\ProfileImageFileSystem;
 use App\Services\Folder\MuteCollaboratorService;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -55,15 +56,11 @@ class FetchMutedCollaboratorsTest extends TestCase
 
         $this->fetchMuteCollaboratorsResponse()
             ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'folder_id' => 'The folder id field is required.',
-            ]);
+            ->assertJsonValidationErrors(['folder_id' => 'The folder id field is required.',]);
 
         $this->fetchMuteCollaboratorsResponse(['folder_id' => 3, 'name' => str_repeat('r', 11)])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'name' => 'The name must not be greater than 10 characters.',
-            ]);
+            ->assertJsonValidationErrors(['name' => 'The name must not be greater than 10 characters.',]);
 
         $this->assertValidPaginationData($this, 'fetchMutedCollaborator', ['folder_id' => 2]);
     }
@@ -71,7 +68,9 @@ class FetchMutedCollaboratorsTest extends TestCase
     #[Test]
     public function fetchCollaborators(): void
     {
-        [$folderOwner, $collaborator, $otherCollaborator] = UserFactory::times(3)->create();
+        [$folderOwner, $otherCollaborator] = UserFactory::times(2)->create();
+
+        $collaborator = UserFactory::new()->hasProfileImage()->create();
 
         $folders = FolderFactory::times(2)->for($folderOwner)->create();
 
@@ -82,8 +81,9 @@ class FetchMutedCollaboratorsTest extends TestCase
         $this->fetchMuteCollaboratorsResponse(['folder_id' => $folders[0]->id])
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonCount(2, 'data.0.attributes')
+            ->assertJsonCount(3, 'data.0.attributes')
             ->assertJsonPath('data.0.attributes.id', $collaborator->id)
+            ->assertJsonPath('data.0.attributes.profile_image_url', (new ProfileImageFileSystem)->publicUrl($collaborator->profile_image_path))
             ->assertJsonPath('data.0.attributes.name', "{$collaborator->first_name} {$collaborator->last_name}")
             ->assertJsonPath('data.0.type', 'mutedCollaborator')
             ->assertJsonStructure([
@@ -93,6 +93,7 @@ class FetchMutedCollaboratorsTest extends TestCase
                         'attributes' => [
                             'id',
                             'name',
+                            'profile_image_url'
                         ]
                     ]
                 ]

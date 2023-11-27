@@ -26,6 +26,7 @@ use Illuminate\Support\Collection;
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  * @property TwoFaMode $two_fa_mode
+ * @property string|null $profile_image_path
  * @method static Builder WithQueryOptions(array $columns = [])
  */
 final class User extends Authenticatable implements MustVerifyEmail

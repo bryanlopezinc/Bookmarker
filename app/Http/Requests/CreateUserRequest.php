@@ -27,6 +27,7 @@ final class CreateUserRequest extends FormRequest
                 Rule::unique(SecondaryEmail::class, 'email')
             ],
             'password'   => ['required', 'confirmed', Password::defaults()],
+            'profile_photo' => ['image', 'max:1000', 'mimes:png,jpg']
         ];
     }
 

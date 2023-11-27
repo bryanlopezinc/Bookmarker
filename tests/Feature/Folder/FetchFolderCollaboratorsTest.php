@@ -3,6 +3,7 @@
 namespace Tests\Feature\Folder;
 
 use App\Enums\Permission;
+use App\Filesystem\ProfileImageFileSystem;
 use App\UAC;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -71,16 +72,17 @@ class FetchFolderCollaboratorsTest extends TestCase
         $this->loginUser($user = UserFactory::new()->create());
 
         $userFolder = FolderFactory::new()->for($user)->create();
-        $collaborator = UserFactory::new()->create();
+        $collaborator = UserFactory::new()->hasProfileImage()->create();
 
         $this->CreateCollaborationRecord($collaborator, $userFolder, UAC::all()->toArray());
 
         $this->fetchCollaboratorsResponse(['folder_id' => $userFolder->id])
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonCount(4, 'data.0.attributes')
+            ->assertJsonCount(5, 'data.0.attributes')
             ->assertJsonCount(4, 'data.0.attributes.permissions')
             ->assertJsonCount(2, 'data.0.attributes.added_by')
+            ->assertJsonPath('data.0.attributes.profile_image_url', (new ProfileImageFileSystem)->publicUrl($collaborator->profile_image_path))
             ->assertJsonPath('data.0.attributes.added_by.exists', true)
             ->assertJsonPath('data.0.attributes.added_by.is_auth_user', true)
             ->assertJsonPath('data.0.type', 'folderCollaborator')
@@ -95,6 +97,7 @@ class FetchFolderCollaboratorsTest extends TestCase
                             'id',
                             'name',
                             'permissions',
+                            'profile_image_url',
                             'added_by' => [
                                 'exists',
                                 'is_auth_user',
@@ -108,8 +111,9 @@ class FetchFolderCollaboratorsTest extends TestCase
     #[Test]
     public function whenCollaboratorWasNotAddedByAuthUser(): void
     {
-        [$folderOwner, $invitee, $collaborator] = UserFactory::times(3)->create();
+        [$folderOwner, $invitee] = UserFactory::times(2)->create();
 
+        $collaborator = UserFactory::new()->hasProfileImage()->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
         $this->CreateCollaborationRecord($invitee, $folder, inviter: $collaborator->id);
@@ -119,6 +123,8 @@ class FetchFolderCollaboratorsTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(3, 'data.0.attributes.added_by')
+            ->assertJsonCount(3, 'data.0.attributes.added_by.user')
+            ->assertJsonPath('data.0.attributes.added_by.user.profile_image_url', (new ProfileImageFileSystem)->publicUrl($collaborator->profile_image_path))
             ->assertJsonPath('data.0.attributes.added_by.exists', true)
             ->assertJsonPath('data.0.attributes.added_by.is_auth_user', false)
             ->assertJsonPath('data.0.attributes.added_by.user.id', $collaborator->id)
@@ -132,6 +138,7 @@ class FetchFolderCollaboratorsTest extends TestCase
                                 'user' => [
                                     'id',
                                     'name',
+                                    'profile_image_url'
                                 ]
                             ]
                         ]

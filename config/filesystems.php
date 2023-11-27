@@ -38,7 +38,7 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            'url' => env('APP_URL') . '/storage',
             'visibility' => 'public',
         ],
 
@@ -59,6 +59,17 @@ return [
             'visibility' => 'private',
             'throw'      => true,
         ],
+
+        'profileImages' => match (env('APP_ENV', 'production')) {
+            'local', 'testing' => [
+                'driver'     => 'local',
+                'root'       => storage_path('app/profileImages'),
+                'visibility' => 'public',
+                'throw'      => true,
+                'url'        => env('APP_URL') . '/storage/profileImages',
+            ],
+            default => throw new \Exception("A storage configuration has not be set for profile images")
+        },
     ],
 
     /*

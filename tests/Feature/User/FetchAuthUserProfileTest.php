@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\User;
 
+use App\Filesystem\ProfileImageFileSystem;
 use App\Repositories\FavoriteRepository;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
@@ -34,7 +35,7 @@ class FetchAuthUserProfileTest extends TestCase
         $this->getUserProfileResponse()
             ->assertOk()
             ->assertJsonCount(1)
-            ->assertJsonCount(6, 'data.attributes')
+            ->assertJsonCount(7, 'data.attributes')
             ->assertJson(function (AssertableJson $json) use ($user) {
                 $json->where('data.attributes.name', "{$user->first_name} {$user->last_name}");
                 $json->where('data.attributes.username', $user->username);
@@ -42,6 +43,7 @@ class FetchAuthUserProfileTest extends TestCase
                 $json->where('data.attributes.favorites_count', 0);
                 $json->where('data.attributes.folders_count', 0);
                 $json->where('data.attributes.has_verified_email', true);
+                $json->where('data.attributes.profile_image_url', (new ProfileImageFileSystem)->publicUrl($user->profile_image_path));
                 $json->etc();
             })
             ->assertJsonStructure([
@@ -54,6 +56,7 @@ class FetchAuthUserProfileTest extends TestCase
                         'favorites_count',
                         'folders_count',
                         'has_verified_email',
+                        'profile_image_url'
                     ],
                 ]
             ]);

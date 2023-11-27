@@ -36,7 +36,7 @@ final class FetchMutedCollaboratorsService
         $um = new User(); // user model
 
         return User::query()
-            ->select([$um->getQualifiedKeyName(), 'full_name'])
+            ->select([$um->getQualifiedKeyName(), 'full_name', 'profile_image_path'])
             ->join($mcm->getTable(), $mcm->qualifyColumn('user_id'), '=', $um->getQualifiedKeyName())
             ->when($collaboratorName, function ($query) use ($collaboratorName) {
                 $query->where('full_name', 'like', "{$collaboratorName}%");

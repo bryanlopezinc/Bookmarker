@@ -50,7 +50,7 @@ final class FetchFolderCollaboratorsService
             ->whereColumn('folder_id', 'folders_collaborators.folder_id');
 
         $query = User::query()
-            ->select(['users.id', 'full_name'])
+            ->select(['users.id', 'full_name', 'profile_image_path'])
             ->join('folders_collaborators', 'folders_collaborators.collaborator_id', '=', 'users.id')
             ->addSelect([
                 'permissions' => FolderPermission::query()
@@ -59,7 +59,7 @@ final class FetchFolderCollaboratorsService
                         $query = $collaboratorPermissionsQuery->getQuery();
                     }),
                 'wasInvitedBy' => User::query()
-                    ->selectRaw("JSON_OBJECT('id', id, 'full_name', full_name)")
+                    ->selectRaw("JSON_OBJECT('id', id, 'full_name', full_name, 'profile_image_path', profile_image_path)")
                     ->whereColumn('id', 'folders_collaborators.invited_by')
             ]);
 

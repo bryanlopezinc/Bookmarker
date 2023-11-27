@@ -5,14 +5,12 @@ namespace Tests\Unit\DatabaseNotificationData;
 use App\Enums\NotificationType;
 use App\Notifications\FolderUpdatedNotification;
 use Database\Factories\FolderFactory;
-use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Arr;
 use Tests\TestCase;
 
-class FolderUpdatedTest extends TestCase
+class FolderUpdatedNotificationTest extends TestCase
 {
-    //migrate the latest jsonSchema
-    use LazilyRefreshDatabase, Assert {
+    use Assert {
         canBeSavedToDB as assertCanBeSavedToDB;
     }
 

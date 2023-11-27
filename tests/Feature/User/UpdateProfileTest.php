@@ -3,9 +3,11 @@
 namespace Tests\Feature\User;
 
 use App\Enums\TwoFaMode;
+use App\Filesystem\ProfileImageFileSystem;
 use App\Models\User;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
@@ -38,7 +40,7 @@ class UpdateProfileTest extends TestCase
 
         $this->updateProfileResponse()
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['first_name' => 'The first name field is required when none of last name / two fa mode / password are present.']);
+            ->assertJsonValidationErrors(['first_name' => 'The first name field is required when none of last name / two fa mode / password / profile photo are present.']);
 
         $this->updateProfileResponse(['first_name' => str_repeat('A', 101)])
             ->assertUnprocessable()
@@ -58,6 +60,14 @@ class UpdateProfileTest extends TestCase
             'password_confirmation' => 'password'
         ])->assertUnprocessable()
             ->assertJsonValidationErrors(['old_password' => 'The password is incorrect']);
+
+        $this->updateProfileResponse(['profile_photo' => UploadedFile::fake()->image('myPicture.txt')->size(10)])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['profile_photo' => 'The profile photo must be an image.']);
+
+        $this->updateProfileResponse(['profile_photo' => UploadedFile::fake()->image('myPicture.jpg')->size(2000)])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['profile_photo' => 'The profile photo must not be greater than 1000 kilobytes.']);
     }
 
     #[Test]
@@ -116,5 +126,31 @@ class UpdateProfileTest extends TestCase
         $user = User::query()->whereKey($user->id)->first();
 
         $this->assertTrue(Hash::check($newPassword, $user->password));
+    }
+
+    #[Test]
+    public function updateProfileImage(): void
+    {
+        $filesystem = new ProfileImageFileSystem;
+        $OtherUserProfileImage = $filesystem->store(UploadedFile::fake()->image('myPicture.jpg'));
+     
+        $this->loginUser($user = UserFactory::new()->create());
+        $this->updateProfileResponse(['profile_photo' => UploadedFile::fake()->image('myPicture.jpg')->size(1000)])->assertOk();
+
+        /** @var User */
+        $userAfterFirstUpdate = User::query()->whereKey($user->id)->first();
+
+        $this->assertEquals(strlen($userAfterFirstUpdate->profile_image_path), 44);
+        $this->assertStringEndsWith('.jpg', $userAfterFirstUpdate->profile_image_path);
+        $this->assertTrue($filesystem->exists($userAfterFirstUpdate->profile_image_path));
+        $this->assertTrue($filesystem->exists($OtherUserProfileImage));
+
+        $this->updateProfileResponse(['profile_photo' => UploadedFile::fake()->image('myPicture.jpg')->size(1000)])->assertOk();
+
+        /** @var User */
+        $userAfterSecondUpdate = User::query()->whereKey($user->id)->first();
+
+        $this->assertFalse($filesystem->exists($userAfterFirstUpdate->profile_image_path));
+        $this->assertTrue($filesystem->exists($userAfterSecondUpdate->profile_image_path));
     }
 }

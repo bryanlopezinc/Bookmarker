@@ -125,7 +125,7 @@ class LoginUserTest extends TestCase
         ])
             ->assertOk()
             ->assertJsonCount(3, 'data')
-            ->assertJsonCount(6, 'data.attributes')
+            ->assertJsonCount(7, 'data.attributes')
             ->assertJsonCount(4, 'data.token')
             ->assertJson(function (AssertableJson $json) {
                 $json->where('data.token.expires_in', function (int $expiresAt) {
@@ -144,7 +144,8 @@ class LoginUserTest extends TestCase
                         'bookmarks_count',
                         'favorites_count',
                         'folders_count',
-                        'has_verified_email'
+                        'has_verified_email',
+                        'profile_image_url'
                     ],
                     'token' => [
                         'token_type',

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('last_name', 100);
             $table->string('full_name')->storedAs("CONCAT(first_name, ' ', last_name)")->index();
             $table->string('email')->unique();
+            $table->text('profile_image_path')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->enum('two_fa_mode', ['None', 'Email']);

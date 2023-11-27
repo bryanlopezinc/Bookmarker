@@ -3,6 +3,7 @@
 namespace Tests\Feature\User;
 
 use App\Enums\TwoFaMode;
+use App\Filesystem\ProfileImageFileSystem;
 use App\Models\SecondaryEmail;
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
@@ -10,11 +11,14 @@ use App\ValueObjects\Url;
 use App\ValueObjects\Username;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Laravel\Passport\Passport;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CreateUserTest extends TestCase
@@ -39,7 +43,7 @@ class CreateUserTest extends TestCase
         $this->createUserResponse()->assertUnauthorized();
     }
 
-    public function testWillReturnUnprocessableWhenRequiredAttributesAreMissing(): void
+    public function testWillReturnUnprocessableWhenAttributesAreInvalid(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
@@ -53,6 +57,30 @@ class CreateUserTest extends TestCase
                 'email',
                 'password'
             ]);
+
+        $this->createUserResponse(['last_name' => str_repeat('A', 101)])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['last_name' => 'The last name must not be greater than 100 characters.']);
+
+        $this->createUserResponse(['first_name' => str_repeat('A', 101)])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['first_name' => 'The first name must not be greater than 100 characters.']);
+
+        $this->createUserResponse(['password' => 'secured'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['password' => 'The password must be at least 8 characters.']);
+
+        $this->createUserResponse(['password' => 'password_password'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['password' => 'The password must contain at least one number.']);
+
+        $this->createUserResponse(['profile_photo' => UploadedFile::fake()->image('myPicture.txt')->size(10)])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['profile_photo' => 'The profile photo must be an image.']);
+
+        $this->createUserResponse(['profile_photo' => UploadedFile::fake()->image('myPicture.jpg')->size(2000)])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['profile_photo' => 'The profile photo must not be greater than 1000 kilobytes.']);
     }
 
     public function testWillReturnUnprocessableWhenUsernameIsValid(): void
@@ -132,7 +160,8 @@ class CreateUserTest extends TestCase
         $this->assertEquals("{$firstName} {$lastName}", $user->full_name);
         $this->assertEquals(TwoFaMode::NONE, $user->two_fa_mode);
         $this->assertNull($user->email_verified_at);
-        $this->assertNotEquals(password_get_info($user->password)['algoName'], 'unknown');
+        $this->assertTrue(Hash::check($password, $user->password));
+        $this->assertNull($user->profile_image_path);
 
         Notification::assertSentTo($user, VerifyEmailNotification::class, function (VerifyEmailNotification $notification) use ($user) {
             static::$verificationUrl = $url = $notification->toMail($user)->actionUrl;
@@ -169,39 +198,31 @@ class CreateUserTest extends TestCase
         $this->assertTrue(User::whereKey($user->id)->sole()->email_verified_at->isToday());
     }
 
-    public function testWillReturnUnprocessableWhenFirstNameIsGreaterThan_100(): void
+    #[Test]
+    public function wilProfileImage(): void
     {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+        $filesystem = new ProfileImageFileSystem;
 
-        $this->createUserResponse(['first_name' => str_repeat('A', 101)])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['first_name' => 'The first name must not be greater than 100 characters.']);
-    }
+        Passport::actingAsClient($client = ClientFactory::new()->asPasswordClient()->create());
 
-    public function testWillReturnUnprocessableWhenLastNameIsGreaterThan_100(): void
-    {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+        $this->createUserResponse([
+            'first_name'            => $this->faker->firstName,
+            'last_name'             => $this->faker->lastName,
+            'username'              =>  Str::random(Username::MAX_LENGTH - 2) . '_' . rand(0, 9),
+            'email'                 => $email = $this->faker->safeEmail,
+            'password'              => $password = str::random(7) . rand(0, 9),
+            'password_confirmation' => $password,
+            'client_id'             => $client->id,
+            'client_secret'         => $client->secret,
+            'grant_type'            => 'password',
+            'profile_photo'         => UploadedFile::fake()->image('myPicture.jpg')->size(1000)
+        ])->assertCreated();
 
-        $this->createUserResponse(['last_name' => str_repeat('A', 101)])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['last_name' => 'The last name must not be greater than 100 characters.']);
-    }
+        /** @var User */
+        $user = User::query()->where('email', $email)->sole();
 
-    public function testWillReturnUnprocessableWhenPasswordIsLessThan_8_Characters(): void
-    {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
-
-        $this->createUserResponse(['password' => 'secured'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['password' => 'The password must be at least 8 characters.']);
-    }
-
-    public function testWillReturnUnprocessableWhenPasswordDoesNotContainANumber(): void
-    {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
-
-        $this->createUserResponse(['password' => 'password_password'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['password' => 'The password must contain at least one number.']);
+        $this->assertEquals(strlen($user->profile_image_path), 44);
+        $this->assertStringEndsWith('.jpg', $user->profile_image_path);
+        $this->assertTrue($filesystem->exists($user->profile_image_path));
     }
 }

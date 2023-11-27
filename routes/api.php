@@ -15,14 +15,15 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
         Route::post('logout', A\LogoutController::class)->name('logoutUser');
         Route::get('me', A\FetchUserProfileController::class)->name('authUserProfile');
         Route::delete('/', A\DeleteUserAccountController::class)->name('deleteUserAccount');
+        Route::patch('/', [A\UserController::class, 'update'])->name('updateUser');
 
         Route::get('folders', F\FetchUserFoldersController::class)->middleware(StringToArray::keys('fields'))->name('userFolders');
         Route::get('folders/collaborations', C\FetchUserCollaborationsController::class)->middleware(StringToArray::keys('fields'))->name('fetchUserCollaborations');
         Route::delete('folders/collaborations/exit', F\LeaveFolderCollaborationController::class)->name('leaveFolderCollaboration');
         Route::get('folders/contains_collaborator', C\FetchUserFoldersWhereContainsCollaboratorController::class)->middleware(StringToArray::keys('fields'))->name('fetchUserFoldersWhereHasCollaborator');
 
-        Route::post('emails/add', A\AddEmailToAccountController::class)->name('addEmailToAccount');
-        Route::delete('emails/remove', A\DeleteEmailController::class)->name('removeEmailFromAccount');
+        Route::post('emails/add', C\AddEmailToAccountController::class)->name('addEmailToAccount');
+        Route::delete('emails/remove', C\DeleteEmailController::class)->name('removeEmailFromAccount');
         Route::post('emails/verify/secondary', A\VerifySecondaryEmailController::class)->name('verifySecondaryEmail');
 
         Route::get('favorites', C\FetchUserFavoritesController::class)->name('fetchUserFavorites');
@@ -90,7 +91,7 @@ Route::post('token/refresh', [AccessTokenController::class, 'issueToken'])->name
 Route::middleware([CheckClientCredentials::class])->group(function () {
     Route::get('folders/invite/accept', F\AcceptFolderCollaborationInviteController::class)->middleware([DBTransaction::class])->name('acceptFolderCollaborationInvite');
 
-    Route::post('users', A\CreateUserController::class)->middleware([DBTransaction::class])->name('createUser');
+    Route::post('users', A\UserController::class)->middleware([DBTransaction::class])->name('createUser');
     Route::post('users/password/reset-token', A\RequestPasswordResetController::class)->middleware([DBTransaction::class])->name('requestPasswordResetToken');
     Route::post('users/password/reset', A\ResetPasswordController::class)->middleware([DBTransaction::class])->name('resetPassword');
     Route::post('users/request-verification-code', A\Request2FACodeController::class)->middleware([DBTransaction::class])->name('requestVerificationCode');

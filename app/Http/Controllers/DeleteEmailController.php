@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers\Auth;
+namespace App\Http\Controllers;
 
 use App\Exceptions\HttpException;
 use App\Models\SecondaryEmail as Model;

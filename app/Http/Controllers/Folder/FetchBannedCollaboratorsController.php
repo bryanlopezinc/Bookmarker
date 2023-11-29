@@ -32,7 +32,7 @@ final class FetchBannedCollaboratorsController
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 
         $bannedUsers = User::query()
-            ->select(['id', 'first_name', 'last_name'])
+            ->select(['id', 'full_name', 'profile_image_path'])
             ->when($request->has('name'), function ($query) use ($request) {
                 $query->where('full_name', 'like', "{$request->input('name')}%");
             })

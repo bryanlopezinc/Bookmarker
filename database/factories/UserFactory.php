@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Enums\TwoFaMode;
-use App\Models\User;
 use App\ValueObjects\Username;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -35,14 +34,6 @@ class UserFactory extends Factory
         ];
     }
 
-    #[\Override]
-    public function configure()
-    {
-        return $this->afterCreating(function (User $user) {
-            $user->full_name = $user->first_name . ' ' . $user->last_name;
-        });
-    }
-
     public static function randomUsername(): string
     {
         return Str::random(Username::MAX_LENGTH - 2) . '_' . rand(0, 9);
@@ -69,6 +60,6 @@ class UserFactory extends Factory
 
     public function hasProfileImage()
     {
-        return $this->state(['profile_image_path' => Str::random(40) . 'jpg']);
+        return $this->state(['profile_image_path' => Str::random(40) . '.jpg']);
     }
 }

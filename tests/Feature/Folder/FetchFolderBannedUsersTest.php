@@ -62,7 +62,7 @@ class FetchFolderBannedUsersTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(3, 'data.0.attributes')
             ->assertJsonPath('data.0.attributes.id', $collaborator->id)
-            ->assertJsonPath('data.0.attributes.name', $collaborator->full_name)
+            ->assertJsonPath('data.0.attributes.name', "{$collaborator->first_name} {$collaborator->last_name}")
             ->assertJsonPath('data.0.attributes.profile_image_url', (new ProfileImageFileSystem())->publicUrl($collaborator->profile_image_path))
             ->assertJsonStructure([
                 'data' => [

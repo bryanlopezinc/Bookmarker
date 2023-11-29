@@ -16,26 +16,26 @@ class SearchUserTagsTest extends TestCase
 
     protected function searchUserTagsResponse(array $parameters = []): TestResponse
     {
-        return $this->getJson(route('searchUserTags', $parameters));
+        return $this->getJson(route('userTags', $parameters));
     }
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/users/tags/search', 'searchUserTags');
+        $this->assertRouteIsAccessibleViaPath('v1/users/tags', 'userTags');
     }
 
     public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
-        $this->searchUserTagsResponse()->assertUnauthorized();
+        $this->searchUserTagsResponse(['tag' => 'foo'])->assertUnauthorized();
     }
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->searchUserTagsResponse()
+        $this->searchUserTagsResponse(['search' => str_repeat('f', 23)])
             ->assertUnprocessable()
-            ->assertJsonValidationErrorFor('tag');
+            ->assertJsonValidationErrorFor('search');
     }
 
     public function testSearchTags(): void
@@ -47,13 +47,20 @@ class SearchUserTagsTest extends TestCase
             BookmarkFactory::new()->for($user)->create()
         );
 
-        $this->searchUserTagsResponse(['tag' => $tag])
+        $this->searchUserTagsResponse(['search' => $tag])
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.name', $tag)
+            ->assertJsonPath('data.0.attributes.name', $tag)
+            ->assertJsonCount(2, 'data.0.attributes')
+            ->assertJsonPath('data.0.attributes.bookmarks_with_tag', 1)
             ->assertJsonStructure([
                 'data' => [
-                    '*' => ['name']
+                    '*' => [
+                        'attributes' => [
+                            'name',
+                            'bookmarks_with_tag'
+                        ]
+                    ]
                 ]
             ]);
     }

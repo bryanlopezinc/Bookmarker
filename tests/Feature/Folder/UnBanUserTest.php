@@ -13,25 +13,23 @@ class UnBanUserTest extends TestCase
 {
     protected function unBanUserResponse(array $parameters = []): TestResponse
     {
-        if (array_key_exists('folder_id', $parameters)) {
-            $parameters['folder_id'] = (string) $parameters['folder_id'];
-        }
-
-        if (array_key_exists('user_id', $parameters)) {
-            $parameters['user_id'] = (string) $parameters['user_id'];
-        }
-
-        return $this->deleteJson(route('unBanUser'), $parameters);
+        return $this->deleteJson(route('unBanUser', $parameters));
     }
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/folders/ban', 'unBanUser');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/{folder_id}/collaborators/{collaborator_id}/ban', 'unBanUser');
     }
 
     public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
-        $this->unBanUserResponse(['folder_id' => 33, 'user_id' => 14])->assertUnauthorized();
+        $this->unBanUserResponse(['folder_id' => 33, 'collaborator_id' => 14])->assertUnauthorized();
+    }
+
+    public function testWillReturnNotFoundWhenRouteParametersAreInvalid(): void
+    {
+        $this->unBanUserResponse(['folder_id' => 44, 'collaborator_id' => 'foo'])->assertNotFound();
+        $this->unBanUserResponse(['folder_id' => 'foo', 'collaborator_id' => 44])->assertNotFound();
     }
 
     public function testSuccess(): void
@@ -44,7 +42,7 @@ class UnBanUserTest extends TestCase
         $this->ban($otherCollaborator->id, $folder->id);
 
         Passport::actingAs($folderOwner);
-        $this->unBanUserResponse(['folder_id' => $folder->id, 'user_id' => $collaborator->id])
+        $this->unBanUserResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
             ->assertOk();
 
         $bannedUser = BannedCollaborator::query()->where('folder_id', $folder->id)->sole();
@@ -69,7 +67,7 @@ class UnBanUserTest extends TestCase
         $this->ban($collaborator->id, $folder->id);
 
         Passport::actingAs(UserFactory::new()->create());
-        $this->unBanUserResponse(['folder_id' => $folder->id, 'user_id' => $collaborator->id])
+        $this->unBanUserResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
             ->assertNotFound()
             ->assertExactJson(['message' => 'FolderNotFound']);
     }
@@ -83,12 +81,12 @@ class UnBanUserTest extends TestCase
         $this->ban($collaborator->id, $folder->id);
 
         Passport::actingAs($folderOwner);
-        $this->unBanUserResponse(['folder_id' => $folder->id + 1, 'user_id' => $collaborator->id])
+        $this->unBanUserResponse(['folder_id' => $folder->id + 1, 'collaborator_id' => $collaborator->id])
             ->assertNotFound()
             ->assertExactJson(['message' => 'FolderNotFound']);
 
         Passport::actingAs(UserFactory::new()->create());
-        $this->unBanUserResponse(['folder_id' => $folder->id + 1, 'user_id' => $collaborator->id])
+        $this->unBanUserResponse(['folder_id' => $folder->id + 1, 'collaborator_id' => $collaborator->id])
             ->assertNotFound()
             ->assertExactJson(['message' => 'FolderNotFound']);
     }
@@ -100,7 +98,7 @@ class UnBanUserTest extends TestCase
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
         Passport::actingAs($folderOwner);
-        $this->unBanUserResponse(['folder_id' => $folder->id, 'user_id' => $collaborator->id])
+        $this->unBanUserResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
             ->assertNotFound()
             ->assertExactJson(['message' => 'UserNotFound']);
     }

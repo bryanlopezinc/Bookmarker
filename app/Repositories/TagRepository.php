@@ -66,35 +66,16 @@ final class TagRepository
     }
 
     /**
-     * Search for tags that was created by user.
-     *
-     * @return Collection<string>
-     */
-    public function search(string $tag, int $userID, int $limit): Collection
-    {
-        return Model::query()
-            ->join('taggables', 'tag_id', '=', 'tags.id')
-            ->where('tags.name', 'LIKE', "$tag%")
-            ->whereExists(function (&$query) use ($userID) {
-                $query = Bookmark::query()
-                    ->select('id')
-                    ->whereRaw('id = taggables.taggable_id')
-                    ->where('user_id', $userID)
-                    ->getQuery();
-            })
-            ->limit($limit)
-            ->get()
-            ->map(fn (Model $tag) => $tag->name);
-    }
-
-    /**
      * @return Paginator<Model>
      */
-    public function getUserTags(int $userId, PaginationData $pagination): Paginator
+    public function getUserTags(int $userId, PaginationData $pagination, string $search = null): Paginator
     {
         return Model::query()
             ->select('name', DB::raw('COUNT(*) as bookmarksWithTag'))
             ->join('taggables', 'tag_id', '=', 'tags.id')
+            ->when($search, function ($query) use ($search) {
+                $query->where('tags.name', 'LIKE', "$search%");
+            })
             ->whereExists(function (&$query) use ($userId) {
                 $query = Bookmark::query()
                     ->select('id')

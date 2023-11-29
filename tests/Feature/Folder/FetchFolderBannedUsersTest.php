@@ -16,16 +16,12 @@ class FetchFolderBannedUsersTest extends TestCase
 
     protected function fetchBannedCollaboratorsResponse(array $parameters = []): TestResponse
     {
-        if (array_key_exists($key = 'folder_id', $parameters)) {
-            $parameters[$key] = (string) $parameters[$key];
-        }
-
         return $this->getJson(route('fetchBannedCollaborator', $parameters));
     }
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/folders/banned', 'fetchBannedCollaborator');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/{folder_id}/banned', 'fetchBannedCollaborator');
     }
 
     public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
@@ -33,13 +29,16 @@ class FetchFolderBannedUsersTest extends TestCase
         $this->fetchBannedCollaboratorsResponse(['folder_id' => 33])->assertUnauthorized();
     }
 
-    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
+    public function testWillReturnNotFoundWhenFolderIdIsInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->fetchBannedCollaboratorsResponse()
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['folder_id']);
+        $this->fetchBannedCollaboratorsResponse(['folder_id' => 'f00'])->assertNotFound();
+    }
+
+    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
 
         $this->fetchBannedCollaboratorsResponse(['name' => str_repeat('A', 11), 'folder_id' => 4])
             ->assertUnprocessable()

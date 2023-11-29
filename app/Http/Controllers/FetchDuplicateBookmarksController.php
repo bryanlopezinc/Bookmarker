@@ -9,7 +9,6 @@ use App\Http\Resources\BookmarkResource;
 use App\Http\Resources\PaginatedResourceCollection as ResourceCollection;
 use App\PaginationData;
 use App\Repositories\BookmarkRepository;
-use App\Rules\ResourceIdRule;
 use App\ValueObjects\UserId;
 use Illuminate\Http\Request;
 
@@ -17,12 +16,9 @@ final class FetchDuplicateBookmarksController
 {
     public function __invoke(Request $request, BookmarkRepository $repository): ResourceCollection
     {
-        $request->validate([
-            'id' => ['required', new ResourceIdRule()],
-            ...PaginationData::new()->asValidationRules(),
-        ]);
+        $request->validate(PaginationData::new()->asValidationRules());
 
-        $bookmark = $repository->findById($request->integer('id'), ['url_canonical_hash', 'user_id', 'id']);
+        $bookmark = $repository->findById(intval($request->route('bookmark_id')), ['url_canonical_hash', 'user_id', 'id']);
 
         BookmarkNotFoundException::throwIfDoesNotBelongToAuthUser($bookmark);
 

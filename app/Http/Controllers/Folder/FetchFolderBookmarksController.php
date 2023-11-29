@@ -7,7 +7,6 @@ namespace App\Http\Controllers\Folder;
 use App\Http\Resources\FolderBookmarkResource;
 use App\Http\Resources\PaginatedResourceCollection;
 use App\PaginationData;
-use App\Rules\ResourceIdRule;
 use App\Services\Folder\FetchFolderBookmarksService;
 use Illuminate\Http\Request;
 
@@ -17,13 +16,10 @@ final class FetchFolderBookmarksController
     {
         $authUser = auth();
 
-        $request->validate([
-            'folder_id' => ['required', new ResourceIdRule()],
-            ...PaginationData::new()->asValidationRules()
-        ]);
+        $request->validate(PaginationData::new()->asValidationRules());
 
         $result = $service->fetch(
-            $request->integer('folder_id'),
+            intval($request->route('folder_id')),
             PaginationData::fromRequest($request),
             $authUser->check() ? (int) $authUser->id() : null
         );

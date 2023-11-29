@@ -36,27 +36,26 @@ class FetchFolderBookmarksTest extends TestCase
 
     protected function folderBookmarksResponse(array $parameters = []): TestResponse
     {
-        if (array_key_exists($key = 'folder_id', $parameters)) {
-            $parameters[$key] = (string) $parameters[$key];
-        }
-
         return $this->getJson(route('folderBookmarks', $parameters));
     }
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/folders/bookmarks', 'folderBookmarks');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/{folder_id}/bookmarks', 'folderBookmarks');
     }
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->folderBookmarksResponse()
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['folder_id']);
+        $this->assertValidPaginationData($this, 'folderBookmarks', ['folder_id' => 30]);
+    }
 
-        $this->assertValidPaginationData($this, 'folderBookmarks');
+    public function testWillReturnNotFoundWhenFolderIdIsInvalid(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
+
+        $this->folderBookmarksResponse(['folder_id' => 'f00'])->assertNotFound();
     }
 
     #[Test]

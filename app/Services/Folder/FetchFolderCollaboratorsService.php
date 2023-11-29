@@ -22,7 +22,7 @@ final class FetchFolderCollaboratorsService
      */
     public function fromRequest(Request $request): Paginator
     {
-        $folder = Folder::query()->find($request->integer('folder_id'), ['id', 'user_id']);
+        $folder = Folder::query()->find($request->route('folder_id'), ['id', 'user_id']);
 
         FolderNotFoundException::throwIf(!$folder);
 

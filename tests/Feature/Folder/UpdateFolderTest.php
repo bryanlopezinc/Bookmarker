@@ -326,26 +326,28 @@ class UpdateFolderTest extends TestCase
         ];
 
         $this->assertCount(2, $notificationData);
-        
+
         $this->assertEquals(
-            $notificationData->pluck('data')->sortBy('modified')->all(),
+            $notificationData->pluck('data')->where('modified', 'description')->sole(),
             [
-                [
-                    ...$expected,
-                    'modified'  => 'description',
-                    'changes' => [
-                        'from' => $folder->description,
-                        'to' => $newDescription,
-                    ],
+                ...$expected,
+                'modified'  => 'description',
+                'changes' => [
+                    'from' => $folder->description,
+                    'to' => $newDescription,
                 ],
-                [
-                    ...$expected,
-                    'modified' => 'name',
-                    'changes' => [
-                        'from' => $folder->name,
-                        'to' => $newName,
-                    ],
-                ]
+            ]
+        );
+
+        $this->assertEquals(
+            $notificationData->pluck('data')->where('modified', 'name')->sole(),
+            [
+                ...$expected,
+                'modified' => 'name',
+                'changes' => [
+                    'from' => $folder->name,
+                    'to' => $newName,
+                ],
             ]
         );
     }

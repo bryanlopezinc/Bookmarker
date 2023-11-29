@@ -28,32 +28,25 @@ class RemoveCollaboratorTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/folders/collaborators', 'deleteFolderCollaborator');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/{folder_id}/collaborators/{collaborator_id}', 'deleteFolderCollaborator');
     }
 
     public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
-        $this->deleteCollaboratorResponse()->assertUnauthorized();
+        $this->deleteCollaboratorResponse(['folder_id' => 44, 'collaborator_id' => 33])->assertUnauthorized();
+    }
+
+    public function testWillReturnNotFoundWhenRouteParametersAreInvalid(): void
+    {
+        $this->deleteCollaboratorResponse(['folder_id' => 44, 'collaborator_id' => 'foo'])->assertNotFound();
+        $this->deleteCollaboratorResponse(['folder_id' => 'foo', 'collaborator_id' => 44])->assertNotFound();
     }
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->deleteCollaboratorResponse()
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'user_id' => ['The user id field is required'],
-                'folder_id' => ['The folder id field is required']
-            ]);
-
-        $this->deleteCollaboratorResponse([
-            'user_id' => 'foo',
-            'folder_id' => 'bar'
-        ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['user_id', 'folder_id']);
-
-        $this->deleteCollaboratorResponse(['ban' => 'foo'])
+        $this->deleteCollaboratorResponse(['ban' => 'foo', 'folder_id' => 44, 'collaborator_id' => 33])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['ban']);
     }
@@ -64,7 +57,7 @@ class RemoveCollaboratorTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->deleteCollaboratorResponse([
-            'user_id'   => UserFactory::new()->create()->id,
+            'collaborator_id' => UserFactory::new()->create()->id,
             'folder_id' => $folder->id + 1
         ])->assertNotFound()
             ->assertExactJson(['message' => 'FolderNotFound']);
@@ -75,7 +68,7 @@ class RemoveCollaboratorTest extends TestCase
         Passport::actingAs(UserFactory::new()->create());
 
         $this->deleteCollaboratorResponse([
-            'user_id'   => UserFactory::new()->create()->id,
+            'collaborator_id' => UserFactory::new()->create()->id,
             'folder_id' => FolderFactory::new()->create()->id
         ])->assertNotFound()
             ->assertExactJson(['message' => 'FolderNotFound']);
@@ -87,7 +80,7 @@ class RemoveCollaboratorTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->deleteCollaboratorResponse([
-            'user_id'   => UserFactory::new()->create()->id,
+            'collaborator_id' => UserFactory::new()->create()->id,
             'folder_id' => $folder->id
         ])->assertNotFound()
             ->assertExactJson(['message' => 'UserNotACollaborator']);
@@ -99,7 +92,7 @@ class RemoveCollaboratorTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->deleteCollaboratorResponse([
-            'user_id'   => UserFactory::new()->create()->id + 1,
+            'collaborator_id' => UserFactory::new()->create()->id + 1,
             'folder_id' => $folder->id
         ])->assertNotFound()
             ->assertExactJson(['message' => 'UserNotACollaborator']);
@@ -112,7 +105,7 @@ class RemoveCollaboratorTest extends TestCase
 
         Passport::actingAs($user);
         $this->deleteCollaboratorResponse([
-            'user_id'   => $user->id,
+            'collaborator_id' => $user->id,
             'folder_id' => $folder->id
         ])->assertForbidden()
             ->assertExactJson(['message' => 'CannotRemoveSelf']);
@@ -135,7 +128,7 @@ class RemoveCollaboratorTest extends TestCase
 
         $this->loginUser($folderOwner);
         $this->deleteCollaboratorResponse([
-            'user_id'   => $collaborator->id,
+            'collaborator_id' => $collaborator->id,
             'folder_id' => $folder->id
         ])->assertOk();
 
@@ -174,7 +167,7 @@ class RemoveCollaboratorTest extends TestCase
 
         Passport::actingAs($folderOwner);
         $this->deleteCollaboratorResponse([
-            'user_id'   => $collaborator->id,
+            'collaborator_id' => $collaborator->id,
             'folder_id' => $folder->id,
             'ban'       => true
         ])->assertOk();

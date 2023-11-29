@@ -18,39 +18,42 @@ class FetchDuplicatesTest extends TestCase
 
     protected function fetchDuplicatesResponse(array $parameters = []): TestResponse
     {
-        return $this->getJson(route('fetchPossibleDuplicates', $parameters));
+        $bookmarkId = $parameters['bookmark_id'];
+
+        unset($parameters['bookmark_id']);
+
+        return $this->getJson(route('fetchPossibleDuplicates', [...$parameters, 'bookmark_id' => $bookmarkId]));
     }
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/bookmarks/duplicates', 'fetchPossibleDuplicates');
+        $this->assertRouteIsAccessibleViaPath('v1/users/bookmarks/{bookmark_id}/duplicates', 'fetchPossibleDuplicates');
     }
 
     public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
-        $this->fetchDuplicatesResponse()->assertUnauthorized();
+        $this->fetchDuplicatesResponse(['bookmark_id' => 4])->assertUnauthorized();
     }
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->assertValidPaginationData($this, 'fetchPossibleDuplicates');
+        $this->assertValidPaginationData($this, 'fetchPossibleDuplicates', ['bookmark_id' => 3]);
+    }
 
-        $this->fetchDuplicatesResponse()
-            ->assertUnprocessable()
-            ->assertJsonValidationErrorFor('id');
+    public function testWillReturnNotFoundWhenBookmarkIdIsInvalid(): void
+    {
+        Passport::actingAs(UserFactory::new()->create());
 
-        $this->fetchDuplicatesResponse(['id' => 'foo bar'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrorFor('id');
+        $this->fetchDuplicatesResponse(['bookmark_id' => 'foo'])->assertNotFound();
     }
 
     public function testWillReturnNotFoundWhenBookmarkDoesNotBelongToUser(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->fetchDuplicatesResponse(['id' => BookmarkFactory::new()->create()->id])
+        $this->fetchDuplicatesResponse(['bookmark_id' => BookmarkFactory::new()->create()->id])
             ->assertNotFound()
             ->assertExactJson(['message' => 'BookmarkNotFound']);
     }
@@ -63,7 +66,7 @@ class FetchDuplicatesTest extends TestCase
 
         $duplicates = BookmarkFactory::times(2)->for($user)->create(['url_canonical_hash' => $hash]);
 
-        $this->fetchDuplicatesResponse(['id' => $duplicates->first()])
+        $this->fetchDuplicatesResponse(['bookmark_id' => $duplicates->first()])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.attributes.id', $duplicates->last()->id);
@@ -79,7 +82,7 @@ class FetchDuplicatesTest extends TestCase
 
         $duplicates = BookmarkFactory::times(2)->for($user)->create(['url_canonical_hash' => $hash])->pluck('id');
 
-        $this->fetchDuplicatesResponse(['id' => $duplicates->first()])
+        $this->fetchDuplicatesResponse(['bookmark_id' => $duplicates->first()])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.attributes.id', $duplicates->last());
@@ -89,9 +92,8 @@ class FetchDuplicatesTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->fetchDuplicatesResponse([
-            'id' => BookmarkFactory::new()->create()->id + 1
-        ])->assertNotFound()
+        $this->fetchDuplicatesResponse(['bookmark_id' => BookmarkFactory::new()->create()->id + 1])
+            ->assertNotFound()
             ->assertExactJson(['message' => 'BookmarkNotFound']);
     }
 }

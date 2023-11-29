@@ -19,31 +19,32 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
 
         Route::get('folders', F\FetchUserFoldersController::class)->middleware(StringToArray::keys('fields'))->name('userFolders');
         Route::get('folders/collaborations', C\FetchUserCollaborationsController::class)->middleware(StringToArray::keys('fields'))->name('fetchUserCollaborations');
-        Route::delete('folders/collaborations/exit', F\LeaveFolderCollaborationController::class)->name('leaveFolderCollaboration');
-        Route::get('folders/contains_collaborator', C\FetchUserFoldersWhereContainsCollaboratorController::class)->middleware(StringToArray::keys('fields'))->name('fetchUserFoldersWhereHasCollaborator');
+        Route::delete('folders/collaborations/{folder_id}', F\LeaveFolderCollaborationController::class)->name('leaveFolderCollaboration');
+        Route::get('folders/collaborators/{collaborator_id}', C\FetchUserFoldersWhereContainsCollaboratorController::class)->middleware(StringToArray::keys('fields'))->name('fetchUserFoldersWhereHasCollaborator');
 
         Route::post('emails/add', C\AddEmailToAccountController::class)->name('addEmailToAccount');
         Route::delete('emails/remove', C\DeleteEmailController::class)->name('removeEmailFromAccount');
         Route::post('emails/verify/secondary', A\VerifySecondaryEmailController::class)->name('verifySecondaryEmail');
 
         Route::get('favorites', C\FetchUserFavoritesController::class)->name('fetchUserFavorites');
-        Route::post('favorites', C\CreateFavoriteController::class)->middleware([StringToArray::keys('bookmarks')])->name('createFavorite');
+        Route::post('bookmarks/favorites', C\CreateFavoriteController::class)->middleware([StringToArray::keys('bookmarks')])->name('createFavorite');
         Route::delete('favorites', C\DeleteFavoriteController::class)->middleware([StringToArray::keys('bookmarks')])->name('deleteFavorite');
 
         Route::get('bookmarks', C\FetchUserBookmarksController::class)->middleware([StringToArray::keys('tags')])->name('fetchUserBookmarks');
         Route::get('bookmarks/sources', C\FetchUserBookmarksSourcesController::class)->name('fetchUserBookmarksSources');
 
         Route::get('tags', C\FetchUserTagsController::class)->name('userTags');
-        Route::get('tags/search', C\SearchUserTagsController::class)->name('searchUserTags');
 
         Route::get('notifications', C\FetchUserNotificationsController::class)->name('fetchUserNotifications');
         Route::patch('notifications/read', C\MarkUserNotificationsAsReadController::class)->middleware([StringToArray::keys('ids')])->name('markNotificationsAsRead');
+
+        Route::get('bookmarks/{bookmark_id}/duplicates', C\FetchDuplicateBookmarksController::class)->name('fetchPossibleDuplicates');
+        Route::delete('folders/{folder_id}', F\DeleteFolderController::class)->name('deleteFolder');
     });
 
     Route::prefix('bookmarks')->group(function () {
         Route::post('/', C\CreateBookmarkController::class)->middleware([StringToArray::keys('tags')])->name('createBookmark');
         Route::delete('/', C\DeleteBookmarkController::class)->middleware([StringToArray::keys('ids')])->name('deleteBookmark');
-        Route::get('/duplicates', C\FetchDuplicateBookmarksController::class)->name('fetchPossibleDuplicates');
         Route::patch('/', C\UpdateBookmarkController::class)->middleware([StringToArray::keys('tags')])->name('updateBookmark');
         Route::post('import', C\ImportBookmarkController::class)->middleware([StringToArray::keys('tags')])->withoutMiddleware(DBTransaction::class)->name('importBookmark');
         Route::delete('tags/remove', C\DeleteBookmarkTagsController::class)->middleware([StringToArray::keys('tags')])->name('deleteBookmarkTags');
@@ -51,29 +52,28 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
 
     Route::prefix('folders')->group(function () {
         Route::get('/', F\FetchFolderController::class)->middleware([StringToArray::keys('fields')])->name('fetchFolder');
-        Route::delete('/', F\DeleteFolderController::class)->name('deleteFolder');
         Route::post('/', F\CreateFolderController::class)->name('createFolder');
         Route::patch('/', F\UpdateFolderController::class)->middleware([StringToArray::keys('tags')])->name('updateFolder');
+        Route::get('/{folder_id}/bookmarks', F\FetchFolderBookmarksController::class)->withoutMiddleware('auth:api')->name('folderBookmarks');
 
         Route::prefix('bookmarks')->group(function () {
-            Route::get('/', F\FetchFolderBookmarksController::class)->withoutMiddleware('auth:api')->name('folderBookmarks');
             Route::post('/', F\AddBookmarksToFolderController::class)->middleware(StringToArray::keys('bookmarks', 'make_hidden'))->name('addBookmarksToFolder');
             Route::delete('/', F\RemoveBookmarksFromFolderController::class)->middleware(StringToArray::keys('bookmarks'))->name('removeBookmarksFromFolder');
             Route::post('hide', F\HideFolderBookmarksController::class)->middleware(StringToArray::keys('bookmarks'))->name('hideFolderBookmarks');
         });
 
         Route::patch('collaborators/actions', [F\UpdateFolderController::class, 'updateAction'])->name('updateFolderCollaboratorActions');
-        Route::get('collaborators', F\FetchFolderCollaboratorsController::class)->middleware(StringToArray::keys('permissions'))->name('fetchFolderCollaborators');
-        Route::delete('collaborators', F\RemoveCollaboratorController::class)->name('deleteFolderCollaborator');
-        Route::delete('collaborators/permissions', F\RevokeFolderCollaboratorPermissionsController::class)->middleware([StringToArray::keys('permissions')])->name('revokePermissions');
-        Route::patch('collaborators/permissions', F\GrantPermissionsToCollaboratorController::class)->middleware([StringToArray::keys('permissions')])->name('grantPermission');
+        Route::get('/{folder_id}/collaborators', F\FetchFolderCollaboratorsController::class)->middleware(StringToArray::keys('permissions'))->name('fetchFolderCollaborators');
+        Route::delete('/{folder_id}/collaborators/{collaborator_id}', F\RemoveCollaboratorController::class)->name('deleteFolderCollaborator');
+        Route::delete('/{folder_id}/collaborators/{collaborator_id}/permissions', F\RevokeFolderCollaboratorPermissionsController::class)->middleware([StringToArray::keys('permissions')])->name('revokePermissions');
+        Route::patch('/{folder_id}/collaborators/{collaborator_id}/permissions', F\GrantPermissionsToCollaboratorController::class)->middleware([StringToArray::keys('permissions')])->name('grantPermission');
         Route::post('invite', F\SendFolderCollaborationInviteController::class)->middleware([StringToArray::keys('permissions')])->name('sendFolderCollaborationInvite');
 
-        Route::get('banned', F\FetchBannedCollaboratorsController::class)->name('fetchBannedCollaborator');
-        Route::delete('ban', F\UnBanUserController::class)->name('unBanUser');
+        Route::get('/{folder_id}/banned', F\FetchBannedCollaboratorsController::class)->name('fetchBannedCollaborator');
+        Route::delete('/{folder_id}/collaborators/{collaborator_id}/ban', F\UnBanUserController::class)->name('unBanUser');
 
-        Route::post('mute', F\MuteCollaboratorController::class)->name('muteCollaborator');
-        Route::delete('mute', [F\MuteCollaboratorController::class, 'unMute'])->name('UnMuteCollaborator');
+        Route::post('/{folder_id}/collaborators/{collaborator_id}/mute', [F\MuteCollaboratorController::class, 'post'])->name('muteCollaborator');
+        Route::delete('/{folder_id}/collaborators/{collaborator_id}/mute', [F\MuteCollaboratorController::class, 'delete'])->name('UnMuteCollaborator');
         Route::get('mute', F\FetchMutedCollaboratorsController::class)->name('fetchMutedCollaborator');
     });
 

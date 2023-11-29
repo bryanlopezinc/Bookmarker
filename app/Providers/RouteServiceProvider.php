@@ -28,6 +28,8 @@ class RouteServiceProvider extends ServiceProvider
     {
         $this->configureRateLimiting();
 
+        $this->registerRoutePatterns();
+
         $this->routes(function () {
             Route::prefix('v1')
                 ->middleware('api')
@@ -50,5 +52,14 @@ class RouteServiceProvider extends ServiceProvider
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
+    }
+
+    private function registerRoutePatterns(): void
+    {
+        Route::patterns([
+            'folder_id'       => '[0-9]+',
+            'collaborator_id' => '[0-9]+',
+            'bookmark_id'     => '[0-9]+'
+        ]);
     }
 }

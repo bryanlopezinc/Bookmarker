@@ -6,7 +6,6 @@ namespace App\Http\Requests;
 
 use App\Enums\Permission;
 use App\PaginationData;
-use App\Rules\ResourceIdRule;
 use App\UAC;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
@@ -16,7 +15,6 @@ final class FetchFolderCollaboratorsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'folder_id'   => ['required', new ResourceIdRule()],
             'name'        => ['sometimes', 'filled', 'string', 'max:10'],
             'permissions' => [
                 'sometimes',

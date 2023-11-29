@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use App\Http\Resources\PaginatedResourceCollection as ResourceCollection;
 use App\PaginationData;
 use App\Repositories\Folder\FetchUserFoldersWhereContainsCollaboratorRepository as Repository;
-use App\Rules\ResourceIdRule;
 use App\Rules\UserCollaborationFieldsRule;
 use App\ValueObjects\UserId;
 
@@ -19,13 +18,12 @@ final class FetchUserFoldersWhereContainsCollaboratorController
     {
         $request->validate([
             ...PaginationData::new()->asValidationRules(),
-            'collaborator_id' => ['required', new ResourceIdRule()],
-            'fields'          => ['sometimes', new UserCollaborationFieldsRule()]
+            'fields' => ['sometimes', new UserCollaborationFieldsRule()]
         ]);
 
         $result = $repository->get(
             UserId::fromAuthUser()->value(),
-            $request->integer('collaborator_id'),
+            intval($request->route('collaborator_id')),
             PaginationData::fromRequest($request),
         );
 

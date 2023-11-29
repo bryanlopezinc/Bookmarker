@@ -24,29 +24,30 @@ class FetchFolderCollaboratorsTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/folders/collaborators', 'fetchFolderCollaborators');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/{folder_id}/collaborators', 'fetchFolderCollaborators');
     }
 
     public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
-        $this->fetchCollaboratorsResponse()->assertUnauthorized();
+        $this->fetchCollaboratorsResponse(['folder_id' => 44])->assertUnauthorized();
+    }
+
+    public function testWillReturnNotFoundWhenFolderIdIsInvalid(): void
+    {
+        $this->fetchCollaboratorsResponse(['folder_id' => 'foo'])->assertNotFound();
     }
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         $this->loginUser(UserFactory::new()->create());
 
-        $this->assertValidPaginationData($this, 'fetchFolderCollaborators');
+        $this->assertValidPaginationData($this, 'fetchFolderCollaborators', ['folder_id' => 44]);
 
-        $this->fetchCollaboratorsResponse()
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['folder_id']);
-
-        $this->fetchCollaboratorsResponse(['permissions' => 'foo'])
+        $this->fetchCollaboratorsResponse(['permissions' => 'foo', 'folder_id' => 4])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['permissions']);
 
-        $this->fetchCollaboratorsResponse(['permissions' => 'addBookmarks,addBookmarks'])
+        $this->fetchCollaboratorsResponse(['permissions' => 'addBookmarks,addBookmarks', 'folder_id' => 4])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 "permissions.0" => [

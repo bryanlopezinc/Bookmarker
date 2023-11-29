@@ -8,6 +8,7 @@ use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
+use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
@@ -19,36 +20,47 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
     protected function grantPermissionsResponse(array $parameters = []): TestResponse
     {
-        return $this->patchJson(route('grantPermission', $parameters));
+        $routeParameters = Arr::except($parameters, 'permissions');
+
+        return $this->patchJson(
+            route('grantPermission', $routeParameters),
+            Arr::only($parameters, ['permissions'])
+        );
     }
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/folders/collaborators/permissions', 'grantPermission');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/{folder_id}/collaborators/{collaborator_id}/permissions', 'grantPermission');
     }
 
     public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
-        $this->grantPermissionsResponse()->assertUnauthorized();
+        $this->grantPermissionsResponse(['collaborator_id' => 4, 'folder_id' => 4])->assertUnauthorized();
     }
+
+
+    public function testWillReturnNotFoundWhenRouteParametersAreInvalid(): void
+    {
+        $this->grantPermissionsResponse(['folder_id' => 44, 'collaborator_id' => 'foo'])->assertNotFound();
+        $this->grantPermissionsResponse(['folder_id' => 'foo', 'collaborator_id' => 44])->assertNotFound();
+    }
+
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->grantPermissionsResponse()
+        $this->grantPermissionsResponse(['folder_id' => 44, 'collaborator_id' => 4])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'folder_id' => ['The folder id field is required.'],
-                'user_id' => ['The user id field is required.'],
                 'permissions' => ['The permissions field is required.']
             ]);
 
-        $this->grantPermissionsResponse(['permissions' => 'foo,bar'])
+        $this->grantPermissionsResponse(['permissions' => 'foo,bar', 'folder_id' => 44, 'collaborator_id' => 4])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['permissions' => ['The selected permissions is invalid.']]);
 
-        $this->grantPermissionsResponse(['permissions' => 'addBookmarks,addBookmarks,inviteUser'])
+        $this->grantPermissionsResponse(['permissions' => 'addBookmarks,addBookmarks,inviteUser','folder_id' => 44, 'collaborator_id' => 4])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 "permissions.0" => [
@@ -70,7 +82,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
         Passport::actingAs($folderOwner);
         $this->grantPermissionsResponse([
-            'user_id'     => $collaborator->id,
+            'collaborator_id' => $collaborator->id,
             'folder_id'   => $folder->id,
             'permissions' => 'inviteUser'
         ])->assertOk();
@@ -92,7 +104,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
         Passport::actingAs($folderOwner);
         $this->grantPermissionsResponse([
-            'user_id'     => $collaborator->id,
+            'collaborator_id' => $collaborator->id,
             'folder_id'   => $folder->id,
             'permissions' => 'inviteUser,addBookmarks'
         ])->assertOk();
@@ -111,7 +123,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
         Passport::actingAs($user);
         $this->grantPermissionsResponse([
-            'user_id' => $user->id,
+            'collaborator_id' => $user->id,
             'folder_id' => $folder->id,
             'permissions' => 'inviteUser'
         ])->assertForbidden()
@@ -123,7 +135,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
         Passport::actingAs(UserFactory::new()->create());
 
         $this->grantPermissionsResponse([
-            'user_id'     => UserFactory::new()->create()->id,
+            'collaborator_id' => UserFactory::new()->create()->id,
             'folder_id'   => FolderFactory::new()->create()->id,
             'permissions' => 'inviteUser'
         ])->assertNotFound();
@@ -138,7 +150,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
         Passport::actingAs($folderOwner);
         $this->grantPermissionsResponse([
-            'user_id'     => $collaborator->id,
+            'collaborator_id' => $collaborator->id,
             'folder_id'   => $folder->id,
             'permissions' => 'addBookmarks'
         ])->assertStatus(Response::HTTP_CONFLICT)
@@ -152,7 +164,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
         Passport::actingAs($folderOwner);
         $this->grantPermissionsResponse([
-            'user_id'     => $collaborator->id,
+            'collaborator_id' => $collaborator->id,
             'folder_id'   => $folder->id,
             'permissions' => 'addBookmarks'
         ])->assertNotFound()
@@ -166,7 +178,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
         Passport::actingAs($folderOwner);
         $this->grantPermissionsResponse([
-            'user_id'     => UserFactory::new()->create()->id + 1,
+            'collaborator_id' => UserFactory::new()->create()->id + 1,
             'folder_id'   => $folder->id,
             'permissions' => 'addBookmarks'
         ])->assertNotFound()
@@ -179,7 +191,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
         Passport::actingAs($folderOwner);
         $this->grantPermissionsResponse([
-            'user_id'     => $collaborator->id,
+            'collaborator_id' => $collaborator->id,
             'folder_id'   => FolderFactory::new()->create()->id + 1,
             'permissions' => 'addBookmarks'
         ])->assertNotFound()

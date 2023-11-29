@@ -23,31 +23,22 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/users/folders/contains_collaborator', 'fetchUserFoldersWhereHasCollaborator');
+        $this->assertRouteIsAccessibleViaPath('v1/users/folders/collaborators/{collaborator_id}', 'fetchUserFoldersWhereHasCollaborator');
     }
 
     public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
-        $this->whereHasCollaboratorsResponse()->assertUnauthorized();
+        $this->whereHasCollaboratorsResponse(['collaborator_id' => 5])->assertUnauthorized();
     }
 
-    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
+    public function testWillReturnNotFoundWhenCollaboratorIdIsInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->assertValidPaginationData($this, 'fetchUserFoldersWhereHasCollaborator');
+        $this->assertValidPaginationData($this, 'fetchUserFoldersWhereHasCollaborator', ['collaborator_id' => 4]);
 
-        $this->whereHasCollaboratorsResponse()
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['collaborator_id']);
-
-        $this->whereHasCollaboratorsResponse(['collaborator_id' => 'foo'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['collaborator_id']);
-
-        $this->whereHasCollaboratorsResponse(['collaborator_id' => -23])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['collaborator_id']);
+        $this->whereHasCollaboratorsResponse(['collaborator_id' => 'foo'])->assertNotFound();
+        $this->whereHasCollaboratorsResponse(['collaborator_id' => -23])->assertNotFound();
     }
 
     public function testWillFetchFolders(): void
@@ -183,19 +174,19 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->whereHasCollaboratorsResponse(['fields' => 'id,name,foo,1'])
+        $this->whereHasCollaboratorsResponse(['fields' => 'id,name,foo,1', 'collaborator_id' => 4])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'fields' => ['The selected fields.2 is invalid.']
             ]);
 
-        $this->whereHasCollaboratorsResponse(['fields' => '1,2,3,4'])
+        $this->whereHasCollaboratorsResponse(['fields' => '1,2,3,4', 'collaborator_id' => 4])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'fields' => ['The selected fields.0 is invalid.']
             ]);
 
-        $this->whereHasCollaboratorsResponse(['fields' => 'id,name,description,description'])
+        $this->whereHasCollaboratorsResponse(['fields' => 'id,name,description,description', 'collaborator_id' => 4])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'fields' => [

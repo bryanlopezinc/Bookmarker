@@ -21,30 +21,28 @@ class LeaveFolderCollaborationTest extends TestCase
 
     protected function leaveFolderCollaborationResponse(array $parameters = []): TestResponse
     {
-        return $this->deleteJson(route('leaveFolderCollaboration'), $parameters);
+        $folderId = $parameters['folder_id'];
+
+        unset($parameters['folder_id']);
+
+        return $this->deleteJson(route('leaveFolderCollaboration', ['folder_id' => $folderId]), $parameters);
     }
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/users/folders/collaborations/exit', 'leaveFolderCollaboration');
+        $this->assertRouteIsAccessibleViaPath('v1/users/folders/collaborations/{folder_id}', 'leaveFolderCollaboration');
     }
 
     public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
-        $this->leaveFolderCollaborationResponse()->assertUnauthorized();
+        $this->leaveFolderCollaborationResponse(['folder_id' => 3])->assertUnauthorized();
     }
 
-    public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
+    public function testWillReturnNotFoundWhenFolderIdIsInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->leaveFolderCollaborationResponse()
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['folder_id']);
-
-        $this->leaveFolderCollaborationResponse(['folder_id' => '2bar'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(["folder_id" => ["The folder_id attribute is invalid"]]);
+        $this->leaveFolderCollaborationResponse(['folder_id' => '2bar'])->assertNotFound();
     }
 
     public function testExit(): void

@@ -25,36 +25,26 @@ class MuteCollaboratorTest extends TestCase
             }
         }
 
-        return $this->postJson(route('muteCollaborator'), $parameters);
+        return $this->postJson(route('muteCollaborator', $parameters));
     }
 
     #[Test]
     public function uri(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/folders/mute', 'muteCollaborator');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/{folder_id}/collaborators/{collaborator_id}/mute', 'muteCollaborator');
     }
 
     #[Test]
     public function willReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
-        $this->muteCollaboratorResponse()->assertUnauthorized();
+        $this->muteCollaboratorResponse(['folder_id' => 33, 'collaborator_id' => 14])->assertUnauthorized();
     }
 
     #[Test]
-    public function willReturnUnprocessableWhenParameterAreInvalid(): void
+    public function willReturnNotFoundWhenRouteParametersAreInvalid(): void
     {
-        $this->loginUser(UserFactory::new()->create());
-
-        $this->muteCollaboratorResponse()
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'folder_id'       => 'The folder id field is required.',
-                'collaborator_id' => 'The collaborator id field is required.'
-            ]);
-
-        $this->muteCollaboratorResponse(['folder_id' => 'foo', 'collaborator_id' => -2])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['folder_id', 'collaborator_id']);
+        $this->muteCollaboratorResponse(['folder_id' => 44, 'collaborator_id' => 'foo'])->assertNotFound();
+        $this->muteCollaboratorResponse(['folder_id' => 'foo', 'collaborator_id' => 44])->assertNotFound();
     }
 
     #[Test]

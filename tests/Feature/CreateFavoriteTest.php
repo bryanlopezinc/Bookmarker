@@ -22,7 +22,7 @@ class CreateFavoriteTest extends TestCase
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/users/favorites', 'createFavorite');
+        $this->assertRouteIsAccessibleViaPath('v1/users/bookmarks/favorites', 'createFavorite');
     }
 
     public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void

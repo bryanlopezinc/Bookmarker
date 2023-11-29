@@ -15,10 +15,12 @@ final class FolderUpdatedNotification extends Notification //implements ShouldQu
     use Queueable;
     use FormatDatabaseNotification;
 
-    public function __construct(
-        private Folder $folder,
-        private int $updatedBy
-    ) {
+    public function __construct(private Folder $folder, private int $updatedBy, private string $modified)
+    {
+        if (!in_array($modified, ['name', 'description'])) {
+            throw new \InvalidArgumentException("Invalid modified attribute {$modified}");
+        }
+
         $this->afterCommit();
     }
 
@@ -38,31 +40,30 @@ final class FolderUpdatedNotification extends Notification //implements ShouldQu
      */
     public function toDatabase($notifiable): array
     {
-        return $this->formatNotificationData([
+        $data = [
             'N-type'         => $this->databaseType(),
             'updated_by'     => $this->updatedBy,
             'folder_updated' => $this->folder->id,
-            'changes'        => $this->getChanges()
-        ]);
+            'modified'       => $this->modified,
+        ];
+
+        if (!empty($changes = $this->getChanges())) {
+            $data['changes'] = $changes;
+        }
+
+        return $this->formatNotificationData($data);
     }
 
     private function getChanges(): array
     {
-        $changes = [
-            'name' => [
-                'from' => $this->folder->getOriginal('name'),
-                'to'   => $this->folder->getDirty()['name'] ?? $this->folder->name
-            ],
-            'description' => [
-                'from' => $this->folder->getOriginal('description'),
-                'to'   => $this->folder->getDirty()['description'] ?? $this->folder->description
-            ]
-        ];
+        if (!in_array($this->modified, ['name', 'description'])) {
+            return [];
+        }
 
-        return collect($changes)
-            ->filter(fn (array $change) => $change['from'] !== $change['to'])
-            ->whenEmpty(fn () => throw new \Exception('No changes were found for folders', 902))
-            ->all();
+        return [
+            'from' => $this->folder->getOriginal($this->modified),
+            'to'   => $this->folder->getDirty()[$this->modified] ?? $this->folder->{$this->modified}
+        ];
     }
 
     public function databaseType(): string

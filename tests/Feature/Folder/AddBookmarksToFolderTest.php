@@ -136,29 +136,6 @@ class AddBookmarksToFolderTest extends TestCase
         Notification::assertNothingSent();
     }
 
-    public function testWillSendNotificationsWhenBookmarksWereNotAddedByFolderOwner(): void
-    {
-        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-
-        $bookmark = BookmarkFactory::new()->for($collaborator)->create();
-
-        $folder = FolderFactory::new()->for($folderOwner)->create();
-
-        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
-
-        Passport::actingAs($collaborator);
-        $this->addBookmarksToFolderResponse([
-            'bookmarks' => (string) $bookmark->id,
-            'folder'    => $folder->id
-        ])->assertCreated();
-
-        $notificationData = DatabaseNotification::query()->where('notifiable_id', $folderOwner->id)->first(['data'])->data;
-
-        $this->assertEquals($folder->id, $notificationData['added_to_folder']);
-        $this->assertEquals($collaborator->id, $notificationData['added_by']);
-        $this->assertEquals([$bookmark->id], $notificationData['bookmarks_added_to_folder']);
-    }
-
     public function testWillReturnForbiddenWhenCollaboratorDoesNotHaveAddBookmarksPermission(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
@@ -353,6 +330,34 @@ class AddBookmarksToFolderTest extends TestCase
             'folder'    => $folder->id,
         ])->assertNotFound()
             ->assertExactJson(['message' => "FolderNotFound"]);
+    }
+
+    public function testWillSendNotificationsWhenBookmarksWereNotAddedByFolderOwner(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+
+        $bookmark = BookmarkFactory::new()->for($collaborator)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
+
+        Passport::actingAs($collaborator);
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => (string) $bookmark->id,
+            'folder'    => $folder->id
+        ])->assertCreated();
+
+        $notificationData = $folderOwner->notifications()->first(['data', 'type']);
+
+        $this->assertEquals('bookmarksAddedToFolder', $notificationData->type);
+        $this->assertEquals($notificationData->data, [
+            'N-type' => 'bookmarksAddedToFolder',
+            'version' => '1.0.0',
+            'added_by' => $collaborator->id,
+            'added_to_folder' => $folder->id,
+            'bookmarks_added_to_folder' => [$bookmark->id]
+        ]);
     }
 
     public function testWillNotSendNotificationWhenNotificationsIsDisabled(): void

@@ -7,14 +7,12 @@ use App\Models\FolderCollaboratorPermission;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 use App\Enums\Permission;
 use App\Models\FolderCollaborator;
-use Illuminate\Testing\Assert as PHPUnit;
 use Tests\Traits\CreatesCollaboration;
 
 class LeaveFolderCollaborationTest extends TestCase
@@ -109,12 +107,15 @@ class LeaveFolderCollaborationTest extends TestCase
             'folder_id' => $folder->id
         ])->assertOk();
 
-        $notificationData = DatabaseNotification::query()->where('notifiable_id', $folderOwner->id)->sole(['data'])->data;
+        $notificationData = $folderOwner->notifications()->sole(['data', 'type']);
 
-        PHPUnit::assertArraySubset([
+        $this->assertEquals('collaboratorExitedFolder', $notificationData->type);
+        $this->assertEquals($notificationData->data, [
+            'N-type'  => 'collaboratorExitedFolder',
+            'version' => '1.0.0',
             'exited_from_folder' => $folder->id,
-            'exited_by'          => $collaborator->id,
-        ], $notificationData);
+            'exited_by' => $collaborator->id,
+        ]);
     }
 
     public function testWillNotNotifyFolderOwner_whenNotificationsAreDisabled(): void

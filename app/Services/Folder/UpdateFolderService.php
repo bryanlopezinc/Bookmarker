@@ -16,9 +16,9 @@ use App\Models\FolderCollaborator;
 use App\Models\Scopes\DisabledActionScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Models\User;
+use App\Notifications\FolderUpdatedNotification;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use Illuminate\Support\Facades\Hash;
-use App\Notifications\FolderUpdatedNotification as Notification;
 use App\Repositories\NotificationRepository;
 use Illuminate\Validation\ValidationException;
 
@@ -140,11 +140,12 @@ final class UpdateFolderService
 
     private function notifyFolderOwner(Folder $folder, int $authUserId): void
     {
+        $settings = $folder->settings;
+        $notifications = [];
+
         if ($folder->user_id === $authUserId) {
             return;
         }
-
-        $settings = $folder->settings;
 
         if (
             $settings->notificationsAreDisabled() ||
@@ -153,9 +154,15 @@ final class UpdateFolderService
             return;
         }
 
-        $this->notifications->notify(
-            $folder->user_id,
-            new Notification($folder, $authUserId)
-        );
+        foreach (array_keys($folder->getDirty()) as $modified) {
+            $notifications[] = match ($modified) {
+                'name'        => new FolderUpdatedNotification($folder, $authUserId, $modified),
+                'description' => new FolderUpdatedNotification($folder, $authUserId, $modified),
+            };
+        }
+
+        foreach ($notifications as $notification) {
+            $this->notifications->notify($folder->user_id, $notification);
+        }
     }
 }

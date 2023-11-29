@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources\Notifications;
 
 use App\DataTransferObjects\Notifications\FolderUpdated;
+use App\Filesystem\ProfileImageFileSystem;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 final class FolderUpdatedNotificationResource extends JsonResource
@@ -25,6 +26,7 @@ final class FolderUpdatedNotificationResource extends JsonResource
         return [
             'type'       => 'FolderUpdatedNotification',
             'attributes' => [
+                'modified'            => $this->notification->modifiedAttribute,
                 'changes'             => $this->notification->changes,
                 'id'                  => $this->notification->uuid,
                 'collaborator_exists' => $updatedBy !== null,
@@ -33,6 +35,7 @@ final class FolderUpdatedNotificationResource extends JsonResource
                 'collaborator'        => $this->when($updatedBy !== null, [
                     'id'   => $updatedBy?->id,
                     'name' => $updatedBy?->full_name,
+                    'profile_image_url' => (new ProfileImageFileSystem())->publicUrl($updatedBy?->profile_image_path)
                 ]),
                 'folder'              => $this->when($folder !== null, [
                     'name' => $folder?->name,

@@ -99,7 +99,7 @@ class FetchNotificationResourcesRepository
         if (!empty($userIds = $this->extractIds('users'))) {
             $query->addSelect([
                 'users' => User::query()
-                    ->select(DB::raw("JSON_ARRAYAGG(JSON_OBJECT('id', id, 'first_name', first_name, 'last_name', last_name))")) //phpcs:ignore
+                    ->select(DB::raw("JSON_ARRAYAGG(JSON_OBJECT('id', id, 'first_name', first_name, 'last_name', last_name, 'profile_image_path', profile_image_path))")) //phpcs:ignore
                     ->whereIntegerInRaw('id', $userIds)
             ]);
         }

@@ -14,7 +14,6 @@ use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
@@ -291,14 +290,16 @@ class RemoveFolderBookmarksTest extends TestCase
             'folder' => $folder->id
         ])->assertOk();
 
-        $notificationData = DatabaseNotification::query()->where('notifiable_id', $folderOwner->id)->sole(['data'])->data;
+        $notificationData = $folderOwner->notifications()->sole(['data', 'type']);
 
-        $this->assertEquals($folder->id, $notificationData['removed_from_folder']);
-        $this->assertEquals($collaborator->id, $notificationData['removed_by']);
-
-        foreach ($notificationData['bookmarks_removed'] as $bookmarkID) {
-            $this->assertTrue($bookmarkIDs->contains($bookmarkID));
-        }
+        $this->assertEquals('bookmarksRemovedFromFolder', $notificationData->type);
+        $this->assertEquals($notificationData->data, [
+            'N-type'  => 'bookmarksRemovedFromFolder',
+            'version' => '1.0.0',
+            'removed_from_folder' => $folder->id,
+            'removed_by' => $collaborator->id,
+            'bookmarks_removed' => $bookmarkIDs->all()
+        ]);
     }
 
     public function testWillNotSendNotificationsWhenNotificationsIsDisabled(): void

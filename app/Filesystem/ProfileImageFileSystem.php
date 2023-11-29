@@ -30,17 +30,17 @@ final class ProfileImageFileSystem
         return $file->storePublicly('', self::DISK);
     }
 
-    public function delete(string $fileName): bool
+    public function delete(?string $fileName): bool
     {
+        if (!$fileName) {
+            return false;
+        }
+
         return $this->filesystem->delete($fileName);
     }
 
     public function publicUrl(?string $fileName): string
     {
-        if (!$fileName) {
-            return $this->filesystem->url(self::DEFAULT);
-        }
-
-        return $this->filesystem->url($fileName);
+        return $this->filesystem->url($fileName ?: self::DEFAULT);
     }
 }

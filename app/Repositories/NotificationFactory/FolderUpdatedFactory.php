@@ -12,12 +12,15 @@ final class FolderUpdatedFactory implements Factory
 {
     public function create(FetchNotificationResourcesRepository $repository, DatabaseNotification $notification): object
     {
+        $data = $notification->data;
+
         return new FolderUpdated(
-            $repository->findFolderByID($notification->data['folder_updated']),
-            $repository->findUserByID($notification->data['updated_by']),
+            $repository->findFolderByID($data['folder_updated']),
+            $repository->findUserByID($data['updated_by']),
             $notification->data['changes'],
             $notification->id,
-            $notification->created_at->toDateTimeString() //@phpstan-ignore-line
+            $notification->created_at->toDateTimeString(), //@phpstan-ignore-line
+            $data['modified']
         );
     }
 }

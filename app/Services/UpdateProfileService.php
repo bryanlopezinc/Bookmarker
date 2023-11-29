@@ -34,11 +34,9 @@ final class UpdateProfileService
         }
 
         if ($validated->has('profile_photo')) {
-            if ($user->profile_image_path) {
-                $this->filesystem->delete($user->profile_image_path);
-            }
-
             $attributes['profile_image_path'] = $this->filesystem->store($request->file('profile_photo'));
+
+            $this->filesystem->delete($user->profile_image_path);
         }
 
         $user->update($attributes);

@@ -11,8 +11,6 @@ use App\Enums\Permission;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Notifications\DatabaseNotification;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
@@ -23,7 +21,6 @@ use App\Models\FolderCollaborator;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\Services\Folder\MuteCollaboratorService;
 use App\UAC;
-use Illuminate\Testing\Assert as PHPUnit;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Traits\CreatesCollaboration;
 
@@ -352,9 +349,9 @@ class AcceptFolderCollaborationInviteTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
+        [$collaborator, $invitee, $folderOwner] = UserFactory::new()->count(3)->create();
 
-        $folder = FolderFactory::new()->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
@@ -366,13 +363,16 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
 
-        $notificationData = DatabaseNotification::query()->where('notifiable_id', $folder->user_id)->first(['data'])->data;
+        $notificationData = $folderOwner->notifications()->sole(['data', 'type']);
 
-        PHPUnit::assertArraySubset([
+        $this->assertEquals('collaboratorAddedToFolder', $notificationData->type);
+        $this->assertEquals($notificationData->data, [
+            'N-type' => 'collaboratorAddedToFolder',
+            'version' => '1.0.0',
             'new_collaborator_id'   => $invitee->id,
             'added_to_folder'       => $folder->id,
-            'added_by_collaborator' => $collaborator->id,
-        ], $notificationData);
+            'added_by_collaborator' => $collaborator->id
+        ]);
     }
 
     public function testWillNotNotifyFolderOwnerWhenNotificationsIsDisabled(): void

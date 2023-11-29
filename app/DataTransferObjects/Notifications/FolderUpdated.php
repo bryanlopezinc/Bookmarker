@@ -14,7 +14,8 @@ final class FolderUpdated
         public readonly ?User $collaborator,
         public readonly array $changes,
         public readonly string $uuid,
-        public readonly string $notifiedOn
+        public readonly string $notifiedOn,
+        public readonly string $modifiedAttribute
     ) {
     }
 }

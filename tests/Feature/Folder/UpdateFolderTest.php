@@ -12,13 +12,11 @@ use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
-use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
-use Illuminate\Testing\Assert as PHPUnit;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Traits\CreatesCollaboration;
 
@@ -317,22 +315,39 @@ class UpdateFolderTest extends TestCase
             'folder'      => $folder->id,
         ])->assertOk();
 
-        $notificationData = DatabaseNotification::query()->where('notifiable_id', $folder->user_id)->sole(['data'])->data;
+        $notificationData = $folderOwner->notifications()->get(['data', 'type']);
 
-        PHPUnit::assertArraySubset([
+        $this->assertEquals(['FolderUpdated', 'FolderUpdated'], $notificationData->pluck('type')->all());
+        $expected = [
+            'N-type'         => 'FolderUpdated',
+            'version'        => '1.0.0',
+            'updated_by'     => $collaborator->id,
             'folder_updated' => $folder->id,
-            'updated_by' => $collaborator->id,
-            'changes' => [
-                'name' => [
-                    'from' => $folder->name,
-                    'to' => $newName
+        ];
+
+        $this->assertCount(2, $notificationData);
+        
+        $this->assertEquals(
+            $notificationData->pluck('data')->sortBy('modified')->all(),
+            [
+                [
+                    ...$expected,
+                    'modified'  => 'description',
+                    'changes' => [
+                        'from' => $folder->description,
+                        'to' => $newDescription,
+                    ],
                 ],
-                'description' => [
-                    'from' => $folder->description,
-                    'to' => $newDescription
-                ],
+                [
+                    ...$expected,
+                    'modified' => 'name',
+                    'changes' => [
+                        'from' => $folder->name,
+                        'to' => $newName,
+                    ],
+                ]
             ]
-        ], $notificationData);
+        );
     }
 
     public function testWillNotSendNotificationWhenUpdateWasPerformedByFolderOwner(): void

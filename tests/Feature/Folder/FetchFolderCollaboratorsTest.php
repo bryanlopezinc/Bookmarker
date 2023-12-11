@@ -8,6 +8,7 @@ use App\UAC;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse as Response;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\AssertValidPaginationData;
 use Tests\TestCase;
@@ -204,9 +205,9 @@ class FetchFolderCollaboratorsTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
         $otherFolder = FolderFactory::new()->create();
 
-        $this->CreateCollaborationRecord($collaborators[0], $folder, Permission::VIEW_BOOKMARKS);
+        $this->CreateCollaborationRecord($collaborators[0], $folder, Permission::INVITE_USER);
         $this->CreateCollaborationRecord($collaborators[1], $otherFolder, Permission::ADD_BOOKMARKS);
-        $this->CreateCollaborationRecord($collaborators[2], $folder, Permission::VIEW_BOOKMARKS);
+        $this->CreateCollaborationRecord($collaborators[2], $folder, Permission::INVITE_USER);
 
         $this->fetchCollaboratorsResponse(['folder_id' => $folder->id, 'name' => 'bryan'])
             ->assertOk()
@@ -232,7 +233,7 @@ class FetchFolderCollaboratorsTest extends TestCase
 
         $this->CreateCollaborationRecord($hasAllPermissions, $folder, UAC::all()->toArray());
         $this->CreateCollaborationRecord($hasOnlyAddBookmarksPermission, $folder, Permission::ADD_BOOKMARKS);
-        $this->CreateCollaborationRecord($hasOnlyReadPermission, $folder, Permission::VIEW_BOOKMARKS);
+        $this->CreateCollaborationRecord($hasOnlyReadPermission, $folder);
         $this->CreateCollaborationRecord($hasOnlyInviteUserPermission, $folder, Permission::INVITE_USER);
         $this->CreateCollaborationRecord($hasOnlyDeletePermission, $folder, Permission::DELETE_BOOKMARKS);
         $this->CreateCollaborationRecord($hasOnlyUpdatePermission, $folder, Permission::UPDATE_FOLDER);

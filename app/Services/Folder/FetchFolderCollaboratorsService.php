@@ -63,21 +63,21 @@ final class FetchFolderCollaboratorsService
                     ->whereColumn('id', 'folders_collaborators.invited_by')
             ]);
 
-        if ($permissions) {
+        if ($permissions?->isEmpty()) {
+            $query->whereNotExists($collaboratorPermissionsQuery);
+        }
+
+        if ($permissions?->isNotEmpty()) {
             $query->whereExists(function (&$query) use ($permissions, $collaboratorPermissionsQuery) {
                 $builder = $collaboratorPermissionsQuery
-                    ->select('user_id')
-                    ->groupBy('user_id');
+                    ->select('user_id', 'folder_id')
+                    ->groupBy('user_id', 'folder_id');
 
                 if ($permissions->hasAllPermissions()) {
                     $builder->havingRaw("COUNT(*) = {$permissions->count()}");
                 }
 
-                if ($permissions->isReadOnly()) {
-                    $builder->havingRaw("COUNT(*) = 1");
-                }
-
-                if (!$permissions->isReadOnly()) {
+                if (!$permissions->hasAllPermissions() && $permissions->isNotEmpty()) {
                     $permissionsQuery = FolderPermission::select('id')->whereIn('name', $permissions->toArray());
 
                     $builder->whereIn('permission_id', $permissionsQuery)->havingRaw("COUNT(*) = {$permissions->count()}");
@@ -108,7 +108,7 @@ final class FetchFolderCollaboratorsService
 
             return new FolderCollaborator(
                 $model,
-                new UAC($model->permissions),
+                new UAC($model->permissions ?? []),
                 $wasInvitedBy ? new User($wasInvitedBy) : null
             );
         };

@@ -61,7 +61,7 @@ final class FetchUserFoldersWhereContainsCollaboratorRepository
         return function (Folder $folder) {
             return new UserCollaboration(
                 $folder,
-                new UAC(json_decode($folder->permissions, true, flags: JSON_THROW_ON_ERROR))
+                new UAC(json_decode($folder->permissions ?? '{}', true, flags: JSON_THROW_ON_ERROR))
             );
         };
     }

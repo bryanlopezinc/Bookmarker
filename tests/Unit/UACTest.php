@@ -14,46 +14,46 @@ class UACTest extends TestCase
     {
         $this->expectExceptionCode(1601);
 
-        new UAC([Permission::VIEW_BOOKMARKS, Permission::VIEW_BOOKMARKS]);
+        new UAC([Permission::ADD_BOOKMARKS, Permission::ADD_BOOKMARKS]);
     }
 
     public function testContainsAllMethod(): void
     {
-        $uac = new UAC([Permission::VIEW_BOOKMARKS]);
+        $uac = new UAC([Permission::UPDATE_FOLDER]);
         $this->assertFalse($uac->containsAll(new UAC([Permission::INVITE_USER, Permission::ADD_BOOKMARKS])));
-        $this->assertTrue($uac->containsAll(new UAC([Permission::VIEW_BOOKMARKS])));
+        $this->assertTrue($uac->containsAll(new UAC([Permission::UPDATE_FOLDER])));
         $this->assertFalse($uac->containsAll(new UAC([])));
 
-        $uac = new UAC([Permission::VIEW_BOOKMARKS, Permission::INVITE_USER]);
-        $this->assertTrue($uac->containsAll(new UAC([Permission::VIEW_BOOKMARKS])));
+        $uac = new UAC([Permission::UPDATE_FOLDER, Permission::INVITE_USER]);
+        $this->assertTrue($uac->containsAll(new UAC([Permission::UPDATE_FOLDER])));
 
-        $this->assertFalse((new UAC([]))->containsAll(new UAC([Permission::VIEW_BOOKMARKS])));
+        $this->assertFalse((new UAC([]))->containsAll(new UAC([Permission::UPDATE_FOLDER])));
     }
 
     public function testContainsAnyMethod(): void
     {
-        $uac = new UAC([Permission::VIEW_BOOKMARKS]);
+        $uac = new UAC([Permission::UPDATE_FOLDER]);
         $this->assertFalse($uac->containsAny(new UAC([Permission::INVITE_USER, Permission::ADD_BOOKMARKS])));
         $this->assertFalse($uac->containsAny(new UAC([])));
-        $this->assertTrue($uac->containsAny(new UAC([Permission::VIEW_BOOKMARKS, Permission::ADD_BOOKMARKS])));
-        $this->assertTrue($uac->containsAny(new UAC([Permission::VIEW_BOOKMARKS])));
+        $this->assertTrue($uac->containsAny(new UAC([Permission::UPDATE_FOLDER, Permission::ADD_BOOKMARKS])));
+        $this->assertTrue($uac->containsAny(new UAC([Permission::UPDATE_FOLDER])));
 
-        $this->assertFalse((new UAC([]))->containsAny(new UAC([Permission::VIEW_BOOKMARKS])));
-        $this->assertFalse((new UAC([Permission::VIEW_BOOKMARKS]))->containsAny(new UAC([])));
+        $this->assertFalse((new UAC([]))->containsAny(new UAC([Permission::UPDATE_FOLDER])));
+        $this->assertFalse((new UAC([Permission::UPDATE_FOLDER]))->containsAny(new UAC([])));
     }
 
     public function testCanAddBookmarksMethod(): void
     {
-        $uac = new UAC([Permission::VIEW_BOOKMARKS]);
+        $uac = new UAC([Permission::UPDATE_FOLDER]);
         $this->assertFalse($uac->canAddBookmarks());
 
         $this->assertFalse((new UAC([]))->canAddBookmarks());
-        $this->assertTrue((new UAC([Permission::VIEW_BOOKMARKS, Permission::ADD_BOOKMARKS]))->canAddBookmarks());
+        $this->assertTrue((new UAC([Permission::UPDATE_FOLDER, Permission::ADD_BOOKMARKS]))->canAddBookmarks());
     }
 
     public function testCanRemoveBookmarksMethod(): void
     {
-        $uac = new UAC([Permission::VIEW_BOOKMARKS]);
+        $uac = new UAC([Permission::UPDATE_FOLDER]);
         $this->assertFalse($uac->canRemoveBookmarks());
 
         $this->assertFalse((new UAC([]))->canRemoveBookmarks());
@@ -62,7 +62,7 @@ class UACTest extends TestCase
 
     public function testCanInviteUserMethod(): void
     {
-        $uac = new UAC([Permission::VIEW_BOOKMARKS]);
+        $uac = new UAC([Permission::UPDATE_FOLDER]);
         $this->assertFalse($uac->canInviteUser());
 
         $this->assertFalse((new UAC([]))->canInviteUser());
@@ -97,7 +97,7 @@ class UACTest extends TestCase
     #[Test]
     public function toJsonResponseMethod(): void
     {
-        $uac = new UAC([Permission::VIEW_BOOKMARKS]);
+        $uac = new UAC([]);
         $this->assertEquals([], $uac->toJsonResponse());
     }
 
@@ -106,6 +106,6 @@ class UACTest extends TestCase
     {
         $this->expectNotToPerformAssertions();
 
-        new UAC([Permission::VIEW_BOOKMARKS->value]);
+        new UAC([Permission::UPDATE_FOLDER->value]);
     }
 }

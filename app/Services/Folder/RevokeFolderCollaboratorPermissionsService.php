@@ -7,6 +7,7 @@ namespace App\Services\Folder;
 use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
+use App\Models\FolderCollaborator;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\UAC;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -41,17 +42,18 @@ final class RevokeFolderCollaboratorPermissionsService
         try {
             FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
         } catch (FolderNotFoundException $e) {
-            $userFolderAccess = $this->permissions->all($authUserId, $folder->id);
+            $userIsACollaborator = FolderCollaborator::query()
+                ->where('folder_id', $folder->id)
+                ->where('collaborator_id', $authUserId)
+                ->exists();
 
-            if ($userFolderAccess->isEmpty()) {
+            if (!$userIsACollaborator) {
                 throw $e;
             }
 
-            if (!$userFolderAccess->canAddBookmarks()) {
-                throw new HttpResponseException(
-                    response()->json(['message' => 'NoRevokePermissionPermission'], 403)
-                );
-            }
+            throw new HttpResponseException(
+                response()->json(['message' => 'NoRevokePermissionPermission'], 403)
+            );
         }
     }
 

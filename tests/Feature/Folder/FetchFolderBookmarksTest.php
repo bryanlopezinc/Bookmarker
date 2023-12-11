@@ -151,7 +151,7 @@ class FetchFolderBookmarksTest extends TestCase
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
         $collaborator = UserFactory::new()->create();
-        $this->CreateCollaborationRecord($collaborator, $folder, Permission::VIEW_BOOKMARKS);
+        $this->CreateCollaborationRecord($collaborator, $folder);
         $this->loginUser($collaborator);
         $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
 

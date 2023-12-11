@@ -91,7 +91,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
         $this->assertTrue($collaboratorPermissions->canInviteUser());
 
-        $this->assertEquals($collaboratorPermissions->count(), 2);
+        $this->assertEquals($collaboratorPermissions->count(), 1);
     }
 
     public function testGrantMultiplePermissions(): void
@@ -113,7 +113,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
         $this->assertTrue($collaboratorPermissions->canInviteUser());
         $this->assertTrue($collaboratorPermissions->canAddBookmarks());
-        $this->assertEquals($collaboratorPermissions->count(), 3);
+        $this->assertEquals($collaboratorPermissions->count(), 2);
     }
 
     public function testWillReturnForbiddenWhenGrantingPermissionToSelf(): void

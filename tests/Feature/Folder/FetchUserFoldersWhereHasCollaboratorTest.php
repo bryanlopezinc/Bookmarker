@@ -7,6 +7,7 @@ use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\AssertValidPaginationData;
 use Tests\TestCase;
 use Tests\Traits\CreatesCollaboration;
@@ -88,6 +89,22 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
             ]);
     }
 
+    #[Test]
+    public function whenCollaboratorHasNoPermissions(): void
+    {
+        $users = UserFactory::times(2)->create();
+
+        $folders = FolderFactory::times(2)->for($users[1])->create();
+
+        $this->CreateCollaborationRecord($users[0], $folders[0]);
+
+        $this->loginUser($users[1]);
+        $this->whereHasCollaboratorsResponse(['collaborator_id' => $users[0]->id])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonCount(0, 'data.0.attributes.permissions');
+    }
+
     public function testWillReturnOnlyUserFolders(): void
     {
         $users = UserFactory::times(3)->create();
@@ -101,8 +118,8 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
             )
             ->create();
 
-        $this->CreateCollaborationRecord($collaborator, $folders[0]);
-        $this->CreateCollaborationRecord($collaborator, $folders[1]);
+        $this->CreateCollaborationRecord($collaborator, $folders[0], Permission::ADD_BOOKMARKS);
+        $this->CreateCollaborationRecord($collaborator, $folders[1], Permission::ADD_BOOKMARKS);
 
         Passport::actingAs($users[1]);
         $this->whereHasCollaboratorsResponse(['collaborator_id' => $collaborator->id])
@@ -131,7 +148,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
         [$user, $collaborator] = UserFactory::times(2)->create();
         $userFolder = FolderFactory::new()->for($user)->create();
 
-        $this->CreateCollaborationRecord($collaborator, $userFolder);
+        $this->CreateCollaborationRecord($collaborator, $userFolder, Permission::ADD_BOOKMARKS);
 
         Passport::actingAs($user);
         $this->whereHasCollaboratorsResponse($query = ['collaborator_id' => $collaborator->id])

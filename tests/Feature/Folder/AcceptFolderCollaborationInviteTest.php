@@ -234,7 +234,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $user->id,
             $invitee->id,
             $folder->id,
-            new UAC([Permission::VIEW_BOOKMARKS])
+            new UAC([Permission::ADD_BOOKMARKS])
         );
 
         $folder->delete();
@@ -259,7 +259,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $user->id,
             $invitee->id,
             $folder->id,
-            new UAC([Permission::VIEW_BOOKMARKS])
+            new UAC([Permission::ADD_BOOKMARKS])
         );
 
         $invitee->delete();
@@ -284,7 +284,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $user->id,
             $invitee->id,
             $folder->id,
-            new UAC([Permission::VIEW_BOOKMARKS])
+            new UAC([Permission::ADD_BOOKMARKS])
         );
 
         $user->delete();
@@ -337,7 +337,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $folderOwner->id,
             $invitee->id,
             $folder->id,
-            new UAC([Permission::VIEW_BOOKMARKS])
+            new UAC([Permission::ADD_BOOKMARKS])
         );
 
         $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
@@ -358,7 +358,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $collaborator->id,
             $invitee->id,
             $folder->id,
-            new UAC([Permission::VIEW_BOOKMARKS])
+            new UAC([Permission::ADD_BOOKMARKS])
         );
 
         $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
@@ -392,7 +392,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $collaborator->id,
             $invitee->id,
             $folder->id,
-            new UAC([Permission::VIEW_BOOKMARKS])
+            new UAC([Permission::ADD_BOOKMARKS])
         );
 
         $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
@@ -419,7 +419,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $collaborator->id,
             $invitee->id,
             $folder->id,
-            new UAC([Permission::VIEW_BOOKMARKS])
+            new UAC([Permission::ADD_BOOKMARKS])
         );
 
         $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
@@ -442,7 +442,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $collaborator->id,
             $invitee->id,
             $folder->id,
-            new UAC([Permission::VIEW_BOOKMARKS])
+            new UAC([Permission::ADD_BOOKMARKS])
         );
 
         Notification::fake();
@@ -468,7 +468,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $folderOwner->id,
             $invitee->id,
             $folder->id,
-            new UAC([Permission::VIEW_BOOKMARKS])
+            new UAC([Permission::ADD_BOOKMARKS])
         );
 
         Notification::fake();
@@ -497,7 +497,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             $collaborator->id,
             $invitee->id,
             $folder->id,
-            new UAC([Permission::VIEW_BOOKMARKS])
+            new UAC([Permission::ADD_BOOKMARKS])
         );
 
         Notification::fake();

@@ -88,7 +88,6 @@ final class UAC implements Countable, Arrayable
     public function toJsonResponse(): array
     {
         $permissions = $this->permissions
-            ->filter(fn (string $permission) => $permission !== Permission::VIEW_BOOKMARKS->value)
             ->values()
             ->map(function (string $permission) {
                 return match ($permission) {
@@ -104,7 +103,7 @@ final class UAC implements Countable, Arrayable
 
     public static function all(): UAc
     {
-        return new UAc(Permission::cases());
+        return new UAC(Permission::cases());
     }
 
     /**
@@ -182,10 +181,5 @@ final class UAC implements Countable, Arrayable
     public function canUpdateFolder(): bool
     {
         return $this->permissions->contains(Permission::UPDATE_FOLDER->value);
-    }
-
-    public function isReadOnly(): bool
-    {
-        return $this->permissions->contains(Permission::VIEW_BOOKMARKS->value) && $this->permissions->count() === 1;
     }
 }

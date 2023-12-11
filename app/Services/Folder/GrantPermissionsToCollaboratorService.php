@@ -7,6 +7,7 @@ namespace App\Services\Folder;
 use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
+use App\Models\Scopes\UserIsCollaboratorScope;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\UAC;
 use App\ValueObjects\UserId;
@@ -19,7 +20,9 @@ final class GrantPermissionsToCollaboratorService
 
     public function grant(int $collaboratorId, int $folderId, UAC $permissions): void
     {
-        $folder = Folder::query()->find($folderId, ['id', 'user_id']);
+        $folder = Folder::query()
+            ->tap(new UserIsCollaboratorScope($collaboratorId))
+            ->find($folderId, ['id', 'user_id']);
 
         FolderNotFoundException::throwIf(!$folder);
 
@@ -29,7 +32,7 @@ final class GrantPermissionsToCollaboratorService
 
         $this->ensureIsNotGrantingPermissionsToSelf($collaboratorId, UserId::fromAuthUser()->value());
 
-        $this->ensureUserIsCurrentlyACollaborator($currentPermissions);
+        $this->ensureUserIsCurrentlyACollaborator($folder);
 
         $this->ensureCollaboratorDoesNotHavePermissions($currentPermissions, $permissions);
 
@@ -45,9 +48,9 @@ final class GrantPermissionsToCollaboratorService
         }
     }
 
-    private function ensureUserIsCurrentlyACollaborator(UAC $currentPermissions): void
+    private function ensureUserIsCurrentlyACollaborator(Folder $folder): void
     {
-        if ($currentPermissions->isEmpty()) {
+        if (!$folder->userIsCollaborator) {
             throw HttpException::notFound(['message' => 'UserNotACollaborator']);
         }
     }

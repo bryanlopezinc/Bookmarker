@@ -19,16 +19,13 @@ trait CreatesCollaboration
         Permission|array $permissions = [],
         int $inviter = null
     ): void {
-        $permissions = $permissions ? new UAC($permissions) : new UAC(Permission::VIEW_BOOKMARKS);
-
-        $permissions = $permissions->toCollection()
-            ->add(Permission::VIEW_BOOKMARKS->value) // add collaborators can view folder bookmarks
-            ->unique()
-            ->all();
+        $permissions = $permissions ? new UAC($permissions) : new UAC([]);
 
         $repository = new CollaboratorPermissionsRepository;
 
-        $repository->create($collaborator->id, $folder->id, new UAC($permissions));
+        if ($permissions->isNotEmpty()) {
+            $repository->create($collaborator->id, $folder->id, $permissions);
+        }
 
         (new CollaboratorRepository)->create($folder->id, $collaborator->id, $inviter ?: $folder->user_id);
     }

@@ -68,7 +68,7 @@ final class LeaveFolderCollaborationService
         }
 
         if (
-            $collaboratorPermissions->isReadOnly() &&
+            $collaboratorPermissions->isEmpty() &&
             $folderNotificationSettings->onlyCollaboratorWithWritePermissionNotificationIsEnabled()
         ) {
             return;

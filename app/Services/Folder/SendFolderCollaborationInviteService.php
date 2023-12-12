@@ -118,6 +118,10 @@ final class SendFolderCollaborationInviteService
             if ($folder->visibility->isPrivate()) {
                 throw HttpException::forbidden(['message' => 'CannotAddCollaboratorsToPrivateFolder']);
             }
+
+            if ($folder->visibility->isPasswordProtected()) {
+                throw HttpException::forbidden(['message' => 'CannotAddCollaboratorsToPasswordProtectedFolder']);
+            }
         } catch (FolderNotFoundException $e) {
             $userFolderPermissions = $this->permissions->all($inviter->id, $folder->id);
 

@@ -15,10 +15,10 @@ final class FolderUpdatedNotification extends Notification //implements ShouldQu
     use Queueable;
     use FormatDatabaseNotification;
 
-    public function __construct(private Folder $folder, private int $updatedBy, private string $modified)
+    public function __construct(private Folder $folder, private int $updatedBy, private string $modifiedAttributeName)
     {
-        if (!in_array($modified, ['name', 'description'])) {
-            throw new \InvalidArgumentException("Invalid modified attribute {$modified}");
+        if (!in_array($modifiedAttributeName, ['name', 'description'])) {
+            throw new \InvalidArgumentException("Invalid modified attribute {$modifiedAttributeName}");
         }
 
         $this->afterCommit();
@@ -44,7 +44,7 @@ final class FolderUpdatedNotification extends Notification //implements ShouldQu
             'N-type'         => $this->databaseType(),
             'updated_by'     => $this->updatedBy,
             'folder_updated' => $this->folder->id,
-            'modified'       => $this->modified,
+            'modified'       => $this->modifiedAttributeName,
         ];
 
         if (!empty($changes = $this->getChanges())) {
@@ -56,13 +56,13 @@ final class FolderUpdatedNotification extends Notification //implements ShouldQu
 
     private function getChanges(): array
     {
-        if (!in_array($this->modified, ['name', 'description'])) {
+        if (!in_array($this->modifiedAttributeName, ['name', 'description'])) {
             return [];
         }
 
         return [
-            'from' => $this->folder->getOriginal($this->modified),
-            'to'   => $this->folder->getDirty()[$this->modified] ?? $this->folder->{$this->modified}
+            'from' => $this->folder->getOriginal($this->modifiedAttributeName),
+            'to'   => $this->folder->getDirty()[$this->modifiedAttributeName] ?? $this->folder->{$this->modifiedAttributeName}
         ];
     }
 

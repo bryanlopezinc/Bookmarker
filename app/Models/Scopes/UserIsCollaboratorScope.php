@@ -25,7 +25,7 @@ final class UserIsCollaboratorScope implements Scope
 
         $query->addSelect([
             $this->as => FolderCollaborator::select('id')
-                ->whereRaw("folder_id = {$folderModel->getQualifiedKeyName()}")
+                ->whereColumn('folder_id', $folderModel->getQualifiedKeyName())
                 ->where('collaborator_id', $this->userId)
         ]);
     }

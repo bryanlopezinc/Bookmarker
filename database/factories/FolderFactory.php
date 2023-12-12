@@ -30,6 +30,7 @@ final class FolderFactory extends Factory
             'user_id'     => UserFactory::new(),
             'visibility'  => FolderVisibility::PUBLIC,
             'settings'    => new FolderSettings([]),
+            'password'    => null
         ];
     }
 
@@ -41,6 +42,14 @@ final class FolderFactory extends Factory
     public function visibleToCollaboratorsOnly(): self
     {
         return $this->state(['visibility' => FolderVisibility::COLLABORATORS]);
+    }
+
+    public function passwordProtected(string $password = 'password'): self
+    {
+        return $this->state([
+            'visibility' => FolderVisibility::PASSWORD_PROTECTED,
+            'password'   => $password
+        ]);
     }
 
     public function settings(FolderSettingsBuilder $settings): self

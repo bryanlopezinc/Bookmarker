@@ -61,6 +61,10 @@ final class AcceptFolderCollaborationInviteService
             throw HttpException::forbidden(['message' => 'PrivateFolder']);
         }
 
+        if ($folder->visibility->isPasswordProtected()) {
+            throw HttpException::forbidden(['message' => 'FolderIsPasswordProtected']);
+        }
+
         if ($folder->inviteeIsACollaborator) {
             return;
         }

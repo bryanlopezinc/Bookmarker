@@ -16,6 +16,7 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
  * @property int $id
  * @property string|null $description
  * @property string $name
+ * @property string $password
  * @property FolderSettings $settings
  * @property FolderVisibility $visibility
  * @property int $user_id
@@ -40,7 +41,10 @@ final class Folder extends Model
     /**
      * {@inheritdoc}
      */
-    protected $casts = ['visibility' => FolderVisibility::class];
+    protected $casts = [
+        'visibility' => FolderVisibility::class,
+        'password' => 'hashed'
+    ];
 
     public function user(): BelongsTo
     {
@@ -79,11 +83,7 @@ final class Folder extends Model
                 'collaboratorsCount' => FolderCollaborator::query()
                     ->selectRaw('COUNT(*)')
                     ->whereRaw("folder_id = {$this->getQualifiedKeyName()}")
-                    ->whereExists(function (&$query) {
-                        $query = User::query()
-                            ->whereRaw('id = folders_collaborators.collaborator_id')
-                            ->getQuery();
-                    })
+                    ->whereExists(User::whereRaw('id = folders_collaborators.collaborator_id'))
             ]);
         });
 
@@ -92,11 +92,7 @@ final class Folder extends Model
                 'bookmarksCount' => FolderBookmark::query()
                     ->selectRaw('COUNT(*)')
                     ->whereRaw("folder_id = {$this->qualifyColumn('id')}")
-                    ->whereExists(function (&$query) {
-                        $query = Bookmark::query()
-                            ->whereRaw('id = folders_bookmarks.bookmark_id')
-                            ->getQuery();
-                    })
+                    ->whereExists(Bookmark::whereRaw('id = folders_bookmarks.bookmark_id'))
             ]);
         });
 

@@ -157,6 +157,28 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             ->assertExactJson(['message' => 'PrivateFolder']);
     }
 
+    #[Test]
+    public function whenFolderIsPasswordProtected(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
+
+        $folder = FolderFactory::new()->passwordProtected()->for($folderOwner)->create();
+
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $folderOwner->id,
+            $invitee->id,
+            $folder->id,
+            new UAC(Permission::ADD_BOOKMARKS)
+        );
+
+        $this->acceptInviteResponse(['invite_hash' => $id])
+            ->assertForbidden()
+            ->assertExactJson(['message' => 'FolderIsPasswordProtected']);
+    }
+
     public function testAcceptInviteWithPermissions(): void
     {
         //Will give only view-bookmarks permission if no permissions were specified

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('description', 150)->nullable();
             $table->string('name', 50)->index();
             $table->json('settings');
+            $table->string('password')->nullable();
             $table->timestamps();
             $table->index('updated_at');
         });

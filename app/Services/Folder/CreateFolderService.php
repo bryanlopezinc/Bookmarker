@@ -19,7 +19,8 @@ final class CreateFolderService
             'name'        => $request->validated('name'),
             'user_id'     => auth()->id(),
             'visibility'  => FolderVisibility::fromRequest($request),
-            'settings'    => new FolderSettings($this->buildSettings($request))
+            'settings'    => new FolderSettings($this->buildSettings($request)),
+            'password'    => $request->validated('folder_password')
         ]);
     }
 

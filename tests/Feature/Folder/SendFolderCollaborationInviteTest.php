@@ -208,8 +208,8 @@ class SendFolderCollaborationInviteTest extends TestCase
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
 
-        Folder::retrieved(function (Folder $retrieved) {
-            $retrieved->collaboratorsCount = 1000;
+        Folder::retrieved(function (Folder $folder) {
+            $folder->collaboratorsCount = 1000;
         });
 
         Passport::actingAs($folderOwner);
@@ -318,6 +318,18 @@ class SendFolderCollaborationInviteTest extends TestCase
         $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->id])
             ->assertForbidden()
             ->assertExactJson(['message' => 'CannotAddCollaboratorsToPrivateFolder']);
+    }
+
+    #[Test]
+    public function willReturnForbiddenWhenFolderIsPasswordProtected(): void
+    {
+        [$user, $invitee] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->for($user)->passwordProtected()->create();
+
+        Passport::actingAs($user);
+        $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->id])
+            ->assertForbidden()
+            ->assertExactJson(['message' => 'CannotAddCollaboratorsToPasswordProtectedFolder']);
     }
 
     public function testWillReturnOkWhenInviterIsACollaborator(): void

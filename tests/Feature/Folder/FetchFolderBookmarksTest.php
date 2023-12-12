@@ -64,6 +64,9 @@ class FetchFolderBookmarksTest extends TestCase
         [$folderOwner, $user] = UserFactory::times(2)->create();
 
         $privateFolder = FolderFactory::new()->private()->for($folderOwner)->create();
+        $bookmark = BookmarkFactory::new()->for($folderOwner)->create();
+
+        $this->addBookmarksToFolder->add($privateFolder->id, $bookmark->id);
 
         //when user is not loggedIn
         $this->folderBookmarksResponse($query = ['folder_id' => $privateFolder->id])
@@ -76,7 +79,7 @@ class FetchFolderBookmarksTest extends TestCase
             ->assertExactJson(['message' => 'FolderNotFound']);
 
         Passport::actingAs($folderOwner);
-        $this->folderBookmarksResponse($query)->assertOk();
+        $this->folderBookmarksResponse($query)->assertOk()->assertJsonCount(1, 'data');
     }
 
     #[Test]
@@ -84,12 +87,15 @@ class FetchFolderBookmarksTest extends TestCase
     {
         [$folderOwner, $user, $collaborator] = UserFactory::times(3)->create();
 
-        $collaboratorOnlyFolder = FolderFactory::new()->visibleToCollaboratorsOnly()->for($folderOwner)->create();
+        $folder = FolderFactory::new()->visibleToCollaboratorsOnly()->for($folderOwner)->create();
+        $bookmark = BookmarkFactory::new()->for($folderOwner)->create();
 
-        $this->CreateCollaborationRecord($collaborator, $collaboratorOnlyFolder);
+        $this->addBookmarksToFolder->add($folder->id, $bookmark->id);
+
+        $this->CreateCollaborationRecord($collaborator, $folder);
 
         //when user is not loggedIn
-        $this->folderBookmarksResponse($query = ['folder_id' => $collaboratorOnlyFolder->id])
+        $this->folderBookmarksResponse($query = ['folder_id' => $folder->id])
             ->assertNotFound()
             ->assertExactJson(['message' => 'FolderNotFound']);
 
@@ -99,10 +105,10 @@ class FetchFolderBookmarksTest extends TestCase
             ->assertExactJson(['message' => 'FolderNotFound']);
 
         Passport::actingAs($folderOwner);
-        $this->folderBookmarksResponse($query)->assertOk();
+        $this->folderBookmarksResponse($query)->assertOk()->assertJsonCount(1, 'data');
 
         Passport::actingAs($collaborator);
-        $this->folderBookmarksResponse($query)->assertOk();
+        $this->folderBookmarksResponse($query)->assertOk()->assertJsonCount(1, 'data');
     }
 
     #[Test]
@@ -111,20 +117,56 @@ class FetchFolderBookmarksTest extends TestCase
         [$folderOwner, $user, $collaborator] = UserFactory::times(3)->create();
 
         $publicFolder = FolderFactory::new()->for($folderOwner)->create();
+        $bookmark = BookmarkFactory::new()->for($folderOwner)->create();
+
+        $this->addBookmarksToFolder->add($publicFolder->id, $bookmark->id);
 
         $this->CreateCollaborationRecord($collaborator, $publicFolder);
 
         //when user is not loggedIn
-        $this->folderBookmarksResponse($query = ['folder_id' => $publicFolder->id])->assertOk();
+        $this->folderBookmarksResponse($query = ['folder_id' => $publicFolder->id])
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
 
         Passport::actingAs($user);
-        $this->folderBookmarksResponse($query)->assertOk();
+        $this->folderBookmarksResponse($query)->assertOk()->assertJsonCount(1, 'data');
 
         Passport::actingAs($folderOwner);
-        $this->folderBookmarksResponse($query)->assertOk();
+        $this->folderBookmarksResponse($query)->assertOk()->assertJsonCount(1, 'data');
 
         Passport::actingAs($collaborator);
-        $this->folderBookmarksResponse($query)->assertOk();
+        $this->folderBookmarksResponse($query)->assertOk()->assertJsonCount(1, 'data');
+    }
+
+    #[Test]
+    public function whenFolderIsPasswordProtected(): void
+    {
+        [$folderOwner, $user] = UserFactory::times(2)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->passwordProtected()->create();
+        $bookmark = BookmarkFactory::new()->for($folderOwner)->create();
+
+        $this->addBookmarksToFolder->add($folder->id, $bookmark->id);
+
+        //when user is not loggedIn
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])
+            ->assertBadRequest()
+            ->assertExactJson(['message' => 'PasswordRequired']);
+
+        $this->folderBookmarksResponse(['folder_id' => $folder->id, 'folder_password' => 'notPassword'])
+            ->assertUnauthorized()
+            ->assertExactJson(['message' => 'InvalidFolderPassword']);
+
+        $this->folderBookmarksResponse($query = ['folder_id' => $folder->id, 'folder_password' => 'password'])
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+
+        $this->loginUser($user);
+        $this->folderBookmarksResponse($query)->assertOk()->assertJsonCount(1, 'data');
+
+        $this->loginUser($folderOwner);
+        //owner does not need password to access
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk()->assertJsonCount(1, 'data');
     }
 
     public function testFolderOwnerCanViewHiddenBookmarks(): void
@@ -149,31 +191,34 @@ class FetchFolderBookmarksTest extends TestCase
     {
         $folderOwner = UserFactory::new()->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
+        $bookmark = BookmarkFactory::new()->for($folderOwner)->create();
+
+        $this->addBookmarksToFolder->add($folder->id, $bookmark->id);
 
         $collaborator = UserFactory::new()->create();
         $this->CreateCollaborationRecord($collaborator, $folder);
         $this->loginUser($collaborator);
-        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk()->assertJsonCount(1, 'data');
 
         $collaborator = UserFactory::new()->create();
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
         $this->loginUser($collaborator);
-        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk()->assertJsonCount(1, 'data');
 
         $collaborator = UserFactory::new()->create();
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::DELETE_BOOKMARKS);
         $this->loginUser($collaborator);
-        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk()->assertJsonCount(1, 'data');
 
         $collaborator = UserFactory::new()->create();
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
         $this->loginUser($collaborator);
-        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk()->assertJsonCount(1, 'data');
 
         $collaborator = UserFactory::new()->create();
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER);
         $this->loginUser($collaborator);
-        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk()->assertJsonCount(1, 'data');
     }
 
     public function testBookmarkBelongsToAuthUser(): void
@@ -352,7 +397,7 @@ class FetchFolderBookmarksTest extends TestCase
     #[Test]
     public function willNotIncludeBookmarksFromMutedCollaborators(): void
     {
-        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        [$folderOwner, $collaborator, $user] = UserFactory::times(3)->create();
 
         /** @var MuteCollaboratorService */
         $muteCollaboratorService = app(MuteCollaboratorService::class);
@@ -362,6 +407,15 @@ class FetchFolderBookmarksTest extends TestCase
 
         $this->addBookmarksToFolder->add($folder->id, $bookmark->id);
         $muteCollaboratorService->mute($folder->id, $collaborator->id, $folderOwner->id);
+
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+
+        $this->loginUser($user);
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
 
         $this->loginUser($folderOwner);
         $this->folderBookmarksResponse(['folder_id' => $folder->id])

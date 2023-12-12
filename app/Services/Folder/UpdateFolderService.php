@@ -14,12 +14,14 @@ use App\Http\Requests\CreateOrUpdateFolderRequest as Request;
 use App\Models\Folder;
 use App\Models\FolderCollaborator;
 use App\Models\Scopes\DisabledActionScope;
+use App\Models\Scopes\UserIsCollaboratorScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Models\User;
 use App\Notifications\FolderUpdatedNotification;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use Illuminate\Support\Facades\Hash;
 use App\Repositories\NotificationRepository;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Validation\ValidationException;
 
 final class UpdateFolderService
@@ -36,67 +38,73 @@ final class UpdateFolderService
      */
     public function fromRequest(Request $request): void
     {
-        $folder = Folder::onlyAttributes(['id', 'user_id', 'name', 'description', 'visibility', 'settings',])
+        $authUser = auth()->user();
+
+        $isUpdatingFolderPassword = $request->has('folder_password') && $request->missing('visibility');
+
+        $folder = Folder::select(['id', 'user_id', 'name', 'description', 'visibility', 'settings'])
             ->tap(new WhereFolderOwnerExists())
             ->tap(new DisabledActionScope(Permission::UPDATE_FOLDER))
+            ->tap(new UserIsCollaboratorScope($authUser->getAuthIdentifier()))
             //we could query for collaborators count but no need to count
             //rows when we could do a simple select.
             ->addSelect([
                 'hasCollaborators' => FolderCollaborator::query()
                     ->select('id')
                     ->whereColumn('folder_id', 'folders.id')
+                    ->whereExists(User::whereRaw('id = folders_collaborators.collaborator_id'))
                     ->limit(1)
             ])
             ->find($request->integer('folder'));
 
         FolderNotFoundException::throwIf(!$folder);
 
-        $authUser = auth()->user();
+        $this->ensureUserHasPermissionToUpdateFolder($folder, $request, $authUser->getAuthIdentifier());
 
-        $this->ensureUserCanUpdateFolder($folder, $request, $authUser->getAuthIdentifier());
+        $this->ensureCanChangeVisibility($folder, $request);
 
-        $this->ensureNoVisibilityConflict($folder, $request);
+        if ($isUpdatingFolderPassword && !$folder->visibility->isPasswordProtected()) {
+            throw new HttpException(['message' => 'FolderNotPasswordProtected'], 400);
+        }
 
         $this->confirmPasswordBeforeUpdatingPrivacy($request, $authUser);
 
-        $updatedFolder = $this->performUpdate($request, $folder);
-
-        $this->notifyFolderOwner($updatedFolder, $authUser->getAuthIdentifier());
+        $this->notifyFolderOwner($this->performUpdate($request, $folder), $authUser->getAuthIdentifier());
     }
 
-    private function ensureNoVisibilityConflict(Folder $folder, Request $request): void
+    private function ensureCanChangeVisibility(Folder $folder, Request $request): void
     {
         if ($request->missing('visibility')) {
             return;
         }
 
-        if (FolderVisibility::fromRequest($request) == $folder->visibility) {
+        $newVisibility = FolderVisibility::fromRequest($request);
+
+        if ($newVisibility == $folder->visibility) {
             throw HttpException::conflict(['message' => 'DuplicateVisibilityState']);
+        }
+
+        if ($folder->hasCollaborators && $newVisibility->isPrivate()) {
+            throw HttpException::forbidden(['message' => 'CannotMakeFolderWithCollaboratorsPrivate']);
+        }
+
+        if ($folder->hasCollaborators && $newVisibility->isPasswordProtected()) {
+            throw HttpException::forbidden(['message' => 'CannotMakeFolderWithCollaboratorsPasswordProtected']);
         }
     }
 
-    private function ensureUserCanUpdateFolder(Folder $folder, Request $request, int $authUserId): void
+    private function ensureUserHasPermissionToUpdateFolder(Folder $folder, Request $request, int $authUserId): void
     {
-        $folderBelongsToAuthUser = $folder->user_id === auth()->id();
-
         try {
-            FolderNotFoundException::throwIf(!$folderBelongsToAuthUser);
-
-            if ($folder->hasCollaborators && FolderVisibility::fromRequest($request)->isPrivate()) {
-                throw HttpException::forbidden(['message' => 'CannotMakeFolderWithCollaboratorsPrivate']);
-            }
+            FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
         } catch (FolderNotFoundException $e) {
-            $userPermissions = $this->permissions->all($authUserId, $folder->id);
-
-            if ($userPermissions->isEmpty()) {
-                throw $e;
-            }
+            throw_if(!$folder->userIsCollaborator, $e);
 
             if ($request->has('visibility')) {
                 throw HttpException::forbidden(['message' => 'NoUpdatePrivacyPermission']);
             }
 
-            if (!$userPermissions->canUpdateFolder()) {
+            if (!$this->permissions->all($authUserId, $folder->id)->canUpdateFolder()) {
                 throw new PermissionDeniedException(Permission::UPDATE_FOLDER);
             }
 
@@ -109,15 +117,19 @@ final class UpdateFolderService
     private function performUpdate(Request $request, Folder $folder): Folder
     {
         if ($request->has('name')) {
-            $folder->name = $request->input('name');
+            $folder->name = $request->validated('name');
         }
 
         if ($request->has('description')) {
-            $folder->description = $request->input('description');
+            $folder->description = $request->validated('description');
         }
 
         if ($request->has('visibility')) {
             $folder->visibility = FolderVisibility::fromRequest($request);
+        }
+
+        if ($request->has('folder_password') && $request->missing('visibility')) {
+            $folder->password = $request->validated('folder_password');
         }
 
         $updatedFolder = clone $folder;
@@ -134,7 +146,7 @@ final class UpdateFolderService
         }
 
         if (!Hash::check($request->input('password'), $authUser->getAuthPassword())) {
-            throw HttpException::forbidden(['message' => 'InvalidPassword']);
+            throw new AuthenticationException('InvalidPassword');
         }
     }
 
@@ -143,11 +155,8 @@ final class UpdateFolderService
         $settings = $folder->settings;
         $notifications = [];
 
-        if ($folder->user_id === $authUserId) {
-            return;
-        }
-
         if (
+            $folder->user_id === $authUserId ||
             $settings->notificationsAreDisabled() ||
             $settings->folderUpdatedNotificationIsDisabled()
         ) {

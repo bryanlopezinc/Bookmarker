@@ -7,6 +7,7 @@ use App\ValueObjects\FolderSettings as FS;
 use App\Models\Folder;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Test;
@@ -113,6 +114,27 @@ class CreateFolderTest extends TestCase
         $folder = Folder::where('user_id', $user->id)->first();
 
         $this->assertTrue($folder->visibility->isPrivate());
+    }
+
+    #[Test]
+    public function createPasswordProtectedFolder(): void
+    {
+        $this->loginUser($user = UserFactory::new()->create());
+
+        $this->createFolderResponse(['name' => $this->faker->word, 'visibility' => 'password_protected'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['folder_password' => 'The folder password field is required.']);
+
+        $this->createFolderResponse([
+            'name' => $this->faker->word,
+            'visibility' => 'password_protected',
+            'folder_password' => 'password'
+        ])->assertCreated();
+
+        $folder = Folder::where('user_id', $user->id)->sole();
+
+        $this->assertTrue($folder->visibility->isPasswordProtected());
+        $this->assertTrue(Hash::check('password', $folder->password));
     }
 
     public function testCreateFolderWithNotifications(): void

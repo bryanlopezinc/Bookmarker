@@ -6,7 +6,6 @@ namespace App\Http\Requests;
 
 use App\Enums\FolderVisibility;
 use App\Rules\FolderSettingsRule;
-use App\Rules\ResourceIdRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -24,8 +23,7 @@ final class CreateOrUpdateFolderRequest extends FormRequest
             'description'     => ['nullable', 'string', 'max:150'],
             'visibility'      => ['nullable', 'string', 'in:public,private,collaborators,password_protected'],
             'settings'        => $this->folderSettingsRules(),
-            'folder'          => [Rule::requiredIf(!$this->isCreateFolderRequest()), new ResourceIdRule()],
-            'password'        => $this->passwordRules(),
+            'password'        => ['sometimes', 'filled', 'string'],
             'folder_password' => [Rule::requiredIf(FolderVisibility::fromRequest($this)->isPasswordProtected()), 'string', 'filled']
         ];
     }
@@ -41,15 +39,6 @@ final class CreateOrUpdateFolderRequest extends FormRequest
                 !$this->isCreateFolderRequest(),
                 [Rule::requiredIf(!$this->hasAny('description', 'visibility', 'folder_password'))]
             )
-        ];
-    }
-
-    private function passwordRules(): array
-    {
-        return [
-            'filled',
-            'string',
-            Rule::requiredIf(!$this->isCreateFolderRequest() && $this->input('visibility') === 'public'),
         ];
     }
 

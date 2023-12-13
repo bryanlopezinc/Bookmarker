@@ -53,7 +53,7 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
     Route::prefix('folders')->group(function () {
         Route::get('/', F\FetchFolderController::class)->middleware([StringToArray::keys('fields')])->name('fetchFolder');
         Route::post('/', F\CreateFolderController::class)->name('createFolder');
-        Route::patch('/', F\UpdateFolderController::class)->middleware([StringToArray::keys('tags')])->name('updateFolder');
+        Route::patch('/{folder_id}', F\UpdateFolderController::class)->middleware([StringToArray::keys('tags')])->name('updateFolder');
         Route::get('/{folder_id}/bookmarks', F\FetchFolderBookmarksController::class)->withoutMiddleware('auth:api')->name('folderBookmarks');
 
         Route::prefix('bookmarks')->group(function () {

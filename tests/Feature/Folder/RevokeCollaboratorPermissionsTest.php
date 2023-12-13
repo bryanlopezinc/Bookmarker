@@ -39,7 +39,6 @@ class RevokeCollaboratorPermissionsTest extends TestCase
         $this->revokePermissionsResponse(['collaborator_id' => 4, 'folder_id' => 4])->assertUnauthorized();
     }
 
-
     public function testWillReturnNotFoundWhenRouteParametersAreInvalid(): void
     {
         $this->revokePermissionsResponse(['folder_id' => 44, 'collaborator_id' => 'foo'])->assertNotFound();

@@ -8,6 +8,7 @@ use App\Enums\FolderVisibility;
 use App\Enums\Permission;
 use App\Exceptions\FolderActionDisabledException;
 use App\Exceptions\FolderNotFoundException;
+use App\Exceptions\FolderNotModifiedAfterOperationException;
 use App\Exceptions\HttpException;
 use App\Exceptions\PermissionDeniedException;
 use App\Http\Requests\CreateOrUpdateFolderRequest as Request;
@@ -40,8 +41,6 @@ final class UpdateFolderService
     {
         $authUser = auth()->user();
 
-        $isUpdatingFolderPassword = $request->has('folder_password') && $request->missing('visibility');
-
         $folder = Folder::select(['id', 'user_id', 'name', 'description', 'visibility', 'settings'])
             ->tap(new WhereFolderOwnerExists())
             ->tap(new DisabledActionScope(Permission::UPDATE_FOLDER))
@@ -55,7 +54,7 @@ final class UpdateFolderService
                     ->whereExists(User::whereRaw('id = folders_collaborators.collaborator_id'))
                     ->limit(1)
             ])
-            ->find($request->integer('folder'));
+            ->find($request->route('folder_id'));
 
         FolderNotFoundException::throwIf(!$folder);
 
@@ -63,11 +62,7 @@ final class UpdateFolderService
 
         $this->ensureCanChangeVisibility($folder, $request);
 
-        if ($isUpdatingFolderPassword && !$folder->visibility->isPasswordProtected()) {
-            throw new HttpException(['message' => 'FolderNotPasswordProtected'], 400);
-        }
-
-        $this->confirmPasswordBeforeUpdatingPrivacy($request, $authUser);
+        $this->confirmPasswordBeforeMakingPrivateFolderPublic($request, $authUser, $folder);
 
         $this->notifyFolderOwner($this->performUpdate($request, $folder), $authUser->getAuthIdentifier());
     }
@@ -79,10 +74,6 @@ final class UpdateFolderService
         }
 
         $newVisibility = FolderVisibility::fromRequest($request);
-
-        if ($newVisibility == $folder->visibility) {
-            throw HttpException::conflict(['message' => 'DuplicateVisibilityState']);
-        }
 
         if ($folder->hasCollaborators && $newVisibility->isPrivate()) {
             throw HttpException::forbidden(['message' => 'CannotMakeFolderWithCollaboratorsPrivate']);
@@ -116,6 +107,14 @@ final class UpdateFolderService
 
     private function performUpdate(Request $request, Folder $folder): Folder
     {
+        $newVisibility = FolderVisibility::fromRequest($request);
+
+        $isUpdatingFolderPassword = $request->has('folder_password') && $request->missing('visibility');
+
+        if ($isUpdatingFolderPassword && !$folder->visibility->isPasswordProtected()) {
+            throw new HttpException(['message' => 'FolderNotPasswordProtected'], 400);
+        }
+
         if ($request->has('name')) {
             $folder->name = $request->validated('name');
         }
@@ -125,11 +124,15 @@ final class UpdateFolderService
         }
 
         if ($request->has('visibility')) {
-            $folder->visibility = FolderVisibility::fromRequest($request);
+            $folder->visibility = $newVisibility;
         }
 
-        if ($request->has('folder_password') && $request->missing('visibility')) {
+        if ($isUpdatingFolderPassword || $newVisibility->isPasswordProtected()) {
             $folder->password = $request->validated('folder_password');
+        }
+
+        if (!$folder->isDirty()) {
+            throw new FolderNotModifiedAfterOperationException();
         }
 
         $updatedFolder = clone $folder;
@@ -139,13 +142,21 @@ final class UpdateFolderService
         return $updatedFolder;
     }
 
-    private function confirmPasswordBeforeUpdatingPrivacy(Request $request, User $authUser): void
+    private function confirmPasswordBeforeMakingPrivateFolderPublic(Request $request, User $authUser, Folder $folder): void
     {
-        if ($request->missing('visibility') || $request->input('visibility') !== 'public') {
+        $newVisibility = FolderVisibility::fromRequest($request);
+
+        $isMakingPrivateFolderPublic = $newVisibility->isPublic() && $request->has('visibility') && $folder->visibility->isPrivate();
+
+        if (!$isMakingPrivateFolderPublic) {
             return;
         }
 
-        if (!Hash::check($request->input('password'), $authUser->getAuthPassword())) {
+        if ($request->missing('password')) {
+            throw ValidationException::withMessages(['password' => 'The Password field is required for this action.']);
+        }
+
+        if (!Hash::check($request->input('password'), $authUser->password)) {
             throw new AuthenticationException('InvalidPassword');
         }
     }

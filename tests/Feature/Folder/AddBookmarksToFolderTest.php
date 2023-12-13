@@ -15,7 +15,6 @@ use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
-use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
@@ -26,9 +25,9 @@ use Tests\Traits\WillCheckBookmarksHealth;
 
 class AddBookmarksToFolderTest extends TestCase
 {
-    use WithFaker,
-        WillCheckBookmarksHealth,
-        CreatesCollaboration;
+    use WithFaker;
+    use WillCheckBookmarksHealth;
+    use CreatesCollaboration;
 
     protected function addBookmarksToFolderResponse(array $parameters = []): TestResponse
     {

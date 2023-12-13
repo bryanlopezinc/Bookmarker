@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs;
 
-use App\Exceptions\UserNotFoundException;
 use App\Jobs\UpdateBookmarkWithHttpResponse;
 use App\Models\Bookmark;
 use App\Models\Source;
@@ -12,14 +11,12 @@ use App\Models\User;
 use App\Readers\BookmarkMetaData;
 use App\Readers\HttpClientInterface;
 use App\Repositories\BookmarkRepository;
-use App\Repositories\UserRepository;
 use App\Utils\UrlHasher;
 use App\ValueObjects\Url;
 use Closure;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\SourceFactory;
 use Illuminate\Foundation\Testing\WithFaker;
-use Mockery\MockInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
@@ -121,7 +118,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
                     return true;
                 }))
                 ->willReturnCallback(function (Url $url) {
-                    return (new UrlHasher)->hashUrl($url);
+                    return (new UrlHasher())->hashUrl($url);
                 });
         });
 

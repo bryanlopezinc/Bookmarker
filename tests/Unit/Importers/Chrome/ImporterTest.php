@@ -21,7 +21,8 @@ use Tests\Unit\Importers\MockFilesystem;
 
 class ImporterTest extends TestCase
 {
-    use WithFaker, MockFilesystem;
+    use WithFaker;
+    use MockFilesystem;
 
     public function testWillThrowExceptionWhenFileDoesNotExists(): void
     {

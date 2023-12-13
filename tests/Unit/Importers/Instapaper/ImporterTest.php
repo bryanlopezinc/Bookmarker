@@ -16,12 +16,12 @@ use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use App\Importers\Instapaper\Importer;
 use App\Services\CreateBookmarkService;
 use App\ValueObjects\Url;
-use Carbon\Carbon;
 use Tests\Unit\Importers\MockFilesystem;
 
 class ImporterTest extends TestCase
 {
-    use WithFaker, MockFilesystem;
+    use WithFaker;
+    use MockFilesystem;
 
     public function testWillThrowExceptionIfFileDoesNotExists(): void
     {

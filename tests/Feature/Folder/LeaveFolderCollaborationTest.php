@@ -17,7 +17,8 @@ use Tests\Traits\CreatesCollaboration;
 
 class LeaveFolderCollaborationTest extends TestCase
 {
-    use WithFaker, CreatesCollaboration;
+    use WithFaker;
+    use CreatesCollaboration;
 
     protected function leaveFolderCollaborationResponse(array $parameters = []): TestResponse
     {

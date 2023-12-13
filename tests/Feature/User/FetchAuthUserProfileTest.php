@@ -43,7 +43,7 @@ class FetchAuthUserProfileTest extends TestCase
                 $json->where('data.attributes.favorites_count', 0);
                 $json->where('data.attributes.folders_count', 0);
                 $json->where('data.attributes.has_verified_email', true);
-                $json->where('data.attributes.profile_image_url', (new ProfileImageFileSystem)->publicUrl($user->profile_image_path));
+                $json->where('data.attributes.profile_image_url', (new ProfileImageFileSystem())->publicUrl($user->profile_image_path));
                 $json->etc();
             })
             ->assertJsonStructure([
@@ -69,7 +69,7 @@ class FetchAuthUserProfileTest extends TestCase
 
         $bookmarks = BookmarkFactory::times(2)->for($user)->create();
 
-        (new FavoriteRepository)->createMany($bookmarks->pluck('id')->all(), $user->id);
+        (new FavoriteRepository())->createMany($bookmarks->pluck('id')->all(), $user->id);
 
         $this->getUserProfileResponse()
             ->assertOk()

@@ -26,7 +26,8 @@ use Tests\Traits\CreatesCollaboration;
 
 class AcceptFolderCollaborationInviteTest extends TestCase
 {
-    use WithFaker, CreatesCollaboration;
+    use WithFaker;
+    use CreatesCollaboration;
 
     protected InviteTokensStore $tokenStore;
 
@@ -191,7 +192,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
 
-        $savedPermissions = (new CollaboratorPermissionsRepository)->all($invitee->id, $folder->id);
+        $savedPermissions = (new CollaboratorPermissionsRepository())->all($invitee->id, $folder->id);
 
         $this->assertEquals(array_diff($permissions->toArray(), $savedPermissions->toArray()), []);
     }

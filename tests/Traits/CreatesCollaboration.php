@@ -21,12 +21,12 @@ trait CreatesCollaboration
     ): void {
         $permissions = $permissions ? new UAC($permissions) : new UAC([]);
 
-        $repository = new CollaboratorPermissionsRepository;
+        $repository = new CollaboratorPermissionsRepository();
 
         if ($permissions->isNotEmpty()) {
             $repository->create($collaborator->id, $folder->id, $permissions);
         }
 
-        (new CollaboratorRepository)->create($folder->id, $collaborator->id, $inviter ?: $folder->user_id);
+        (new CollaboratorRepository())->create($folder->id, $collaborator->id, $inviter ?: $folder->user_id);
     }
 }

@@ -29,9 +29,9 @@ class YoutubeHttpClientTest extends TestCase
         $data = json_decode($expectedJson);
 
         $this->assertEquals(data_get($data, 'items.0.snippet.thumbnails.medium.url'), $response->thumbnailUrl->toString());
-        $this->assertEquals(data_get($data, 'items.0.snippet.title'),  $response->title);
-        $this->assertEquals(data_get($data, 'items.0.snippet.description'),  $response->description);
-        $this->assertEquals('youtube',  $response->hostSiteName);
+        $this->assertEquals(data_get($data, 'items.0.snippet.title'), $response->title);
+        $this->assertEquals(data_get($data, 'items.0.snippet.description'), $response->description);
+        $this->assertEquals('youtube', $response->hostSiteName);
     }
 
     public function testWillThrowExceptionIf_Api_KeyIsNotSet(): void

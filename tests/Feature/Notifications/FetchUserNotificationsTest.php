@@ -14,7 +14,8 @@ use Tests\Feature\AssertValidPaginationData;
 
 class FetchUserNotificationsTest extends TestCase
 {
-    use MakesHttpRequest, AssertValidPaginationData;
+    use MakesHttpRequest;
+    use AssertValidPaginationData;
 
     public function testIsAccessibleViaPath(): void
     {

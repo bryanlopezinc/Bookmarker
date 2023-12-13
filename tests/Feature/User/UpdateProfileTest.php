@@ -131,9 +131,9 @@ class UpdateProfileTest extends TestCase
     #[Test]
     public function updateProfileImage(): void
     {
-        $filesystem = new ProfileImageFileSystem;
+        $filesystem = new ProfileImageFileSystem();
         $OtherUserProfileImage = $filesystem->store(UploadedFile::fake()->image('myPicture.jpg'));
-     
+
         $this->loginUser($user = UserFactory::new()->create());
         $this->updateProfileResponse(['profile_photo' => UploadedFile::fake()->image('myPicture.jpg')->size(1000)])->assertOk();
 

@@ -24,7 +24,7 @@ class BookmarksHealthRepositoryTest extends TestCase
         BookmarkHealthFactory::new()->checkedDaysAgo(6)->create(['bookmark_id' => $second]);
         BookmarkHealthFactory::new()->checkedDaysAgo(7)->create(['bookmark_id' => $third]);
 
-        $result = (new BookmarksHealthRepository)->whereNotRecentlyChecked($ids);
+        $result = (new BookmarksHealthRepository())->whereNotRecentlyChecked($ids);
 
         $this->assertCount(3, $result);
         $this->assertContains($second, $result);
@@ -35,7 +35,7 @@ class BookmarksHealthRepositoryTest extends TestCase
     {
         $bookmark = BookmarkFactory::new()->create();
 
-        $result = (new BookmarksHealthRepository)->whereNotRecentlyChecked([$bookmark->id]);
+        $result = (new BookmarksHealthRepository())->whereNotRecentlyChecked([$bookmark->id]);
 
         $this->assertCount(1, $result);
         $this->assertContains($bookmark->id, $result);
@@ -53,7 +53,7 @@ class BookmarksHealthRepositoryTest extends TestCase
         //first bookmarkID was healthy.
         BookmarkHealthFactory::new()->create(['bookmark_id' => $first, 'last_checked' => now()->subWeek()]);
 
-        (new BookmarksHealthRepository)->update([
+        (new BookmarksHealthRepository())->update([
             new HealthCheckResult($first, new Response(new Psr7Response(404))),
             new HealthCheckResult($second, new Response(new Psr7Response())),
             new HealthCheckResult($third, new Response(new Psr7Response())),

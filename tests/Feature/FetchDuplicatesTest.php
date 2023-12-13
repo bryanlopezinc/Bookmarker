@@ -14,7 +14,9 @@ use Tests\Traits\AssertsBookmarkJson;
 
 class FetchDuplicatesTest extends TestCase
 {
-    use WithFaker, AssertsBookmarkJson, AssertValidPaginationData;
+    use WithFaker;
+    use AssertsBookmarkJson;
+    use AssertValidPaginationData;
 
     protected function fetchDuplicatesResponse(array $parameters = []): TestResponse
     {
@@ -62,7 +64,7 @@ class FetchDuplicatesTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $hash = (new UrlHasher)->hashUrl(new Url($this->faker->url));
+        $hash = (new UrlHasher())->hashUrl(new Url($this->faker->url));
 
         $duplicates = BookmarkFactory::times(2)->for($user)->create(['url_canonical_hash' => $hash]);
 
@@ -76,7 +78,7 @@ class FetchDuplicatesTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $hash = (new UrlHasher)->hashUrl(new Url($this->faker->url));
+        $hash = (new UrlHasher())->hashUrl(new Url($this->faker->url));
 
         BookmarkFactory::times(5)->create(['url_canonical_hash' => $hash]);
 

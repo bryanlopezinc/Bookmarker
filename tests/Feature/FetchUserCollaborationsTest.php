@@ -16,7 +16,8 @@ use Tests\Traits\CreatesCollaboration;
 
 class FetchUserCollaborationsTest extends TestCase
 {
-    use AssertValidPaginationData, CreatesCollaboration;
+    use AssertValidPaginationData;
+    use CreatesCollaboration;
 
     protected function userCollaborationsResponse(array $parameters = []): TestResponse
     {

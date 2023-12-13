@@ -23,8 +23,8 @@ class DeleteOrphanRecordsTest extends TestCase
         $userBookmark = BookmarkFactory::new()->for($user)->create();
 
         $user->delete();
-        
-        (new DeleteOrphanRecords)->handle();
+
+        (new DeleteOrphanRecords())->handle();
 
         $this->assertDatabaseMissing(Bookmark::class, ['id' => $userBookmark->id]);
         $this->assertDatabaseHas(Bookmark::class, ['id' => $bookmark->id]);

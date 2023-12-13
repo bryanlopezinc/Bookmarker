@@ -24,7 +24,8 @@ use Tests\Traits\CreatesCollaboration;
 
 class SendFolderCollaborationInviteTest extends TestCase
 {
-    use WithFaker, CreatesCollaboration;
+    use WithFaker;
+    use CreatesCollaboration;
 
     protected ToggleFolderCollaborationRestriction $toggleFolderCollaborationRestriction;
 

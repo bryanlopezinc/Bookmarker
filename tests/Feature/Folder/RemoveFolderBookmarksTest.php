@@ -24,7 +24,8 @@ use Tests\Traits\CreatesCollaboration;
 
 class RemoveFolderBookmarksTest extends TestCase
 {
-    use WithFaker, CreatesCollaboration;
+    use WithFaker;
+    use CreatesCollaboration;
 
     protected function removeFolderBookmarksResponse(array $parameters = []): TestResponse
     {

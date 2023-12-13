@@ -16,7 +16,8 @@ use Tests\Traits\WillCheckBookmarksHealth;
 
 class DeleteFolderTest extends TestCase
 {
-    use WithFaker, WillCheckBookmarksHealth;
+    use WithFaker;
+    use WillCheckBookmarksHealth;
 
     protected function deleteFolderResponse($folderId = 50, array $parameters = []): TestResponse
     {

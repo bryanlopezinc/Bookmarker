@@ -12,7 +12,6 @@ use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Laravel\Passport\Passport;
-use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\AssertValidPaginationData;
 use Tests\TestCase;
@@ -21,9 +20,9 @@ use Tests\Traits\WillCheckBookmarksHealth;
 
 class FetchFolderBookmarksTest extends TestCase
 {
-    use WillCheckBookmarksHealth,
-        AssertValidPaginationData,
-        CreatesCollaboration;
+    use WillCheckBookmarksHealth;
+    use AssertValidPaginationData;
+    use CreatesCollaboration;
 
     private AddBookmarksToFolderService $addBookmarksToFolder;
 

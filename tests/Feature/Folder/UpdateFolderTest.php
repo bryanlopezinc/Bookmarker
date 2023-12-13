@@ -22,7 +22,8 @@ use Tests\Traits\CreatesCollaboration;
 
 class UpdateFolderTest extends TestCase
 {
-    use WithFaker, CreatesCollaboration;
+    use WithFaker;
+    use CreatesCollaboration;
 
     protected function updateFolderResponse(array $parameters = []): TestResponse
     {

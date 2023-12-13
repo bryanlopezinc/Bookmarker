@@ -15,7 +15,8 @@ use PHPUnit\Framework\Attributes\Test;
 
 class FolderUpdatedTest extends TestCase
 {
-    use MakesHttpRequest, WithFaker;
+    use MakesHttpRequest;
+    use WithFaker;
 
     #[Test]
     public function nameUpdatedNotification(): void

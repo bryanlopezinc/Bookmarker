@@ -8,7 +8,6 @@ use App\UAC;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse as Response;
-use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\AssertValidPaginationData;
 use Tests\TestCase;
@@ -16,7 +15,8 @@ use Tests\Traits\CreatesCollaboration;
 
 class FetchFolderCollaboratorsTest extends TestCase
 {
-    use AssertValidPaginationData, CreatesCollaboration;
+    use AssertValidPaginationData;
+    use CreatesCollaboration;
 
     protected function fetchCollaboratorsResponse(array $parameters = []): Response
     {
@@ -84,7 +84,7 @@ class FetchFolderCollaboratorsTest extends TestCase
             ->assertJsonCount(5, 'data.0.attributes')
             ->assertJsonCount(4, 'data.0.attributes.permissions')
             ->assertJsonCount(2, 'data.0.attributes.added_by')
-            ->assertJsonPath('data.0.attributes.profile_image_url', (new ProfileImageFileSystem)->publicUrl($collaborator->profile_image_path))
+            ->assertJsonPath('data.0.attributes.profile_image_url', (new ProfileImageFileSystem())->publicUrl($collaborator->profile_image_path))
             ->assertJsonPath('data.0.attributes.added_by.exists', true)
             ->assertJsonPath('data.0.attributes.added_by.is_auth_user', true)
             ->assertJsonPath('data.0.type', 'folderCollaborator')
@@ -126,7 +126,7 @@ class FetchFolderCollaboratorsTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(3, 'data.0.attributes.added_by')
             ->assertJsonCount(3, 'data.0.attributes.added_by.user')
-            ->assertJsonPath('data.0.attributes.added_by.user.profile_image_url', (new ProfileImageFileSystem)->publicUrl($collaborator->profile_image_path))
+            ->assertJsonPath('data.0.attributes.added_by.user.profile_image_url', (new ProfileImageFileSystem())->publicUrl($collaborator->profile_image_path))
             ->assertJsonPath('data.0.attributes.added_by.exists', true)
             ->assertJsonPath('data.0.attributes.added_by.is_auth_user', false)
             ->assertJsonPath('data.0.attributes.added_by.user.id', $collaborator->id)

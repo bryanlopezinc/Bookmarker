@@ -13,7 +13,7 @@ class ExplodeStringTest extends TestCase
     {
         $request = request()->merge(['foo' => 'bar,baz,far']);
 
-        (new ExplodeString)->handle($request, function () {
+        (new ExplodeString())->handle($request, function () {
         }, 'foo');
 
         $this->assertEquals(['bar', 'baz', 'far'], request('foo'));
@@ -27,7 +27,7 @@ class ExplodeStringTest extends TestCase
             'foo' => ['bar,baz,far']
         ]);
 
-        (new ExplodeString)->handle($request, function () {
+        (new ExplodeString())->handle($request, function () {
         }, 'foo');
 
         $this->assertEquals(['bar', 'baz', 'far'], request('foo'));

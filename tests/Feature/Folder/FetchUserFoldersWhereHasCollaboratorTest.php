@@ -14,8 +14,8 @@ use Tests\Traits\CreatesCollaboration;
 
 class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
 {
-    use AssertValidPaginationData,
-        CreatesCollaboration;
+    use AssertValidPaginationData;
+    use CreatesCollaboration;
 
     protected function whereHasCollaboratorsResponse(array $parameters = []): TestResponse
     {

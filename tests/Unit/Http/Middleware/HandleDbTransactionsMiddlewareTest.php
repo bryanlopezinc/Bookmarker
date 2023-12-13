@@ -38,7 +38,7 @@ class HandleDbTransactionsMiddlewareTest extends TestCase
 
         $request->setMethod('POST');
 
-        (new HandleDbTransactionsMiddleware)->handle($request, function () {
+        (new HandleDbTransactionsMiddleware())->handle($request, function () {
             $this->performTransaction('hello');
 
             return new Response(status: 500);
@@ -49,7 +49,7 @@ class HandleDbTransactionsMiddlewareTest extends TestCase
 
     public function testWillCommitTransactionWhenResponseIsSuccessful(): void
     {
-        (new HandleDbTransactionsMiddleware)->handle(request(), function () {
+        (new HandleDbTransactionsMiddleware())->handle(request(), function () {
             $this->performTransaction('hi');
 
             return new Response(status: 200);

@@ -16,7 +16,8 @@ use Tests\Traits\CreatesCollaboration;
 
 class GrantFolderPermissionToCollaboratorTest extends TestCase
 {
-    use WithFaker, CreatesCollaboration;
+    use WithFaker;
+    use CreatesCollaboration;
 
     protected function grantPermissionsResponse(array $parameters = []): TestResponse
     {
@@ -87,7 +88,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
             'permissions' => 'inviteUser'
         ])->assertOk();
 
-        $collaboratorPermissions = (new Repository)->all($collaborator->id, $folder->id);
+        $collaboratorPermissions = (new Repository())->all($collaborator->id, $folder->id);
 
         $this->assertTrue($collaboratorPermissions->canInviteUser());
 
@@ -109,7 +110,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
             'permissions' => 'inviteUser,addBookmarks'
         ])->assertOk();
 
-        $collaboratorPermissions = (new Repository)->all($collaborator->id, $folder->id);
+        $collaboratorPermissions = (new Repository())->all($collaborator->id, $folder->id);
 
         $this->assertTrue($collaboratorPermissions->canInviteUser());
         $this->assertTrue($collaboratorPermissions->canAddBookmarks());

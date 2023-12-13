@@ -57,7 +57,7 @@ class RemoveBookmarksFromFavoritesTest extends TestCase
 
         $bookmark = BookmarkFactory::new()->for($user)->create();
 
-        (new FavoriteRepository)->create($bookmark->id, $user->id);
+        (new FavoriteRepository())->create($bookmark->id, $user->id);
 
         $this->deleteFavoriteResponse(['bookmarks' => (string)$bookmark->id])->assertOk();
 
@@ -78,7 +78,7 @@ class RemoveBookmarksFromFavoritesTest extends TestCase
             ->pluck('id')
             ->all();
 
-        (new FavoriteRepository)->createMany($ids, $user->id);
+        (new FavoriteRepository())->createMany($ids, $user->id);
 
         $this->deleteFavoriteResponse(['bookmarks' => implode(',', [$ids[0], $ids[1]])])->assertOk();
 

@@ -5,7 +5,6 @@ namespace Tests\Feature\Notifications;
 use Tests\TestCase;
 use Illuminate\Support\Str;
 use Laravel\Passport\Passport;
-use Illuminate\Support\Collection;
 use Database\Factories\UserFactory;
 use Database\Factories\FolderFactory;
 use App\Notifications\NewCollaboratorNotification;
@@ -55,7 +54,7 @@ class CollaboratorAddedTest extends TestCase
                 $this->assertEquals($folder->id, $folderData['id']);
                 return true;
             })
-            ->assertJsonPath('data.0.attributes.new_collaborator', function (array $newCollaboratorData)  use ($newCollaborator) {
+            ->assertJsonPath('data.0.attributes.new_collaborator', function (array $newCollaboratorData) use ($newCollaborator) {
                 $this->assertEquals($newCollaborator->id, $newCollaboratorData['id']);
                 $this->assertEquals($newCollaborator->full_name, $newCollaboratorData['name']);
                 return true;

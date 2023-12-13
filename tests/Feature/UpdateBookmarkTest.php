@@ -17,7 +17,8 @@ use Tests\Traits\WillCheckBookmarksHealth;
 
 class UpdateBookmarkTest extends TestCase
 {
-    use WithFaker, WillCheckBookmarksHealth;
+    use WithFaker;
+    use WillCheckBookmarksHealth;
 
     protected function updateBookmarkResponse(array $parameters = []): TestResponse
     {
@@ -173,7 +174,7 @@ class UpdateBookmarkTest extends TestCase
         /** @var Bookmark */
         $model = BookmarkFactory::new()->for($user)->create();
 
-        (new TagRepository)->attach(
+        (new TagRepository())->attach(
             TagFactory::times(10)->make()->all(),
             $model
         );
@@ -216,7 +217,7 @@ class UpdateBookmarkTest extends TestCase
         /** @var Bookmark */
         $model = BookmarkFactory::new()->for($user)->create();
 
-        (new TagRepository)->attach(
+        (new TagRepository())->attach(
             $tags = TagFactory::times(10)->make()->pluck('name')->all(),
             $model
         );

@@ -49,7 +49,7 @@ class DeleteBookmarkTagsTest extends TestCase
         $bookmark = BookmarkFactory::new()->for($user)->create();
         $tags = TagFactory::new()->count(2)->make([]);
 
-        (new TagRepository)->attach($tags->all(), $bookmark);
+        (new TagRepository())->attach($tags->all(), $bookmark);
 
         $this->deleteBookmarkTagsResponse(['id' => $bookmark->id, 'tags' => $tags[0]->name])->assertOk();
 

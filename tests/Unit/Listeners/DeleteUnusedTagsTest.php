@@ -15,10 +15,10 @@ class DeleteUnusedTagsTest extends TestCase
 {
     public function testWillNotDeleteTagsThatAreAttachedToAResource(): void
     {
-        $listener = new DeleteUnusedTags;
+        $listener = new DeleteUnusedTags();
         $tag = TagFactory::new()->create();
 
-        (new TagRepository)->attach($tag, BookmarkFactory::new()->create());
+        (new TagRepository())->attach($tag, BookmarkFactory::new()->create());
 
         $listener->handle(
             new TagsDetachedEvent([$tag->name])
@@ -29,7 +29,7 @@ class DeleteUnusedTagsTest extends TestCase
 
     public function testWillDeleteTagsThatAreNotAttachedToAnyResource(): void
     {
-        $listener = new DeleteUnusedTags;
+        $listener = new DeleteUnusedTags();
         $tag = TagFactory::new()->create();
 
         $listener->handle(

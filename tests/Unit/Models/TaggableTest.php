@@ -12,7 +12,7 @@ class TaggableTest extends TestCase
 {
     public function testWillThrowExceptionWhenBookmarkHasDuplicateTags(): void
     {
-       $this->expectExceptionCode(23000);
+        $this->expectExceptionCode(23000);
 
         Taggable::query()->create($attributes = [
             'taggable_id' => 5,

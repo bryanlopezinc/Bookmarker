@@ -117,8 +117,8 @@ class RemoveCollaboratorTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        $collaboratorRepository = new CollaboratorRepository;
-        $collaboratorPermissionsRepository = new CollaboratorPermissionsRepository;
+        $collaboratorRepository = new CollaboratorRepository();
+        $collaboratorPermissionsRepository = new CollaboratorPermissionsRepository();
 
         $collaboratorPermissionsRepository->create($collaborator->id, $folder->id, UAC::all());
         $collaboratorPermissionsRepository->create($otherCollaborator->id, $folder->id, UAC::all());
@@ -163,7 +163,7 @@ class RemoveCollaboratorTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        (new CollaboratorRepository)->create($folder->id, $collaborator->id, $folderOwner->id);
+        (new CollaboratorRepository())->create($folder->id, $collaborator->id, $folderOwner->id);
 
         Passport::actingAs($folderOwner);
         $this->deleteCollaboratorResponse([

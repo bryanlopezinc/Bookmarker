@@ -35,7 +35,7 @@ class FetchUserTagsTest extends TestCase
         /** @var Bookmark[] */
         $userBookmarks = BookmarkFactory::times(2)->for($user)->create();
 
-        $repository = new TagRepository;
+        $repository = new TagRepository();
 
         $repository->attach($tag = TagFactory::new()->create(), $userBookmarks[0]);
         $repository->attach($tag, $userBookmarks[1]);

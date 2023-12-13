@@ -9,7 +9,6 @@ use Database\Factories\UserFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\BookmarkFactory;
 use App\Notifications\BookmarksAddedToFolderNotification;
-use Carbon\Carbon;
 use Illuminate\Notifications\DatabaseNotification;
 
 class BookmarksAddedToFolderTest extends TestCase

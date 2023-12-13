@@ -18,10 +18,10 @@ use Tests\Traits\{AssertsBookmarkJson, WillCheckBookmarksHealth};
 
 class FetchUserBookmarksTest extends TestCase
 {
-    use WithFaker,
-    AssertsBookmarkJson,
-    WillCheckBookmarksHealth,
-    AssertValidPaginationData;
+    use WithFaker;
+    use AssertsBookmarkJson;
+    use WillCheckBookmarksHealth;
+    use AssertValidPaginationData;
 
     protected function userBookmarksResponse(array $parameters = []): TestResponse
     {
@@ -44,13 +44,13 @@ class FetchUserBookmarksTest extends TestCase
 
         $this->assertValidPaginationData($this, 'fetchUserBookmarks');
 
-          $this->userBookmarksResponse([
-            'tags' => collect()->times(16, fn () => $this->faker->word)->implode(',')
+        $this->userBookmarksResponse([
+          'tags' => collect()->times(16, fn () => $this->faker->word)->implode(',')
         ])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'tags' => ['The tags must not be greater than 15 characters.']
-            ]);
+          ->assertUnprocessable()
+          ->assertJsonValidationErrors([
+              'tags' => ['The tags must not be greater than 15 characters.']
+          ]);
 
         $this->userBookmarksResponse(['source_id' => 'foo'])
             ->assertUnprocessable()
@@ -59,7 +59,7 @@ class FetchUserBookmarksTest extends TestCase
         $this->userBookmarksResponse(['tags' => str_repeat('H', 23)])
             ->assertUnprocessable()
             ->assertJsonValidationErrorFor('tags.0');
-        }
+    }
 
     public function testWillFetchUserBookmarks(): void
     {
@@ -151,7 +151,7 @@ class FetchUserBookmarksTest extends TestCase
         /** @var Bookmark */
         $expected = $factory->create();
 
-        (new TagRepository)->attach([$tag], $expected);
+        (new TagRepository())->attach([$tag], $expected);
 
         $this->userBookmarksResponse(['tags' => $tag->name])
             ->assertOk()
@@ -172,7 +172,7 @@ class FetchUserBookmarksTest extends TestCase
         /** @var Bookmark */
         $expected = $factory->create();
 
-        (new TagRepository)->attach([$tag], $bookmarkWithTag);
+        (new TagRepository())->attach([$tag], $bookmarkWithTag);
 
         $this->userBookmarksResponse(['untagged' => true])
             ->assertOk()
@@ -254,7 +254,7 @@ class FetchUserBookmarksTest extends TestCase
         /** @var Bookmark */
         $bookmark = BookmarkFactory::new()->for($user)->create();
 
-        (new TagRepository)->attach($tags->all(), $bookmark);
+        (new TagRepository())->attach($tags->all(), $bookmark);
 
         $this->userBookmarksResponse()
             ->assertOk()

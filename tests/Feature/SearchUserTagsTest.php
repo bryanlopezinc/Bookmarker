@@ -42,7 +42,7 @@ class SearchUserTagsTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        (new TagRepository)->attach(
+        (new TagRepository())->attach(
             [$tag = $this->faker->word],
             BookmarkFactory::new()->for($user)->create()
         );

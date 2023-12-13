@@ -201,7 +201,7 @@ class CreateUserTest extends TestCase
     #[Test]
     public function wilProfileImage(): void
     {
-        $filesystem = new ProfileImageFileSystem;
+        $filesystem = new ProfileImageFileSystem();
 
         Passport::actingAsClient($client = ClientFactory::new()->asPasswordClient()->create());
 

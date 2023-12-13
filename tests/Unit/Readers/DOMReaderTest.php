@@ -18,7 +18,7 @@ class DOMReaderTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->reader = new Reader;
+        $this->reader = new Reader();
     }
 
     public function test_default(): void

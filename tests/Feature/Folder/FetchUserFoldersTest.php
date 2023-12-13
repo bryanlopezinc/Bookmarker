@@ -14,8 +14,8 @@ use Tests\TestCase;
 
 class FetchUserFoldersTest extends TestCase
 {
-    use WithFaker,
-        AssertValidPaginationData;
+    use WithFaker;
+    use AssertValidPaginationData;
 
     private AddBookmarksToFolderService $addBookmarksToFolder;
 

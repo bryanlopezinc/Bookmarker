@@ -200,7 +200,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             'permissions' => 'addBookmarks'
         ])->assertOk();
 
-        $permissions = (new CollaboratorPermissionsRepository)->all($collaborator->id, $folder->id);
+        $permissions = (new CollaboratorPermissionsRepository())->all($collaborator->id, $folder->id);
 
         $this->assertFalse($permissions->canAddBookmarks());
     }
@@ -219,7 +219,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             'permissions' => 'removeBookmarks'
         ])->assertOk();
 
-        $permissions = (new CollaboratorPermissionsRepository)->all($collaborator->id, $folder->id);
+        $permissions = (new CollaboratorPermissionsRepository())->all($collaborator->id, $folder->id);
 
         $this->assertFalse($permissions->canRemoveBookmarks());
     }
@@ -238,7 +238,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             'permissions' => 'inviteUser'
         ])->assertOk();
 
-        $permissions = (new CollaboratorPermissionsRepository)->all($collaborator->id, $folder->id);
+        $permissions = (new CollaboratorPermissionsRepository())->all($collaborator->id, $folder->id);
 
         $this->assertFalse($permissions->canInviteUser());
     }
@@ -257,7 +257,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             'permissions' => 'inviteUser,addBookmarks'
         ])->assertOk();
 
-        $permissions = (new CollaboratorPermissionsRepository)->all($collaborator->id, $folder->id);
+        $permissions = (new CollaboratorPermissionsRepository())->all($collaborator->id, $folder->id);
 
         $this->assertFalse($permissions->canAddBookmarks());
         $this->assertFalse($permissions->canInviteUser());
@@ -278,7 +278,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             'permissions' => 'addBookmarks'
         ])->assertOk();
 
-        $permissions = (new CollaboratorPermissionsRepository)->all($collaborator->id, $folder->id);
+        $permissions = (new CollaboratorPermissionsRepository())->all($collaborator->id, $folder->id);
 
         $this->assertTrue($permissions->canInviteUser());
     }
@@ -299,7 +299,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             'permissions' => 'addBookmarks'
         ])->assertOk();
 
-        $permissions = (new CollaboratorPermissionsRepository)->all($users[2]->id, $folder->id);
+        $permissions = (new CollaboratorPermissionsRepository())->all($users[2]->id, $folder->id);
 
         $this->assertTrue($permissions->isNotEmpty());
     }

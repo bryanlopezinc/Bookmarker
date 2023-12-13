@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Folder;
 
-use App\ValueObjects\FolderSettings;
 use App\ValueObjects\FolderSettings as FS;
 use App\Models\Folder;
 use Database\Factories\UserFactory;
@@ -251,7 +250,7 @@ class CreateFolderTest extends TestCase
         $this->createFolderResponse([
             'settings' => ['N-enable' => 'foo']
         ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['settings']);;
+            ->assertJsonValidationErrors(['settings']);
 
         //Assert all values must be a boolean.
         $this->createFolderResponse([

@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Jobs\UpdateBookmarkWithHttpResponse;
 use App\Models\Bookmark;
 use App\Models\Taggable;
-use App\Models\UserBookmarksCount;
 use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;

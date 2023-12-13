@@ -14,7 +14,9 @@ use Tests\Traits\WillCheckBookmarksHealth;
 
 class FetchUserFavoritesTest extends TestCase
 {
-    use AssertsBookmarkJson, WillCheckBookmarksHealth, AssertValidPaginationData;
+    use AssertsBookmarkJson;
+    use WillCheckBookmarksHealth;
+    use AssertValidPaginationData;
 
     protected function fetchUserFavoritesResponse(array $parameters = []): TestResponse
     {
@@ -46,7 +48,7 @@ class FetchUserFavoritesTest extends TestCase
 
         $bookmark = BookmarkFactory::new()->for($user)->create();
 
-        (new FavoriteRepository)->create($bookmark->id, $user->id);
+        (new FavoriteRepository())->create($bookmark->id, $user->id);
 
         $response = $this->fetchUserFavoritesResponse()
             ->assertOk()
@@ -76,9 +78,9 @@ class FetchUserFavoritesTest extends TestCase
         /** @var Bookmark[] */
         $bookmarks = BookmarkFactory::new()->count(3)->for($user)->create();
 
-        (new FavoriteRepository)->create($bookmarks[2]->id, $user->id);
-        (new FavoriteRepository)->create($bookmarks[0]->id, $user->id);
-        (new FavoriteRepository)->create($bookmarks[1]->id, $user->id);
+        (new FavoriteRepository())->create($bookmarks[2]->id, $user->id);
+        (new FavoriteRepository())->create($bookmarks[0]->id, $user->id);
+        (new FavoriteRepository())->create($bookmarks[1]->id, $user->id);
 
         $this->fetchUserFavoritesResponse()
             ->assertOk()
@@ -94,7 +96,7 @@ class FetchUserFavoritesTest extends TestCase
 
         $bookmarks = BookmarkFactory::new()->count(5)->for($user)->create();
 
-        (new FavoriteRepository)->createMany($bookmarks->pluck('id')->all(), $user->id);
+        (new FavoriteRepository())->createMany($bookmarks->pluck('id')->all(), $user->id);
 
         $this->fetchUserFavoritesResponse()->assertOk();
 

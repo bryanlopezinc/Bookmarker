@@ -1,7 +1,6 @@
 {
     "preset": "psr12",
     "exclude": [
-        "tests",
         "database/migrations"
     ]
 }

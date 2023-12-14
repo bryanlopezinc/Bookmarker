@@ -199,7 +199,7 @@ class CreateUserTest extends TestCase
     }
 
     #[Test]
-    public function wilProfileImage(): void
+    public function createWithProfileImage(): void
     {
         $filesystem = new ProfileImageFileSystem();
 

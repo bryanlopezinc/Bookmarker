@@ -7,44 +7,37 @@ namespace App\Repositories\Folder;
 use App\DataTransferObjects\UserCollaboration;
 use App\Models\Folder;
 use App\Models\FolderCollaborator;
-use App\Models\FolderPermission;
 use App\PaginationData;
 use Illuminate\Pagination\Paginator;
 use App\Models\FolderCollaboratorPermission;
 use App\Models\User;
 use App\UAC;
-use Illuminate\Support\Facades\DB;
 
 final class FetchUserFoldersWhereContainsCollaboratorRepository
 {
+    public function __construct(private PermissionRepository $permissions)
+    {
+    }
+
     /**
      * @return Paginator<UserCollaboration>
      */
     public function get(int $authUserId, int $collaboratorId, PaginationData $pagination): Paginator
     {
-        $folderModel = new Folder();
-
         $query = Folder::onlyAttributes()
             ->addSelect([
-                'permissions' => FolderPermission::query()
-                    ->select(DB::raw("JSON_ARRAYAGG(name)"))
-                    ->whereIn(
-                        'id',
-                        FolderCollaboratorPermission::select('permission_id')
-                            ->whereRaw("folder_id = {$folderModel->qualifyColumn('id')}")
-                            ->where('user_id', $collaboratorId)
-                    )
+                'permissions' => FolderCollaboratorPermission::query()
+                    ->selectRaw('JSON_ARRAYAGG(permission_id)')
+                    ->whereColumn('folder_id', 'folders.id')
+                    ->where('user_id', $collaboratorId)
             ])
             ->where('user_id', $authUserId)
-            ->whereExists(function (&$query) use ($collaboratorId) {
-                $query = FolderCollaborator::query()
+            ->whereExists(
+                FolderCollaborator::query()
                     ->where('collaborator_id', $collaboratorId)
-                    ->whereRaw("folder_id = folders.id")
-                    ->getQuery();
-            })
-            ->whereExists(function (&$query) use ($collaboratorId) {
-                $query = User::select('id')->where('id', $collaboratorId)->getQuery();
-            });
+                    ->whereColumn('folder_id', 'folders.id')
+            )
+            ->whereExists(User::select('id')->where('id', $collaboratorId));
 
         /** @var Paginator */
         $collaborations = $query->simplePaginate($pagination->perPage(), page: $pagination->page());
@@ -59,9 +52,11 @@ final class FetchUserFoldersWhereContainsCollaboratorRepository
     private function createCollaborationFn(): \Closure
     {
         return function (Folder $folder) {
+            $folder->mergeCasts(['permissions' => 'json']);
+
             return new UserCollaboration(
                 $folder,
-                new UAC(json_decode($folder->permissions ?? '{}', true, flags: JSON_THROW_ON_ERROR))
+                new UAC($this->permissions->findManyById($folder->permissions ?? [])->all())
             );
         };
     }

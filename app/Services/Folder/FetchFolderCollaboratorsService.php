@@ -7,16 +7,20 @@ namespace App\Services\Folder;
 use App\DataTransferObjects\FolderCollaborator;
 use App\Exceptions\FolderNotFoundException;
 use App\Models\FolderCollaboratorPermission as CollaboratorPermission;
-use App\Models\FolderPermission;
 use App\Models\User;
 use App\PaginationData;
 use App\UAC;
 use Illuminate\Pagination\Paginator;
 use App\Http\Requests\FetchFolderCollaboratorsRequest as Request;
 use App\Models\Folder;
+use App\Repositories\Folder\PermissionRepository;
 
 final class FetchFolderCollaboratorsService
 {
+    public function __construct(private PermissionRepository $permissions)
+    {
+    }
+
     /**
      * @return Paginator<FolderCollaborator>
      */
@@ -53,11 +57,10 @@ final class FetchFolderCollaboratorsService
             ->select(['users.id', 'full_name', 'profile_image_path'])
             ->join('folders_collaborators', 'folders_collaborators.collaborator_id', '=', 'users.id')
             ->addSelect([
-                'permissions' => FolderPermission::query()
-                    ->selectRaw('JSON_ARRAYAGG(name)')
-                    ->whereExists(function (&$query) use ($collaboratorPermissionsQuery) {
-                        $query = $collaboratorPermissionsQuery->getQuery();
-                    }),
+                'permissions' => CollaboratorPermission::query()
+                    ->selectRaw('JSON_ARRAYAGG(permission_id)')
+                    ->whereColumn('user_id', 'users.id')
+                    ->whereColumn('folder_id', 'folders_collaborators.folder_id'),
                 'wasInvitedBy' => User::query()
                     ->selectRaw("JSON_OBJECT('id', id, 'full_name', full_name, 'profile_image_path', profile_image_path)")
                     ->whereColumn('id', 'folders_collaborators.invited_by')
@@ -78,7 +81,7 @@ final class FetchFolderCollaboratorsService
                 }
 
                 if (!$permissions->hasAllPermissions() && $permissions->isNotEmpty()) {
-                    $permissionsQuery = FolderPermission::select('id')->whereIn('name', $permissions->toArray());
+                    $permissionsQuery = $this->permissions->findManyByName($permissions->toArray())->pluck('id');
 
                     $builder->whereIn('permission_id', $permissionsQuery)->havingRaw("COUNT(*) = {$permissions->count()}");
                 }
@@ -108,7 +111,7 @@ final class FetchFolderCollaboratorsService
 
             return new FolderCollaborator(
                 $model,
-                new UAC($model->permissions ?? []),
+                new UAC($this->permissions->findManyById($model->permissions ?? [])->all()),
                 $wasInvitedBy ? new User($wasInvitedBy) : null
             );
         };

@@ -11,33 +11,35 @@ use Illuminate\Support\Collection;
 
 final class CollaboratorPermissionsRepository
 {
-    public function all(int $userID, int $folderID): UAC
-    {
-        $permissionIdsQuery = Model::query()
-            ->select('permission_id')
-            ->where('user_id', $userID)
-            ->where('folder_id', $folderID);
+    private PermissionRepository $permissions;
 
-        return FolderPermission::query()
-            ->select('name')
-            ->whereIn('id', $permissionIdsQuery)
-            ->get()
-            ->pluck('name')
-            ->pipe(fn (Collection $permissionNames) => new UAC($permissionNames->all()));
+    public function __construct(PermissionRepository $permissionRepository = null)
+    {
+        $this->permissions = $permissionRepository ?: new PermissionRepository();
+    }
+
+    public function all(int $collaboratorId, int $folderID): UAC
+    {
+        $userPermissionsIds = Model::query()
+            ->where('user_id', $collaboratorId)
+            ->where('folder_id', $folderID)
+            ->get(['permission_id'])
+            ->pluck('permission_id');
+
+        return new UAC(
+            $this->permissions->findManyById($userPermissionsIds)->all()
+        );
     }
 
     public function create(int $userID, int $folderID, UAC $folderPermissions): void
     {
         $createdAt = now();
 
-        FolderPermission::select('id')
-            ->whereIn('name', $folderPermissions->toArray())
-            ->get()
-            ->pluck('id')
-            ->map(fn (int $permissionID) => [
+        $this->permissions->findManyByName($folderPermissions->toArray())
+            ->map(fn (FolderPermission $p) => [
                 'folder_id'     => $folderID,
                 'user_id'       => $userID,
-                'permission_id' => $permissionID,
+                'permission_id' => $p->id,
                 'created_at'    => $createdAt
             ])
             ->tap(function (Collection $records) {
@@ -52,9 +54,7 @@ final class CollaboratorPermissionsRepository
             ->where('user_id', $collaboratorID);
 
         if ($permissions) {
-            $subQuery = FolderPermission::select('id')->whereIn('name', $permissions->toArray());
-
-            $query->whereIn('permission_id', $subQuery);
+            $query->whereIn('permission_id', $this->permissions->findManyByName($permissions->toArray())->pluck('id'));
         }
 
         $query->delete();

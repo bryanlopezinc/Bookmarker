@@ -18,7 +18,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('folder_id')->index();
             $table->foreignId('user_id')->index();
-            $table->foreignId('permission_id')->constrained('folders_permissions');
+            $table->foreignId('permission_id');
             $table->unique(['folder_id', 'user_id', 'permission_id'], 'unique_permission');
             $table->timestamp('created_at');
         });

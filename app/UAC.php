@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App;
 
 use App\Enums\Permission;
+use App\Models\FolderPermission;
 use Countable;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Request;
@@ -21,10 +22,7 @@ final class UAC implements Countable, Arrayable
      */
     private readonly Collection $permissions;
 
-    /**
-     * @param array<Permission|string> $permissions
-     */
-    public function __construct(array|Permission|string $permissions)
+    public function __construct(array|Permission|string|FolderPermission $permissions)
     {
         $this->permissions = $this->resolvePermissions(Arr::wrap($permissions));
 
@@ -33,10 +31,16 @@ final class UAC implements Countable, Arrayable
 
     private function resolvePermissions(array $permissions): Collection
     {
-        return collect($permissions)->map(function (string|Permission $permission) {
-            return is_string($permission) ?
-                Permission::from($permission)->value :
-                $permission->value;
+        return collect($permissions)->map(function (string|Permission|FolderPermission $permission) {
+            if ($permission instanceof FolderPermission) {
+                $permission = $permission->name;
+            }
+
+            if ($permission instanceof Permission) {
+                $permission = $permission->value;
+            }
+
+            return Permission::from($permission)->value;
         });
     }
 

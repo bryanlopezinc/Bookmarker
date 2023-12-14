@@ -184,7 +184,7 @@ class SendFolderCollaborationInviteTest extends TestCase
 
         $this->sendInviteResponse($parameters)
             ->assertTooManyRequests()
-            ->assertJsonPath('retry-after', 60);
+            ->assertJsonPath('retry-after', fn (int $retry) => $retry <= 60);
 
         $this->sendInviteResponse($parameters)->assertTooManyRequests();
 

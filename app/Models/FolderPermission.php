@@ -15,7 +15,6 @@ final class FolderPermission extends Model
 {
     public const UPDATED_AT = null;
 
-
     /**
      * {@inheritdoc}
      */

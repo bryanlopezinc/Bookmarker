@@ -37,6 +37,8 @@ class CreateBookmarkTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
+        $this->withRequestId();
+
         $this->createBookmarkResponse()
             ->assertUnprocessable()
             ->assertJsonValidationErrorFor('url');
@@ -55,14 +57,12 @@ class CreateBookmarkTest extends TestCase
 
         $this->createBookmarkResponse([
             'url'  => $this->faker->url,
-            'tags' => TagFactory::new()->count(16)->make()->pluck('name')->implode(',')
-        ])->assertJsonValidationErrors([
-            'tags' => 'The tags must not have more than 15 items.'
-        ]);
+            'tags' => TagFactory::new()->count(16)->make()->pluck('name')->implode(','),
+        ])->assertJsonValidationErrors(['tags' => 'The tags must not have more than 15 items.']);
 
         $this->createBookmarkResponse([
             'url' => $this->faker->url,
-            'tags' => 'howTo,howTo,stackOverflow'
+            'tags' => 'howTo,howTo,stackOverflow',
         ])->assertJsonValidationErrors([
             "tags.0" => [
                 "The tags.0 field has a duplicate value."
@@ -74,20 +74,18 @@ class CreateBookmarkTest extends TestCase
 
         $this->createBookmarkResponse(['url' => $this->faker->url, 'description' => str_repeat('a', 201)])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'description' => 'The description must not be greater than 200 characters.'
-            ]);
+            ->assertJsonValidationErrors(['description' => 'The description must not be greater than 200 characters.']);
 
         $this->createBookmarkResponse(['url' => $this->faker->url, 'title' => str_repeat('a', 101)])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'title' => 'The title must not be greater than 100 characters.'
-            ]);
+            ->assertJsonValidationErrors(['title' => 'The title must not be greater than 100 characters.']);
     }
 
     public function testWillReturnUnprocessableWenUrlIsNotHttp(): void
     {
         Passport::actingAs(UserFactory::new()->make());
+
+        $this->withRequestId();
 
         $this->createBookmarkResponse(['url' => 'chrome://flags'])
             ->assertUnprocessable()
@@ -103,7 +101,9 @@ class CreateBookmarkTest extends TestCase
         Bus::fake(UpdateBookmarkWithHttpResponse::class);
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->createBookmarkResponse(['url' => $url =  $this->faker->url])->assertCreated();
+        $this->withRequestId()
+            ->createBookmarkResponse($query = ['url' => $url =  $this->faker->url])
+            ->assertCreated();
 
         /** @var Bookmark */
         $bookmark = Bookmark::query()->where('user_id', $user->id)->sole();
@@ -116,6 +116,11 @@ class CreateBookmarkTest extends TestCase
         $this->assertNull($bookmark->description);
         $this->assertFalse($bookmark->has_custom_title);
         $this->assertFalse($bookmark->description_set_by_user);
+
+        $this->createBookmarkResponse($query);
+        $this->assertRequestAlreadyCompleted();
+
+        Bus::assertDispatchedTimes(UpdateBookmarkWithHttpResponse::class, 1);
     }
 
     public function testCreateBookmarkWithTitle(): void
@@ -124,10 +129,11 @@ class CreateBookmarkTest extends TestCase
 
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->createBookmarkResponse([
-            'url'   => $this->faker->url,
-            'title' => $title = '<h1>whatever</h1>',
-        ])->assertCreated();
+        $this->withRequestId()
+            ->createBookmarkResponse([
+                'url'   => $this->faker->url,
+                'title' => $title = '<h1>whatever</h1>',
+            ])->assertCreated();
 
         /** @var Bookmark */
         $bookmark = Bookmark::query()->where('user_id', $user->id)->sole();
@@ -144,10 +150,11 @@ class CreateBookmarkTest extends TestCase
 
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->createBookmarkResponse([
-            'url'   => $this->faker->url,
-            'description' => $description = '<h2>my dog stepped on a bee :-(</h2>'
-        ])->assertCreated();
+        $this->withRequestId()
+            ->createBookmarkResponse([
+                'url'   => $this->faker->url,
+                'description' => $description = '<h2>my dog stepped on a bee :-(</h2>',
+            ])->assertCreated();
 
         /** @var Bookmark */
         $bookmark = Bookmark::query()->where('user_id', $user->id)->sole();
@@ -163,27 +170,15 @@ class CreateBookmarkTest extends TestCase
 
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->createBookmarkResponse([
-            'url'   => $this->faker->url,
-            'tags'  => TagFactory::new()->count(3)->make()->pluck('name')->implode(',')
-        ])->assertCreated();
+        $this->withRequestId()
+            ->createBookmarkResponse([
+                'url'   => $this->faker->url,
+                'tags'  => TagFactory::new()->count(3)->make()->pluck('name')->implode(','),
+            ])->assertCreated();
 
         $this->assertDatabaseHas(Taggable::class, [
             'taggable_id' => Bookmark::query()->where('user_id', $user->id)->sole('id')->id,
         ]);
-    }
-
-    public function testWillDispatchJob(): void
-    {
-        Bus::fake(UpdateBookmarkWithHttpResponse::class);
-
-        Passport::actingAs(UserFactory::new()->create());
-
-        $this->withoutExceptionHandling()
-            ->createBookmarkResponse(['url' => $this->faker->url])
-            ->assertCreated();
-
-        Bus::assertDispatchedTimes(UpdateBookmarkWithHttpResponse::class, 1);
     }
 
     public function testEventHandlerWillHandleEvent(): void
@@ -206,7 +201,9 @@ class CreateBookmarkTest extends TestCase
 
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->createBookmarkResponse(['url' => $this->faker->url])->assertCreated();
+        $this->withRequestId()
+            ->createBookmarkResponse(['url' => $this->faker->url])
+            ->assertCreated();
     }
 
     /**
@@ -235,6 +232,8 @@ class CreateBookmarkTest extends TestCase
 
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->createBookmarkResponse(['url' => $this->faker->url])->assertCreated();
+        $this->withRequestId()
+            ->createBookmarkResponse(['url' => $this->faker->url])
+            ->assertCreated();
     }
 }

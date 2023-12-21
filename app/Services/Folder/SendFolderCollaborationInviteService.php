@@ -12,7 +12,6 @@ use App\Models\{BannedCollaborator, Folder, FolderCollaborator, User};
 use App\Exceptions\HttpException;
 use App\Exceptions\FolderCollaboratorsLimitExceededException;
 use App\Exceptions\PermissionDeniedException;
-use App\Exceptions\TooManyInvitesException;
 use App\Exceptions\UserNotFoundException;
 use App\Http\Requests\SendFolderCollaborationInviteRequest as Request;
 use App\Mail\FolderCollaborationInviteMail as InvitationMail;
@@ -20,6 +19,7 @@ use App\Models\Scopes\DisabledActionScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\UAC;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Support\Facades\{RateLimiter, Mail};
 use Illuminate\Support\Str;
 
@@ -60,8 +60,9 @@ final class SendFolderCollaborationInviteService
         );
 
         if (!$invitationSent) {
-            throw new TooManyInvitesException(
-                RateLimiter::availableIn($rateLimiterKey)
+            throw new ThrottleRequestsException(
+                message: 'TooManySentInvites',
+                headers: ['resend-invite-after' => RateLimiter::availableIn($rateLimiterKey)]
             );
         }
     }

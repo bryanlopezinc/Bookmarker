@@ -8,6 +8,8 @@ use App\Enums\Permission;
 use App\Models\MutedCollaborator;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
+use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -16,16 +18,14 @@ use Tests\Traits\CreatesCollaboration;
 class MuteCollaboratorTest extends TestCase
 {
     use CreatesCollaboration;
+    use WithFaker;
 
     protected function muteCollaboratorResponse(array $parameters = []): TestResponse
     {
-        foreach (['folder_id', 'collaborator_id'] as $key) {
-            if (array_key_exists($key, $parameters)) {
-                $parameters[$key] = (string) $parameters[$key];
-            }
-        }
-
-        return $this->postJson(route('muteCollaborator', $parameters));
+        return $this->postJson(
+            route('muteCollaborator', Arr::only($parameters, $routeParameters = ['folder_id', 'collaborator_id'])),
+            Arr::except($parameters, $routeParameters)
+        );
     }
 
     #[Test]
@@ -37,7 +37,9 @@ class MuteCollaboratorTest extends TestCase
     #[Test]
     public function willReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
-        $this->muteCollaboratorResponse(['folder_id' => 33, 'collaborator_id' => 14])->assertUnauthorized();
+        $this->withRequestId()
+            ->muteCollaboratorResponse(['folder_id' => 33, 'collaborator_id' => 14])
+            ->assertUnauthorized();
     }
 
     #[Test]
@@ -57,7 +59,8 @@ class MuteCollaboratorTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         $this->loginUser($folderOwner);
-        $this->muteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
+        $this->withRequestId()
+            ->muteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
             ->assertCreated();
 
         $this->assertDatabaseHas(MutedCollaborator::class, [
@@ -67,7 +70,7 @@ class MuteCollaboratorTest extends TestCase
     }
 
     #[Test]
-    public function willReturnSuccessWhenCollaboratorIsAlreadyMuted(): void
+    public function whenRequestHasBeenCompleted(): void
     {
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
 
@@ -76,10 +79,33 @@ class MuteCollaboratorTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         $this->loginUser($folderOwner);
-        $this->muteCollaboratorResponse($query = ['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
+
+        $this->withRequestId($requestId = $this->faker->uuid)
+            ->muteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
             ->assertCreated();
 
-        $this->muteCollaboratorResponse($query)->assertCreated();
+        $this->withRequestId($requestId)->muteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id]);
+        $this->assertRequestAlreadyCompleted();
+    }
+
+    #[Test]
+    public function willReturnCOnflictWhenCollaboratorIsAlreadyMuted(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::times(2)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
+
+        $this->loginUser($folderOwner);
+        $this->withRequestId()
+            ->muteCollaboratorResponse($query = ['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
+            ->assertCreated();
+
+        $this->withRequestId()
+            ->muteCollaboratorResponse($query)
+            ->assertConflict()
+            ->assertExactJson(['message' => 'CollaboratorAlreadyMuted']);
     }
 
     #[Test]
@@ -90,7 +116,8 @@ class MuteCollaboratorTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->loginUser($user);
-        $this->muteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => $user->id])
+        $this->withRequestId()
+            ->muteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => $user->id])
             ->assertForbidden()
             ->assertExactJson(['message' => 'CannotMuteSelf']);
     }
@@ -103,7 +130,8 @@ class MuteCollaboratorTest extends TestCase
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
         $this->loginUser($folderOwner);
-        $this->muteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id + 1])
+        $this->withRequestId()
+            ->muteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id + 1])
             ->assertNotFound()
             ->assertExactJson(['message' => 'UserNotFound']);
     }
@@ -116,7 +144,8 @@ class MuteCollaboratorTest extends TestCase
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
         $this->loginUser($folderOwner);
-        $this->muteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
+        $this->withRequestId()
+            ->muteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
             ->assertNotFound()
             ->assertExactJson(['message' => 'UserNotFound']);
     }
@@ -129,7 +158,8 @@ class MuteCollaboratorTest extends TestCase
         $folder = FolderFactory::new()->create();
 
         $this->loginUser($folderOwner);
-        $this->muteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
+        $this->withRequestId()
+            ->muteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
             ->assertNotFound()
             ->assertExactJson(['message' => 'FolderNotFound']);
     }
@@ -142,7 +172,8 @@ class MuteCollaboratorTest extends TestCase
         $folder = FolderFactory::new()->create();
 
         $this->loginUser($folderOwner);
-        $this->muteCollaboratorResponse(['folder_id' => $folder->id + 1, 'collaborator_id' => $collaborator->id])
+        $this->withRequestId()
+            ->muteCollaboratorResponse(['folder_id' => $folder->id + 1, 'collaborator_id' => $collaborator->id])
             ->assertNotFound()
             ->assertExactJson(['message' => 'FolderNotFound']);
     }

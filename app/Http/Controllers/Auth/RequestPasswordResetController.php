@@ -27,7 +27,7 @@ final class RequestPasswordResetController
         }
 
         if ($status === PasswordBroker::RESET_THROTTLED) {
-            throw new ThrottleRequestsException('Too Many Requests');
+            throw new ThrottleRequestsException('TooManyPasswordResetRequests');
         }
 
         return response()->json(['message' => 'success']);

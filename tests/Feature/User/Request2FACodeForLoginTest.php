@@ -5,12 +5,12 @@ namespace Tests\Feature\User;
 use App\ValueObjects\TwoFACode;
 use App\Mail\TwoFACodeMail;
 use Database\Factories\UserFactory;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
 use Laravel\Passport\Passport;
+use PHPUnit\Framework\Attributes\Test;
 
 class Request2FACodeForLoginTest extends TestCase
 {
@@ -38,7 +38,8 @@ class Request2FACodeForLoginTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->twoFARequestResponse([])
+        $this->withRequestId()
+            ->twoFARequestResponse([])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['username', 'password']);
     }
@@ -47,10 +48,11 @@ class Request2FACodeForLoginTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->twoFARequestResponse([
-            'username'  => UserFactory::randomUsername(),
-            'password' => 'password',
-        ])->assertUnauthorized()
+        $this->withRequestId()
+            ->twoFARequestResponse([
+                'username'  => UserFactory::randomUsername(),
+                'password' => 'password',
+            ])->assertUnauthorized()
             ->assertExactJson(['message' => 'InvalidCredentials']);
     }
 
@@ -58,10 +60,11 @@ class Request2FACodeForLoginTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->twoFARequestResponse([
-            'username'  => UserFactory::new()->create()->username,
-            'password' => 'wrong-password',
-        ])->assertUnauthorized()
+        $this->withRequestId()
+            ->twoFARequestResponse([
+                'username'  => UserFactory::new()->create()->username,
+                'password' => 'wrong-password',
+            ])->assertUnauthorized()
             ->assertExactJson(['message' => 'InvalidCredentials']);
     }
 
@@ -74,10 +77,11 @@ class Request2FACodeForLoginTest extends TestCase
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
         Mail::fake();
 
-        $this->twoFARequestResponse([
-            'username'  => $user->username,
-            'password' => 'password',
-        ])->assertOk();
+        $this->withRequestId()
+            ->twoFARequestResponse([
+                'username'  => $user->username,
+                'password' => 'password',
+            ])->assertOk();
 
         Mail::assertQueued(function (TwoFACodeMail $mail) use ($user, $verificationCode) {
             $this->assertSame($user->email, $mail->to[0]['address']);
@@ -96,55 +100,36 @@ class Request2FACodeForLoginTest extends TestCase
 
         $user = UserFactory::new()->create();
 
-        $this->twoFARequestResponse([
-            'username'  => $user->email,
-            'password' => 'password',
-        ])->assertOk();
+        $this->withRequestId()
+            ->twoFARequestResponse([
+                'username'  => $user->email,
+                'password' => 'password',
+            ])->assertOk();
     }
 
-    public function testWillReturnTooManyRequestsErrorResponseWhenRequestIsSentMoreThanOnceInAMinute(): void
+    #[Test]
+    public function canOnlyRequestCodeOncePerMinute(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         $username = UserFactory::new()->create()->username;
 
-        $this->twoFARequestResponse([
-            'username'  => $username,
-            'password' => 'password',
-        ])->assertOk();
+        $this->withRequestId()
+            ->twoFARequestResponse($query = [
+                'username'  => $username,
+                'password' => 'password',
+            ])->assertOk();
 
-        $this->twoFARequestResponse([
-            'username'  => $username,
-            'password' => 'password',
-        ])->assertStatus(Response::HTTP_TOO_MANY_REQUESTS);
+        $this->withRequestId()
+            ->twoFARequestResponse($query)
+            ->assertTooManyRequests()
+            ->assertHeader('request-2FA-after')
+            ->tap(function (TestResponse $response) {
+                $this->assertLessThanOrEqual($response->baseResponse->headers->get('request-2FA-after'), 59);
+            });
 
-        $this->twoFARequestResponse([
-            'username'  => $username,
-            'password' => 'password',
-        ])->assertStatus(Response::HTTP_TOO_MANY_REQUESTS);
-    }
-
-    public function testCanRequestNewTokenAfterOneMinute(): void
-    {
-        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
-
-        $username = UserFactory::new()->create()->username;
-
-        $this->twoFARequestResponse([
-            'username'  => $username,
-            'password' => 'password',
-        ])->assertOk();
-
-        $this->twoFARequestResponse([
-            'username'  => $username,
-            'password' => 'password',
-        ])->assertStatus(Response::HTTP_TOO_MANY_REQUESTS);
-
-        $this->travel(62)->seconds();
-
-        $this->twoFARequestResponse([
-            'username'  => $username,
-            'password' => 'password',
-        ])->assertOk();
+        $this->travel(61)->seconds(function () use ($query) {
+            $this->withRequestId()->twoFARequestResponse($query)->assertOk();
+        });
     }
 }

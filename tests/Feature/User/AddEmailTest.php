@@ -37,12 +37,16 @@ class AddEmailTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
+        $this->withRequestId();
+
         $this->addEmailToAccount()->assertUnprocessable()->assertJsonValidationErrorFor('email');
         $this->addEmailToAccount(['email' => 'foo bar'])->assertJsonValidationErrorFor('email');
     }
 
     public function testAddEmail(): void
     {
+        $this->withRequestId();
+
         Mail::fake();
 
         Passport::actingAs(UserFactory::new()->create());
@@ -54,6 +58,8 @@ class AddEmailTest extends TestCase
 
     public function testCanAddAnotherEmailAfter_5_minutes_WithoutVerifyingFirstEmail(): void
     {
+        $this->withRequestId();
+
         Passport::actingAs(UserFactory::new()->create());
 
         $this->addEmailToAccount(['email' => $this->faker->unique()->email])->assertOk();
@@ -68,6 +74,8 @@ class AddEmailTest extends TestCase
 
     public function testWillReturnForbiddenWhenSecondaryEmailsIsMoreThan_3(): void
     {
+        $this->withRequestId();
+
         Passport::actingAs($user = UserFactory::new()->create());
 
         EmailFactory::times(3)->for($user)->create();
@@ -81,45 +89,47 @@ class AddEmailTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->addEmailToAccount(['email' => $this->faker->unique()->email]);
+        $this->withRequestId()->addEmailToAccount(['email' => $this->faker->unique()->email]);
 
-        $this->addEmailToAccount(['email' => $this->faker->unique()->email])
+        $this->withRequestId()
+            ->addEmailToAccount(['email' => $this->faker->unique()->email])
             ->assertStatus(Response::HTTP_BAD_REQUEST)
             ->assertExactJson(['message'    => 'AwaitingVerification']);
     }
 
-    public function testWillReturnUnprocessableWhenSecondaryEmailAlreadyExists(): void
+    public function testWillReturnUnprocessableWhenEmailAlreadyExists(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->withRequestId();
+
+        [$user, $otherUser] = UserFactory::times(2)->create();
 
         SecondaryEmail::create([
             'user_id'     => $user->id,
-            'email'       => $email = $this->faker->unique()->email,
+            'email'       => $userSecondaryEmail = $this->faker->unique()->email,
             'verified_at' => now()
         ]);
 
-        $this->addEmailToAccount(['email' => $email])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['email' => 'The email has already been taken.']);
-    }
+        SecondaryEmail::create([
+            'user_id'     => $otherUser->id,
+            'email'       => $otherUSecondaryEmail = $this->faker->unique()->email,
+            'verified_at' => now()
+        ]);
 
-    public function testWillReturnUnprocessableWhenEmailIsUserPrimaryEmail(): void
-    {
-        Passport::actingAs($user = UserFactory::new()->create());
+        Passport::actingAs($user);
+        $this->addEmailToAccount(['email' => $userSecondaryEmail])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors($errorMessage = ['email' => 'The email has already been taken.']);
 
         $this->addEmailToAccount(['email' => $user->email])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['email' => 'The email has already been taken.']);
-    }
+            ->assertJsonValidationErrors($errorMessage);
 
-    public function testWillReturnUnprocessableWhenEmailIsExistingUserPrimaryEmail(): void
-    {
-        [$johnny, $hector] = UserFactory::new()->count(2)->create()->all();
-
-        Passport::actingAs($hector);
-
-        $this->addEmailToAccount(['email' => $johnny->email])
+        $this->addEmailToAccount(['email' => $otherUser->email])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['email' => 'The email has already been taken.']);
+            ->assertJsonValidationErrors($errorMessage);
+
+        $this->addEmailToAccount(['email' => $otherUSecondaryEmail])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors($errorMessage);
     }
 }

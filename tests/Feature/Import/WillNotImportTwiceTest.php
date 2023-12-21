@@ -17,13 +17,14 @@ class WillNotImportTwiceTest extends ImportBookmarkBaseTest
 
         Passport::actingAs(UserFactory::new()->create());
 
+        $this->withRequestId();
+
         $this->importBookmarkResponse($parameters = [
-            'request_id' => $this->faker->uuid,
             'source'     => 'chromeExportFile',
             'html'       => UploadedFile::fake()->createWithContent('file.html', file_get_contents(base_path('tests/stubs/Imports/chromeExportFile.html'))),
         ])->assertStatus(Response::HTTP_PROCESSING);
 
-        $this->importBookmarkResponse($parameters)->assertNoContent();
-        $this->importBookmarkResponse($parameters)->assertNoContent();
+        $this->importBookmarkResponse($parameters);
+        $this->assertRequestAlreadyCompleted();
     }
 }

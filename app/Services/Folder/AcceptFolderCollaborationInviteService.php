@@ -66,7 +66,7 @@ final class AcceptFolderCollaborationInviteService
         }
 
         if ($folder->inviteeIsACollaborator) {
-            return;
+            throw HttpException::conflict(['message' => 'InvitationAlreadyAccepted']);
         }
 
         $permissions = $this->extractPermissions($payload);

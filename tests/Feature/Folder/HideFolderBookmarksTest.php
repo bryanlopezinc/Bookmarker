@@ -8,12 +8,16 @@ use App\Services\Folder\AddBookmarksToFolderService;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
+use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class HideFolderBookmarksTest extends TestCase
 {
+    use WithFaker;
+
     private AddBookmarksToFolderService $addBookmarksToFolder;
 
     protected function setUp(): void
@@ -42,11 +46,13 @@ class HideFolderBookmarksTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
+        $this->withRequestId();
+
         $this->hideFolderResponse()
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['folder_id', 'bookmarks']);
 
-        $this->hideFolderResponse(['bookmarks' => '1,1,3,4,5',])
+        $this->hideFolderResponse(['bookmarks' => '1,1,3,4,5'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 "bookmarks.0" => ["The bookmarks.0 field has a duplicate value."],
@@ -70,10 +76,11 @@ class HideFolderBookmarksTest extends TestCase
 
         $this->addBookmarksToFolder->add($folder->id, $bookmarkIds);
 
-        $this->hideFolderResponse([
-            'folder_id' => $folder->id,
-            'bookmarks' => (string) $bookmarkIds[0]
-        ])->assertOk();
+        $this->withRequestId()
+            ->hideFolderResponse([
+                'folder_id' => $folder->id,
+                'bookmarks' => (string) $bookmarkIds[0],
+            ])->assertOk();
 
         $folderBookmarks = FolderBookmark::where('folder_id', $folder->id)->get();
 
@@ -88,16 +95,36 @@ class HideFolderBookmarksTest extends TestCase
         );
     }
 
+    #[Test]
+    public function whenRequestHasBeenCompleted(): void
+    {
+        $this->loginUser($user = UserFactory::new()->create());
+        $bookmarkIds = BookmarkFactory::new()->count(2)->for($user)->create()->pluck('id')->all();
+
+        $folder = FolderFactory::new()->for($user)->create();
+
+        $this->addBookmarksToFolder->add($folder->id, $bookmarkIds);
+
+        $this->withRequestId()
+            ->hideFolderResponse($query = [
+                'folder_id' => $folder->id,
+                'bookmarks' => (string) $bookmarkIds[0],
+            ])->assertOk();
+
+        $this->assertRequestAlreadyCompleted($this->hideFolderResponse($query));
+    }
+
     public function testWillReturnNotFoundWhenFolderDoesNotBelongToUser(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
         $folder = FolderFactory::new()->create();
 
-        $this->hideFolderResponse([
-            'folder_id' => $folder->id,
-            'bookmarks' => collect()->times(30)->implode(',')
-        ])->assertNotFound();
+        $this->withRequestId()
+            ->hideFolderResponse([
+                'folder_id' => $folder->id,
+                'bookmarks' => collect()->times(30)->implode(','),
+            ])->assertNotFound();
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotExists(): void
@@ -106,10 +133,11 @@ class HideFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->hideFolderResponse([
-            'folder_id' => $folder->id + 1,
-            'bookmarks' => collect()->times(30)->implode(',')
-        ])->assertNotFound()
+        $this->withRequestId()
+            ->hideFolderResponse([
+                'folder_id' => $folder->id + 1,
+                'bookmarks' => collect()->times(30)->implode(','),
+            ])->assertNotFound()
             ->assertExactJson(['message' => 'FolderNotFound']);
     }
 
@@ -120,10 +148,11 @@ class HideFolderBookmarksTest extends TestCase
         $bookmarkIDs = BookmarkFactory::new()->count(5)->for($user)->create()->pluck('id');
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->hideFolderResponse([
-            'folder_id' => $folder->id,
-            'bookmarks' => $bookmarkIDs->map(fn (int $bookmarkID) => $bookmarkID + 1)->implode(',')
-        ])->assertNotFound()
+        $this->withRequestId()
+            ->hideFolderResponse([
+                'folder_id' => $folder->id,
+                'bookmarks' => $bookmarkIDs->map(fn (int $bookmarkID) => $bookmarkID + 1)->implode(','),
+            ])->assertNotFound()
             ->assertExactJson(['message' => "BookmarkNotFound"]);
     }
 
@@ -139,10 +168,11 @@ class HideFolderBookmarksTest extends TestCase
 
         $bookmarks->first()->delete();
 
-        $this->hideFolderResponse([
-            'folder_id' => $folder->id,
-            'bookmarks' => $bookmarks->pluck('id')->implode(',')
-        ])->assertNotFound()
+        $this->withRequestId()
+            ->hideFolderResponse([
+                'folder_id' => $folder->id,
+                'bookmarks' => $bookmarks->pluck('id')->implode(','),
+            ])->assertNotFound()
             ->assertExactJson(['message' => 'BookmarkNotFound']);
     }
 
@@ -155,10 +185,11 @@ class HideFolderBookmarksTest extends TestCase
 
         $this->addBookmarksToFolder->add($folder->id, $bookmarkIds->all());
 
-        $this->hideFolderResponse([
-            'folder_id' => $folder->id,
-            'bookmarks' => $bookmarkIds->implode(',')
-        ])->assertForbidden()
+        $this->withRequestId()
+            ->hideFolderResponse([
+                'folder_id' => $folder->id,
+                'bookmarks' => $bookmarkIds->implode(','),
+            ])->assertForbidden()
             ->assertExactJson(['message' => 'CannotHideCollaboratorBookmarks']);
     }
 }

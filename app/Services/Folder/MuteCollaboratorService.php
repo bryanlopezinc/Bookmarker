@@ -35,7 +35,7 @@ final class MuteCollaboratorService
         }
 
         if ($folder->collaboratorIsMuted) {
-            return;
+            throw HttpException::conflict(['message' => 'CollaboratorAlreadyMuted']);
         }
 
         $this->mute($folderId, $collaboratorId, $authUserId);

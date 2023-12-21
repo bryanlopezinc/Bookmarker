@@ -220,7 +220,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
     }
 
     #[Test]
-    public function willReturnCreatedWhenInviteHasAlreadyBeenAccepted(): void
+    public function whenInviteHasAlreadyBeenAccepted(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
@@ -238,8 +238,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             UAC::all()
         );
 
-        $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
-        $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
+        $this->acceptInviteResponse(['invite_hash' => $id])->assertConflict()->assertExactJson(['message' => 'InvitationAlreadyAccepted']);
     }
 
     public function testWillReturnNotFoundWhenFolderHasBeenDeleted(): void

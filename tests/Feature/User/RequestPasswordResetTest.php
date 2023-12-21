@@ -10,6 +10,7 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
 use Laravel\Passport\Passport;
+use PHPUnit\Framework\Attributes\Test;
 
 class RequestPasswordResetTest extends TestCase
 {
@@ -34,6 +35,8 @@ class RequestPasswordResetTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asClientCredentials()->create());
 
+        $this->withRequestId();
+
         $this->requestPasswordResetResponse([])->assertUnprocessable()->assertJsonValidationErrors(['email']);
         $this->requestPasswordResetResponse(['email' => 'my mail@yahoo.com'])->assertUnprocessable();
     }
@@ -42,7 +45,8 @@ class RequestPasswordResetTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asClientCredentials()->create());
 
-        $this->requestPasswordResetResponse(['email'  => $this->faker->email])
+        $this->withRequestId()
+            ->requestPasswordResetResponse(['email'  => $this->faker->email])
             ->assertNotFound()
             ->assertExactJson(['message' => 'UserNotFound']);
     }
@@ -57,7 +61,8 @@ class RequestPasswordResetTest extends TestCase
 
         $user = UserFactory::new()->create();
 
-        $this->requestPasswordResetResponse(['email'  => $user->email,])
+        $this->withRequestId()
+            ->requestPasswordResetResponse(['email'  => $user->email,])
             ->assertOk()
             ->assertExactJson(['message' => 'success']);
 
@@ -70,6 +75,27 @@ class RequestPasswordResetTest extends TestCase
             );
 
             return true;
+        });
+    }
+
+    #[Test]
+    public function canOnlySendOneResetLinkPerMinute(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asClientCredentials()->create());
+
+        $user = UserFactory::new()->create();
+
+        $this->withRequestId()
+            ->requestPasswordResetResponse(['email' => $user->email,])
+            ->assertOk()
+            ->assertExactJson(['message' => 'success']);
+
+        $this->withRequestId()
+            ->requestPasswordResetResponse(['email' => $user->email,])
+            ->assertTooManyRequests();
+
+        $this->travel(61)->seconds(function () use ($user) {
+            $this->withRequestId()->requestPasswordResetResponse(['email' => $user->email,])->assertOk();
         });
     }
 }

@@ -7,6 +7,7 @@ use App\Models\User;
 use Laravel\Passport\Passport;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\PasswordBroker;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
@@ -34,7 +35,8 @@ class ResetPasswordTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->resetPasswordResponse([])
+        $this->withRequestId()
+            ->resetPasswordResponse([])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['email', 'password', 'token']);
     }
@@ -43,12 +45,14 @@ class ResetPasswordTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->resetPasswordResponse([
-            'email'                 => 'non-existentUser@yahoo.com',
-            'password'              => self::NEW_PASSWORD,
-            'password_confirmation' => self::NEW_PASSWORD,
-            'token'                 => 'token'
-        ])->assertNotFound()
+        $this
+            ->withRequestId()
+            ->resetPasswordResponse([
+                'email'                 => 'non-existentUser@yahoo.com',
+                'password'              => self::NEW_PASSWORD,
+                'password_confirmation' => self::NEW_PASSWORD,
+                'token'                 => 'token'
+            ])->assertNotFound()
             ->assertExactJson(['message' => 'UserNotFound']);
     }
 
@@ -56,12 +60,13 @@ class ResetPasswordTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->resetPasswordResponse([
-            'email'                 => UserFactory::new()->create([])->email,
-            'password'              => self::NEW_PASSWORD,
-            'password_confirmation' => self::NEW_PASSWORD,
-            'token'                 => 'token'
-        ])->assertStatus(400)
+        $this->withRequestId()
+            ->resetPasswordResponse([
+                'email'                 => UserFactory::new()->create([])->email,
+                'password'              => self::NEW_PASSWORD,
+                'password_confirmation' => self::NEW_PASSWORD,
+                'token'                 => 'token'
+            ])->assertStatus(400)
             ->assertExactJson(['message' => 'InvalidResetToken']);
     }
 
@@ -80,24 +85,36 @@ class ResetPasswordTest extends TestCase
             $token = $hash;
         });
 
-        $this->resetPasswordResponse([
-            'email'                 => $user->email,
-            'password'              => self::NEW_PASSWORD,
-            'password_confirmation' => self::NEW_PASSWORD,
-            'token'                 => $token
-        ])->assertOk();
+        $this->withRequestId()
+            ->resetPasswordResponse($query = [
+                'email'                 => $user->email,
+                'password'              => self::NEW_PASSWORD,
+                'password_confirmation' => self::NEW_PASSWORD,
+                'token'                 => $token
+            ])->assertOk();
+
+        //assert token will be deleted.
+        $this->withRequestId()
+            ->resetPasswordResponse($query)
+            ->assertBadRequest()
+            ->assertExactJson(['message' => 'InvalidResetToken']);
+
+        $updatedUser = $user->query()->where('id', $user->id)->first(['password']);
 
         $this->assertNotSame(
             $initialPassword,
-            $user->query()->where('id', $user->id)->first()->password
+            $updatedUser->password
         );
+
+        $this->assertTrue(Hash::check(self::NEW_PASSWORD, $updatedUser->password));
     }
 
     public function testWillReturnUnprocessableWhenNewPasswordIsLessThan_8_characters(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->resetPasswordResponse(['password' => 'secured'])
+        $this->withRequestId()
+            ->resetPasswordResponse(['password' => 'secured'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['password' => 'The password must be at least 8 characters.']);
     }
@@ -106,7 +123,8 @@ class ResetPasswordTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->resetPasswordResponse(['password' => 'password_password'])
+        $this->withRequestId()
+            ->resetPasswordResponse(['password' => 'password_password'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['password' => 'The password must contain at least one number.']);
     }

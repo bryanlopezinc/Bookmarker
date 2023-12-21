@@ -48,6 +48,8 @@ class AddBookmarksToFolderTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
+        $this->withRequestId();
+
         $this->addBookmarksToFolderResponse()
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['bookmarks', 'folder']);
@@ -62,7 +64,7 @@ class AddBookmarksToFolderTest extends TestCase
         $this->addBookmarksToFolderResponse([
             'folder'      => 12,
             'bookmarks'   => '1,2,3,4,5',
-            'make_hidden' => '1,2,3,4,5,6'
+            'make_hidden' => '1,2,3,4,5,6',
         ])->assertJsonValidationErrors([
             'make_hidden.5' => ['BookmarkId 6 does not exist in bookmarks.']
         ]);
@@ -101,10 +103,11 @@ class AddBookmarksToFolderTest extends TestCase
             'updated_at' => $createdAt,
         ])->id;
 
-        $this->addBookmarksToFolderResponse([
-            'bookmarks' => (string) $bookmark->id,
-            'folder'    => $folderId,
-        ])->assertCreated();
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse([
+                'bookmarks' => (string) $bookmark->id,
+                'folder'    => $folderId,
+            ])->assertCreated();
 
         $this->assertDatabaseHas(FolderBookmark::class, [
             'folder_id'   => $folderId,
@@ -117,6 +120,29 @@ class AddBookmarksToFolderTest extends TestCase
         );
     }
 
+    #[Test]
+    public function whenRequestHasBeenCompleted(): void
+    {
+        $this->loginUser($user = UserFactory::new()->create());
+
+        $bookmark = BookmarkFactory::new()->for($user)->create();
+
+        $folderId = FolderFactory::new()->for($user)->create([
+            'created_at' => $createdAt = now()->yesterday(),
+            'updated_at' => $createdAt,
+        ])->id;
+
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse($query = [
+                'bookmarks' => (string) $bookmark->id,
+                'folder'    => $folderId,
+                'request_id' => $this->faker->uuid
+            ])->assertCreated();
+
+        $this->addBookmarksToFolderResponse($query);
+        $this->assertRequestAlreadyCompleted();
+    }
+
     public function testWillNotSendNotificationWhenBookmarksWereAddedByFolderOwner(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
@@ -127,10 +153,11 @@ class AddBookmarksToFolderTest extends TestCase
 
         Notification::fake();
 
-        $this->addBookmarksToFolderResponse([
-            'bookmarks' => (string) $bookmark->id,
-            'folder'    => $folderID,
-        ])->assertCreated();
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse([
+                'bookmarks' => (string) $bookmark->id,
+                'folder'    => $folderID,
+            ])->assertCreated();
 
         Notification::assertNothingSent();
     }
@@ -149,10 +176,11 @@ class AddBookmarksToFolderTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, $permissions);
 
         Passport::actingAs($collaborator);
-        $this->addBookmarksToFolderResponse([
-            'bookmarks' => (string) $collaboratorBookmark->id,
-            'folder'    => $folder->id
-        ])->assertForbidden()
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse([
+                'bookmarks' => (string) $collaboratorBookmark->id,
+                'folder'    => $folder->id,
+            ])->assertForbidden()
             ->assertExactJson(['message' => 'NoAddBookmarkPermission']);
     }
 
@@ -170,10 +198,11 @@ class AddBookmarksToFolderTest extends TestCase
             $retrieved->bookmarksCount = 200;
         });
 
-        $this->addBookmarksToFolderResponse([
-            'bookmarks' => (string) BookmarkFactory::new()->for($user)->create()->id,
-            'folder'    => $folder->id,
-        ])
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse([
+                'bookmarks' => (string) BookmarkFactory::new()->for($user)->create()->id,
+                'folder'    => $folder->id,
+            ])
             ->assertForbidden()
             ->assertExactJson(['message' => 'folderBookmarksLimitReached']);
     }
@@ -185,10 +214,11 @@ class AddBookmarksToFolderTest extends TestCase
         $bookmarkIDs = BookmarkFactory::new()->count(10)->for($user)->create()->pluck('id');
         $folderID = FolderFactory::new()->for($user)->create()->id;
 
-        $this->addBookmarksToFolderResponse([
-            'bookmarks' => $bookmarkIDs->implode(','),
-            'folder'    => $folderID,
-        ])->assertCreated();
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse([
+                'bookmarks' => $bookmarkIDs->implode(','),
+                'folder'    => $folderID,
+            ])->assertCreated();
 
         $this->assertBookmarksHealthWillBeChecked($bookmarkIDs->all());
     }
@@ -202,11 +232,12 @@ class AddBookmarksToFolderTest extends TestCase
 
         $folderID = FolderFactory::new()->for($user)->create()->id;
 
-        $this->addBookmarksToFolderResponse([
-            'bookmarks'   => implode(',', [$bookmarkToMakePrivate->id, $bookmarkToMakePublic->id]),
-            'folder'      => $folderID,
-            'make_hidden' => (string) $bookmarkToMakePrivate->id
-        ])->assertCreated();
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse([
+                'bookmarks'   => implode(',', [$bookmarkToMakePrivate->id, $bookmarkToMakePublic->id]),
+                'folder'      => $folderID,
+                'make_hidden' => (string) $bookmarkToMakePrivate->id,
+            ])->assertCreated();
 
         $folderBookmarks = FolderBookmark::where('folder_id', $folderID)->get();
 
@@ -225,11 +256,12 @@ class AddBookmarksToFolderTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         Passport::actingAs($collaborator);
-        $this->addBookmarksToFolderResponse([
-            'bookmarks'   => $bookmarkIds->implode(','),
-            'folder'      => $folder->id,
-            'make_hidden' => (string) $bookmarkIds->first()
-        ])->assertStatus(400)
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse([
+                'bookmarks'   => $bookmarkIds->implode(','),
+                'folder'      => $folder->id,
+                'make_hidden' => (string) $bookmarkIds->first(),
+            ])->assertStatus(400)
             ->assertExactJson(['message' => 'collaboratorCannotMakeBookmarksHidden']);
     }
 
@@ -245,10 +277,11 @@ class AddBookmarksToFolderTest extends TestCase
 
         $service->add($folder->id, $bookmark->id);
 
-        $this->addBookmarksToFolderResponse([
-            'bookmarks' => (string) $bookmark->id,
-            'folder'    => $folder->id
-        ])->assertStatus(Response::HTTP_CONFLICT)
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse([
+                'bookmarks' => (string) $bookmark->id,
+                'folder'    => $folder->id,
+            ])->assertStatus(Response::HTTP_CONFLICT)
             ->assertExactJson(['message' => 'FolderContainsBookmarks']);
     }
 
@@ -260,10 +293,11 @@ class AddBookmarksToFolderTest extends TestCase
 
         $otherUsersFolder = FolderFactory::new()->for(UserFactory::new()->create())->create();
 
-        $this->addBookmarksToFolderResponse([
-            'bookmarks' => $bookmarks->pluck('id')->implode(','),
-            'folder'    => $otherUsersFolder->id
-        ])->assertNotFound()
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse([
+                'bookmarks' => $bookmarks->pluck('id')->implode(','),
+                'folder'    => $otherUsersFolder->id,
+            ])->assertNotFound()
             ->assertExactJson(['message' => 'FolderNotFound']);
     }
 
@@ -275,10 +309,11 @@ class AddBookmarksToFolderTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->addBookmarksToFolderResponse([
-            'bookmarks' => $otherUsersBookmarks->pluck('id')->implode(','),
-            'folder'    => $folder->id
-        ])->assertNotFound()
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse([
+                'bookmarks' => $otherUsersBookmarks->pluck('id')->implode(','),
+                'folder'    => $folder->id,
+            ])->assertNotFound()
             ->assertExactJson(['message' => 'BookmarkNotFound']);
     }
 
@@ -290,10 +325,11 @@ class AddBookmarksToFolderTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->addBookmarksToFolderResponse([
-            'bookmarks' => implode(',', [$bookmark->id, $bookmark->id + 1]),
-            'folder'    => $folder->id
-        ])
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse([
+                'bookmarks' => implode(',', [$bookmark->id, $bookmark->id + 1]),
+                'folder'    => $folder->id,
+            ])
             ->assertNotFound()
             ->assertExactJson(['message' => "BookmarkNotFound"]);
     }
@@ -306,10 +342,11 @@ class AddBookmarksToFolderTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->addBookmarksToFolderResponse([
-            'bookmarks' => $bookmarks->pluck('id')->implode(','),
-            'folder'    => $folder->id + 1
-        ])->assertNotFound()
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse([
+                'bookmarks' => $bookmarks->pluck('id')->implode(','),
+                'folder'    => $folder->id + 1,
+            ])->assertNotFound()
             ->assertExactJson(['message' => "FolderNotFound"]);
     }
 
@@ -324,10 +361,11 @@ class AddBookmarksToFolderTest extends TestCase
         $folderOwner->delete();
 
         Passport::actingAs($collaborator);
-        $this->addBookmarksToFolderResponse([
-            'bookmarks' => BookmarkFactory::new()->count(3)->for($collaborator)->create()->pluck('id')->implode(','),
-            'folder'    => $folder->id,
-        ])->assertNotFound()
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse([
+                'bookmarks' => BookmarkFactory::new()->count(3)->for($collaborator)->create()->pluck('id')->implode(','),
+                'folder'    => $folder->id,
+            ])->assertNotFound()
             ->assertExactJson(['message' => "FolderNotFound"]);
     }
 
@@ -342,10 +380,11 @@ class AddBookmarksToFolderTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         Passport::actingAs($collaborator);
-        $this->addBookmarksToFolderResponse([
-            'bookmarks' => (string) $bookmark->id,
-            'folder'    => $folder->id
-        ])->assertCreated();
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse([
+                'bookmarks' => (string) $bookmark->id,
+                'folder'    => $folder->id,
+            ])->assertCreated();
 
         $notificationData = $folderOwner->notifications()->first(['data', 'type']);
 
@@ -374,10 +413,11 @@ class AddBookmarksToFolderTest extends TestCase
         Notification::fake();
 
         Passport::actingAs($collaborator);
-        $this->addBookmarksToFolderResponse([
-            'bookmarks' => $bookmarks->implode(','),
-            'folder' => $folder->id
-        ])->assertCreated();
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse([
+                'bookmarks' => $bookmarks->implode(','),
+                'folder' => $folder->id,
+            ])->assertCreated();
 
         Notification::assertNothingSent();
     }
@@ -397,10 +437,11 @@ class AddBookmarksToFolderTest extends TestCase
         Notification::fake();
 
         Passport::actingAs($collaborator);
-        $this->addBookmarksToFolderResponse([
-            'bookmarks' => $bookmarks->implode(','),
-            'folder' => $folder->id
-        ])->assertCreated();
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse([
+                'bookmarks' => $bookmarks->implode(','),
+                'folder' => $folder->id,
+            ])->assertCreated();
 
         Notification::assertNothingSent();
     }
@@ -422,7 +463,9 @@ class AddBookmarksToFolderTest extends TestCase
         Notification::fake();
 
         $this->loginUser($collaborator);
-        $this->addBookmarksToFolderResponse(['bookmarks' => $bookmarks->implode(','), 'folder' => $folder->id])->assertCreated();
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse(['bookmarks' => $bookmarks->implode(','), 'folder' => $folder->id])
+            ->assertCreated();
 
         Notification::assertNothingSent();
     }
@@ -444,28 +487,33 @@ class AddBookmarksToFolderTest extends TestCase
         //Assert collaborator can add bookmark when disabled action is not addBookmarks action
         $updateCollaboratorActionService->update($folder->id, Permission::INVITE_USER, false);
         $this->loginUser($collaborator);
-        $this->addBookmarksToFolderResponse([
-            'bookmarks' => (string) $collaboratorBookmarks[0]->id,
-            'folder'    => $folder->id
-        ])->assertCreated();
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse([
+                'bookmarks' => (string) $collaboratorBookmarks[0]->id,
+                'folder'    => $folder->id,
+            ])->assertCreated();
 
         $updateCollaboratorActionService->update($folder->id, Permission::ADD_BOOKMARKS, false);
 
         $this->loginUser($folderOwner);
-        $this->addBookmarksToFolderResponse($query = [
-            'bookmarks' => (string) $folderOwnerBookmark->id,
-            'folder'    => $folder->id
-        ])->assertCreated();
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse($query = [
+                'bookmarks' => (string) $folderOwnerBookmark->id,
+                'folder'    => $folder->id,
+            ])->assertCreated();
 
         //when user is not a collaborator
         $this->loginUser(UserFactory::new()->create());
-        $this->addBookmarksToFolderResponse($query)->assertNotFound();
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse($query)
+            ->assertNotFound();
 
         $this->loginUser($collaborator);
-        $this->addBookmarksToFolderResponse([
-            'bookmarks' => (string) $collaboratorBookmarks[1]->id,
-            'folder'    => $folder->id
-        ])->assertForbidden()
+        $this->withRequestId()
+            ->addBookmarksToFolderResponse([
+                'bookmarks' => (string) $collaboratorBookmarks[1]->id,
+                'folder'    => $folder->id,
+            ])->assertForbidden()
             ->assertExactJson(['message' => 'AddBookmarksActionDisabled']);
     }
 }

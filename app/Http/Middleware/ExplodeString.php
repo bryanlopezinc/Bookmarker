@@ -4,12 +4,21 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use Illuminate\Contracts\Validation\Factory;
+
 /**
  * Convert request attributes that are comma separated to array.
  * Any attribute with format foo,bar,baz will be converted to array.
  */
 final class ExplodeString
 {
+    private readonly Factory $validatorFactory;
+
+    public function __construct(Factory $validatorFactory = null)
+    {
+        $this->validatorFactory = $validatorFactory ?: app(Factory::class);
+    }
+
     /**
      * Handle an incoming request.
      *
@@ -25,7 +34,7 @@ final class ExplodeString
                 continue;
             }
 
-            $request->validate([$key => ['string']]);
+            $this->validatorFactory->make($request->only($key), [$key => ['string']])->validate();
 
             $converted[$key] = explode(',', $request->input($key));
         }

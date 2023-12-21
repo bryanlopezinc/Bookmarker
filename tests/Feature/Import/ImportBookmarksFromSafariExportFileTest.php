@@ -16,6 +16,7 @@ class ImportBookmarksFromSafariExportFileTest extends ImportBookmarkBaseTest
     {
         Passport::actingAs(UserFactory::new()->create());
 
+        $this->withRequestId();
         $this->importBookmarkResponse()
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
@@ -58,6 +59,7 @@ class ImportBookmarksFromSafariExportFileTest extends ImportBookmarkBaseTest
 
         Passport::actingAs(UserFactory::new()->create());
 
+        $this->withRequestId();
         $this->importBookmarkResponse([
             'request_id' => $this->faker->uuid,
             'source' => 'safariExportFile',

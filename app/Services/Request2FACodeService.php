@@ -30,28 +30,30 @@ final class Request2FACodeService
 
     public function __invoke(Request $request): void
     {
-        $maxRequestsPerMinute = 1;
-
         $user = $this->getUser($request);
+
+        $rateLimiterKey = "2FARequests:{$user->id}";
 
         if (!$this->hasher->check($request->input('password'), $user->password)) {
             throw $this->invalidCredentialsException();
         }
 
-        $twoFACodeSent = RateLimiter::attempt($this->key($user), $maxRequestsPerMinute, function () use ($user) {
-            $this->user2FACodeRepository->put($user->id, $twoFACode = TwoFACode::generate());
+        $twoFACodeSent = RateLimiter::attempt(
+            key: $rateLimiterKey,
+            maxAttempts: 1,
+            callback: function () use ($user) {
+                $this->user2FACodeRepository->put($user->id, $twoFACode = TwoFACode::generate());
 
-            Mail::to($user->email)->queue(new TwoFACodeMail($twoFACode));
-        });
+                Mail::to($user->email)->queue(new TwoFACodeMail($twoFACode));
+            }
+        );
 
         if (!$twoFACodeSent) {
-            throw new  ThrottleRequestsException('Too Many Requests');
+            throw new ThrottleRequestsException(
+                message: 'TooMany2FACodeRequests',
+                headers: ['request-2FA-after' => RateLimiter::availableIn($rateLimiterKey)]
+            );
         }
-    }
-
-    private function key(User $user): string
-    {
-        return 'sent2fa::' . $user->id;
     }
 
     private function getUser(Request $request): User

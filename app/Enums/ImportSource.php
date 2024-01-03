@@ -24,4 +24,15 @@ enum ImportSource
             $request::FIREFOX    => self::FIREFOX
         };
     }
+
+    public function toBookmarkCreationSource(): BookmarkCreationSource
+    {
+        return match ($this) {
+            self::CHROME     => BookmarkCreationSource::CHROME_IMPORT,
+            self::POCKET     => BookmarkCreationSource::POCKET_IMPORT,
+            self::SAFARI     => BookmarkCreationSource::SAFARI_IMPORT,
+            self::INSTAPAPER => BookmarkCreationSource::INSTAPAPER_IMPORT,
+            self::FIREFOX    => BookmarkCreationSource::FIREFOX_IMPORT
+        };
+    }
 }

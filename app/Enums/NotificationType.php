@@ -11,6 +11,7 @@ enum NotificationType: string
     case BOOKMARKS_REMOVED_FROM_FOLDER = 'bookmarksRemovedFromFolder';
     case COLLABORATOR_EXIT             = 'collaboratorExitedFolder';
     case NEW_COLLABORATOR              = 'collaboratorAddedToFolder';
+    case IMPORT_FAILED                 = 'ImportFailed';
 
     public static function values(): array
     {

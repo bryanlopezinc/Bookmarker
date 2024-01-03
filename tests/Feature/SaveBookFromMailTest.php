@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\UpdateBookmarkWithHttpResponse;
 use App\Mail\EmailNotRegisteredMail;
 use App\Mail\EmailNotVerifiedMail;
 use App\Models\Bookmark;
@@ -12,7 +11,6 @@ use Illuminate\Support\Str;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Mail;
 
 class SaveBookFromMailTest extends TestCase
@@ -42,8 +40,6 @@ class SaveBookFromMailTest extends TestCase
 
     public function testSaveBookmark(): void
     {
-        Bus::fake(UpdateBookmarkWithHttpResponse::class);
-
         $user = UserFactory::new()->create();
 
         $data = json_decode(associative: true, json: file_get_contents(base_path('tests/stubs/SendGrid/mail.json')));
@@ -60,8 +56,6 @@ class SaveBookFromMailTest extends TestCase
 
     public function testSaveBookmarkFromSecondaryEmail(): void
     {
-        Bus::fake(UpdateBookmarkWithHttpResponse::class);
-
         $user = UserFactory::new()->create();
 
         SecondaryEmail::query()->create([

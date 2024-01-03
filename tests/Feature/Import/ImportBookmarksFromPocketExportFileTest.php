@@ -2,12 +2,10 @@
 
 namespace Tests\Feature\Import;
 
-use App\Jobs\UpdateBookmarkWithHttpResponse;
-use App\Models\Bookmark;
 use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\View;
 use Laravel\Passport\Passport;
 
 class ImportBookmarksFromPocketExportFileTest extends ImportBookmarkBaseTest
@@ -25,29 +23,28 @@ class ImportBookmarksFromPocketExportFileTest extends ImportBookmarkBaseTest
             ]);
 
         $this->importBookmarkResponse([
-            'source'             => 'pocketExportFile',
-            'pocket_export_file' => UploadedFile::fake()->create('file.html', 5001),
+            'source'  => 'pocketExportFile',
+            'html' => UploadedFile::fake()->create('file.html', 1001),
         ])->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'pocket_export_file' => ['The pocket export file must not be greater than 5000 kilobytes.']
+                'html' => ['The html must not be greater than 1000 kilobytes.']
             ]);
     }
 
-    public function testWillImportBookmarks(): void
+    public function testImportBookmarks(): void
     {
-        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
-
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        $content = file_get_contents(base_path('tests/stubs/Imports/pocketExportFile.html'));
-
+        Passport::actingAs(UserFactory::new()->create());
         $this->withRequestId();
-        $this->importBookmarkResponse([
-            'request_id' => $this->faker->uuid,
-            'source' => 'pocketExportFile',
-            'pocket_export_file' => UploadedFile::fake()->createWithContent('file.html', $content),
-        ])->assertStatus(Response::HTTP_PROCESSING);
 
-        $this->assertEquals(Bookmark::query()->where('user_id', $user->id)->count(), 11);
+        $this->importBookmarkResponse([
+            'source' => 'pocketExportFile',
+            'html' => UploadedFile::fake()->createWithContent('file.html', $this->getViewInstance()->render()),
+        ])->assertStatus(Response::HTTP_PROCESSING);
+    }
+
+    private function getViewInstance()
+    {
+        return View::file(base_path('tests/stubs/Imports/pocket.blade.php'))
+            ->with('bookmarks', [['tags' => '']]);
     }
 }

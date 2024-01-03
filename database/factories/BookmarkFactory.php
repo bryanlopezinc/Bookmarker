@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\BookmarkCreationSource;
 use App\Models\Bookmark;
 use App\Utils\UrlHasher;
 use App\ValueObjects\Url;
@@ -37,7 +38,8 @@ final class BookmarkFactory extends Factory
             'url_canonical'           => $url,
             'url_canonical_hash'      => $hasher->hashUrl(new Url($url)),
             'resolved_url'            => $url,
-            'resolved_at'             => null
+            'resolved_at'             => null,
+            'created_from'            => BookmarkCreationSource::HTTP
         ];
     }
 }

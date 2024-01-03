@@ -44,6 +44,9 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
 
         Route::get('bookmarks/{bookmark_id}/duplicates', C\FetchDuplicateBookmarksController::class)->name('fetchPossibleDuplicates');
         Route::delete('folders/{folder_id}', F\DeleteFolderController::class)->name('deleteFolder');
+
+        Route::get('imports', [C\ImportController::class, 'imports'])->name('fetchUserImports');
+        Route::get('imports/{import_id}/history', [C\ImportController::class, 'history'])->whereUuid('import_id')->name('fetchImportHistory');
     });
 
     Route::prefix('bookmarks')->group(function () {
@@ -51,7 +54,7 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
         Route::delete('/', C\DeleteBookmarkController::class)->middleware([StringToArray::keys('ids')])->name('deleteBookmark');
         Route::patch('/', C\UpdateBookmarkController::class)->middleware([StringToArray::keys('tags')])->name('updateBookmark');
         Route::delete('tags/remove', C\DeleteBookmarkTagsController::class)->middleware([StringToArray::keys('tags')])->name('deleteBookmarkTags');
-        Route::post('import', C\ImportBookmarkController::class)
+        Route::post('import', [C\ImportController::class, 'store'])
             ->middleware([StringToArray::keys('tags'), PreventsDuplicateImportMiddleware::class])
             ->withoutMiddleware(DBTransaction::class)
             ->name('importBookmark');

@@ -17,77 +17,26 @@ final class ImportBookmarkRequest extends FormRequest
     public const INSTAPAPER = 'instapaperFile';
     public const FIREFOX    = 'firefoxFile';
 
+    private const VALID_SOURCES = [
+        self::CHROME,
+        self::POCKET,
+        self::SAFARI,
+        self::INSTAPAPER,
+        self::FIREFOX
+    ];
+
     public function rules(): array
     {
-        $rules = match ($this->input('source')) {
-            self::CHROME     => $this->chromeImportRules(),
-            self::POCKET     => $this->pocketImportRules(),
-            self::SAFARI     => $this->safariImportRules(),
-            self::INSTAPAPER => $this->paperImportRules(),
-            self::FIREFOX    => $this->fireFoxImportRules(),
-            default          => []
-        };
-
-        return array_merge($rules, [
-            'source'     => [
-                'required', 'string', 'filled', Rule::in([
-                    self::CHROME,
-                    self::POCKET,
-                    self::SAFARI,
-                    self::INSTAPAPER,
-                    self::FIREFOX
-                ])
-            ]
-        ]);
-    }
-
-    private function fireFoxImportRules(): array
-    {
         return [
-            'use_timestamp'       => ['nullable', 'bool'],
-            'ignore_tags'         => ['nullable', 'bool'],
-            'firefox_export_file' => ['required', 'file', 'mimes:html', 'max:5000'],
-        ];
-    }
-
-    private function paperImportRules(): array
-    {
-        return [
-            'instapaper_html' => [
-                'required', 'file',
-                'mimes:html',
-                join(':', ['max', setting('MAX_SAFARI_FILE_SIZE')])
-            ],
-            'tags' => ['nullable', 'max:15'],
-            'tags.*' => ['distinct:strict', new TagRule()],
-        ];
-    }
-
-    private function safariImportRules(): array
-    {
-        return [
-            'safari_html' => ['required', 'file', 'mimes:html', join(':', ['max', setting('MAX_SAFARI_FILE_SIZE')])],
-            'tags'        => ['nullable', 'max:15'],
-            'tags.*'      => ['distinct:strict', new TagRule()],
-        ];
-    }
-
-    private function chromeImportRules(): array
-    {
-        return [
-            'use_timestamp' => ['nullable', 'bool'],
-            'html'          => ['required', 'file', 'mimes:html', join(':', ['max', setting('MAX_CHROME_FILE_SIZE')])],
-            'tags'          => ['nullable', 'max:15'],
-            'tags.*'        => ['distinct:strict', new TagRule()],
-        ];
-    }
-
-    private function pocketImportRules(): array
-    {
-        return [
-            'use_timestamp'      => ['nullable', 'bool'],
-            'ignore_tags'        => ['nullable', 'bool'],
-            'pocket_export_file' => ['required', 'file', 'mimes:html', 'max:5000'],
+            'source'                 => ['required', 'string', 'filled', Rule::in(self::VALID_SOURCES)],
+            'html'                   => ['required', 'file', 'mimes:html', 'max:1000'],
+            'tags'                   => ['sometimes', 'array', 'max:15'],
+            'tags.*'                 => ['distinct:strict', new TagRule()],
+            'include_bookmark_tags'  => ['sometimes', 'bool'],
+            'bookmark_tags_exceeded' => ['sometimes', 'in:slice,skip_bookmark,fail_import'],
+            'invalid_bookmark_tag'   => ['sometimes', 'string', 'in:skip_bookmark,fail_import,skip_tag'],
+            'tags_merge_overflow'    => ['sometimes', 'in:skip_bookmark,fail_import,ignore_all_tags'],
+            'merge_strategy'         => ['sometimes', 'string', 'in:user_defined_tags_first,import_file_tags_first'],
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\BookmarkCreationSource;
 use App\Jobs\UpdateBookmarkWithHttpResponse;
 use App\Models\Bookmark;
 use App\Models\Taggable;
@@ -111,6 +112,7 @@ class CreateBookmarkTest extends TestCase
         $this->assertEquals($url, $bookmark->title);
         $this->assertEquals($url, $bookmark->url);
         $this->assertEquals($url, $bookmark->url_canonical);
+        $this->assertEquals(BookmarkCreationSource::HTTP, $bookmark->created_from);
         $this->assertEquals($url, $bookmark->resolved_url);
         $this->assertEquals($user->id, $bookmark->user_id);
         $this->assertNull($bookmark->description);
@@ -125,8 +127,6 @@ class CreateBookmarkTest extends TestCase
 
     public function testCreateBookmarkWithTitle(): void
     {
-        Bus::fake(UpdateBookmarkWithHttpResponse::class);
-
         Passport::actingAs($user = UserFactory::new()->create());
 
         $this->withRequestId()
@@ -139,15 +139,12 @@ class CreateBookmarkTest extends TestCase
         $bookmark = Bookmark::query()->where('user_id', $user->id)->sole();
 
         $this->assertEquals($title, $bookmark->title);
-        $this->assertNull($bookmark->description);
         $this->assertTrue($bookmark->has_custom_title);
         $this->assertFalse($bookmark->description_set_by_user);
     }
 
     public function testCreateBookmarkWithDescription(): void
     {
-        Bus::fake(UpdateBookmarkWithHttpResponse::class);
-
         Passport::actingAs($user = UserFactory::new()->create());
 
         $this->withRequestId()
@@ -166,8 +163,6 @@ class CreateBookmarkTest extends TestCase
 
     public function testCreateBookmarkWithTags(): void
     {
-        Bus::fake(UpdateBookmarkWithHttpResponse::class);
-
         Passport::actingAs($user = UserFactory::new()->create());
 
         $this->withRequestId()

@@ -42,11 +42,7 @@ final class CreateBookmarkFromMailMessageService
         }
 
         try {
-            $this->service->fromArray([
-                'url'       => new Url(trim((string)$message->getTextContent())),
-                'createdOn' => (string) now(),
-                'userID'    => $user->id
-            ]);
+            $this->service->fromMail(new Url(trim((string)$message->getTextContent())), $user->id);
         } catch (MalformedURLException) {
         }
     }

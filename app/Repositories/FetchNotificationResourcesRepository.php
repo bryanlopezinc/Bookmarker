@@ -112,6 +112,10 @@ class FetchNotificationResourcesRepository
             ]);
         }
 
+        if (empty($query->columns)) {
+            return;
+        }
+
         collect($query->get()->first())
             ->mapWithKeys(fn (?string $json, string $key) => [$key => json_decode($json ?? '{}', true)])
             ->mapWithKeys(function (array $data, string $key) {

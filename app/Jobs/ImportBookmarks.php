@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\DataTransferObjects\ImportData;
-use App\Importers\Factory;
+use App\Import\ImportBookmarkRequestData;
+use App\Import\Importer;
+use App\Import\Listeners;
+use App\Import\EventDispatcher;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Support\Facades\DB;
 
 final class ImportBookmarks implements ShouldQueue
 {
@@ -19,24 +20,28 @@ final class ImportBookmarks implements ShouldQueue
     use InteractsWithQueue;
     use Queueable;
 
-    public function __construct(private ImportData $importData)
+    public function __construct(private ImportBookmarkRequestData $importData)
     {
     }
 
-    public function handle(Factory $factory): void
+    public function handle(): void
     {
-        if (!User::query()->whereKey($this->importData->userID())->exists()) {
+        $user = User::query()->whereKey($this->importData->userId())->first();
+
+        if (!$user) {
             return;
         }
 
-        DB::transaction(function () use ($factory) {
-            $importData = $this->importData;
+        $eventDispatcher = new EventDispatcher();
 
-            $factory->getImporter($importData->source())->import(
-                $importData->userID(),
-                $importData->requestID(),
-                $importData->data()
-            );
-        });
+        $eventDispatcher->addListener(new Listeners\StoresImportHistory($this->importData));
+        $eventDispatcher->addListener(new Listeners\UpdatesImportStatus());
+        $eventDispatcher->addListener(new Listeners\TransferImportsToBookmarksStore($this->importData));
+        $eventDispatcher->addListener(new Listeners\NotifiesUserOnImportFailure($user, $this->importData->importId()));
+        $eventDispatcher->addListener(new Listeners\ClearsDataAfterImport($user->id, $this->importData->importId()));
+
+        $importer = new Importer(event: $eventDispatcher);
+
+        $importer->import($this->importData);
     }
 }

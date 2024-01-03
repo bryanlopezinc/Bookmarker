@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\BookmarkCreationSource;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -32,6 +33,7 @@ use Illuminate\Support\Collection;
  * @property bool $isHealthy
  * @property bool $isUserFavorite
  * @property bool $hasDuplicates
+ * @property BookmarkCreationSource $created_from
  * @property \Carbon\Carbon|null $resolved_at
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
@@ -62,6 +64,7 @@ final class Bookmark extends Model
         'resolved_at'             => 'datetime',
         'created_at'              => 'datetime',
         'updated_at'              => 'datetime',
+        'created_from'            => BookmarkCreationSource::class
     ];
 
     public function getSourceAttribute(): Source

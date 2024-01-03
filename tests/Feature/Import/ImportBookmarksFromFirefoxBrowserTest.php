@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Import;
 
-use App\Jobs\UpdateBookmarkWithHttpResponse;
+use App\Enums\BookmarkCreationSource;
 use App\Models\Bookmark;
 use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\View;
 use Laravel\Passport\Passport;
 
 class ImportBookmarksFromFirefoxBrowserTest extends ImportBookmarkBaseTest
@@ -25,35 +25,47 @@ class ImportBookmarksFromFirefoxBrowserTest extends ImportBookmarkBaseTest
             ]);
 
         $this->importBookmarkResponse(['source' => 'foo'])
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors([
-            'source' => ['The selected source is invalid.']
-        ]);
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'source' => ['The selected source is invalid.']
+            ]);
 
         $this->importBookmarkResponse([
             'source' => 'firefoxFile',
-            'firefox_export_file' => UploadedFile::fake()->create('file.html', 5001),
+            'html' => UploadedFile::fake()->create('file.html', 1001),
         ])->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'firefox_export_file' => ['The firefox export file must not be greater than 5000 kilobytes.']
+                'html' => ['The html must not be greater than 1000 kilobytes.']
             ]);
     }
 
     public function testImportBookmarks(): void
     {
-        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
-
         Passport::actingAs($user = UserFactory::new()->create());
-
-        $content = file_get_contents(base_path('tests/stubs/Imports/firefox.html'));
 
         $this->withRequestId();
         $this->importBookmarkResponse([
-            'request_id' => $this->faker->uuid,
             'source' => 'firefoxFile',
-            'firefox_export_file' => UploadedFile::fake()->createWithContent('file.html', $content),
+            'html' => UploadedFile::fake()->createWithContent('file.html', $this->getViewInstance()->render()),
         ])->assertStatus(Response::HTTP_PROCESSING);
 
-        $this->assertEquals(Bookmark::query()->where('user_id', $user->id)->count(), 6);
+        /** @var Bookmark */
+        $userBookmark = Bookmark::query()->with('tags')->where('user_id', $user->id)->sole();
+
+        $this->assertEquals($userBookmark->created_from, BookmarkCreationSource::FIREFOX_IMPORT);
+        $this->assertEquals('https://www.rottentomatoes.com/m/vhs99', $userBookmark->url);
+        $this->assertFalse($userBookmark->has_custom_title);
+        $this->assertFalse($userBookmark->description_set_by_user);
+        $this->assertEmpty($userBookmark->tags->all());
+    }
+
+    private function getViewInstance()
+    {
+        return View::file(base_path('tests/stubs/Imports/firefox.blade.php'))
+            ->with(['includeBookmarksInPersonalToolBar' => false])
+            ->with('bookmarks', [
+                ['url' => 'https://www.rottentomatoes.com/m/vhs99', 'tags' => ''],
+                ['url' => 'fake', 'tags' => '']
+            ]);
     }
 }

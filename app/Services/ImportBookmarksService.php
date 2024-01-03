@@ -6,12 +6,14 @@ namespace App\Services;
 
 use App\Enums\ImportSource;
 use Illuminate\Support\Str;
-use App\ValueObjects\UserId;
-use App\Importers\Filesystem;
+use App\Import\Filesystem;
 use App\Jobs\ImportBookmarks;
 use Illuminate\Http\UploadedFile;
-use App\DataTransferObjects\ImportData;
+use App\Import\ImportBookmarkRequestData;
 use App\Http\Requests\ImportBookmarkRequest;
+use App\Import\ImportBookmarksStatus;
+use App\Import\ImportStats;
+use App\Models\Import;
 
 final class ImportBookmarksService
 {
@@ -21,28 +23,26 @@ final class ImportBookmarksService
 
     public function fromRequest(ImportBookmarkRequest $request): void
     {
-        $userID = UserId::fromAuthUser()->value();
+        $userID = auth()->id();
 
-        $requestID = Str::uuid()->toString();
+        $importId = Str::uuid()->toString();
 
-        /** @var UploadedFile*/
-        $file = match ($request->input('source')) {
-            $request::CHROME     => $request->file('html'),
-            $request::POCKET     => $request->file('pocket_export_file'),
-            $request::SAFARI     => $request->file('safari_html'),
-            $request::INSTAPAPER => $request->file('instapaper_html'),
-            $request::FIREFOX    => $request->file('firefox_export_file'),
-        };
-
-        $this->filesystem->put($file->getContent(), $userID, $requestID);
+        $this->filesystem->put($request->file('html')->getContent(), $userID, $importId);
 
         // Remove the file from the request data because
         // \Illuminate\Http\UploadedFile cannot be serialized
         // and will throw an exception when trying to queue ImportBookmarks job.
         $validated = collect($request->validated())->reject(fn ($value) => $value instanceof UploadedFile)->all();
 
+        Import::query()->create([
+            'import_id' => $importId,
+            'user_id' => $userID,
+            'status'  => ImportBookmarksStatus::PENDING,
+            'statistics' => new ImportStats()
+        ]);
+
         dispatch(new ImportBookmarks(
-            new ImportData($requestID, ImportSource::fromRequest($request), $userID, $validated)
+            new ImportBookmarkRequestData($importId, ImportSource::fromRequest($request), $userID, $validated)
         ));
     }
 }

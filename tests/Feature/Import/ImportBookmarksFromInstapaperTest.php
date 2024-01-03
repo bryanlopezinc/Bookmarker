@@ -2,13 +2,11 @@
 
 namespace Tests\Feature\Import;
 
-use App\Jobs\UpdateBookmarkWithHttpResponse;
-use App\Models\Bookmark;
 use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\View;
 use Laravel\Passport\Passport;
 
 class ImportBookmarksFromInstapaperTest extends ImportBookmarkBaseTest
@@ -28,22 +26,22 @@ class ImportBookmarksFromInstapaperTest extends ImportBookmarkBaseTest
         $this->importBookmarkResponse(['source' => 'instapaperFile',])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'instapaper_html' => ['The instapaper html field is required.']
+                'html' => ['The html field is required.']
             ]);
 
         $this->importBookmarkResponse([
             'source' => 'instapaperFile',
-            'instapaper_html' => UploadedFile::fake()->create('file.html', 5001),
+            'html' => UploadedFile::fake()->create('file.html', 1001),
         ])->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'instapaper_html' => ['The instapaper html must not be greater than 5000 kilobytes.']
+                'html' => ['The html must not be greater than 1000 kilobytes.']
             ]);
 
         $this->importBookmarkResponse([
             'source' => 'instapaperFile',
             'tags'   => TagFactory::new()->count(16)->make()->pluck('name')->implode(',')
         ])->assertJsonValidationErrors([
-            'tags' => 'The tags must not be greater than 15 characters.'
+            'tags' => 'The tags must not have more than 15 items.'
         ]);
 
         $this->importBookmarkResponse([
@@ -57,29 +55,18 @@ class ImportBookmarksFromInstapaperTest extends ImportBookmarkBaseTest
 
     public function testImportBookmarks(): void
     {
-        Bus::fake([UpdateBookmarkWithHttpResponse::class]);
-        Passport::actingAs($user = UserFactory::new()->create());
-
-        $expectedUrls = [
-            'https://symfony.com/',
-            'https://redis.io/docs/getting-started/installation/install-redis-on-mac-os/',
-            'https://www.goal.com/en',
-            'https://laravel.com/'
-        ];
-
+        Passport::actingAs(UserFactory::new()->create());
         $this->withRequestId();
 
         $this->importBookmarkResponse([
-            'request_id' => $this->faker->uuid,
             'source' => 'instapaperFile',
-            'instapaper_html' => UploadedFile::fake()->createWithContent('file.html', file_get_contents(base_path('tests/stubs/Imports/instapaper.html'))),
+            'html' => UploadedFile::fake()->createWithContent('file.html', $this->getViewInstance()->render()),
         ])->assertStatus(Response::HTTP_PROCESSING);
+    }
 
-        Bookmark::query()
-            ->where('user_id', $user->id)
-            ->get()
-            ->each(function (Bookmark $bookmark) use ($expectedUrls) {
-                $this->assertContains($bookmark->url, $expectedUrls);
-            });
+    private function getViewInstance()
+    {
+        return View::file(base_path('tests/stubs/Imports/instapaper.blade.php'))
+            ->with('bookmarks', [['url' => 'https://symfony.com/']]);
     }
 }

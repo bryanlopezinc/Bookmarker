@@ -45,7 +45,7 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
         Route::get('bookmarks/{bookmark_id}/duplicates', C\FetchDuplicateBookmarksController::class)->name('fetchPossibleDuplicates');
         Route::delete('folders/{folder_id}', F\DeleteFolderController::class)->name('deleteFolder');
 
-        Route::get('imports', [C\ImportController::class, 'imports'])->name('fetchUserImports');
+        Route::get('imports', C\FetchUserImportsController::class)->name('fetchUserImports');
         Route::get('imports/{import_id}/history', [C\ImportController::class, 'history'])->whereUuid('import_id')->name('fetchImportHistory');
     });
 

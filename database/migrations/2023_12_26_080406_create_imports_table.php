@@ -16,7 +16,7 @@ return new class extends Migration
             $table->uuid('import_id')->unique();
             $table->foreignId('user_id')->index();
             $table->unique(['import_id', 'user_id']);
-            $table->tinyInteger('status');
+            $table->tinyInteger('status')->index();
             $table->json('statistics');
             $table->timestamp('created_at');
         });

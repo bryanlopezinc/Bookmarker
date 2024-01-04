@@ -17,6 +17,27 @@ enum ImportBookmarksStatus: int
     case FAILED_DUE_TO_INVALID_BOOKMARK_URL = 8;
     case FAILED_DUE_TO_TO_MANY_TAGS         = 9;
 
+    /**
+     * @return array<int>
+     */
+    public static function failedCases(): array
+    {
+        return collect(self::cases())
+            ->filter(fn (self $status) => $status->failed())
+            ->map(fn (self $status) => $status->value)
+            ->values()
+            ->all();
+    }
+
+    public static function fromRequest(string $category): self
+    {
+        return match ($category) {
+            'pending' => self::PENDING,
+            'success' => self::SUCCESS,
+            'importing' => self::IMPORTING,
+        };
+    }
+
     public function isRunning(): bool
     {
         return $this == self::IMPORTING;

@@ -3,7 +3,7 @@
 namespace Tests\Feature\Import;
 
 use App\Cache\ImportStatRepository;
-use App\Import\ImportBookmarksStatus;
+use App\Import\ImportBookmarksStatus as Status;
 use App\Import\ImportStats;
 use Database\Factories\ImportFactory;
 use Database\Factories\UserFactory;
@@ -59,6 +59,43 @@ class FetchUserImportsTest extends TestCase
     }
 
     #[Test]
+    public function filterImports(): void
+    {
+        $this->loginUser($user = UserFactory::new()->create());
+
+        $factory = ImportFactory::new(['user_id' => $user->id]);
+
+        $imports = [
+            $factory->pending()->create(),
+            $factory->importing()->create(),
+            $factory->failed(reason: Status::FAILED_DUE_TO_INVALID_TAG)->create(),
+            $factory->failed(reason: Status::FAILED_DUE_TO_MERGE_TAGS_EXCEEDED)->create(),
+            $factory->failed(reason: Status::FAILED_DUE_TO_SYSTEM_ERROR)->create(),
+            $factory->failed(reason: Status::FAILED_DUE_TO_INVALID_BOOKMARK_URL)->create(),
+            $factory->failed(reason: Status::FAILED_DUE_TO_TO_MANY_TAGS)->create(),
+        ];
+
+        $this->fetchImportsResponse(['filter' => 'failed'])
+            ->assertOk()
+            ->assertJsonCount(5, 'data')
+            ->assertJsonPath('data.0.attributes.id', $imports[6]->import_id)
+            ->assertJsonPath('data.1.attributes.id', $imports[5]->import_id)
+            ->assertJsonPath('data.2.attributes.id', $imports[4]->import_id)
+            ->assertJsonPath('data.3.attributes.id', $imports[3]->import_id)
+            ->assertJsonPath('data.4.attributes.id', $imports[2]->import_id);
+
+        $this->fetchImportsResponse(['filter' => 'pending'])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.attributes.id', $imports[0]->import_id);
+
+        $this->fetchImportsResponse(['filter' => 'importing'])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.attributes.id', $imports[1]->import_id);
+    }
+
+    #[Test]
     public function whenStatusIsSuccess(): void
     {
         $this->loginUser($user = UserFactory::new()->create());
@@ -103,7 +140,7 @@ class FetchUserImportsTest extends TestCase
         $this->loginUser($user = UserFactory::new()->create());
 
         $import = ImportFactory::new()
-            ->failed(new ImportStats(100, 3, 104, 0, 1), ImportBookmarksStatus::FAILED_DUE_TO_INVALID_BOOKMARK_URL)
+            ->failed(new ImportStats(100, 3, 104, 0, 1), Status::FAILED_DUE_TO_INVALID_BOOKMARK_URL)
             ->create(['user_id' => $user->id]);
 
         $this->fetchImportsResponse()

@@ -10,7 +10,7 @@
    - Save links seamlessly with visually appealing previews for enhanced accessibility.
 
 2. **Browser Integration:**
-   - Effortlessly import bookmarks from your preferred browsers for a seamless transition.
+   - Effortlessly consolidate bookmarks from preferred browsers in real-time. Seamlessly transition and gain insights through import statistics and history for   enhanced productivity and collaboration.
 
 3. **Tagging and Organization:**
    - Implement a structured approach with advanced tagging and folder organization capabilities.

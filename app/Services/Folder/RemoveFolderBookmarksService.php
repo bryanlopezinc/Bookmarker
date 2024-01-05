@@ -18,6 +18,7 @@ use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\Notifications\BookmarksRemovedFromFolderNotification as Notification;
 use App\Repositories\NotificationRepository;
+use App\ValueObjects\UserId;
 use Illuminate\Database\Eloquent\Collection;
 
 final class RemoveFolderBookmarksService
@@ -30,7 +31,7 @@ final class RemoveFolderBookmarksService
 
     public function remove(array $bookmarkIDs, int $folderID): void
     {
-        $authUserId = auth()->id();
+        $authUserId = UserId::fromAuthUser()->value();
 
         $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'updated_at'])
             ->tap(new WhereFolderOwnerExists())
@@ -38,7 +39,9 @@ final class RemoveFolderBookmarksService
             ->tap(new IsMutedUserScope($authUserId))
             ->find($folderID);
 
-        FolderNotFoundException::throwIf(!$folder);
+        if (is_null($folder)) {
+            throw new FolderNotFoundException();
+        }
 
         $folderBookmarks = FolderBookmark::query()
             ->where('folder_id', $folder->id)

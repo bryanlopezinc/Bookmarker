@@ -25,7 +25,7 @@ final class ProfileImageFileSystem
         return $this->filesystem->exists($fileName);
     }
 
-    public function store(UploadedFile $file): string
+    public function store(UploadedFile $file): string|false
     {
         return $file->storePublicly('', self::DISK);
     }

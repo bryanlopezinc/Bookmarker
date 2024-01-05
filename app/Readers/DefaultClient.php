@@ -29,7 +29,7 @@ final class DefaultClient implements HttpClientInterface
                 ->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36') //phpcs:ignore
                 ->get($bookmark->url);
         } catch (ConnectionException $e) {
-            return $this->handleException($e->getPrevious(), $bookmark);
+            return $this->handleException($e->getPrevious(), $bookmark); //@phpstan-ignore-line
         }
 
         if (!$response->successful() || !str_contains($response->header('content-type'), 'text/html')) {

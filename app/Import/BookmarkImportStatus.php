@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Import;
 
+use Exception;
+
 enum BookmarkImportStatus: int
 {
     case SUCCESS                            = 3;
@@ -32,7 +34,8 @@ enum BookmarkImportStatus: int
             ImportBookmarksStatus::FAILED_DUE_TO_MERGE_TAGS_EXCEEDED => self::FAILED_DUE_TO_MERGE_TAGS_EXCEEDED,
             ImportBookmarksStatus::FAILED_DUE_TO_SYSTEM_ERROR => self::FAILED_DUE_TO_SYSTEM_ERROR,
             ImportBookmarksStatus::FAILED_DUE_TO_INVALID_BOOKMARK_URL => self::FAILED_DUE_TO_INVALID_URL,
-            ImportBookmarksStatus::FAILED_DUE_TO_TO_MANY_TAGS => self::FAILED_DUE_TO_TOO_MANY_TAGS
+            ImportBookmarksStatus::FAILED_DUE_TO_TO_MANY_TAGS => self::FAILED_DUE_TO_TOO_MANY_TAGS,
+            default => throw new Exception('Status is not failed.')
         };
     }
 

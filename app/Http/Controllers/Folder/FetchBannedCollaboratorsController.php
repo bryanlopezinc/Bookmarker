@@ -23,11 +23,14 @@ final class FetchBannedCollaboratorsController
 
         $request->validate(PaginationData::new()->asValidationRules());
 
+        /** @var Folder|null */
         $folder = Folder::query()->find($request->route('folder_id'), ['user_id']);
 
         $pagination = PaginationData::fromRequest($request);
 
-        FolderNotFoundException::throwIf(!$folder);
+        if (is_null($folder)) {
+            throw new FolderNotFoundException();
+        }
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 

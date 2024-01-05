@@ -14,11 +14,14 @@ use Illuminate\Http\Request;
 
 final class FetchDuplicateBookmarksController
 {
-    public function __invoke(Request $request, BookmarkRepository $repository): ResourceCollection
+    public function __invoke(Request $request, BookmarkRepository $repository, string $bookmarkId): ResourceCollection
     {
         $request->validate(PaginationData::new()->asValidationRules());
 
-        $bookmark = $repository->findById(intval($request->route('bookmark_id')), ['url_canonical_hash', 'user_id', 'id']);
+        $bookmark = $repository->findById(
+            (int)$bookmarkId,
+            ['url_canonical_hash', 'user_id', 'id']
+        );
 
         BookmarkNotFoundException::throwIfDoesNotBelongToAuthUser($bookmark);
 

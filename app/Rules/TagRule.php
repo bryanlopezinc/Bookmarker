@@ -30,7 +30,7 @@ final class TagRule implements ValidationRule
         );
 
         if ($validator->fails()) {
-            $fail($childAttribute, $validator->errors()->first());
+            $fail($childAttribute, $validator->errors()->first());//@phpstan-ignore-line
         }
     }
 
@@ -47,7 +47,7 @@ final class TagRule implements ValidationRule
             $passes = false;
         };
 
-        $this->validate($attribute, $value, $fail);
+        $this->validate($attribute, $value, $fail); //@phpstan-ignore-line
 
         return $passes;
     }

@@ -11,6 +11,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use App\Models\Bookmark;
+use Illuminate\Support\Collection;
 
 final class CheckBookmarksHealth implements ShouldQueue
 {
@@ -20,16 +21,17 @@ final class CheckBookmarksHealth implements ShouldQueue
     use SerializesModels;
 
     /**
-     * @param iterable<Bookmark> $bookmarks
+     * @var Collection<Bookmark>
      */
-    public function __construct(private iterable $bookmarks)
+    private Collection $bookmarks;
+
+    public function __construct(iterable $bookmarks)
     {
+        $this->bookmarks = collect($bookmarks); //@phpstan-ignore-line
     }
 
     public function handle(HealthChecker $healthChecker): void
     {
-        $healthChecker->ping(
-            collect($this->bookmarks)->all()
-        );
+        $healthChecker->ping($this->bookmarks->all());
     }
 }

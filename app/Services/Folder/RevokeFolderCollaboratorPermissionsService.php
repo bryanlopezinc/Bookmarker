@@ -10,6 +10,7 @@ use App\Models\Folder;
 use App\Models\FolderCollaborator;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\UAC;
+use App\ValueObjects\UserId;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class RevokeFolderCollaboratorPermissionsService
@@ -22,11 +23,13 @@ final class RevokeFolderCollaboratorPermissionsService
     {
         $folder = Folder::query()->find($folderID, ['id', 'user_id']);
 
-        FolderNotFoundException::throwIf(!$folder);
+        if (is_null($folder)) {
+            throw new FolderNotFoundException();
+        }
 
         $collaboratorPermissions = $this->permissions->all($collaboratorID, $folderID);
 
-        $this->ensureIsNotPerformingActionOnSelf($collaboratorID, $authUserId = auth()->id());
+        $this->ensureIsNotPerformingActionOnSelf($collaboratorID, $authUserId = UserId::fromAuthUser()->value());
 
         $this->ensureUserHasPermissionToPerformAction($folder, $authUserId);
 

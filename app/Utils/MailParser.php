@@ -17,7 +17,7 @@ final class MailParser
         $this->message = Message::from($mimeMessage, true);
     }
 
-    public function from(): string
+    public function from(): ?string
     {
         $from = $this->message->getHeader('From');
 
@@ -25,7 +25,7 @@ final class MailParser
             return $from->getEmail();
         }
 
-        return '';
+        return null;
     }
 
     public function getTextContent(): ?string

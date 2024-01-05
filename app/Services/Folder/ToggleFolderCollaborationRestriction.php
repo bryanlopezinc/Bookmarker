@@ -19,11 +19,13 @@ final class ToggleFolderCollaborationRestriction
 
         $folder = Folder::query()->find($folderId, ['user_id']);
 
-        FolderNotFoundException::throwIf(!$folder);
+        if (is_null($folder)) {
+            throw new FolderNotFoundException();
+        }
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 
-        $disabledActions = Model::query()
+        $disabledActions = Model::query() //@phpstan-ignore-line
             ->where('folder_id', $folderId)
             ->get(['action'])
             ->pluck('action');

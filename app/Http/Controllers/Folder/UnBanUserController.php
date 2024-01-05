@@ -15,9 +15,12 @@ final class UnBanUserController
 {
     public function __invoke(Request $request): JsonResponse
     {
+        /** @var Folder|null */
         $folder = Folder::query()->find($request->route('folder_id'), ['user_id']);
 
-        FolderNotFoundException::throwIf(!$folder);
+        if (is_null($folder)) {
+            throw new FolderNotFoundException();
+        }
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 

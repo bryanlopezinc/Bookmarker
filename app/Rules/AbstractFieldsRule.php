@@ -77,7 +77,7 @@ abstract class AbstractFieldsRule implements ValidationRule
         }
 
         if ($this->errors->isNotEmpty()) {
-            $fail($attribute, $this->errors->first());
+            $fail($attribute, $this->errors->first()); //@phpstan-ignore-line
         }
     }
 

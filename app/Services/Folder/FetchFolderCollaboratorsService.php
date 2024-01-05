@@ -28,7 +28,9 @@ final class FetchFolderCollaboratorsService
     {
         $folder = Folder::query()->find($request->route('folder_id'), ['id', 'user_id']);
 
-        FolderNotFoundException::throwIf(!$folder);
+        if (is_null($folder)) {
+            throw new FolderNotFoundException();
+        }
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 

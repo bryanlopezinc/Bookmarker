@@ -10,9 +10,9 @@ use Illuminate\Http\Request;
 
 final class LeaveFolderCollaborationController
 {
-    public function __invoke(Request $request, Service $service): JsonResponse
+    public function __invoke(Request $request, Service $service, string $folderId): JsonResponse
     {
-        $service->leave((int)$request->route('folder_id'));
+        $service->leave((int)$folderId);
 
         return response()->json();
     }

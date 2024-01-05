@@ -43,7 +43,7 @@ final class ImportBookmarkRequestData
         return $this->importId;
     }
 
-    public function getOption()
+    public function getOption(): Option
     {
         return new Option($this->data);
     }

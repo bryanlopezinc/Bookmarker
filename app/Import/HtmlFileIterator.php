@@ -22,7 +22,7 @@ final class HtmlFileIterator
                 return yield from [];
             }
 
-            /** @var \DOMElement */
+            /** @var \DOMElement $dOMElement*/
             foreach ($DOMNodeList as $dOMElement) {
                 yield new Bookmark(
                     $dOMElement->getAttribute('href'),

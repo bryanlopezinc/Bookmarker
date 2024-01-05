@@ -53,3 +53,6 @@ jobs:
 
     - name: Coding standard (Run pint without changing files)
       run: ./vendor/bin/pint --test
+
+    - name: Static Analyses (PHPStan)
+      run: ./vendor/bin/phpstan analyze --memory-limit=1G

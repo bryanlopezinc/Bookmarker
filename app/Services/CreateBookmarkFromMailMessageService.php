@@ -25,6 +25,10 @@ final class CreateBookmarkFromMailMessageService
 
         $email = $message->from();
 
+        if (is_null($email)) {
+            return;
+        }
+
         try {
             $user = $this->userRepository->findByEmailOrSecondaryEmail(
                 $email,

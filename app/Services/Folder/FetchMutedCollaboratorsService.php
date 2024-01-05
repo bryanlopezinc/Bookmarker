@@ -20,7 +20,9 @@ final class FetchMutedCollaboratorsService
     {
         $folder = Folder::query()->find($folderId, ['id', 'user_id']);
 
-        FolderNotFoundException::throwIf(!$folder);
+        if (is_null($folder)) {
+            throw new FolderNotFoundException();
+        }
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 

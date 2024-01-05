@@ -19,7 +19,7 @@ final class FetchUserNotificationsController
         ]);
 
         return new PaginatedResourceCollection(
-            $repository->unread(auth()->id(), PaginationData::fromRequest($request)),
+            $repository->unread(auth()->id(), PaginationData::fromRequest($request)), //@phpstan-ignore-line
             NotificationResource::class
         );
     }

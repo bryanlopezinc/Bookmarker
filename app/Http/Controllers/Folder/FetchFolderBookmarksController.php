@@ -12,13 +12,13 @@ use Illuminate\Http\Request;
 
 final class FetchFolderBookmarksController
 {
-    public function __invoke(Request $request, FetchFolderBookmarksService $service): PaginatedResourceCollection
+    public function __invoke(Request $request, FetchFolderBookmarksService $service, string $folderId): PaginatedResourceCollection
     {
         $request->validate(PaginationData::new()->asValidationRules());
 
         $request->validate(['folder_password' => ['sometimes', 'filled', 'string']]);
 
-        $result = $service($request);
+        $result = $service($request, (int) $folderId);
 
         return new PaginatedResourceCollection($result, FolderBookmarkResource::class);
     }

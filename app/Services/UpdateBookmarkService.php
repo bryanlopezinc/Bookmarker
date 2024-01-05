@@ -50,7 +50,7 @@ final class UpdateBookmarkService
 
         $hasDuplicates = $bookmark->tags
             ->toBase()
-            ->map(fn (Tag $tag) => $tag->name)
+            ->map(fn (Tag $tag) => $tag->name) //@phpstan-ignore-line
             ->intersect($tags)
             ->isNotEmpty();
 

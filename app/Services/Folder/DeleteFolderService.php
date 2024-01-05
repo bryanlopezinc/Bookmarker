@@ -29,7 +29,9 @@ final class DeleteFolderService
     {
         $folder = Folder::query()->find($folderID, ['id', 'user_id']);
 
-        FolderNotFoundException::throwIf(!$folder);
+        if (is_null($folder)) {
+            throw new FolderNotFoundException();
+        }
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 

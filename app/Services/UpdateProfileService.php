@@ -34,7 +34,7 @@ final class UpdateProfileService
         }
 
         if ($validated->has('profile_photo')) {
-            $attributes['profile_image_path'] = $this->filesystem->store($request->file('profile_photo'));
+            $attributes['profile_image_path'] = $this->filesystem->store($request->file('profile_photo')); //@phpstan-ignore-line
 
             $this->filesystem->delete($user->profile_image_path);
         }

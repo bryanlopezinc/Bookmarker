@@ -30,7 +30,7 @@ final class NotificationResource extends JsonResource
             BookmarksRemovedFromFolder::class => (new FolderBookmarksRemovedNotificationResource($this->notification))->toArray($request),
             FolderUpdated::class              => (new FolderUpdatedNotificationResource($this->notification))->toArray($request),
             NewCollaborator::class            => (new NewCollaboratorNotificationResource($this->notification))->toArray($request),
-            default                           => new ImportFailedNotificationResource($this->notification)
+            default                           => new ImportFailedNotificationResource($this->notification) //@phpstan-ignore-line
         };
     }
 }

@@ -10,15 +10,15 @@ use Illuminate\Http\Request;
 
 final class RemoveCollaboratorController
 {
-    public function __invoke(Request $request, Service $service): JsonResponse
+    public function __invoke(Request $request, Service $service, string $folderId, string $collaboratorId): JsonResponse
     {
         $request->validate([
             'ban' => ['sometimes', 'boolean']
         ]);
 
         $service->revokeUserAccess(
-            (int)$request->route('folder_id'),
-            (int)$request->route('collaborator_id'),
+            (int)$folderId,
+            (int)$collaboratorId,
             $request->boolean('ban')
         );
 

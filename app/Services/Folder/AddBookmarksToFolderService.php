@@ -24,6 +24,7 @@ use App\Notifications\BookmarksAddedToFolderNotification as Notification;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\Repositories\NotificationRepository;
 use App\ValueObjects\FolderStorage;
+use App\ValueObjects\UserId;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Collection;
 
@@ -38,7 +39,7 @@ final class AddBookmarksToFolderService
 
     public function fromRequest(Request $request): void
     {
-        $authUserId = auth()->id();
+        $authUserId = UserId::fromAuthUser()->value();
 
         $bookmarkIds = $request->getBookmarkIds();
 
@@ -48,7 +49,9 @@ final class AddBookmarksToFolderService
             ->tap(new IsMutedUserScope($authUserId))
             ->find($request->integer('folder'));
 
-        FolderNotFoundException::throwIf(!$folder);
+        if (is_null($folder)) {
+            throw new FolderNotFoundException();
+        }
 
         $bookmarks = $this->bookmarksRepository->findManyById($bookmarkIds, ['user_id', 'id', 'url']);
 
@@ -161,7 +164,7 @@ final class AddBookmarksToFolderService
 
     private function notifyFolderOwner(array $bookmarkIDs, Folder $folder): void
     {
-        $collaboratorID = auth()->id();
+        $collaboratorID = UserId::fromAuthUser()->value();
 
         $settings = $folder->settings;
 

@@ -14,6 +14,7 @@ use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\Repositories\Folder\CollaboratorRepository;
 use App\Repositories\NotificationRepository;
 use App\UAC;
+use App\ValueObjects\UserId;
 
 final class LeaveFolderCollaborationService
 {
@@ -26,7 +27,7 @@ final class LeaveFolderCollaborationService
 
     public function leave(int $folderID): void
     {
-        $collaboratorID = auth()->id();
+        $collaboratorID = UserId::fromAuthUser()->value();
 
         $folder = Folder::onlyAttributes(['id', 'user_id', 'settings'])
             ->tap(new WhereFolderOwnerExists())
@@ -35,7 +36,9 @@ final class LeaveFolderCollaborationService
 
         $collaboratorPermissions = $this->permissionsRepository->all($collaboratorID, $folderID);
 
-        FolderNotFoundException::throwIf(!$folder);
+        if (is_null($folder)) {
+            throw new FolderNotFoundException();
+        }
 
         $this->ensureCollaboratorDoesNotOwnFolder($collaboratorID, $folder);
 

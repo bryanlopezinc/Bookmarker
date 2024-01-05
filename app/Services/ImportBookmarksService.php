@@ -14,6 +14,7 @@ use App\Http\Requests\ImportBookmarkRequest;
 use App\Import\ImportBookmarksStatus;
 use App\Import\ImportStats;
 use App\Models\Import;
+use App\ValueObjects\UserId;
 
 final class ImportBookmarksService
 {
@@ -23,16 +24,18 @@ final class ImportBookmarksService
 
     public function fromRequest(ImportBookmarkRequest $request): void
     {
-        $userID = auth()->id();
+        $userID = UserId::fromAuthUser()->value();
 
         $importId = Str::uuid()->toString();
 
-        $this->filesystem->put($request->file('html')->getContent(), $userID, $importId);
+        $this->filesystem->put($request->file('html')->getContent(), $userID, $importId); //@phpstan-ignore-line
 
         // Remove the file from the request data because
         // \Illuminate\Http\UploadedFile cannot be serialized
         // and will throw an exception when trying to queue ImportBookmarks job.
-        $validated = collect($request->validated())->reject(fn ($value) => $value instanceof UploadedFile)->all();
+        $validated = collect($request->validated()) //@phpstan-ignore-line
+            ->reject(fn ($value) => $value instanceof UploadedFile)
+            ->all();
 
         Import::query()->create([
             'import_id' => $importId,

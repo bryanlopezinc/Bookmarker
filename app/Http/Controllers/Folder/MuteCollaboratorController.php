@@ -6,27 +6,27 @@ namespace App\Http\Controllers\Folder;
 
 use App\Services\Folder\MuteCollaboratorService;
 use App\Services\Folder\UnMuteCollaboratorService;
+use App\ValueObjects\UserId;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 final class MuteCollaboratorController
 {
-    public function post(Request $request, MuteCollaboratorService $service): JsonResponse
+    public function post(MuteCollaboratorService $service, string $folderId, string $collaboratorId): JsonResponse
     {
         $service(
-            (int)$request->route('folder_id'),
-            (int)$request->route('collaborator_id'),
-            auth()->id()
+            (int)$folderId,
+            (int)$collaboratorId,
+            UserId::fromAuthUser()->value()
         );
 
         return response()->json(status: JsonResponse::HTTP_CREATED);
     }
 
-    public function delete(Request $request, UnMuteCollaboratorService $service): JsonResponse
+    public function delete(UnMuteCollaboratorService $service, string $folderId, string $collaboratorId): JsonResponse
     {
         $service(
-            (int)$request->route('folder_id'),
-            (int)$request->route('collaborator_id'),
+            (int)$folderId,
+            (int)$collaboratorId,
         );
 
         return response()->json(status: JsonResponse::HTTP_OK);

@@ -39,6 +39,7 @@ final class UpdateFolderService
      */
     public function fromRequest(Request $request): void
     {
+        /** @var User */
         $authUser = auth()->user();
 
         $folder = Folder::select(['id', 'user_id', 'name', 'description', 'visibility', 'settings'])
@@ -56,7 +57,9 @@ final class UpdateFolderService
             ])
             ->find($request->route('folder_id'));
 
-        FolderNotFoundException::throwIf(!$folder);
+        if (is_null($folder)) {
+            throw new FolderNotFoundException();
+        }
 
         $this->ensureUserHasPermissionToUpdateFolder($folder, $request, $authUser->getAuthIdentifier());
 
@@ -178,6 +181,7 @@ final class UpdateFolderService
             $notifications[] = match ($modified) {
                 'name'        => new FolderUpdatedNotification($folder, $authUserId, $modified),
                 'description' => new FolderUpdatedNotification($folder, $authUserId, $modified),
+                default => throw new \Exception("Cannot create notification for [$modified]")
             };
         }
 

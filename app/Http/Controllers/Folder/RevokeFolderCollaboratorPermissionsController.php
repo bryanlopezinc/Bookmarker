@@ -12,7 +12,7 @@ use Illuminate\Validation\Rule;
 
 final class RevokeFolderCollaboratorPermissionsController
 {
-    public function __invoke(Request $request, Service $service): JsonResponse
+    public function __invoke(Request $request, Service $service, string $folderId, string $collaboratorId): JsonResponse
     {
         $request->validate([
             'permissions' => ['required', 'array', Rule::in([
@@ -24,8 +24,8 @@ final class RevokeFolderCollaboratorPermissionsController
         ]);
 
         $service->revokePermissions(
-            (int)$request->route('collaborator_id'),
-            (int)$request->route('folder_id'),
+            (int)$collaboratorId,
+            (int)$folderId,
             UAC::fromRequest($request, 'permissions')
         );
 

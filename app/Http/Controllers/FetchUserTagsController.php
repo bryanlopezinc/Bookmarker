@@ -9,6 +9,7 @@ use App\Http\Resources\TagResource;
 use App\PaginationData;
 use App\Repositories\TagRepository;
 use App\Rules\TagRule;
+use App\ValueObjects\UserId;
 use Illuminate\Http\Request;
 
 final class FetchUserTagsController
@@ -18,7 +19,11 @@ final class FetchUserTagsController
         $request->validate(PaginationData::new()->maxPerPage(50)->asValidationRules());
         $request->validate(['search' => ['sometimes', new TagRule()]]);
 
-        $tags = $repository->getUserTags(auth()->id(), PaginationData::fromRequest($request), $request->input('search'));
+        $tags = $repository->getUserTags(
+            UserId::fromAuthUser()->value(),
+            PaginationData::fromRequest($request),
+            $request->input('search')
+        );
 
         return new PaginatedResourceCollection($tags, TagResource::class);
     }

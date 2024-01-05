@@ -14,7 +14,7 @@ use App\ValueObjects\UserId;
 
 final class FetchUserFoldersWhereContainsCollaboratorController
 {
-    public function __invoke(Request $request, Repository $repository): ResourceCollection
+    public function __invoke(Request $request, Repository $repository, string $collaboratorId): ResourceCollection
     {
         $request->validate([
             ...PaginationData::new()->asValidationRules(),
@@ -23,7 +23,7 @@ final class FetchUserFoldersWhereContainsCollaboratorController
 
         $result = $repository->get(
             UserId::fromAuthUser()->value(),
-            intval($request->route('collaborator_id')),
+            (int) $collaboratorId,
             PaginationData::fromRequest($request),
         );
 

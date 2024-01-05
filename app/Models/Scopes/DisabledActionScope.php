@@ -26,7 +26,7 @@ final class DisabledActionScope implements Scope
         $query->addSelect([
             $this->alias => FolderDisabledAction::select('id')
                 ->whereRaw("folder_id = {$folderModel->getQualifiedKeyName()}")
-                ->when($this->permission, fn ($query) => $query->where('action', $this->permission->value))
+                ->when($this->permission, fn ($query) => $query->where('action', $this->permission?->value))
                 ->when(!$this->permission, fn ($query) => $query->limit(1))
         ]);
     }

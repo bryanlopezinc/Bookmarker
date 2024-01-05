@@ -16,6 +16,7 @@ use App\Models\MutedCollaborator;
 use App\Models\Scopes\UserIsCollaboratorScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\PaginationData;
+use App\ValueObjects\UserId;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -28,13 +29,13 @@ final class FetchFolderBookmarksService
     /**
      * @return Paginator<FolderBookmark>
      */
-    public function __invoke(Request $request): Paginator
+    public function __invoke(Request $request, int $folderId): Paginator
     {
-        $authUserId = auth()->id();
+        $authUserId = auth()->check() ? UserId::fromAuthUser()->value() : null;
 
         $folder = Folder::query()
             ->tap(new WhereFolderOwnerExists())
-            ->when($authUserId, fn ($query) => $query->tap(new UserIsCollaboratorScope($authUserId)))
+            ->when($authUserId, fn ($query, int $authUserId) => $query->tap(new UserIsCollaboratorScope($authUserId)))
             ->find($request->route('folder_id'), ['id', 'user_id', 'visibility', 'password']);
 
         FolderNotFoundException::throwIf(!$folder);
@@ -44,7 +45,7 @@ final class FetchFolderBookmarksService
         $this->ensureUserCanViewFolderBookmarks($folder, $request->input('folder_password'));
 
         $folderBookmarks = $this->getBookmarks(
-            (int) $request->route('folder_id'),
+            $folderId,
             $fetchOnlyPublicBookmarks,
             $authUserId,
             PaginationData::fromRequest($request)

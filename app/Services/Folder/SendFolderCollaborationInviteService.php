@@ -47,6 +47,10 @@ final class SendFolderCollaborationInviteService
             callback: function () use ($request, $inviteeEmail, $inviter) {
                 $folder = $this->fetchFolderAndAttributesForValidation($request->integer('folder_id'), $inviteeEmail);
 
+                if (is_null($folder)) {
+                    throw new FolderNotFoundException();
+                }
+
                 $this->validateAction($folder, $inviter, $request);
 
                 $this->sendInvitation(
@@ -92,10 +96,8 @@ final class SendFolderCollaborationInviteService
             ->find($folderId);
     }
 
-    private function validateAction(?Folder $folder, User $inviter, Request $request): void
+    private function validateAction(Folder $folder, User $inviter, Request $request): void
     {
-        FolderNotFoundException::throwIf(!$folder);
-
         $this->ensureUserHasPermissionToPerformAction($folder, $inviter, $request);
 
         UserNotFoundException::throwIf(!$folder->inviteeId);

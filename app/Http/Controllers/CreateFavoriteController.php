@@ -20,7 +20,7 @@ final class CreateFavoriteController
             'bookmarks.*' => [new ResourceIdRule(), 'distinct:strict']
         ], ['max' => "cannot add more than {$maxBookmarks} bookmarks simultaneously"]);
 
-        $service->create($request->input('bookmarks'), auth()->id());
+        $service->create($request->input('bookmarks'), (int)auth()->id());
 
         return new JsonResponse(status: JsonResponse::HTTP_CREATED);
     }

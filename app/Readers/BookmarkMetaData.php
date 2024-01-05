@@ -26,28 +26,24 @@ final class BookmarkMetaData
     }
 
     /**
-     * @param array<string,mixed> $data
-     *
-     * ```php
-     *   $data = [
-     *         'description' => string|false,
-     *          'title' => string|false,
-     *          'siteName' => string|false,
-     *          'imageUrl' => App\ValueObjects\Url::class|false,
-     *          'canonicalUrl' => App\ValueObjects\Url::class|false,
-     *          'resolvedUrl' => App\ValueObjects\Url::class
-     *    ]
-     * ```
+     * @param array{
+     *   description: string|false,
+     *   title: string|false,
+     *   siteName: string|false,
+     *   imageUrl: \App\ValueObjects\Url|false,
+     *   canonicalUrl: \App\ValueObjects\Url|false,
+     *   resolvedUrl: \App\ValueObjects\Url|false,
+     *  } $data
      */
     public static function fromArray(array $data): self
     {
         return new self([
-            'description' => $data['description'],
-            'title' => $data['title'],
+            'description'  => $data['description'],
+            'title'        => $data['title'],
             'hostSiteName' => $data['siteName'],
             'thumbnailUrl' => $data['imageUrl'],
             'canonicalUrl' => $data['canonicalUrl'],
-            'resolvedUrl' => $data['resolvedUrl']
+            'resolvedUrl'  => $data['resolvedUrl']
         ]);
     }
 }

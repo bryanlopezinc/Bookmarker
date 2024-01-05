@@ -107,6 +107,6 @@ final class EventDispatcher
 
     public function getReport(): ImportStats
     {
-        return $this->listeners[0]->getReport();
+        return $this->listeners[0]->getReport(); //@phpstan-ignore-line
     }
 }

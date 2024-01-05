@@ -83,7 +83,7 @@ final class UAC implements Countable, Arrayable
             };
         });
 
-        return new UAc($permissions->all());
+        return new UAC($permissions->all());
     }
 
     /**
@@ -105,7 +105,7 @@ final class UAC implements Countable, Arrayable
         return $permissions->all();
     }
 
-    public static function all(): UAc
+    public static function all(): UAC
     {
         return new UAC(Permission::cases());
     }

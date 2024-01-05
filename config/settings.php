@@ -4,7 +4,7 @@ use Illuminate\Support\Env;
 
 return [
     'MAX_BOOKMARK_TAGS' => 15,
-    
+
     //The amount of time (in minutes) an access token should live
     'ACCESS_TOKEN_EXPIRE' => 60,
 

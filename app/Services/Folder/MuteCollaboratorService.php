@@ -22,7 +22,9 @@ final class MuteCollaboratorService
             ->whereKey($folderId)
             ->first();
 
-        FolderNotFoundException::throwIf(is_null($folder));
+        if (is_null($folder)) {
+            throw new FolderNotFoundException();
+        }
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 

@@ -24,7 +24,9 @@ final class GrantPermissionsToCollaboratorService
             ->tap(new UserIsCollaboratorScope($collaboratorId))
             ->find($folderId, ['id', 'user_id']);
 
-        FolderNotFoundException::throwIf(!$folder);
+        if (is_null($folder)) {
+            throw new FolderNotFoundException();
+        }
 
         $currentPermissions = $this->permissions->all($collaboratorId, $folderId);
 

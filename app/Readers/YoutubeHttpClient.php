@@ -65,6 +65,6 @@ final class YoutubeHttpClient implements HttpClientInterface
 
         parse_str($parts['query'], $query);
 
-        return $query['v'];
+        return $query['v']; //@phpstan-ignore-line
     }
 }

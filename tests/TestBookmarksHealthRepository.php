@@ -9,7 +9,7 @@ use App\Contracts\BookmarksHealthRepositoryInterface;
 final class TestBookmarksHealthRepository implements BookmarksHealthRepositoryInterface
 {
     /** @var array<int> */
-    public static $bookmarkIds = [];
+    public static array $bookmarkIds = [];
 
     public function __construct(private BookmarksHealthRepositoryInterface $baseRepository)
     {

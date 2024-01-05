@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Importers\Filesystem;
+use App\Import\Filesystem;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;

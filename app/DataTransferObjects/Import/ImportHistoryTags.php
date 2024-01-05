@@ -26,9 +26,6 @@ final class ImportHistoryTags
         return $this->tags['invalid'] ?? [];
     }
 
-    /**
-     * @return array<string>
-     */
     public function found(): int
     {
         return $this->tags['found'] ?? 0;

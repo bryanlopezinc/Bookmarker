@@ -21,9 +21,12 @@ final class FetchFolderController extends Controller
             'fields' => ['sometimes', new FolderFieldsRule()]
         ]);
 
+        /** @var Folder|null */
         $folder = Folder::onlyAttributes()->find($request->integer('id'));
 
-        FolderNotFoundException::throwIf(!$folder);
+        if (is_null($folder)) {
+            throw new FolderNotFoundException();
+        }
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 

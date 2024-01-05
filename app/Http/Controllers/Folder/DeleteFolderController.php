@@ -10,13 +10,13 @@ use Illuminate\Http\Request;
 
 final class DeleteFolderController
 {
-    public function __invoke(Request $request, DeleteFolderService $service): JsonResponse
+    public function __invoke(Request $request, DeleteFolderService $service, string $folderId): JsonResponse
     {
         $request->validate([
             'delete_bookmarks' => ['nullable', 'boolean']
         ]);
 
-        $folderId = (int)$request->route('folder_id');
+        $folderId = (int) $folderId;
 
         if ($request->boolean('delete_bookmarks')) {
             $service->deleteRecursive($folderId);

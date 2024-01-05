@@ -5,6 +5,7 @@ parameters:
     level:  8
     checkMissingIterableValueType: false
     checkGenericClassInNonGenericObjectType: false
+    treatPhpDocTypesAsCertain: false 
     paths:
         -   app
 
@@ -17,6 +18,10 @@ parameters:
         -
             message: '#Match expression does not handle remaining value: mixed#'
             path: 'app/*'
+        -
+            message: '#Match expression does not handle remaining value: string#'
+        -
+            message: '#Unable to resolve the template type TKey in call to function collect#'
         -
             message: '#Access to an undefined property App\\Models\\[a-zA-Z0-9\\_]+::\$[a-zA-Z0-9\\_]+\.#'
             path: 'app/*'

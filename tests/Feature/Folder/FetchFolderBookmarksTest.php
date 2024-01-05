@@ -283,7 +283,9 @@ class FetchFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->folderBookmarksResponse(['folder_id' => $folder->id + 1])
+        $folder->delete();
+
+        $this->folderBookmarksResponse(['folder_id' => $folder->id])
             ->assertNotFound()
             ->assertExactJson(['message' => 'FolderNotFound']);
     }

@@ -36,6 +36,30 @@ enum BookmarkImportStatus: int
         };
     }
 
+    /**
+     * @return array<int>
+     */
+    public static function failedCases(): array
+    {
+        return collect(self::cases())
+            ->filter(fn (self $status) => str_starts_with($status->name, 'FAILED'))
+            ->map(fn (self $status) => $status->value)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int>
+     */
+    public static function skippedCases(): array
+    {
+        return collect(self::cases())
+            ->filter(fn (self $status) => str_starts_with($status->name, 'SKIPPED'))
+            ->map(fn (self $status) => $status->value)
+            ->values()
+            ->all();
+    }
+
     public function isSuccessful(): bool
     {
         return $this == self::SUCCESS;

@@ -15,6 +15,7 @@ use App\Services\ImportBookmarksService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
+use App\Import\BookmarkImportStatus as Status;
 
 final class ImportController
 {
@@ -27,6 +28,7 @@ final class ImportController
 
     public function history(Request $request, string $importId): PaginatedResourceCollection
     {
+        $request->validate(['filter' => ['sometimes', 'string', 'in:skipped,failed']]);
         $request->validate(PaginationData::new()->asValidationRules());
 
         /** @var Import */
@@ -39,6 +41,15 @@ final class ImportController
         /** @var Paginator */
         $result = ImportHistory::query()
             ->where('import_id', $importId)
+            ->when($request->input('filter'), function ($query, string $filterBy) {
+                $query->useIndex('imports_history_import_id_status_index');
+
+                if ($filterBy === 'failed') {
+                    $query->whereIn('status', Status::failedCases());
+                } else {
+                    $query->whereIn('status', Status::skippedCases());
+                }
+            })
             ->latest('id')
             ->simplePaginate($request->input('per_page'), page: $request->input('page'));
 

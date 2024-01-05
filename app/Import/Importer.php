@@ -91,15 +91,17 @@ final class Importer
 
     private function shouldSkipBookmark(Bookmark $bookmark, Option $option): ReasonForSkippingBookmark|false
     {
+        $maxBookmarksTags = setting('MAX_BOOKMARK_TAGS');
+
         if ($bookmark->tags->hasInvalid() && $option->skipBookmarkIfContainsAnyInvalidTag()) {
             return ReasonForSkippingBookmark::INVALID_TAG;
         }
 
-        if ($bookmark->tags->valid()->merge($option->tags())->count() > 15 && $option->skipBookmarkOnTagsMergeOverflow()) {
+        if ($bookmark->tags->valid()->merge($option->tags())->count() > $maxBookmarksTags && $option->skipBookmarkOnTagsMergeOverflow()) {
             return ReasonForSkippingBookmark::TAG_MERGE_OVERFLOW;
         }
 
-        if ($bookmark->tags->valid()->count() > 15 && $option->skipBookmarkIfTagsIsTooLarge()) {
+        if ($bookmark->tags->valid()->count() > $maxBookmarksTags && $option->skipBookmarkIfTagsIsTooLarge()) {
             return ReasonForSkippingBookmark::TAGS_TOO_LARGE;
         }
 
@@ -120,7 +122,7 @@ final class Importer
             return ImportBookmarksStatus::FAILED_DUE_TO_MERGE_TAGS_EXCEEDED;
         }
 
-        if ($bookmark->tags->valid()->count() > 15 && $option->failImportIfBookmarkTagsIsTooLarge()) {
+        if ($bookmark->tags->valid()->count() > setting('MAX_BOOKMARK_TAGS') && $option->failImportIfBookmarkTagsIsTooLarge()) {
             return ImportBookmarksStatus::FAILED_DUE_TO_TO_MANY_TAGS;
         }
 

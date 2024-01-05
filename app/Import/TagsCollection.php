@@ -37,7 +37,7 @@ final class TagsCollection
 
     public function willOverflowWhenMergedWithUserDefinedTags(array $tags): bool
     {
-        return $this->valid()->merge($tags)->count() > 15;
+        return $this->valid()->merge($tags)->count() > setting('MAX_BOOKMARK_TAGS');
     }
 
     public function all(): array

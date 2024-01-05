@@ -15,7 +15,7 @@ final class HideFolderBookmarksController
     {
         $request->validate([
             'folder_id'   => ['required', new ResourceIdRule()],
-            'bookmarks'   => ['required', 'array', 'filled', join(':', ['max', setting('MAX_POST_HIDE_BOOKMARKS')])],
+            'bookmarks'   => ['required', 'array', 'filled', 'max:50'],
             'bookmarks.*' => [new ResourceIdRule(), 'distinct:strict']
         ]);
 

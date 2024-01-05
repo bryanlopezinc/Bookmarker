@@ -3,35 +3,8 @@
 use Illuminate\Support\Env;
 
 return [
-    //The amount of bookmarks that can be add to  favorites in one request.
-    'MAX_POST_FAVOURITES' => 50,
-
-    //The amount of favourites that can be deleted in one request.
-    'MAX_DELETE_FAVOURITES' => 50,
-
-    //The amount of bookmarks that can be deleted in one request.
-    'MAX_DELETE_BOOKMARKS' => 50,
-
-    //The amount of bookmarks that can be marked as hidden in one request.
-    'MAX_POST_HIDE_BOOKMARKS' => 50,
-
-    //The amount of bookmarks that can be removed from a folder in one request.
-    'MAX_DELETE_FOLDER_BOOKMARKS' => 50,
-
-    //The amount of bookmarks that can be added to a folder in one request.
-    'MAX_POST_FOLDER_BOOKMARKS' => 50,
-
-    //The maximum number of data that can be requested perPage when
-    //retrieving user bookmarks sources.
-    'PER_PAGE_BOOKMARKS_SOURCES' => 50,
-
-    //The maximum number of data that can be requested perPage when
-    //retrieving user tags.
-    'PER_PAGE_USER_TAGS' => 50,
-
-    //The maximum number of result that can be returned from a user tag search request.
-    'SEARCH_USER_TAGS_LIMIT' => 50,
-
+    'MAX_BOOKMARK_TAGS' => 15,
+    
     //The amount of time (in minutes) an access token should live
     'ACCESS_TOKEN_EXPIRE' => 60,
 
@@ -56,16 +29,4 @@ return [
     //The accept invite url that will be sent to the user.
     //The url should contain placeholders for the 'invite_hash', 'signature', and 'expires' parameters.
     'ACCEPT_INVITE_URL' => Env::getOrFail('ACCEPT_INVITE_URL'),
-
-    'FIRST_NAME_MAX_LENGTH' => 100,
-    'LAST_NAME_MAX_LENGTH' => 100,
-
-    //max size (in Kb) for the chrome import file.
-    'MAX_CHROME_FILE_SIZE' => 5000,
-
-    //max size (in Kb) for the safari import file.
-    'MAX_SAFARI_FILE_SIZE' => 5000,
-
-    //the amount of secondary emails user can add to account.
-    'MAX_SECONDARY_EMAIL' => 3,
 ];

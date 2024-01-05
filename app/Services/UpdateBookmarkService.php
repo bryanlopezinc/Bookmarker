@@ -61,7 +61,7 @@ final class UpdateBookmarkService
 
     private function ensureMaxBookmarkTagsIsNotExceeded(Request $request, Bookmark $bookmark): void
     {
-        if ($bookmark->tags->count() + $request->collect('tags')->count() > 15) {
+        if ($bookmark->tags->count() + $request->collect('tags')->count() > setting('MAX_BOOKMARK_TAGS')) {
             throw new HttpException(['message' => 'MaxBookmarkTagsLengthExceeded'], Response::HTTP_BAD_REQUEST);
         }
     }

@@ -14,7 +14,7 @@ final class MergeStrategy
 
     public function merge(Collection $userDefinedTags, Collection $bookmarkTags): Collection
     {
-        $maxBookmarksTags = 15;
+        $maxBookmarksTags = setting('MAX_BOOKMARK_TAGS');
 
         return match ($this->strategy) {
             'ignore_all'              => collect(),
@@ -25,8 +25,10 @@ final class MergeStrategy
 
     private function mergeUsingImportFileTagsFirst(Collection $userDefinedTags, Collection $bookmarkTags): Collection
     {
-        $bookmarkTags = $bookmarkTags->take(15);
+        $maxBookmarksTags = setting('MAX_BOOKMARK_TAGS');
 
-        return $bookmarkTags->merge($userDefinedTags->take(15 - $bookmarkTags->count()));
+        $bookmarkTags = $bookmarkTags->take($maxBookmarksTags);
+
+        return $bookmarkTags->merge($userDefinedTags->take($maxBookmarksTags - $bookmarkTags->count()));
     }
 }

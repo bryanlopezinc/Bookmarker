@@ -80,13 +80,13 @@ final class StoresImportHistory implements
     {
         $option = $this->data->getOption();
         $userDefinedTags = collect($option->tags());
-        $bookmarkTags = $bookmark->tags->valid()->take(15);
+        $bookmarkTags = $bookmark->tags->valid()->take(setting('MAX_BOOKMARK_TAGS'));
 
         if (!$option->includeImportFileTags()) {
             return $userDefinedTags->all();
         }
 
-        if (count($tags = $bookmarkTags->merge($userDefinedTags)->unique()->values()) <= 15) {
+        if (count($tags = $bookmarkTags->merge($userDefinedTags)->unique()->values()) <= setting('MAX_BOOKMARK_TAGS')) {
             return $tags->all();
         }
 

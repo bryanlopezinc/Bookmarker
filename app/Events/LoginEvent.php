@@ -15,14 +15,4 @@ final class LoginEvent
         public readonly ?IpAddress $ipAddress,
     ) {
     }
-
-    public function hasUserAgentInfo(): bool
-    {
-        return !is_null($this->userAgent);
-    }
-
-    public function hasIpAddressInfo(): bool
-    {
-        return !is_null($this->ipAddress);
-    }
 }

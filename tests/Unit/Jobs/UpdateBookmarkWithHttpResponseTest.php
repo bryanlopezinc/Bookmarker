@@ -77,8 +77,8 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
                 ->willReturn(BookmarkMetaData::fromArray([
                     'description'  => false,
                     'title'        => false,
-                    'siteName'     => false,
-                    'imageUrl'     => false,
+                    'hostSiteName' => false,
+                    'thumbnailUrl' => false,
                     'canonicalUrl' => false,
                     'resolvedUrl'  => new Url($this->faker->url)
                 ]));
@@ -103,8 +103,8 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
                 ->willReturn(BookmarkMetaData::fromArray([
                     'description'  => $description,
                     'title'        => $title,
-                    'siteName'     => false,
-                    'imageUrl'     => $imageUrl,
+                    'hostSiteName' => false,
+                    'thumbnailUrl' => $imageUrl,
                     'canonicalUrl' => $canonicalUrl,
                     'resolvedUrl'  => $resolvedUrl
                 ]));
@@ -147,9 +147,9 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             $mock->method('fetchBookmarkPageData')
                 ->willReturn(BookmarkMetaData::fromArray([
                     'description'  => $this->faker->sentence,
-                    'imageUrl'     => false,
+                    'thumbnailUrl' => false,
                     'title'        => false,
-                    'siteName'     => false,
+                    'hostSiteName' => false,
                     'canonicalUrl' => false,
                     'resolvedUrl'  => new Url($this->faker->url)
                 ]));
@@ -177,9 +177,9 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             $mock->method('fetchBookmarkPageData')
                 ->willReturn(BookmarkMetaData::fromArray([
                     'description'  => $description,
-                    'imageUrl'     => false,
+                    'thumbnailUrl' => false,
                     'title'        => false,
-                    'siteName'     => false,
+                    'hostSiteName' => false,
                     'canonicalUrl' => false,
                     'resolvedUrl'  => new Url($this->faker->url)
                 ]));
@@ -200,9 +200,9 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             $mock->method('fetchBookmarkPageData')
                 ->willReturn(BookmarkMetaData::fromArray([
                     'description'  => false,
-                    'imageUrl'     => false,
+                    'thumbnailUrl' => false,
                     'title'        => str_repeat('A', 200),
-                    'siteName'     => false,
+                    'hostSiteName' => false,
                     'canonicalUrl' => false,
                     'resolvedUrl'  => new Url($this->faker->url)
                 ]));
@@ -223,9 +223,9 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             $mock->method('fetchBookmarkPageData')
                 ->willReturn(BookmarkMetaData::fromArray([
                     'description'  => false,
-                    'imageUrl'     => false,
+                    'thumbnailUrl' => false,
                     'title'        => false,
-                    'siteName'     => 'PlayStation',
+                    'hostSiteName' => 'PlayStation',
                     'canonicalUrl' => false,
                     'resolvedUrl'  => new Url($this->faker->url)
                 ]));
@@ -252,9 +252,9 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             $mock->method('fetchBookmarkPageData')
                 ->willReturn(BookmarkMetaData::fromArray([
                     'description'  => false,
-                    'imageUrl'     => false,
+                    'thumbnailUrl' => false,
                     'title'        => false,
-                    'siteName'     => false,
+                    'hostSiteName' => false,
                     'canonicalUrl' => false,
                     'resolvedUrl'  => new Url($this->faker->url)
                 ]));
@@ -283,9 +283,9 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             $mock->method('fetchBookmarkPageData')
                 ->willReturn(BookmarkMetaData::fromArray([
                     'description'  => false,
-                    'imageUrl'     => false,
+                    'thumbnailUrl' => false,
                     'title'        => false,
-                    'siteName'     => 'PlayStation',
+                    'hostSiteName' => 'PlayStation',
                     'canonicalUrl' => false,
                     'resolvedUrl'  => new Url($this->faker->url)
                 ]));

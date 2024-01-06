@@ -6,6 +6,16 @@ namespace App\Readers;
 
 use App\ValueObjects\Url;
 
+/**
+ * @phpstan-type MetaData array{
+ *   description: string|false,
+ *   title: string|false,
+ *   hostSiteName: string|false,
+ *   thumbnailUrl: \App\ValueObjects\Url|false,
+ *   canonicalUrl: \App\ValueObjects\Url|false,
+ *   resolvedUrl: \App\ValueObjects\Url,
+ *  }
+ */
 final class BookmarkMetaData
 {
     public readonly string|false $description;
@@ -16,7 +26,7 @@ final class BookmarkMetaData
     public readonly Url $resolvedUrl;
 
     /**
-     * @param array<string,mixed> $attributes
+     * @phpstan-param MetaData $attributes
      */
     public function __construct(protected array $attributes)
     {
@@ -26,24 +36,10 @@ final class BookmarkMetaData
     }
 
     /**
-     * @param array{
-     *   description: string|false,
-     *   title: string|false,
-     *   siteName: string|false,
-     *   imageUrl: \App\ValueObjects\Url|false,
-     *   canonicalUrl: \App\ValueObjects\Url|false,
-     *   resolvedUrl: \App\ValueObjects\Url|false,
-     *  } $data
+     * @phpstan-param MetaData $data
      */
     public static function fromArray(array $data): self
     {
-        return new self([
-            'description'  => $data['description'],
-            'title'        => $data['title'],
-            'hostSiteName' => $data['siteName'],
-            'thumbnailUrl' => $data['imageUrl'],
-            'canonicalUrl' => $data['canonicalUrl'],
-            'resolvedUrl'  => $data['resolvedUrl']
-        ]);
+        return new self($data);
     }
 }

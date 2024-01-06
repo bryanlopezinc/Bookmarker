@@ -40,8 +40,8 @@ final class YoutubeHttpClient implements HttpClientInterface
         return BookmarkMetaData::fromArray([
             'title'        => $response->json('items.0.snippet.title'),
             'description'  => $response->json('items.0.snippet.description'),
-            'imageUrl'     => new Url($response->json('items.0.snippet.thumbnails.medium.url')),
-            'siteName'     => self::SITE_NAME,
+            'thumbnailUrl' => new Url($response->json('items.0.snippet.thumbnails.medium.url')),
+            'hostSiteName' => self::SITE_NAME,
             'canonicalUrl' => new Url($bookmark->url_canonical),
             'resolvedUrl'  => new Url($bookmark->resolved_url)
         ]);

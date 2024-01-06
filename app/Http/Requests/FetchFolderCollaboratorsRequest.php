@@ -38,7 +38,7 @@ final class FetchFolderCollaboratorsRequest extends FormRequest
                 return;
             }
 
-            $filter = collect($this->input('permissions', [])); // @phpstan-ignore-line
+            $filter = collect($this->input('permissions', []));
 
             $filter->when($filter->contains('readOnly') && $filter->count() > 1, function () use ($validator) {
                 $validator->errors()->add(

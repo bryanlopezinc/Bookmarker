@@ -8,6 +8,7 @@ use App\Http\Resources\Notifications\NotificationResource;
 use App\Http\Resources\PaginatedResourceCollection;
 use App\PaginationData;
 use App\Repositories\NotificationRepository;
+use App\ValueObjects\UserId;
 use Illuminate\Http\Request;
 
 final class FetchUserNotificationsController
@@ -19,7 +20,7 @@ final class FetchUserNotificationsController
         ]);
 
         return new PaginatedResourceCollection(
-            $repository->unread(auth()->id(), PaginationData::fromRequest($request)), //@phpstan-ignore-line
+            $repository->unread(UserId::fromAuthUser()->value(), PaginationData::fromRequest($request)),
             NotificationResource::class
         );
     }

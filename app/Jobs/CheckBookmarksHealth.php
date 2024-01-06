@@ -27,7 +27,7 @@ final class CheckBookmarksHealth implements ShouldQueue
 
     public function __construct(iterable $bookmarks)
     {
-        $this->bookmarks = collect($bookmarks); //@phpstan-ignore-line
+        $this->bookmarks = collect($bookmarks);
     }
 
     public function handle(HealthChecker $healthChecker): void

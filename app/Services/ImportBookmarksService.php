@@ -33,7 +33,7 @@ final class ImportBookmarksService
         // Remove the file from the request data because
         // \Illuminate\Http\UploadedFile cannot be serialized
         // and will throw an exception when trying to queue ImportBookmarks job.
-        $validated = collect($request->validated()) //@phpstan-ignore-line
+        $validated = collect($request->validated())
             ->reject(fn ($value) => $value instanceof UploadedFile)
             ->all();
 

@@ -26,8 +26,8 @@ final class TestHttpClient implements HttpClientInterface
         return BookmarkMetaData::fromArray([
             'description'  => $faker->sentence,
             'title'        => $faker->sentence,
-            'siteName'     => $url->getHost(),
-            'imageUrl'     => new Url($faker->imageUrl),
+            'hostSiteName' => $url->getHost(),
+            'thumbnailUrl' => new Url($faker->imageUrl),
             'canonicalUrl' => $url,
             'resolvedUrl'  => $url
         ]);

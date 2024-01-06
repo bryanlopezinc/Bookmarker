@@ -6,15 +6,25 @@ namespace App\Import;
 
 use App\Import\Listeners\RecordsImportStat;
 
+/**
+ * @phpstan-type Listener (Contracts\ReportableInterface |
+ *  Contracts\ImportsStartedListenerInterface |
+ *  Contracts\ImportStartedListenerInterface |
+ *  Contracts\BookmarkSkippedListenerInterface |
+ *  Contracts\ImportsEndedListenerInterface |
+ *  Contracts\BookmarkNotProcessedListenerInterface |
+ *  Contracts\ImportFailedListenerInterface |
+ *  Contracts\BookmarkImportedListenerInterface)
+ */
 final class EventDispatcher
 {
     /**
-     * @var array<object>
+     * @phpstan-var Listener[]
      */
     private array $listeners;
 
     /**
-     * @param array<object> $listeners
+     * @phpstan-param Listener[] $listeners
      */
     public function __construct(Contracts\ReportableInterface $logger = null, array $listeners = [])
     {
@@ -23,6 +33,9 @@ final class EventDispatcher
         $this->listeners = [$logger, ...$listeners];
     }
 
+    /**
+     * @phpstan-param Listener $listener
+     */
     public function addListener(object $listener): void
     {
         $this->listeners[] = $listener;
@@ -107,6 +120,9 @@ final class EventDispatcher
 
     public function getReport(): ImportStats
     {
-        return $this->listeners[0]->getReport(); //@phpstan-ignore-line
+        return array_filter(
+            $this->listeners,
+            fn ($listener) => $listener instanceof Contracts\ReportableInterface
+        )[0]->getReport();
     }
 }

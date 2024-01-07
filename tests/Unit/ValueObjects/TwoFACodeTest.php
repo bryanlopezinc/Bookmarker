@@ -4,36 +4,36 @@ declare(strict_types=1);
 
 namespace Tests\Unit\ValueObjects;
 
-use App\Exceptions\Invalid2FACodeException;
 use App\ValueObjects\TwoFACode;
+use LengthException;
 use Tests\TestCase;
 
 class TwoFACodeTest extends TestCase
 {
     public function testWillThrowExceptionWhenCodeIsANegativeNumber(): void
     {
-        $this->expectException(Invalid2FACodeException::class);
+        $this->expectExceptionMessage('Invalid 2FA code -1234');
 
         new TwoFACode(-1234);
     }
 
-    public function testWillThrowExceptionWhenCodeIsGreaterThan_5(): void
+    public function testWillThrowExceptionWhenCodeIsGreaterThan_6(): void
     {
-        $this->expectException(Invalid2FACodeException::class);
+        $this->expectExceptionMessage('Invalid 2FA code 4123447');
 
-        new TwoFACode(412344);
+        new TwoFACode(4123447);
     }
 
-    public function testWillThrowExceptionWhenCodeIsLessThan_5(): void
+    public function testWillThrowExceptionWhenCodeIsLessThan_6(): void
     {
-        $this->expectException(Invalid2FACodeException::class);
+        $this->expectExceptionMessage('Invalid 2FA code 41235');
 
-        new TwoFACode(4123);
+        new TwoFACode(41235);
     }
 
     public function testWillGenerateCodeWithCustomGenerator(): void
     {
-        $code = 11111;
+        $code = 111111;
         TwoFACode::useGenerator(fn () => $code);
 
         $this->assertEquals($code, TwoFACode::generate()->value());
@@ -46,7 +46,7 @@ class TwoFACodeTest extends TestCase
 
     public function testWillResetGenerator(): void
     {
-        $code = 11111;
+        $code = 111111;
         TwoFACode::useGenerator(fn () => $code);
 
         $this->assertEquals($code, TwoFACode::generate()->value());
@@ -66,14 +66,14 @@ class TwoFACodeTest extends TestCase
             try {
                 TwoFACode::generate()->value();
                 return false;
-            } catch (Invalid2FACodeException) {
+            } catch (LengthException) {
                 return true;
             }
         };
 
         $this->assertTrue($isInvalid(12));
         $this->assertTrue($isInvalid(-12345));
-        $this->assertTrue($isInvalid(123456));
+        $this->assertTrue($isInvalid(1234567));
 
         TwoFACode::useGenerator();
     }
@@ -87,7 +87,7 @@ class TwoFACodeTest extends TestCase
         );
 
         $this->assertFalse(
-            (new TwoFACode(45651))->equals(new TwoFACode(23859))
+            (new TwoFACode(456516))->equals(new TwoFACode(238596))
         );
     }
 

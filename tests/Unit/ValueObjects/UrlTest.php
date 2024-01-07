@@ -7,7 +7,7 @@ namespace Tests\Unit\ValueObjects;
 use App\Exceptions\MalformedURLException;
 use App\ValueObjects\Url;
 use Illuminate\Foundation\Testing\WithFaker;
-use Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 
 class UrlTest extends TestCase
 {
@@ -95,7 +95,7 @@ class UrlTest extends TestCase
 
     public function testSerialization(): void
     {
-        $url = new Url($this->faker->url);
+        $url = new Url(fake()->url());
 
         $unSerialized = unserialize(serialize($url));
 

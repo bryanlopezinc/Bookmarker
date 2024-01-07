@@ -29,7 +29,7 @@ use Illuminate\Support\Collection;
  * @property string|null $profile_image_path
  * @method static Builder WithQueryOptions(array $columns = [])
  */
-final class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens;
     use HasFactory;

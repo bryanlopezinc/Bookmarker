@@ -6,7 +6,7 @@ namespace Tests\Unit\Readers;
 
 use App\Readers\ResolveCanonicalUrlValue;
 use App\ValueObjects\Url;
-use Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 
 class ResolveCanonicalUrlValueTest extends TestCase
 {

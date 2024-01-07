@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\ValueObjects;
 
-use Tests\TestCase;
 use App\ValueObjects\FolderStorage;
+use PHPUnit\Framework\TestCase;
 
 class FolderStorageTest extends TestCase
 {

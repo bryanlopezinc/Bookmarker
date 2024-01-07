@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Rules\UsernameOrEmailRule;
-use App\Exceptions\Invalid2FACodeException;
 use App\ValueObjects\TwoFACode;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
@@ -36,9 +35,7 @@ final class LoginUserRequest extends FormRequest
                 return;
             }
 
-            try {
-                TwoFACode::fromString($this->input('two_fa_code'));
-            } catch (Invalid2FACodeException) {
+            if (!TwoFACode::isValid($this->input('two_fa_code'))) {
                 $validator->errors()->add('two_fa_code', 'Invalid verification code format');
             }
         });

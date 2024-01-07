@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\ValueObjects;
 
 use Illuminate\Support\Str;
-use Tests\TestCase;
 use App\Exceptions\InvalidUsernameException;
 use App\ValueObjects\Username;
+use PHPUnit\Framework\TestCase;
 
 class UsernameTest extends TestCase
 {

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\ValueObjects;
 
-use App\Exceptions\MalformedURLException;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Spatie\Url\QueryParameterBag;
+use App\Exceptions\MalformedURLException;
 
 final class Url
 {
@@ -18,7 +18,7 @@ final class Url
         $url = (string) $url;
         $parts = parse_url($url);
 
-        if (Validator::make(['value' => $url], ['value' => ['filled', 'url']])->fails()) {
+        if (!Str::isUrl($url, ['http', 'https'])) {
             throw MalformedURLException::invalidFormat($url);
         }
 
@@ -28,10 +28,6 @@ final class Url
 
         $this->parts = $parts;
         $this->url = $url;
-
-        if (!in_array($this->getScheme(), ['http', 'https'])) {
-            throw MalformedURLException::invalidScheme($url, $this->getScheme());
-        }
     }
 
     public static function isValid(mixed $url): bool
@@ -66,11 +62,6 @@ final class Url
     public function parseQuery(): array
     {
         return QueryParameterBag::fromString($this->parts['query'] ?? '')->all();
-    }
-
-    private function getScheme(): string
-    {
-        return $this->parts['scheme'] ?? '';
     }
 
     public function toString(): string

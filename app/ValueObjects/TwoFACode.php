@@ -4,31 +4,43 @@ declare(strict_types=1);
 
 namespace App\ValueObjects;
 
-use App\Exceptions\Invalid2FACodeException;
 use Closure;
 use Illuminate\Support\Facades\Crypt;
+use LengthException;
 
 final class TwoFACode
 {
-    public const LENGTH = 5;
+    public const LENGTH = 6;
 
     private static ?Closure $generator = null;
-    private int $value;
 
-    public function __construct(int $value)
+    public function __construct(private int $value)
     {
-        $length = strlen((string)$value);
-        $this->value = $value;
-
-        if ($length !== self::LENGTH || $value < 0) {
-            throw new Invalid2FACodeException('Invalid 2FA code ' . $value);
+        if (!self::isValid($value)) {
+            throw new LengthException("Invalid 2FA code $value");
         }
+    }
+
+    public static function isValid(string|int $code): bool
+    {
+        if (is_string($code)) {
+            $code = intval($code);
+        }
+
+        return strlen(strval($code)) === self::LENGTH && $code > 0;
     }
 
     public static function generate(): self
     {
         $generator = static::$generator ??= function () {
-            return random_int(10_000, 99_999);
+            $randomInt = strval(random_int(0, 999_999));
+
+            return intval(str_pad(
+                $randomInt,
+                self::LENGTH,
+                strval(self::LENGTH),
+                STR_PAD_LEFT
+            ));
         };
 
         return new self($generator());
@@ -37,7 +49,7 @@ final class TwoFACode
     /**
      * Set the generator that will be used to generate new 2Fa codes.
      *
-     * @param Closure $generator The closure should return a valid integer that can pass the TwoFACode validation.
+     * @param Closure():int $generator The closure should return a valid integer that can pass the TwoFACode validation.
      */
     public static function useGenerator(Closure $generator = null): void
     {

@@ -54,14 +54,14 @@ class LoginUserTest extends TestCase
             'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
             'grant_type'    => 'password',
-            'two_fa_code'   => '12345',
+            'two_fa_code'   => '123456',
         ])->assertStatus(400)->assertExactJson($data);
 
         //missing credentials
         $this->loginUserResponse([
             'username'    => $this->user->username,
             'password'    => 'password',
-            'two_fa_code' => '12345',
+            'two_fa_code' => '123456',
         ])->assertStatus(400)->assertExactJson([
             "error" => "unsupported_grant_type",
             "error_description" => "The authorization grant type is not supported by the authorization server.",
@@ -303,7 +303,7 @@ class LoginUserTest extends TestCase
             'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
             'grant_type'    => 'password',
-            'two_fa_code'   => '12345',
+            'two_fa_code'   => '123456',
         ])->assertStatus(400)->assertExactJson([
             "error" => "invalidVerificationCode",
             "error_description" => "The given verification code is invalid.",
@@ -386,7 +386,7 @@ class LoginUserTest extends TestCase
             'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,
             'grant_type'    => 'password',
-            'two_fa_code'   => '12345',
+            'two_fa_code'   => '123456',
         ])->assertStatus(400)->assertExactJson([
             "error" => "userEmailNotVerified",
             "error_description" => "The user email has not been verified.",

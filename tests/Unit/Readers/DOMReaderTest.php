@@ -6,13 +6,10 @@ namespace Tests\Unit\Readers;
 
 use App\Readers\DOMReader as Reader;
 use App\ValueObjects\Url;
-use Illuminate\Foundation\Testing\WithFaker;
-use Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 
 class DOMReaderTest extends TestCase
 {
-    use WithFaker;
-
     private Reader $reader;
 
     protected function setUp(): void
@@ -23,7 +20,7 @@ class DOMReaderTest extends TestCase
 
     public function test_default(): void
     {
-        $this->reader->loadHTML($this->html(), new Url($this->faker->url));
+        $this->reader->loadHTML($this->html(), new Url(fake()->url()));
 
         $this->assertFalse($this->reader->getSiteName());
         $this->assertFalse($this->reader->getPageDescription());
@@ -34,7 +31,7 @@ class DOMReaderTest extends TestCase
 
     public function testWillReadOpenGraphDescriptionTagBeforeOtherDescriptionTags(): void
     {
-        $description = implode(' ', $this->faker->sentences());
+        $description = implode(' ', fake()->sentences());
 
         $html = $this->html(<<<HTML
                 <meta name="description" content="A foo bar site">
@@ -42,7 +39,7 @@ class DOMReaderTest extends TestCase
                 <meta property="og:description" content="$description">
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertEquals($description, $this->reader->getPageDescription());
     }
@@ -53,7 +50,7 @@ class DOMReaderTest extends TestCase
                 <meta property="og:description" content=" ">
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertFalse($this->reader->getPageDescription());
     }
@@ -86,7 +83,7 @@ class DOMReaderTest extends TestCase
                 <meta name="twitter:description" content="Twitter Description">
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertEquals($description, $this->reader->getPageDescription());
     }
@@ -97,7 +94,7 @@ class DOMReaderTest extends TestCase
                 <meta name="description" content="  ">
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertFalse($this->reader->getPageDescription());
     }
@@ -110,7 +107,7 @@ class DOMReaderTest extends TestCase
                 <meta name="twitter:description" content="$description">
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertEquals($description, $this->reader->getPageDescription());
     }
@@ -121,7 +118,7 @@ class DOMReaderTest extends TestCase
                 <meta name="twitter:description" content="  ">
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertFalse($this->reader->getPageDescription());
     }
@@ -132,7 +129,7 @@ class DOMReaderTest extends TestCase
                 <meta property="og:image" content="https://image.com/smike.png">
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertEquals('https://image.com/smike.png', $this->reader->getPreviewImageUrl()->toString());
     }
@@ -143,7 +140,7 @@ class DOMReaderTest extends TestCase
                 <meta name="twitter:image" content="https://twitter.png">
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertEquals('https://twitter.png', $this->reader->getPreviewImageUrl()->toString());
     }
@@ -158,7 +155,7 @@ class DOMReaderTest extends TestCase
                 <meta property="og:image" content="$content">
             HTML);
 
-            $this->reader->loadHTML($html, new Url($this->faker->url));
+            $this->reader->loadHTML($html, new Url(fake()->url()));
 
             $this->assertFalse($this->reader->getPreviewImageUrl(), "failed asserting that $content is invalid");
         }
@@ -174,7 +171,7 @@ class DOMReaderTest extends TestCase
                 <meta name="twitter:image" content="$content">
             HTML);
 
-            $this->reader->loadHTML($html, new Url($this->faker->url));
+            $this->reader->loadHTML($html, new Url(fake()->url()));
 
             $this->assertFalse($this->reader->getPreviewImageUrl(), "failed asserting that $content is invalid");
         }
@@ -182,7 +179,7 @@ class DOMReaderTest extends TestCase
 
     public function test_will_first_read_og_title_tag(): void
     {
-        $title = implode(' ', $this->faker->sentences());
+        $title = implode(' ', fake()->sentences());
 
         $html = $this->html(<<<HTML
                 <meta property="og:title" content="$title">
@@ -190,7 +187,7 @@ class DOMReaderTest extends TestCase
                 <title>Page Title</title>
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertEquals($title, $this->reader->getPageTitle());
     }
@@ -202,7 +199,7 @@ class DOMReaderTest extends TestCase
                 <title>Page Title</title>
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertFalse($this->reader->getPageTitle());
     }
@@ -216,7 +213,7 @@ class DOMReaderTest extends TestCase
                 <meta name="twitter:title" content="Why are crypto gurus silent :-)">
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertEquals($title, $this->reader->getPageTitle());
     }
@@ -227,7 +224,7 @@ class DOMReaderTest extends TestCase
                 <title></title>
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertFalse($this->reader->getPageTitle());
     }
@@ -240,7 +237,7 @@ class DOMReaderTest extends TestCase
                 <meta name="twitter:title" content="$title">
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertEquals($title, $this->reader->getPageTitle());
     }
@@ -251,7 +248,7 @@ class DOMReaderTest extends TestCase
                 <meta name="twitter:title" content="  ">
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertFalse($this->reader->getPageTitle());
     }
@@ -262,7 +259,7 @@ class DOMReaderTest extends TestCase
                 <title><script>alert('hacked')</script></title>
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertEquals('alert(&#039;hacked&#039;)', $this->reader->getPageTitle());
     }
@@ -273,7 +270,7 @@ class DOMReaderTest extends TestCase
                 <meta name="twitter:title" content=alert('hacked')>
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertEquals('alert(&#039;hacked&#039;)', $this->reader->getPageTitle());
     }
@@ -284,7 +281,7 @@ class DOMReaderTest extends TestCase
                 <meta property="og:title" content="<script>alert('hacked')</script>">
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertEquals('&lt;script&gt;alert(&#039;hacked&#039;)&lt;/script&gt;', $this->reader->getPageTitle());
     }
@@ -297,7 +294,7 @@ class DOMReaderTest extends TestCase
                 <meta name="twitter:site" content="@USERNAME">
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertEquals('Xbox', $this->reader->getSiteName());
     }
@@ -309,7 +306,7 @@ class DOMReaderTest extends TestCase
                 <meta name="twitter:site" content="@USERNAME">
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertEquals('PlayStation', $this->reader->getSiteName());
     }
@@ -320,7 +317,7 @@ class DOMReaderTest extends TestCase
                 <meta name="twitter:site" content="@RickRoss">
         HTML);
 
-        $this->reader->loadHTML($html, new Url($this->faker->url));
+        $this->reader->loadHTML($html, new Url(fake()->url()));
 
         $this->assertEquals('@RickRoss', $this->reader->getSiteName());
     }
@@ -352,7 +349,7 @@ class DOMReaderTest extends TestCase
                 <link rel="canonical" href="$content">
             HTML);
 
-            $this->reader->loadHTML($html, new Url($this->faker->url));
+            $this->reader->loadHTML($html, new Url(fake()->url()));
 
             $this->assertFalse($this->reader->getCanonicalUrl(), "failed asserting that $content is invalid");
         }
@@ -384,7 +381,7 @@ class DOMReaderTest extends TestCase
                 <meta property="og:url" content="$content">
             HTML);
 
-            $this->reader->loadHTML($html, new Url($this->faker->url));
+            $this->reader->loadHTML($html, new Url(fake()->url()));
 
             $this->assertFalse($this->reader->getCanonicalUrl(), "failed asserting that $content is invalid");
         }

@@ -53,7 +53,7 @@ final class ToggleFolderCollaborationRestriction
         $actions = [
             Permission::ADD_BOOKMARKS->value    => $request->validated('addBookmarks', null),
             Permission::DELETE_BOOKMARKS->value => $request->validated('removeBookmarks', null),
-            Permission::INVITE_USER->value      => $request->validated('inviteUser', null),
+            Permission::INVITE_USER->value      => $request->validated('inviteUsers', null),
             Permission::UPDATE_FOLDER->value    => $request->validated('updateFolder', null)
         ];
 

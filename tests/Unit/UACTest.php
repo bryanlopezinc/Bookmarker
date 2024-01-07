@@ -90,15 +90,18 @@ class UACTest extends TestCase
     #[Test]
     public function fromRequestMethod(): void
     {
-        $uac = UAC::fromRequest(new Request(['key' => ['*']]), 'key');
+        $uac = UAC::fromRequest(new Request(['permissions' => ['*']]), 'permissions');
         $this->assertEquals(UAC::all(), $uac);
+
+        $uac = UAC::fromRequest(new Request(['permissions' => ['addBookmarks', 'removeBookmarks']]), 'permissions');
+        $this->assertEquals(new UAC([Permission::ADD_BOOKMARKS, Permission::DELETE_BOOKMARKS]), $uac);
     }
 
     #[Test]
-    public function toJsonResponseMethod(): void
+    public function toExternalIdentifiersMethod(): void
     {
         $uac = new UAC([]);
-        $this->assertEquals([], $uac->toJsonResponse());
+        $this->assertEquals([], $uac->toExternalIdentifiers());
     }
 
     #[Test]

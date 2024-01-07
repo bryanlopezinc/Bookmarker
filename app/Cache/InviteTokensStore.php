@@ -25,18 +25,24 @@ final class InviteTokensStore
         int $folderID,
         UAC $permissions
     ): void {
+
         $data = [
-            self::INVITER_ID  => $inviterID,
-            self::INVITEE_ID  => $inviteeID,
-            self::FOLDER_ID   => $folderID,
-            self::PERMISSIONS => $permissions->serialize()
+            'inviterId'   => $inviterID,
+            'inviteeId'   => $inviteeID,
+            'folderId'    => $folderID,
+            'permissions' => $permissions->toArray()
         ];
 
         $this->repository->put($uuid, $data, $this->ttl);
     }
 
     /**
-     * @return array<string,mixed>
+     * @return array{
+     *   inviterId: int,
+     *   inviteeId: int,
+     *   folderId: int,
+     *   permissions: string[]
+     *  }
      */
     public function get(string $token): array
     {

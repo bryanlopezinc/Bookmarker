@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Rules\ResourceIdRule;
+use App\UAC;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -18,13 +19,7 @@ final class SendFolderCollaborationInviteRequest extends FormRequest
         return [
             'email'       => ['required', 'email'],
             'folder_id'   => ['required', new ResourceIdRule()],
-            'permissions' => ['sometimes', 'array', Rule::in([
-                '*',
-                'addBookmarks',
-                'removeBookmarks',
-                'inviteUser',
-                'updateFolder',
-            ])],
+            'permissions' => ['sometimes', 'array', Rule::in(['*', ...UAC::validExternalIdentifiers()])],
             'permissions.*' => ['filled', 'distinct:strict'],
         ];
     }

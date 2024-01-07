@@ -56,6 +56,7 @@ final class FetchFolderCollaboratorsService
             ->whereColumn('folder_id', 'folders_collaborators.folder_id');
 
         $query = User::query()
+            ->withCasts(['permissions' => 'json', 'wasInvitedBy' => 'json'])
             ->select(['users.id', 'full_name', 'profile_image_path'])
             ->join('folders_collaborators', 'folders_collaborators.collaborator_id', '=', 'users.id')
             ->addSelect([
@@ -107,8 +108,6 @@ final class FetchFolderCollaboratorsService
     private function createCollaboratorFn(): \Closure
     {
         return function (User $model) {
-            $model->mergeCasts(['permissions' => 'json', 'wasInvitedBy' => 'json']);
-
             $wasInvitedBy = $model->wasInvitedBy;
 
             return new FolderCollaborator(

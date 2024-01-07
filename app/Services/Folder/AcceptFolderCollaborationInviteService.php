@@ -9,17 +9,17 @@ use App\Exceptions\HttpException;
 use App\UAC;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use Illuminate\Http\Request;
-use App\Cache\InviteTokensStore as Payload;
 use App\Exceptions\FolderCollaboratorsLimitExceededException;
 use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\UserNotFoundException;
 use App\Models\Folder;
-use App\Models\Scopes\IsMutedUserScope;
-use App\Models\Scopes\UserIsCollaboratorScope;
+use App\Models\Scopes\IsMutedCollaboratorScope;
+use App\Models\Scopes\UserIsACollaboratorScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Models\User;
 use App\Notifications\NewCollaboratorNotification as Notification;
 use App\Repositories\Folder\CollaboratorRepository;
+use Illuminate\Support\Facades\Notification as NotificationSender;
 
 final class AcceptFolderCollaborationInviteService
 {
@@ -36,21 +36,23 @@ final class AcceptFolderCollaborationInviteService
 
         $payload = $this->inviteTokensStore->get($token);
 
-        [$inviterId, $inviteeId, $folderId] = [
-            $payload[Payload::INVITER_ID] ?? null,
-            $payload[Payload::INVITEE_ID] ?? null,
-            $payload[Payload::FOLDER_ID]  ?? null,
-        ];
+        if (empty($payload)) {
+            throw HttpException::notFound(['message' => 'InvitationNotFoundOrExpired']);
+        }
 
-        $this->ensureInviteTokenIsValid($payload);
+        [$inviterId, $inviteeId, $folderId] = [
+            $payload['inviterId'],
+            $payload['inviteeId'],
+            $payload['folderId'],
+        ];
 
         $this->ensureUsersStillExist($inviterId, $inviteeId);
 
         /** @var Folder|null */
         $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'collaboratorsCount', 'visibility'])
             ->tap(new WhereFolderOwnerExists())
-            ->tap(new IsMutedUserScope($inviterId))
-            ->tap(new UserIsCollaboratorScope($inviteeId, 'inviteeIsACollaborator'))
+            ->tap(new IsMutedCollaboratorScope($inviterId))
+            ->tap(new UserIsACollaboratorScope($inviteeId, 'inviteeIsACollaborator'))
             ->find($folderId);
 
         if (is_null($folder)) {
@@ -76,22 +78,15 @@ final class AcceptFolderCollaborationInviteService
         $this->collaboratorRepository->create($folder->id, $inviteeId, $inviterId);
 
         if ($permissions->isNotEmpty()) {
-            $this->permissions->create($inviteeId, $folder->id, $this->extractPermissions($payload));
+            $this->permissions->create($inviteeId, $folder->id, $permissions);
         }
 
         $this->notifyFolderOwner($inviterId, $inviteeId, $folder);
     }
 
-    private function ensureInviteTokenIsValid(array $data): void
-    {
-        if (empty($data)) {
-            throw HttpException::notFound(['message' => 'InvitationNotFoundOrExpired']);
-        }
-    }
-
     private function extractPermissions(array $payload): UAC
     {
-        $permissionsSetByFolderOwner = new UAC($payload[Payload::PERMISSIONS]);
+        $permissionsSetByFolderOwner = new UAC($payload['permissions']);
 
         if ($permissionsSetByFolderOwner->isEmpty()) {
             return new UAC([]);
@@ -134,7 +129,8 @@ final class AcceptFolderCollaborationInviteService
             return;
         }
 
-        (new User(['id' => $folder->user_id]))->notify(
+        NotificationSender::send(
+            new User(['id' => $folder->user_id]),
             new Notification($inviteeId, $folder->id, $inviterId)
         );
     }

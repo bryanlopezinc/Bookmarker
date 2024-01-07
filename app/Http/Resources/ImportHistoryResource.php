@@ -27,7 +27,6 @@ final class ImportHistoryResource extends JsonResource
                 'url'                  => $this->importHistory->url,
                 'document_line_number' => $this->importHistory->document_line_number,
                 'status'               => $status->category(),
-                'tags_count'           => $tags->found(),
                 'has_tags'             => $hasTags = $tags->found() !== 0,
                 'tags'                 => $this->when($hasTags, [
                     'resolved' => $tags->resolved(),

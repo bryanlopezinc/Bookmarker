@@ -18,7 +18,7 @@ use App\Models\Bookmark;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Models\Scopes\DisabledActionScope;
-use App\Models\Scopes\IsMutedUserScope;
+use App\Models\Scopes\IsMutedCollaboratorScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Notifications\BookmarksAddedToFolderNotification as Notification;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
@@ -46,7 +46,7 @@ final class AddBookmarksToFolderService
         $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'bookmarks_count'])
             ->tap(new WhereFolderOwnerExists())
             ->tap(new DisabledActionScope(Permission::ADD_BOOKMARKS))
-            ->tap(new IsMutedUserScope($authUserId))
+            ->tap(new IsMutedCollaboratorScope($authUserId))
             ->find($request->integer('folder'));
 
         if (is_null($folder)) {

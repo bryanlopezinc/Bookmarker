@@ -13,7 +13,7 @@ use App\Models\Bookmark;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Models\Scopes\DisabledActionScope;
-use App\Models\Scopes\IsMutedUserScope;
+use App\Models\Scopes\IsMutedCollaboratorScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\Notifications\BookmarksRemovedFromFolderNotification as Notification;
@@ -36,7 +36,7 @@ final class RemoveFolderBookmarksService
         $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'updated_at'])
             ->tap(new WhereFolderOwnerExists())
             ->tap(new DisabledActionScope(Permission::DELETE_BOOKMARKS))
-            ->tap(new IsMutedUserScope($authUserId))
+            ->tap(new IsMutedCollaboratorScope($authUserId))
             ->find($folderID);
 
         if (is_null($folder)) {

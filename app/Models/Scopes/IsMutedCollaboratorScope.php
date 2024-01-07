@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class IsMutedUserScope implements Scope
+final class IsMutedCollaboratorScope implements Scope
 {
     public function __construct(
         private readonly int $userId,

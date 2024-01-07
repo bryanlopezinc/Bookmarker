@@ -44,6 +44,41 @@ final class UAC implements Countable, Arrayable
         });
     }
 
+    public static function fromRequest(Request $request, string $key): UAC
+    {
+        $permissions = $request->input($key, []);
+
+        if (in_array('*', $permissions, true)) {
+            return self::all();
+        }
+
+        return collect(self::externalToInternalIdentifiersMap())
+            ->only($permissions)
+            ->values()
+            ->pipe(fn ($collection) => new UAC($collection->all()));
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    private static function externalToInternalIdentifiersMap(): array
+    {
+        return [
+            'addBookmarks'    => Permission::ADD_BOOKMARKS->value,
+            'removeBookmarks' => Permission::DELETE_BOOKMARKS->value,
+            'inviteUsers'     => Permission::INVITE_USER->value,
+            'updateFolder'    => Permission::UPDATE_FOLDER->value
+        ];
+    }
+
+    /**
+     * @return array<string>
+     */
+    public static function validExternalIdentifiers(): array
+    {
+        return array_keys(self::externalToInternalIdentifiersMap());
+    }
+
     private function validate(): void
     {
         $isUnique = $this->permissions->unique()->count() === $this->permissions->count();
@@ -66,43 +101,16 @@ final class UAC implements Countable, Arrayable
         return $this->permissions;
     }
 
-    public static function fromRequest(Request $request, string $key): UAC
-    {
-        $permissions = $request->input($key, []);
-
-        if (in_array('*', $permissions, true)) {
-            return self::all();
-        }
-
-        $permissions = collect($permissions)->map(function (string $permission) {
-            return match ($permission) {
-                'addBookmarks'    => Permission::ADD_BOOKMARKS,
-                'removeBookmarks' => Permission::DELETE_BOOKMARKS,
-                'inviteUser'      => Permission::INVITE_USER,
-                'updateFolder'    => Permission::UPDATE_FOLDER
-            };
-        });
-
-        return new UAC($permissions->all());
-    }
-
     /**
      * @return array<string>
      */
-    public function toJsonResponse(): array
+    public function toExternalIdentifiers(): array
     {
-        $permissions = $this->permissions
+        return collect(self::externalToInternalIdentifiersMap())
+            ->flip()
+            ->only($this->toArray())
             ->values()
-            ->map(function (string $permission) {
-                return match ($permission) {
-                    Permission::ADD_BOOKMARKS->value     => 'addBookmarks',
-                    Permission::DELETE_BOOKMARKS->value  => 'removeBookmarks',
-                    Permission::INVITE_USER->value       => 'inviteUsers',
-                    Permission::UPDATE_FOLDER->value     => 'updateFolder',
-                };
-            });
-
-        return $permissions->all();
+            ->all();
     }
 
     public static function all(): UAC
@@ -121,14 +129,6 @@ final class UAC implements Countable, Arrayable
     public function hasAllPermissions(): bool
     {
         return $this->count() === count(self::all());
-    }
-
-    /**
-     * @return array<string>
-     */
-    public function serialize(): array
-    {
-        return $this->permissions->all();
     }
 
     public function isEmpty(): bool

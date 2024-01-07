@@ -7,11 +7,13 @@ namespace Tests\Feature\Folder;
 use App\Enums\Permission;
 use App\Models\FolderCollaboratorPermission;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
+use App\UAC;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\CreatesCollaboration;
 
@@ -98,23 +100,23 @@ class RevokeCollaboratorPermissionsTest extends TestCase
 
     public function testWillReturnForbiddenWhenUserIsACollaboratorButDoesNotOwnFolder(): void
     {
-        $users = UserFactory::times(3)->create();
+        [$collaborator, $otherCollaborator, $userThatIsNotACollaborator] = UserFactory::times(3)->create();
 
         $folder = FolderFactory::new()->create();
 
-        $this->CreateCollaborationRecord($users[1], $folder);
-        $this->CreateCollaborationRecord($users[2], $folder, Permission::ADD_BOOKMARKS);
+        $this->CreateCollaborationRecord($collaborator, $folder);
+        $this->CreateCollaborationRecord($otherCollaborator, $folder, Permission::ADD_BOOKMARKS);
 
-        Passport::actingAs($users[1]);
+        Passport::actingAs($collaborator);
         $this->revokePermissionsResponse([
-            'collaborator_id' => $users[2]->id,
+            'collaborator_id' => $otherCollaborator->id,
             'folder_id'   => $folder->id,
             'permissions' => 'addBookmarks'
         ])->assertForbidden()
             ->assertExactJson($error = ['message' => 'NoRevokePermissionPermission']);
 
         $this->revokePermissionsResponse([
-            'collaborator_id' => $users[0]->id,
+            'collaborator_id' => $userThatIsNotACollaborator->id,
             'folder_id'   => $folder->id,
             'permissions' => 'addBookmarks'
         ])->assertForbidden()
@@ -122,7 +124,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
 
         $this->assertDatabaseHas(FolderCollaboratorPermission::class, [
             'folder_id' => $folder->id,
-            'user_id'   => $users[2]->id,
+            'user_id'   => $otherCollaborator->id,
         ]);
     }
 
@@ -186,60 +188,35 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             ->assertExactJson(['message' => 'UserHasNoSuchPermissions']);
     }
 
-    public function testRevokeAddBookmarksPermission(): void
+    #[Test]
+    public function revokeFolderPermission(): void
     {
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
+        $permissionsRepository = new CollaboratorPermissionsRepository();
         $folder = FolderFactory::new()->for($folderOwner)->create();
+        $query = ['collaborator_id' => $collaborator->id, 'folder_id' => $folder->id];
 
-        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
+        $this->CreateCollaborationRecord($collaborator, $folder, UAC::all()->toArray());
+        $this->loginUser($folderOwner);
 
-        Passport::actingAs($folderOwner);
-        $this->revokePermissionsResponse([
-            'collaborator_id' => $collaborator->id,
-            'folder_id'  => $folder->id,
-            'permissions' => 'addBookmarks'
-        ])->assertOk();
+        $this->revokePermissionsResponse(['permissions' => 'updateFolder', ...$query])->assertOk();
+        $permissions = $permissionsRepository->all($collaborator->id, $folder->id);
+        $this->assertCount(3, $permissions);
+        $this->assertFalse($permissions->canUpdateFolder());
 
-        $permissions = (new CollaboratorPermissionsRepository())->all($collaborator->id, $folder->id);
-
+        $this->revokePermissionsResponse(['permissions' => 'addBookmarks', ...$query])->assertOk();
+        $permissions = $permissionsRepository->all($collaborator->id, $folder->id);
+        $this->assertCount(2, $permissions);
         $this->assertFalse($permissions->canAddBookmarks());
-    }
 
-    public function testRevokeRemoveBookmarksPermission(): void
-    {
-        [$folderOwner, $collaborator] = UserFactory::times(2)->create();
-        $folder = FolderFactory::new()->for($folderOwner)->create();
-
-        $this->CreateCollaborationRecord($collaborator, $folder, Permission::DELETE_BOOKMARKS);
-
-        Passport::actingAs($folderOwner);
-        $this->revokePermissionsResponse([
-            'collaborator_id' => $collaborator->id,
-            'folder_id'  => $folder->id,
-            'permissions' => 'removeBookmarks'
-        ])->assertOk();
-
-        $permissions = (new CollaboratorPermissionsRepository())->all($collaborator->id, $folder->id);
-
+        $this->revokePermissionsResponse(['permissions' => 'removeBookmarks', ...$query])->assertOk();
+        $permissions = $permissionsRepository->all($collaborator->id, $folder->id);
+        $this->assertCount(1, $permissions);
         $this->assertFalse($permissions->canRemoveBookmarks());
-    }
 
-    public function testRevokeInviteUserPermission(): void
-    {
-        [$folderOwner, $collaborator] = UserFactory::times(2)->create();
-        $folder = FolderFactory::new()->for($folderOwner)->create();
-
-        $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
-
-        Passport::actingAs($folderOwner);
-        $this->revokePermissionsResponse([
-            'collaborator_id' => $collaborator->id,
-            'folder_id' => $folder->id,
-            'permissions' => 'inviteUser'
-        ])->assertOk();
-
-        $permissions = (new CollaboratorPermissionsRepository())->all($collaborator->id, $folder->id);
-
+        $this->revokePermissionsResponse(['permissions' => 'inviteUsers', ...$query])->assertOk();
+        $permissions = $permissionsRepository->all($collaborator->id, $folder->id);
+        $this->assertCount(0, $permissions);
         $this->assertFalse($permissions->canInviteUser());
     }
 
@@ -254,33 +231,13 @@ class RevokeCollaboratorPermissionsTest extends TestCase
         $this->revokePermissionsResponse([
             'collaborator_id' => $collaborator->id,
             'folder_id' => $folder->id,
-            'permissions' => 'inviteUser,addBookmarks'
+            'permissions' => 'inviteUsers,addBookmarks'
         ])->assertOk();
 
         $permissions = (new CollaboratorPermissionsRepository())->all($collaborator->id, $folder->id);
 
         $this->assertFalse($permissions->canAddBookmarks());
         $this->assertFalse($permissions->canInviteUser());
-    }
-
-    public function testWillNotRevokeOtherCollaboratorPermissions(): void
-    {
-        [$user, $collaborator] = UserFactory::times(2)->create();
-
-        $folder = FolderFactory::new()->for($user)->create();
-
-        $this->CreateCollaborationRecord($collaborator, $folder, [Permission::ADD_BOOKMARKS, Permission::INVITE_USER]);
-
-        Passport::actingAs($user);
-        $this->revokePermissionsResponse([
-            'collaborator_id' => $collaborator->id,
-            'folder_id'   => $folder->id,
-            'permissions' => 'addBookmarks'
-        ])->assertOk();
-
-        $permissions = (new CollaboratorPermissionsRepository())->all($collaborator->id, $folder->id);
-
-        $this->assertTrue($permissions->canInviteUser());
     }
 
     public function testWillNotAffectOtherCollaboratorsPermissions(): void

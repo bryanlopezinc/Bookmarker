@@ -17,9 +17,9 @@ final class UpdateCollaboratorActionRequest extends FormRequest
     {
         return [
             'folder_id'       => ['required', new ResourceIdRule()],
-            'addBookmarks'    => ['boolean', Rule::requiredIf(!$this->hasAny('removeBookmarks', 'inviteUser', 'updateFolder'))],
+            'addBookmarks'    => ['boolean', Rule::requiredIf(!$this->hasAny('removeBookmarks', 'inviteUsers', 'updateFolder'))],
             'removeBookmarks' => ['sometimes', 'boolean'],
-            'inviteUser'      => ['sometimes', 'boolean'],
+            'inviteUsers'      => ['sometimes', 'boolean'],
             'updateFolder'    => ['sometimes', 'boolean'],
         ];
     }

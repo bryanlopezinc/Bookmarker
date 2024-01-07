@@ -7,6 +7,7 @@ namespace App\Http\Requests;
 use App\PaginationData;
 use App\UAC;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 final class FetchFolderCollaboratorsRequest extends FormRequest
@@ -18,7 +19,7 @@ final class FetchFolderCollaboratorsRequest extends FormRequest
             'permissions' => [
                 'sometimes',
                 'array',
-                'in:readOnly,addBookmarks,removeBookmarks,inviteUser,updateFolder'
+                Rule::in(['readOnly', ...UAC::validExternalIdentifiers()]),
             ],
             'permissions.*' => ['distinct:strict', 'filled'],
             ...PaginationData::new()->asValidationRules()

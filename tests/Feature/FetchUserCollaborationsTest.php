@@ -76,7 +76,7 @@ class FetchUserCollaborationsTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.attributes.id', $folder->id)
             ->assertJsonPath('data.0.type', 'userCollaboration')
-            ->assertJsonPath('data.0.attributes.permissions', UAC::all()->toJsonResponse())
+            ->assertJsonPath('data.0.attributes.permissions', UAC::all()->toExternalIdentifiers())
             ->collect('data')
             ->each(function (array $data) {
                 (new AssertableJsonString($data))

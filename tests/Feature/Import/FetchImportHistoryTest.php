@@ -63,7 +63,6 @@ class FetchImportHistoryTest extends TestCase
                             'url',
                             'document_line_number',
                             'status',
-                            'tags_count',
                             'has_tags'
                         ]
                     ]
@@ -144,7 +143,7 @@ class FetchImportHistoryTest extends TestCase
         $this->fetchImportHistoryResponse(['import_id' => $import->import_id])
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonCount(5, 'data.0.attributes')
+            ->assertJsonCount(4, 'data.0.attributes')
             ->assertJsonPath('data.0.attributes.status', 'success')
             ->assertJsonStructure([
                 'data' => [
@@ -154,7 +153,6 @@ class FetchImportHistoryTest extends TestCase
                             'url',
                             'document_line_number',
                             'status',
-                            'tags_count',
                             'has_tags'
                         ]
                     ]
@@ -180,7 +178,7 @@ class FetchImportHistoryTest extends TestCase
         $this->fetchImportHistoryResponse(['import_id' => $import->import_id])
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonCount(6, 'data.0.attributes')
+            ->assertJsonCount(5, 'data.0.attributes')
             ->assertJsonPath('data.0.attributes.status', 'failed')
             ->assertJsonPath('data.0.attributes.status_reason', 'FailedDueToSystemError')
             ->assertJsonStructure([
@@ -191,7 +189,6 @@ class FetchImportHistoryTest extends TestCase
                             'url',
                             'document_line_number',
                             'status',
-                            'tags_count',
                             'has_tags',
                             'status_reason'
                         ]
@@ -212,7 +209,7 @@ class FetchImportHistoryTest extends TestCase
         $this->fetchImportHistoryResponse(['import_id' => $import->import_id])
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonCount(6, 'data.0.attributes')
+            ->assertJsonCount(5, 'data.0.attributes')
             ->assertJsonPath('data.0.attributes.status', 'skipped')
             ->assertJsonPath('data.0.attributes.status_reason', 'SkippedDueToInvalidTag')
             ->assertJsonStructure([
@@ -223,7 +220,6 @@ class FetchImportHistoryTest extends TestCase
                             'url',
                             'document_line_number',
                             'status',
-                            'tags_count',
                             'has_tags',
                             'status_reason'
                         ]

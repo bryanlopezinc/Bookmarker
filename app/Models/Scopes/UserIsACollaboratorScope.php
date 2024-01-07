@@ -11,11 +11,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class UserIsCollaboratorScope implements Scope
+final class UserIsACollaboratorScope implements Scope
 {
     public function __construct(
         private readonly int $userId,
-        private readonly string $as = 'userIsCollaborator'
+        private readonly string $as = 'userIsACollaborator'
     ) {
     }
 
@@ -23,11 +23,12 @@ final class UserIsCollaboratorScope implements Scope
     {
         $folderModel = new Folder();
 
-        $query->addSelect([
-            $this->as => FolderCollaborator::select('id')
-                ->whereColumn('folder_id', $folderModel->getQualifiedKeyName())
-                ->where('collaborator_id', $this->userId)
-        ]);
+        $query->withCasts([$this->as => 'boolean'])
+            ->addSelect([
+                $this->as => FolderCollaborator::select('id')
+                    ->whereColumn('folder_id', $folderModel->getQualifiedKeyName())
+                    ->where('collaborator_id', $this->userId)
+            ]);
     }
 
     /**

@@ -7,7 +7,7 @@ namespace App\Services\Folder;
 use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
-use App\Models\Scopes\UserIsCollaboratorScope;
+use App\Models\Scopes\UserIsACollaboratorScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Notifications\CollaboratorExitNotification;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
@@ -31,7 +31,7 @@ final class LeaveFolderCollaborationService
 
         $folder = Folder::onlyAttributes(['id', 'user_id', 'settings'])
             ->tap(new WhereFolderOwnerExists())
-            ->tap(new UserIsCollaboratorScope($collaboratorID))
+            ->tap(new UserIsACollaboratorScope($collaboratorID))
             ->find($folderID);
 
         $collaboratorPermissions = $this->permissionsRepository->all($collaboratorID, $folderID);
@@ -42,7 +42,7 @@ final class LeaveFolderCollaborationService
 
         $this->ensureCollaboratorDoesNotOwnFolder($collaboratorID, $folder);
 
-        FolderNotFoundException::throwIf(!$folder->userIsCollaborator);
+        FolderNotFoundException::throwIf(!$folder->userIsACollaborator);
 
         $this->collaboratorRepository->delete($folder->id, $collaboratorID);
 

@@ -29,7 +29,7 @@ final class FolderCollaboratorResource extends JsonResource
             'attributes' => [
                 'id'          => $this->collaborator->user->id,
                 'name'        => $this->collaborator->user->full_name,
-                'permissions' => $this->collaborator->permissions->toJsonResponse(),
+                'permissions' => $this->collaborator->permissions->toExternalIdentifiers(),
                 'profile_image_url'  => $filesystem->publicUrl($this->collaborator->user->profile_image_path),
                 'added_by'    => [
                     'exists'       => $inviterExists,

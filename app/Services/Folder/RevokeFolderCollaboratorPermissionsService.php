@@ -7,7 +7,7 @@ namespace App\Services\Folder;
 use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
-use App\Models\FolderCollaborator;
+use App\Models\Scopes\UserIsACollaboratorScope;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\UAC;
 use App\ValueObjects\UserId;
@@ -21,7 +21,13 @@ final class RevokeFolderCollaboratorPermissionsService
 
     public function revokePermissions(int $collaboratorID, int $folderID, UAC $revokePermissions): void
     {
-        $folder = Folder::query()->find($folderID, ['id', 'user_id']);
+        $authUserId = UserId::fromAuthUser()->value();
+
+        $folder = Folder::query()
+            ->select(['id', 'user_id'])
+            ->tap(new UserIsACollaboratorScope($collaboratorID, 'userIsACollaborator'))
+            ->tap(new UserIsACollaboratorScope($authUserId, 'authUserIsACollaborator'))
+            ->find($folderID);
 
         if (is_null($folder)) {
             throw new FolderNotFoundException();
@@ -29,28 +35,23 @@ final class RevokeFolderCollaboratorPermissionsService
 
         $collaboratorPermissions = $this->permissions->all($collaboratorID, $folderID);
 
-        $this->ensureIsNotPerformingActionOnSelf($collaboratorID, $authUserId = UserId::fromAuthUser()->value());
+        $this->ensureIsNotPerformingActionOnSelf($collaboratorID, $authUserId);
 
-        $this->ensureUserHasPermissionToPerformAction($folder, $authUserId);
+        $this->ensureUserHasPermissionToPerformAction($folder);
 
-        $this->ensureUserIsACollaborator($collaboratorPermissions);
+        $this->ensureUserIsACollaborator($folder);
 
         $this->ensureCollaboratorHasPermissions($collaboratorPermissions, $revokePermissions);
 
         $this->permissions->delete($collaboratorID, $folderID, $revokePermissions);
     }
 
-    private function ensureUserHasPermissionToPerformAction(Folder $folder, int $authUserId): void
+    private function ensureUserHasPermissionToPerformAction(Folder $folder): void
     {
         try {
             FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
         } catch (FolderNotFoundException $e) {
-            $userIsACollaborator = FolderCollaborator::query()
-                ->where('folder_id', $folder->id)
-                ->where('collaborator_id', $authUserId)
-                ->exists();
-
-            if (!$userIsACollaborator) {
+            if (!$folder->authUserIsACollaborator) {
                 throw $e;
             }
 
@@ -63,18 +64,14 @@ final class RevokeFolderCollaboratorPermissionsService
     private function ensureIsNotPerformingActionOnSelf(int $collaboratorID, int $authUserId): void
     {
         if ($authUserId === $collaboratorID) {
-            throw HttpException::forbidden([
-                'message' => 'CannotRemoveSelf'
-            ]);
+            throw HttpException::forbidden(['message' => 'CannotRemoveSelf']);
         }
     }
 
-    private function ensureUserIsACollaborator(UAC $collaboratorsCurrentPermissions): void
+    private function ensureUserIsACollaborator(Folder $folder): void
     {
-        if ($collaboratorsCurrentPermissions->isEmpty()) {
-            throw HttpException::notFound([
-                'message' => 'UserNotACollaborator'
-            ]);
+        if (!$folder->userIsACollaborator) {
+            throw HttpException::notFound(['message' => 'UserNotACollaborator']);
         }
     }
 
@@ -86,9 +83,7 @@ final class RevokeFolderCollaboratorPermissionsService
         UAC $permissionsToRevoke
     ): void {
         if (!$collaboratorPermissions->containsAll($permissionsToRevoke)) {
-            throw HttpException::notFound([
-                'message' => 'UserHasNoSuchPermissions'
-            ]);
+            throw HttpException::notFound(['message' => 'UserHasNoSuchPermissions']);
         }
     }
 }

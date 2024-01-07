@@ -9,16 +9,16 @@ use App\Exceptions\HttpException;
 use App\Exceptions\UserNotFoundException;
 use App\Models\Folder;
 use App\Models\MutedCollaborator;
-use App\Models\Scopes\IsMutedUserScope;
-use App\Models\Scopes\UserIsCollaboratorScope;
+use App\Models\Scopes\IsMutedCollaboratorScope;
+use App\Models\Scopes\UserIsACollaboratorScope;
 
 final class MuteCollaboratorService
 {
     public function __invoke(int $folderId, int $collaboratorId, int $authUserId): void
     {
         $folder = Folder::onlyAttributes(['user_id'])
-            ->tap(new UserIsCollaboratorScope($collaboratorId))
-            ->tap(new IsMutedUserScope($collaboratorId))
+            ->tap(new UserIsACollaboratorScope($collaboratorId))
+            ->tap(new IsMutedCollaboratorScope($collaboratorId))
             ->whereKey($folderId)
             ->first();
 
@@ -32,7 +32,7 @@ final class MuteCollaboratorService
             throw HttpException::forbidden(['message' => 'CannotMuteSelf']);
         }
 
-        if (!$folder->userIsCollaborator) {
+        if (!$folder->userIsACollaborator) {
             throw new UserNotFoundException();
         }
 

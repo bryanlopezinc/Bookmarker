@@ -51,9 +51,9 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['addBookmarks']);
 
-        $this->updateFolderResponse(['inviteUser' => 'foo'])
+        $this->updateFolderResponse(['inviteUsers' => 'foo'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['inviteUser']);
+            ->assertJsonValidationErrors(['inviteUsers']);
 
         $this->updateFolderResponse(['updateFolder' => 'foo'])
             ->assertUnprocessable()
@@ -182,14 +182,14 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
             id: null,
             assertions: [
                 'Will return ok when restriction is already enabled' => [
-                    'data' => ['inviteUser' => true],
+                    'data' => ['inviteUsers' => true],
                     'expectation' => function (Collection $disabledActions) {
                         $this->assertCount(0, $disabledActions);
                     }
                 ],
 
                 'Will enable restrictions' => [
-                    'data' => ['inviteUser' => false],
+                    'data' => ['inviteUsers' => false],
                     'expectation' => function (Collection $disabledActions) {
                         $this->assertCount(1, $disabledActions);
                         $this->assertEquals($disabledActions->first()->action, 'INVITE_USER');
@@ -197,7 +197,7 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
                 ],
 
                 'Will return ok when restriction is already enabled' => [
-                    'data' => ['inviteUser' => false],
+                    'data' => ['inviteUsers' => false],
                     'expectation' => function (Collection $disabledActions) {
                         $this->assertCount(1, $disabledActions);
                         $this->assertEquals($disabledActions->first()->action, 'INVITE_USER');
@@ -205,7 +205,7 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
                 ],
 
                 'Will disable restriction' => [
-                    'data' => ['inviteUser' => true],
+                    'data' => ['inviteUsers' => true],
                     'expectation' => function (Collection $disabledActions) {
                         $this->assertCount(0, $disabledActions);
                     }

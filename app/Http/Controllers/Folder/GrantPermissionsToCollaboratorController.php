@@ -15,12 +15,7 @@ final class GrantPermissionsToCollaboratorController
     public function __invoke(Request $request, Service $service, string $folderId, string $collaboratorId): JsonResponse
     {
         $request->validate([
-            'permissions' => ['required', 'array', Rule::in([
-                'addBookmarks',
-                'removeBookmarks',
-                'inviteUser',
-                'updateFolder'
-            ])],
+            'permissions' => ['required', 'array', Rule::in(UAC::validExternalIdentifiers())],
             'permissions.*' => ['filled', 'distinct:strict'],
         ]);
 

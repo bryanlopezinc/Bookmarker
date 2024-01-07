@@ -90,7 +90,7 @@ class FetchFolderCollaboratorsTest extends TestCase
             ->assertJsonPath('data.0.type', 'folderCollaborator')
             ->assertJsonPath('data.0.attributes.id', $collaborator->id)
             ->assertJsonPath('data.0.attributes.name', $collaborator->first_name . ' ' . $collaborator->last_name)
-            ->assertJsonPath('data.0.attributes.permissions', UAC::all()->toJsonResponse())
+            ->assertJsonPath('data.0.attributes.permissions', UAC::all()->toExternalIdentifiers())
             ->assertJsonStructure([
                 'data' => [
                     '*' => [
@@ -239,7 +239,7 @@ class FetchFolderCollaboratorsTest extends TestCase
         $this->CreateCollaborationRecord($hasOnlyUpdatePermission, $folder, Permission::UPDATE_FOLDER);
         $this->CreateCollaborationRecord($hasInviteAndAddBookmarksPermission, $folder, [Permission::INVITE_USER, Permission::ADD_BOOKMARKS]);
 
-        $this->fetchCollaboratorsResponse(['folder_id' => $folder->id, 'permissions' => 'addBookmarks,inviteUser'])
+        $this->fetchCollaboratorsResponse(['folder_id' => $folder->id, 'permissions' => 'addBookmarks,inviteUsers'])
             ->assertOk()
             ->assertJsonCount(2, 'data')
             ->assertJsonCount(2, 'data.0.attributes.permissions')
@@ -257,7 +257,7 @@ class FetchFolderCollaboratorsTest extends TestCase
             ->assertJsonPath('data.1.attributes.id', $hasOnlyAddBookmarksPermission->id)
             ->assertJsonPath('data.2.attributes.id', $hasAllPermissions->id);
 
-        $this->fetchCollaboratorsResponse(['folder_id' => $folder->id, 'permissions' => 'inviteUser'])
+        $this->fetchCollaboratorsResponse(['folder_id' => $folder->id, 'permissions' => 'inviteUsers'])
             ->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJsonCount(2, 'data.0.attributes.permissions')

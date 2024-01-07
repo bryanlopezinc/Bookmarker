@@ -13,7 +13,7 @@ use App\Models\Bookmark;
 use App\Models\Favorite;
 use App\Models\Folder;
 use App\Models\MutedCollaborator;
-use App\Models\Scopes\UserIsCollaboratorScope;
+use App\Models\Scopes\UserIsACollaboratorScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\PaginationData;
 use App\ValueObjects\UserId;
@@ -35,7 +35,7 @@ final class FetchFolderBookmarksService
 
         $folder = Folder::query()
             ->tap(new WhereFolderOwnerExists())
-            ->when($authUserId, fn ($query, int $authUserId) => $query->tap(new UserIsCollaboratorScope($authUserId)))
+            ->when($authUserId, fn ($query, int $authUserId) => $query->tap(new UserIsACollaboratorScope($authUserId)))
             ->find($request->route('folder_id'), ['id', 'user_id', 'visibility', 'password']);
 
         FolderNotFoundException::throwIf(!$folder);
@@ -80,7 +80,7 @@ final class FetchFolderBookmarksService
                 return;
             }
 
-            if (!$folder->userIsCollaborator) {
+            if (!$folder->userIsACollaborator) {
                 throw $e;
             }
         }

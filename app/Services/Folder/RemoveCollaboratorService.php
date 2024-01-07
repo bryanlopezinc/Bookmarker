@@ -8,7 +8,7 @@ use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
 use App\Models\BannedCollaborator;
 use App\Models\Folder;
-use App\Models\Scopes\UserIsCollaboratorScope;
+use App\Models\Scopes\UserIsACollaboratorScope;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\Repositories\Folder\CollaboratorRepository;
 use App\ValueObjects\UserId;
@@ -24,7 +24,7 @@ final class RemoveCollaboratorService
     public function revokeUserAccess(int $folderID, int $collaboratorID, bool $banCollaborator): void
     {
         $folder = Folder::query()
-            ->tap(new UserIsCollaboratorScope($collaboratorID))
+            ->tap(new UserIsACollaboratorScope($collaboratorID))
             ->find($folderID, ['id', 'user_id']);
 
         if (is_null($folder)) {
@@ -35,7 +35,7 @@ final class RemoveCollaboratorService
 
         $this->ensureIsNotRemovingSelf($collaboratorID, UserId::fromAuthUser()->value());
 
-        if (!$folder->userIsCollaborator) {
+        if (!$folder->userIsACollaborator) {
             throw HttpException::notFound(['message' => 'UserNotACollaborator']);
         }
 

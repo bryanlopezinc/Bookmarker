@@ -61,7 +61,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['permissions' => ['The selected permissions is invalid.']]);
 
-        $this->grantPermissionsResponse(['permissions' => 'addBookmarks,addBookmarks,inviteUser','folder_id' => 44, 'collaborator_id' => 4])
+        $this->grantPermissionsResponse(['permissions' => 'addBookmarks,addBookmarks,inviteUsers','folder_id' => 44, 'collaborator_id' => 4])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 "permissions.0" => [
@@ -85,7 +85,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
         $this->grantPermissionsResponse([
             'collaborator_id' => $collaborator->id,
             'folder_id'   => $folder->id,
-            'permissions' => 'inviteUser'
+            'permissions' => 'inviteUsers'
         ])->assertOk();
 
         $collaboratorPermissions = (new Repository())->all($collaborator->id, $folder->id);
@@ -107,7 +107,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
         $this->grantPermissionsResponse([
             'collaborator_id' => $collaborator->id,
             'folder_id'   => $folder->id,
-            'permissions' => 'inviteUser,addBookmarks'
+            'permissions' => 'inviteUsers,addBookmarks'
         ])->assertOk();
 
         $collaboratorPermissions = (new Repository())->all($collaborator->id, $folder->id);
@@ -126,7 +126,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
         $this->grantPermissionsResponse([
             'collaborator_id' => $user->id,
             'folder_id' => $folder->id,
-            'permissions' => 'inviteUser'
+            'permissions' => 'inviteUsers'
         ])->assertForbidden()
             ->assertExactJson(['message' => 'CannotGrantPermissionsToSelf']);
     }
@@ -138,7 +138,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
         $this->grantPermissionsResponse([
             'collaborator_id' => UserFactory::new()->create()->id,
             'folder_id'   => FolderFactory::new()->create()->id,
-            'permissions' => 'inviteUser'
+            'permissions' => 'inviteUsers'
         ])->assertNotFound();
     }
 

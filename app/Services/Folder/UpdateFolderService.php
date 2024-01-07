@@ -15,7 +15,7 @@ use App\Http\Requests\CreateOrUpdateFolderRequest as Request;
 use App\Models\Folder;
 use App\Models\FolderCollaborator;
 use App\Models\Scopes\DisabledActionScope;
-use App\Models\Scopes\UserIsCollaboratorScope;
+use App\Models\Scopes\UserIsACollaboratorScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Models\User;
 use App\Notifications\FolderUpdatedNotification;
@@ -45,7 +45,7 @@ final class UpdateFolderService
         $folder = Folder::select(['id', 'user_id', 'name', 'description', 'visibility', 'settings'])
             ->tap(new WhereFolderOwnerExists())
             ->tap(new DisabledActionScope(Permission::UPDATE_FOLDER))
-            ->tap(new UserIsCollaboratorScope($authUser->getAuthIdentifier()))
+            ->tap(new UserIsACollaboratorScope($authUser->getAuthIdentifier()))
             //we could query for collaborators count but no need to count
             //rows when we could do a simple select.
             ->addSelect([
@@ -92,7 +92,7 @@ final class UpdateFolderService
         try {
             FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
         } catch (FolderNotFoundException $e) {
-            throw_if(!$folder->userIsCollaborator, $e);
+            throw_if(!$folder->userIsACollaborator, $e);
 
             if ($request->has('visibility')) {
                 throw HttpException::forbidden(['message' => 'NoUpdatePrivacyPermission']);

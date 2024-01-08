@@ -33,23 +33,19 @@ final class FetchFolderBookmarksService
     {
         $authUserId = auth()->check() ? UserId::fromAuthUser()->value() : null;
 
+        /** @var Folder|null */
         $folder = Folder::query()
             ->tap(new WhereFolderOwnerExists())
             ->when($authUserId, fn ($query, int $authUserId) => $query->tap(new UserIsACollaboratorScope($authUserId)))
             ->find($request->route('folder_id'), ['id', 'user_id', 'visibility', 'password']);
 
-        FolderNotFoundException::throwIf(!$folder);
-
-        $fetchOnlyPublicBookmarks = (!$authUserId || $folder->user_id !== $authUserId);
+        if (is_null($folder)) {
+            throw new FolderNotFoundException();
+        }
 
         $this->ensureUserCanViewFolderBookmarks($folder, $request->input('folder_password'));
 
-        $folderBookmarks = $this->getBookmarks(
-            $folderId,
-            $fetchOnlyPublicBookmarks,
-            $authUserId,
-            PaginationData::fromRequest($request)
-        );
+        $folderBookmarks = $this->getBookmarks($folder, $authUserId, PaginationData::fromRequest($request));
 
         $folderBookmarks
             ->getCollection()
@@ -89,18 +85,16 @@ final class FetchFolderBookmarksService
     /**
      * @return Paginator<FolderBookmark>
      */
-    private function getBookmarks(
-        int $folderId,
-        bool $onlyPublic,
-        ?int $authUserId,
-        PaginationData $pagination
-    ): Paginator {
+    private function getBookmarks(Folder $folder, ?int $authUserId, PaginationData $pagination): Paginator
+    {
+        $fetchOnlyPublicBookmarks = !$authUserId || $folder->user_id !== $authUserId;
+        $shouldNotIncludeMutedCollaboratorBookmarks = $folder->visibility->isPublic() || $folder->visibility->isVisibleToCollaboratorsOnly();
 
         /** @var Paginator */
         $result = Bookmark::WithQueryOptions()
             ->join('folders_bookmarks', 'folders_bookmarks.bookmark_id', '=', 'bookmarks.id')
-            ->when($onlyPublic, fn ($query) => $query->where('visibility', FolderBookmarkVisibility::PUBLIC->value))
-            ->when(!$onlyPublic, fn ($query) => $query->addSelect(['visibility']))
+            ->when($fetchOnlyPublicBookmarks, fn ($query) => $query->where('visibility', FolderBookmarkVisibility::PUBLIC->value))
+            ->when(!$fetchOnlyPublicBookmarks, fn ($query) => $query->addSelect(['visibility']))
             ->when($authUserId, function ($query) use ($authUserId) {
                 $query->addSelect([
                     'isUserFavorite' => Favorite::query()
@@ -109,20 +103,20 @@ final class FetchFolderBookmarksService
                         ->whereColumn('bookmark_id', 'bookmarks.id')
                 ]);
             })
-            ->when($authUserId, function ($query) use ($authUserId, $folderId) {
+            ->when($shouldNotIncludeMutedCollaboratorBookmarks, function ($query) use ($authUserId, $folder) {
                 $mutedCollaboratorQuery = MutedCollaborator::query()
                     ->whereColumn('user_id', 'bookmarks.user_id')
-                    ->where('folder_id', $folderId)
+                    ->where('folder_id', $folder->id)
                     ->where('muted_by', $authUserId);
 
                 $query->whereNotExists($mutedCollaboratorQuery);
             })
-            ->where('folder_id', $folderId)
+            ->where('folder_id', $folder->id)
             ->latest('folders_bookmarks.id')
             ->simplePaginate($pagination->perPage(), [], page: $pagination->page());
 
         $result->setCollection(
-            $result->getCollection()->map($this->buildFolderBookmarkObject($onlyPublic))
+            $result->getCollection()->map($this->buildFolderBookmarkObject($fetchOnlyPublicBookmarks))
         );
 
         return $result;

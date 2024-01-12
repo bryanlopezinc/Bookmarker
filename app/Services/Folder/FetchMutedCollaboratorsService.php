@@ -6,7 +6,6 @@ namespace App\Services\Folder;
 
 use App\Exceptions\FolderNotFoundException;
 use App\Models\Folder;
-use App\Models\MutedCollaborator;
 use App\Models\User;
 use App\PaginationData;
 use Illuminate\Pagination\Paginator;
@@ -34,17 +33,17 @@ final class FetchMutedCollaboratorsService
      */
     private function collaborators(int $folderID, PaginationData $pagination, ?string $collaboratorName = null): Paginator
     {
-        $mcm = new MutedCollaborator(); //muted collaborator model
-        $um = new User(); // user model
+        $currentDateTime = now();
 
         return User::query()
-            ->select([$um->getQualifiedKeyName(), 'full_name', 'profile_image_path'])
-            ->join($mcm->getTable(), $mcm->qualifyColumn('user_id'), '=', $um->getQualifiedKeyName())
-            ->when($collaboratorName, function ($query) use ($collaboratorName) {
-                $query->where('full_name', 'like', "{$collaboratorName}%");
+            ->select(['users.id', 'full_name', 'profile_image_path'])
+            ->join('folders_muted_collaborators', 'folders_muted_collaborators.user_id', '=', 'users.id')
+            ->when($collaboratorName, function ($query, string $name) {
+                $query->where('full_name', 'like', "{$name}%");
             })
             ->where('folder_id', $folderID)
-            ->latest($mcm->getQualifiedKeyName())
+            ->whereRaw("(muted_until IS NULL OR muted_until > '$currentDateTime')")
+            ->latest('folders_muted_collaborators.id')
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
     }
 }

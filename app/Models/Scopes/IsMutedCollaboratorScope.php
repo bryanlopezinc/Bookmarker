@@ -16,7 +16,7 @@ final class IsMutedCollaboratorScope implements Scope
     public function __construct(
         private readonly int $userId,
         private readonly ?int $mutedBy = null,
-        private readonly string $as = 'collaboratorIsMuted'
+        private readonly string $as = 'collaboratorIsMuted',
     ) {
     }
 
@@ -24,10 +24,15 @@ final class IsMutedCollaboratorScope implements Scope
     {
         $folderModel = new Folder();
 
+        $currentDateTime = now();
+
         $query->addSelect([
-            $this->as => MutedCollaborator::select('id')
+            $this->as => MutedCollaborator::query()
+                ->withCasts([$this->as => 'boolean'])
+                ->select('id')
                 ->whereRaw("folder_id = {$folderModel->getQualifiedKeyName()}")
                 ->where('user_id', $this->userId)
+                ->whereRaw("(muted_until IS NULL OR muted_until > '$currentDateTime')")
                 ->when(!$this->mutedBy, fn ($query) => $query->whereRaw("muted_by = {$folderModel->qualifyColumn('user_id')}"))
                 ->when($this->mutedBy, fn ($query) => $query->where('muted_by', $this->mutedBy))
         ]);

@@ -203,4 +203,29 @@ class FetchMutedCollaboratorsTest extends TestCase
             ->assertNotFound()
             ->assertExactJson(['message' => 'FolderNotFound']);
     }
+
+    #[Test]
+    public function whenCollaboratorMuteDurationIsPast(): void
+    {
+        [$folderOwner, $collaborator, $otherCollaborator] = UserFactory::times(3)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->service->mute($folder->id, $collaborator->id, $folderOwner->id, now(), 1);
+        $this->service->mute($folder->id, $otherCollaborator->id, $folderOwner->id);
+
+        $this->loginUser($folderOwner);
+        $this->travel(55)->minutes(function () use ($folder) {
+            $this->fetchMuteCollaboratorsResponse(['folder_id' => $folder->id])
+                ->assertOk()
+                ->assertJsonCount(2, 'data');
+        });
+
+        $this->travel(61)->minutes(function () use ($folder, $otherCollaborator) {
+            $this->fetchMuteCollaboratorsResponse(['folder_id' => $folder->id])
+                ->assertOk()
+                ->assertJsonCount(1, 'data')
+                ->assertJsonPath('data.0.attributes.id', $otherCollaborator->id);
+        });
+    }
 }

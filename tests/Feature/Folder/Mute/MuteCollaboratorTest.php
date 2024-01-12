@@ -63,10 +63,70 @@ class MuteCollaboratorTest extends TestCase
             ->muteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
             ->assertCreated();
 
-        $this->assertDatabaseHas(MutedCollaborator::class, [
-            'folder_id' => $folder->id,
-            'user_id'   => $collaborator->id
-        ]);
+        /** @var MutedCollaborator */
+        $record = MutedCollaborator::query()->where(['folder_id' => $folder->id, 'user_id' => $collaborator->id])->sole();
+
+        $this->assertNull($record->muted_until);
+        $this->assertNotNull($record->muted_at);
+    }
+
+    #[Test]
+    public function muteCollaboratorForAGivenPeriod(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::times(2)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+        $query = ['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id];
+
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
+
+        $this->loginUser($folderOwner);
+        $this->withRequestId()
+            ->muteCollaboratorResponse(['mute_until' => -1, ...$query])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['mute_until' => 'The mute until must be at least 1.']);
+
+        $this->withRequestId()
+            ->muteCollaboratorResponse(['mute_until' => 745, ...$query])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['mute_until' => 'The mute until must not be greater than 744.']);
+
+        $this->withRequestId()
+            ->muteCollaboratorResponse(['mute_until' => 1, ...$query])
+            ->assertCreated();
+
+        /** @var MutedCollaborator */
+        $record = MutedCollaborator::query()->where(['folder_id' => $folder->id, 'user_id' => $collaborator->id])->sole();
+
+        $this->assertEquals(1, $record->muted_at->diffInHours($record->muted_until));
+    }
+
+    #[Test]
+    public function muteACollaboratorAgainWhenMuteDurationIsPast(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::times(2)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+        $query = ['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id];
+
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
+
+        $this->loginUser($folderOwner);
+
+        $this->withRequestId()
+            ->muteCollaboratorResponse(['mute_until' => 1, ...$query])
+            ->assertCreated();
+
+        $this->travel(61)->minutes(function () use ($query) {
+            $this->withRequestId()
+                ->muteCollaboratorResponse(['mute_until' => 1, ...$query])
+                ->assertCreated();
+        });
+
+        /** @var MutedCollaborator */
+        $record = MutedCollaborator::query()->where(['folder_id' => $folder->id, 'user_id' => $collaborator->id])->sole();
+
+        $this->assertEquals(1, $record->muted_at->diffInHours($record->muted_until));
     }
 
     #[Test]

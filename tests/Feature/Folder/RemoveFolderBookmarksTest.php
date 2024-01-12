@@ -380,6 +380,32 @@ class RemoveFolderBookmarksTest extends TestCase
     }
 
     #[Test]
+    public function willNotifyFolderOwnerWhenMuteDurationIsPast(): void
+    {
+        Notification::fake();
+
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->addBookmarksToFolder($bookmarkIDs->all(), $folder->id);
+
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::DELETE_BOOKMARKS);
+
+        /** @var MuteCollaboratorService */
+        $muteCollaboratorService = app(MuteCollaboratorService::class);
+
+        $muteCollaboratorService->mute($folder->id, $collaborator->id, $folderOwner->id, now(), 1);
+
+        $this->loginUser($collaborator);
+        $this->travel(61)->minutes(function () use ($bookmarkIDs, $folder) {
+            $this->removeFolderBookmarksResponse(['bookmarks' => $bookmarkIDs->all(), 'folder' => $folder->id])->assertOk();
+
+            Notification::assertCount(1);
+        });
+    }
+
+    #[Test]
     public function willReturnCorrectResponseWhenActionsIsDisabled(): void
     {
         /** @var ToggleFolderCollaborationRestriction */

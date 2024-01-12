@@ -88,7 +88,7 @@ final class FetchFolderBookmarksService
     private function getBookmarks(Folder $folder, ?int $authUserId, PaginationData $pagination): Paginator
     {
         $fetchOnlyPublicBookmarks = !$authUserId || $folder->user_id !== $authUserId;
-        $shouldNotIncludeMutedCollaboratorBookmarks = $folder->visibility->isPublic() || $folder->visibility->isVisibleToCollaboratorsOnly();
+        $shouldNotIncludeMutedCollaboratorBookmarks = ($folder->visibility->isPublic() || $folder->visibility->isVisibleToCollaboratorsOnly()) && $authUserId !== null;
 
         /** @var Paginator */
         $result = Bookmark::WithQueryOptions()
@@ -104,10 +104,13 @@ final class FetchFolderBookmarksService
                 ]);
             })
             ->when($shouldNotIncludeMutedCollaboratorBookmarks, function ($query) use ($authUserId, $folder) {
+                $currentDateTime = now();
+
                 $mutedCollaboratorQuery = MutedCollaborator::query()
-                    ->whereColumn('user_id', 'bookmarks.user_id')
                     ->where('folder_id', $folder->id)
-                    ->where('muted_by', $authUserId);
+                    ->whereColumn('user_id', 'bookmarks.user_id')
+                    ->where('muted_by', $authUserId)
+                    ->whereRaw("(muted_until IS NULL OR muted_until > '$currentDateTime')");
 
                 $query->whereNotExists($mutedCollaboratorQuery);
             })

@@ -17,6 +17,8 @@ return new class extends Migration
             $table->foreignId('user_id');
             $table->foreignId('muted_by');
             $table->unique(['folder_id', 'user_id', 'muted_by']);
+            $table->timestamp('muted_at');
+            $table->timestamp('muted_until')->nullable();
         });
     }
 

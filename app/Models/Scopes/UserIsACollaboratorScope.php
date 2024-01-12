@@ -23,7 +23,7 @@ final class UserIsACollaboratorScope implements Scope
     {
         $folderModel = new Folder();
 
-        $query->withCasts([$this->as => 'boolean'])
+        $query->withCasts([$this->as => 'boolean']) //@phpstan-ignore-line
             ->addSelect([
                 $this->as => FolderCollaborator::select('id')
                     ->whereColumn('folder_id', $folderModel->getQualifiedKeyName())

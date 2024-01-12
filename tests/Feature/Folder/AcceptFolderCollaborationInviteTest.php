@@ -528,4 +528,35 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         Notification::assertNothingSent();
     }
+
+    #[Test]
+    public function willNotifyFolderOwnerWhenMuteDurationIsPast(): void
+    {
+        Notification::fake();
+
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
+
+        $folder = FolderFactory::new()->create();
+
+        /** @var MuteCollaboratorService */
+        $muteCollaboratorService = app(MuteCollaboratorService::class);
+
+        $muteCollaboratorService->mute($folder->id, $collaborator->id, $folder->user_id, now(), 1);
+
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $collaborator->id,
+            $invitee->id,
+            $folder->id,
+            new UAC([Permission::ADD_BOOKMARKS])
+        );
+
+        $this->travel(61)->minutes(function () use ($id) {
+            $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
+
+            Notification::assertCount(1);
+        });
+    }
 }

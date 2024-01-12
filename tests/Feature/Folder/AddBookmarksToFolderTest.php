@@ -471,6 +471,31 @@ class AddBookmarksToFolderTest extends TestCase
     }
 
     #[Test]
+    public function willNotifyFolderOwnerWhenMuteDurationIsPast(): void
+    {
+        Notification::fake();
+
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $bookmarks = BookmarkFactory::times(2)->for($collaborator)->create()->pluck('id');
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        /** @var MuteCollaboratorService */
+        $muteCollaboratorService = app(MuteCollaboratorService::class);
+
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
+
+        $muteCollaboratorService->mute($folder->id, $collaborator->id, $folderOwner->id, now(), 1);
+
+        $this->loginUser($collaborator);
+        $this->travel(61)->minutes(function () use ($bookmarks, $folder) {
+            $this->withRequestId()
+                ->addBookmarksToFolderResponse(['bookmarks' => $bookmarks->implode(','), 'folder' => $folder->id])
+                ->assertCreated();
+            Notification::assertCount(1);
+        });
+    }
+
+    #[Test]
     public function willReturnCorrectResponseWhenActionsIsDisabled(): void
     {
         /** @var ToggleFolderCollaborationRestriction */

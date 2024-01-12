@@ -423,4 +423,32 @@ class FetchFolderBookmarksTest extends TestCase
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }
+
+    #[Test]
+    public function willIncludeBookmarksFromMutedCollaboratorsWhenMuteDurationIsPast(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::times(2)->create();
+
+        /** @var MuteCollaboratorService */
+        $muteCollaboratorService = app(MuteCollaboratorService::class);
+
+        $bookmark = BookmarkFactory::new()->for($collaborator)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->addBookmarksToFolder->add($folder->id, $bookmark->id);
+        $muteCollaboratorService->mute($folder->id, $collaborator->id, $folderOwner->id, now(), 2);
+
+        $this->loginUser($folderOwner);
+        $this->travel(119)->minutes(function () use ($folder) {
+            $this->folderBookmarksResponse(['folder_id' => $folder->id])
+                ->assertOk()
+                ->assertJsonCount(0, 'data');
+        });
+
+        $this->travel(121)->minutes(function () use ($folder) {
+            $this->folderBookmarksResponse(['folder_id' => $folder->id])
+                ->assertOk()
+                ->assertJsonCount(1, 'data');
+        });
+    }
 }

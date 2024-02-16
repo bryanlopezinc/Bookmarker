@@ -20,17 +20,16 @@ use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Models\User;
 use App\Notifications\FolderUpdatedNotification;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
+use App\ValueObjects\FolderName;
 use Illuminate\Support\Facades\Hash;
-use App\Repositories\NotificationRepository;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 final class UpdateFolderService
 {
-    public function __construct(
-        private CollaboratorPermissionsRepository $permissions,
-        private NotificationRepository $notifications,
-    ) {
+    public function __construct(private CollaboratorPermissionsRepository $permissions)
+    {
     }
 
     /**
@@ -67,7 +66,7 @@ final class UpdateFolderService
 
         $this->confirmPasswordBeforeMakingPrivateFolderPublic($request, $authUser, $folder);
 
-        $this->notifyFolderOwner($this->performUpdate($request, $folder), $authUser->getAuthIdentifier());
+        $this->notifyFolderOwner($this->performUpdate($request, $folder), $authUser);
     }
 
     private function ensureCanChangeVisibility(Folder $folder, Request $request): void
@@ -119,7 +118,7 @@ final class UpdateFolderService
         }
 
         if ($request->has('name')) {
-            $folder->name = $request->validated('name');
+            $folder->name = new FolderName($request->validated('name'));
         }
 
         if ($request->has('description')) {
@@ -164,13 +163,14 @@ final class UpdateFolderService
         }
     }
 
-    private function notifyFolderOwner(Folder $folder, int $authUserId): void
+    private function notifyFolderOwner(Folder $folder, User $authUser): void
     {
         $settings = $folder->settings;
+
         $notifications = [];
 
         if (
-            $folder->user_id === $authUserId ||
+            $folder->user_id === $authUser->id ||
             $settings->notificationsAreDisabled() ||
             $settings->folderUpdatedNotificationIsDisabled()
         ) {
@@ -179,14 +179,17 @@ final class UpdateFolderService
 
         foreach (array_keys($folder->getDirty()) as $modified) {
             $notifications[] = match ($modified) {
-                'name'        => new FolderUpdatedNotification($folder, $authUserId, $modified),
-                'description' => new FolderUpdatedNotification($folder, $authUserId, $modified),
+                'name'        => new FolderUpdatedNotification($folder, $authUser, $modified),
+                'description' => new FolderUpdatedNotification($folder, $authUser, $modified),
                 default => throw new \Exception("Cannot create notification for [$modified]")
             };
         }
 
         foreach ($notifications as $notification) {
-            $this->notifications->notify($folder->user_id, $notification);
+            Notification::send(
+                new User(['id' => $folder->user_id]),
+                $notification
+            );
         }
     }
 }

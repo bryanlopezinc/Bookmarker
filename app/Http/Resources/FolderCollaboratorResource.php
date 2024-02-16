@@ -28,7 +28,7 @@ final class FolderCollaboratorResource extends JsonResource
             'type' => 'folderCollaborator',
             'attributes' => [
                 'id'          => $this->collaborator->user->id,
-                'name'        => $this->collaborator->user->full_name,
+                'name'        => $this->collaborator->user->full_name->present(),
                 'permissions' => $this->collaborator->permissions->toExternalIdentifiers(),
                 'profile_image_url'  => $filesystem->publicUrl($this->collaborator->user->profile_image_path),
                 'added_by'    => [
@@ -36,7 +36,7 @@ final class FolderCollaboratorResource extends JsonResource
                     'is_auth_user' => $wasInvitedByAuthUser,
                     'user'         => $this->when($inviterExists && !$wasInvitedByAuthUser, [
                         'id'   =>  $this->collaborator->wasInvitedBy?->id,
-                        'name' => $this->collaborator->wasInvitedBy?->full_name,
+                        'name' => $this->collaborator->wasInvitedBy?->full_name?->present(),
                         'profile_image_url' => $filesystem->publicUrl($this->collaborator->wasInvitedBy?->profile_image_path),
                     ])
                 ]

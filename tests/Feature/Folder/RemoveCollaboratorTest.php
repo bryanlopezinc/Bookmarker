@@ -15,11 +15,14 @@ use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\CreatesCollaboration;
 
 class RemoveCollaboratorTest extends TestCase
 {
     use WithFaker;
+    use CreatesCollaboration;
 
     protected function deleteCollaboratorResponse(array $parameters = []): TestResponse
     {
@@ -175,6 +178,31 @@ class RemoveCollaboratorTest extends TestCase
         $this->assertDatabaseHas(BannedCollaborator::class, [
             'user_id'   => $collaborator->id,
             'folder_id' => $folder->id
+        ]);
+    }
+
+    #[Test]
+    public function willNotifyCollaboratorThatWasRemoved(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::times(2)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->CreateCollaborationRecord($collaborator, $folder);
+
+        $this->loginUser($folderOwner);
+        $this->deleteCollaboratorResponse([
+            'collaborator_id' => $collaborator->id,
+            'folder_id' => $folder->id
+        ])->assertOk();
+
+        $notificationData = $collaborator->notifications()->sole(['data', 'type']);
+        $this->assertEquals('YouHaveBeenKickedOut', $notificationData->type);
+        $this->assertEquals($notificationData->data, [
+            'N-type'      => 'YouHaveBeenKickedOut',
+            'version'     => '1.0.0',
+            'folder_id'   => $folder->id,
+            'folder_name' => $folder->name->value
         ]);
     }
 }

@@ -66,7 +66,7 @@ class FetchFolderTest extends TestCase
                 $json->where('data.attributes.storage.available', 200);
                 $json->where('data.attributes.storage.percentage_used', 0);
                 $json->where('data.attributes.has_description', true);
-                $json->where('data.attributes.name', $folder->name);
+                $json->where('data.attributes.name', $folder->name->present());
                 $json->where('data.attributes.description', $folder->description);
                 $json->where('data.attributes.date_created', (string) $folder->created_at);
                 $json->where('data.attributes.last_updated', (string) $folder->updated_at);
@@ -204,7 +204,7 @@ class FetchFolderTest extends TestCase
             ->assertJson(function (AssertableJson $json) use ($folder) {
                 $json->etc();
                 $json->where('data.attributes.id', $folder->id);
-                $json->where('data.attributes.name', $folder->name);
+                $json->where('data.attributes.name', $folder->name->present());
                 $json->where('data.attributes.description', $folder->description);
             })
             ->assertJsonStructure([

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Notifications;
 
 use App\Enums\NotificationType;
+use App\Models\Folder;
+use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Bus\Queueable;
@@ -14,7 +16,7 @@ final class CollaboratorExitNotification extends Notification implements ShouldQ
     use Queueable;
     use FormatDatabaseNotification;
 
-    public function __construct(private int $folderID, private int $collaboratorThatLeft)
+    public function __construct(private Folder $folder, private User $collaboratorThatLeft)
     {
         $this->afterCommit();
     }
@@ -36,9 +38,11 @@ final class CollaboratorExitNotification extends Notification implements ShouldQ
     public function toDatabase($notifiable): array
     {
         return $this->formatNotificationData([
-            'N-type'             => $this->databaseType(),
-            'exited_from_folder' => $this->folderID,
-            'exited_by'          => $this->collaboratorThatLeft
+            'N-type'          => $this->databaseType(),
+            'folder_id'       => $this->folder->id,
+            'collaborator_id' => $this->collaboratorThatLeft->id,
+            'folder_name'     => $this->folder->name->value,
+            'collaborator_full_name' => $this->collaboratorThatLeft->full_name->value,
         ]);
     }
 

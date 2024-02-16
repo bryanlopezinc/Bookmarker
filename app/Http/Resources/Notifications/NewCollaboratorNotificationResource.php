@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Notifications;
 
-use App\DataTransferObjects\Notifications\NewCollaborator;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\DataTransferObjects\Notifications\NewCollaboratorNotificationData;
 
 final class NewCollaboratorNotificationResource extends JsonResource
 {
-    public function __construct(private NewCollaborator $notification)
+    public function __construct(private NewCollaboratorNotificationData $notification)
     {
     }
 
@@ -18,31 +18,28 @@ final class NewCollaboratorNotificationResource extends JsonResource
      */
     public function toArray($request)
     {
-        $newCollaborator = $this->notification->newCollaborator;
-        $folder = $this->notification->folder;
-        $collaborator = $this->notification->collaborator;
-
         return [
             'type'       => 'CollaboratorAddedToFolderNotification',
             'attributes' => [
                 'id'                      => $this->notification->uuid,
-                'collaborator_exists'     => $collaborator !== null,
-                'folder_exists'           => $folder !== null,
-                'new_collaborator_exists' => $newCollaborator !== null,
-                'notified_on'             => $this->notification->notifiedOn,
-                'collaborator'            => $this->when($collaborator !== null, [
-                    'id'   => $collaborator?->id,
-                    'name' => $collaborator?->full_name,
-                ]),
-                'folder'  => $this->when($folder !== null, [
-                    'name' => $folder?->name,
-                    'id'  => $folder?->id
-                ]),
-                'new_collaborator' => $this->when($newCollaborator !== null, [
-                    'id'   => $newCollaborator?->id,
-                    'name' => $newCollaborator?->full_name,
-                ]),
+                'collaborator_exists'     => $this->notification->collaborator !== null,
+                'folder_exists'           => $this->notification->folder !== null,
+                'new_collaborator_exists' => $this->notification->newCollaborator !== null,
+                'message'                 => $this->notificationMessage(),
+                'notified_on'              => $this->notification->notifiedOn,
+                'collaborator_id'         => $this->notification->collaboratorId,
+                'new_collaborator_id'     => $this->notification->newCollaboratorId,
+                'folder_id'               => $this->notification->folderId,
             ]
         ];
+    }
+
+    private function notificationMessage(): string
+    {
+        return sprintf('%s added %s to %s folder.', ...[
+            $this->notification->collaborator?->full_name?->present() ?: $this->notification->collaboratorFullName->present(),
+            $this->notification->newCollaborator?->full_name?->present() ?: $this->notification->newCollaboratorFullName->present(),
+            $this->notification->folder?->name?->present() ?: $this->notification->folderName->present()
+        ]);
     }
 }

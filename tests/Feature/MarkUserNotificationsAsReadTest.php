@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Notifications\NewCollaboratorNotification;
+use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Notifications\DatabaseNotification;
@@ -63,9 +64,9 @@ class MarkUserNotificationsAsReadTest extends TestCase
 
         $user->notify(
             new NewCollaboratorNotification(
-                rand(1, 100),
-                rand(1, 100),
-                rand(1, 100)
+                UserFactory::new()->create(),
+                FolderFactory::new()->create(),
+                UserFactory::new()->create(),
             )
         );
 
@@ -85,9 +86,9 @@ class MarkUserNotificationsAsReadTest extends TestCase
 
         $user->notify(
             new NewCollaboratorNotification(
-                rand(1, 100),
-                rand(1, 100),
-                rand(1, 100)
+                UserFactory::new()->create(),
+                FolderFactory::new()->create(),
+                UserFactory::new()->create(),
             )
         );
 
@@ -105,9 +106,9 @@ class MarkUserNotificationsAsReadTest extends TestCase
 
         $user->notify(
             new NewCollaboratorNotification(
-                rand(1, 100),
-                rand(1, 100),
-                rand(1, 100)
+                UserFactory::new()->create(),
+                FolderFactory::new()->create(),
+                UserFactory::new()->create(),
             )
         );
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\FolderVisibility;
+use App\ValueObjects\FolderName;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use App\ValueObjects\FolderSettings;
@@ -15,7 +16,7 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 /**
  * @property int $id
  * @property string|null $description
- * @property string $name
+ * @property FolderName $name
  * @property string $password
  * @property FolderSettings $settings
  * @property FolderVisibility $visibility
@@ -43,7 +44,7 @@ final class Folder extends Model
      */
     protected $casts = [
         'visibility' => FolderVisibility::class,
-        'password' => 'hashed'
+        'password' => 'hashed',
     ];
 
     public function user(): BelongsTo
@@ -56,6 +57,14 @@ final class Folder extends Model
         return new Attribute(
             get: fn (?string $json) => FolderSettings::make($json),
             set: fn ($value) => FolderSettings::make($value)->toJson()
+        );
+    }
+
+    protected function name(): Attribute
+    {
+        return new Attribute(
+            get: fn (string $name) => new FolderName($name),
+            set: fn (mixed $name) => $name instanceof FolderName ? $name->value : (new FolderName($name))->value
         );
     }
 

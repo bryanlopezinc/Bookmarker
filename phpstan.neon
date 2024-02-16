@@ -15,10 +15,6 @@ parameters:
             message: '#Class .* has an uninitialized readonly property \$.*\. Assign it in the constructor\.#'
             paths:
                 -  'app/Readers/*'
-
-        -
-            message: '#Match expression does not handle remaining value: mixed#'
-            path: 'app/*'
         -
             message: '#Match expression does not handle remaining value: string#'
         -

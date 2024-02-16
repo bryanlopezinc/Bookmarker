@@ -19,6 +19,7 @@ use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Models\User;
 use App\Notifications\NewCollaboratorNotification as Notification;
 use App\Repositories\Folder\CollaboratorRepository;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification as NotificationSender;
 
 final class AcceptFolderCollaborationInviteService
@@ -46,17 +47,22 @@ final class AcceptFolderCollaborationInviteService
             $payload['folderId'],
         ];
 
-        $this->ensureUsersStillExist($inviterId, $inviteeId);
-
         /** @var Folder|null */
         $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'collaboratorsCount', 'visibility'])
+            ->withCasts(['inviter' => 'json', 'invitee' => 'json'])
             ->tap(new WhereFolderOwnerExists())
             ->tap(new IsMutedCollaboratorScope($inviterId))
             ->tap(new UserIsACollaboratorScope($inviteeId, 'inviteeIsACollaborator'))
+            ->addSelect(['inviter' => User::select(DB::raw("JSON_OBJECT('id', id, 'full_name', full_name)"))->where('id', $inviterId)])
+            ->addSelect(['invitee' => User::select(DB::raw("JSON_OBJECT('id', id, 'full_name', full_name)"))->where('id', $inviteeId)])
             ->find($folderId);
 
         if (is_null($folder)) {
             throw new FolderNotFoundException();
+        }
+
+        if (is_null($folder->invitee) || is_null($folder->inviter)) {
+            throw new UserNotFoundException();
         }
 
         FolderCollaboratorsLimitExceededException::throwIfExceeded($folder->collaboratorsCount);
@@ -81,7 +87,7 @@ final class AcceptFolderCollaborationInviteService
             $this->permissions->create($inviteeId, $folder->id, $permissions);
         }
 
-        $this->notifyFolderOwner($inviterId, $inviteeId, $folder);
+        $this->notifyFolderOwner(new User($folder->inviter), new User($folder->invitee), $folder);
     }
 
     private function extractPermissions(array $payload): UAC
@@ -95,21 +101,9 @@ final class AcceptFolderCollaborationInviteService
         return $permissionsSetByFolderOwner;
     }
 
-    private function ensureUsersStillExist(int $inviterId, int $inviteeId): void
+    private function notifyFolderOwner(User $inviter, User $invitee, Folder $folder): void
     {
-        $users = User::query()
-            ->select('id')
-            ->whereIntegerInRaw('id', func_get_args())
-            ->get();
-
-        if ($users->count() !== 2) {
-            throw new UserNotFoundException();
-        }
-    }
-
-    private function notifyFolderOwner(int $inviterId, int $inviteeId, Folder $folder): void
-    {
-        $wasInvitedByFolderOwner = $folder->user_id === $inviterId;
+        $wasInvitedByFolderOwner = $folder->user_id === $inviter->id;
 
         $settings = $folder->settings;
 
@@ -131,7 +125,7 @@ final class AcceptFolderCollaborationInviteService
 
         NotificationSender::send(
             new User(['id' => $folder->user_id]),
-            new Notification($inviteeId, $folder->id, $inviterId)
+            new Notification($invitee, $folder, $inviter)
         );
     }
 }

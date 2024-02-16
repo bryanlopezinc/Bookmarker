@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use App\Enums\TwoFaMode;
+use App\ValueObjects\FullName;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Collection;
 
 /**
@@ -16,7 +18,7 @@ use Illuminate\Support\Collection;
  * @property string $username
  * @property string $first_name
  * @property string $last_name
- * @property string $full_name
+ * @property FullName $full_name
  * @property string $email
  * @property string $password
  * @property int $bookmarks_count
@@ -43,7 +45,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * The attributes that should be cast.
      *
-     * @var array<string, string>
+     * @var array<string,string>
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
@@ -64,6 +66,14 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getEmailName(): string
     {
         return 'email';
+    }
+
+    protected function fullName(): Attribute
+    {
+        return new Attribute(
+            get: fn (string $firstNameAndLastName) => new FullName($firstNameAndLastName),
+            set: fn (string|FullName $fullName) => is_string($fullName) ? $fullName : $fullName->value
+        );
     }
 
     /**

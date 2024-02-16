@@ -20,12 +20,12 @@ class CollaboratorExitNotificationTest extends TestCase
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
         $folderOwner->notify(
-            new CollaboratorExitNotification(
-                $folder->id,
-                $collaborator->id
-            )
+            new CollaboratorExitNotification($folder, $collaborator)
         );
 
+        $collaborator->update(['first_name' => 'bruce', 'last_name' => 'wayne']);
+
+        $folder->update(['name' => 'gotham problems']);
         $expectedDateTime = DatabaseNotification::where('notifiable_id', $folderOwner->id)->sole(['created_at'])->created_at;
 
         Passport::actingAs($folderOwner);
@@ -35,36 +35,24 @@ class CollaboratorExitNotificationTest extends TestCase
             ->assertJsonPath('data.0.type', 'CollaboratorExitNotification')
             ->assertJsonPath('data.0.attributes.collaborator_exists', true)
             ->assertJsonPath('data.0.attributes.id', fn (string $id) => Str::isUuid($id))
+            ->assertJsonPath('data.0.attributes.message', 'Bruce Wayne left Gotham Problems folder.')
             ->assertJsonPath('data.0.attributes.folder_exists', true)
             ->assertJsonPath('data.0.attributes.notified_on', fn (string $dateTime) => $dateTime === (string) $expectedDateTime)
-            ->assertJsonPath('data.0.attributes.collaborator', function (array $collaboratorData) use ($collaborator) {
-                $this->assertEquals($collaborator->full_name, $collaboratorData['name']);
-                return true;
-            })
-            ->assertJsonPath('data.0.attributes.folder', function (array $folderData) use ($folder) {
-                $this->assertEquals($folder->name, $folderData['name']);
-                $this->assertEquals($folder->id, $folderData['id']);
-                return true;
-            })
-            ->assertJsonCount(6, 'data.0.attributes')
-            ->assertJsonCount(1, 'data.0.attributes.collaborator')
-            ->assertJsonCount(2, 'data.0.attributes.folder')
+            ->assertJsonPath('data.0.attributes.collaborator_id', $collaborator->id)
+            ->assertJsonPath('data.0.attributes.folder_id', $folder->id)
+            ->assertJsonCount(7, 'data.0.attributes')
             ->assertJsonStructure([
                 'data' => [
                     '*' => [
-                        "type",
-                        "attributes" => [
-                            "id",
-                            "collaborator_exists",
-                            "folder_exists",
+                        'type',
+                        'attributes' => [
+                            'id',
+                            'collaborator_exists',
+                            'folder_exists',
                             'notified_on',
-                            "collaborator" =>  [
-                                "name",
-                            ],
-                            "folder" => [
-                                "name",
-                                "id",
-                            ],
+                            'message',
+                            'collaborator_id',
+                            'folder_id',
                         ]
                     ]
                 ]
@@ -77,10 +65,7 @@ class CollaboratorExitNotificationTest extends TestCase
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
         $folderOwner->notify(
-            new CollaboratorExitNotification(
-                $folder->id,
-                $collaborator->id
-            )
+            new CollaboratorExitNotification($folder, $collaborator)
         );
 
         $collaborator->delete();
@@ -88,10 +73,8 @@ class CollaboratorExitNotificationTest extends TestCase
         Passport::actingAs($folderOwner);
         $this->fetchNotificationsResponse()
             ->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonCount(5, 'data.0.attributes')
             ->assertJsonPath('data.0.attributes.collaborator_exists', false)
-            ->assertJsonMissingPath('data.0.attributes.by_collaborator');
+            ->assertJsonPath('data.0.attributes.message', "{$collaborator->full_name->present()} left {$folder->name->present()} folder.");
     }
 
     public function testWillReturnCorrectPayloadWhenFolderNoLongerExists(): void
@@ -101,8 +84,8 @@ class CollaboratorExitNotificationTest extends TestCase
 
         $folderOwner->notify(
             new CollaboratorExitNotification(
-                $folder->id,
-                $collaborator->id
+                $folder,
+                $collaborator
             )
         );
 
@@ -111,9 +94,7 @@ class CollaboratorExitNotificationTest extends TestCase
         Passport::actingAs($folderOwner);
         $this->fetchNotificationsResponse()
             ->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonCount(5, 'data.0.attributes')
             ->assertJsonPath('data.0.attributes.folder_exists', false)
-            ->assertJsonMissingPath('data.0.attributes.folder');
+            ->assertJsonPath('data.0.attributes.message', "{$collaborator->full_name->present()} left {$folder->name->present()} folder.");
     }
 }

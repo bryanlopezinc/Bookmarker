@@ -23,7 +23,7 @@ final class BannedCollaboratorResource extends JsonResource
             'type' => 'bannedCollaborator',
             'attributes' => [
                 'id'    => $this->bannedCollaborator->id,
-                'name'  => $this->bannedCollaborator->full_name,
+                'name'  => $this->bannedCollaborator->full_name->present(),
                 'profile_image_url' => (new ProfileImageFileSystem())->publicUrl($this->bannedCollaborator->profile_image_path)
             ]
         ];

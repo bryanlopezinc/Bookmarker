@@ -21,7 +21,7 @@ enum ImportSource
             $request::POCKET     => self::POCKET,
             $request::SAFARI     => self::SAFARI,
             $request::INSTAPAPER => self::INSTAPAPER,
-            $request::FIREFOX    => self::FIREFOX
+            default              => self::FIREFOX
         };
     }
 

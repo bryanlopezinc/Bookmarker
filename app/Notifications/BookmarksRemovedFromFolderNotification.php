@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Notifications;
 
 use App\Enums\NotificationType;
+use App\Models\Folder;
+use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Bus\Queueable;
@@ -16,8 +18,8 @@ final class BookmarksRemovedFromFolderNotification extends Notification implemen
 
     public function __construct(
         private array $bookmarkIDs,
-        private int $folderID,
-        private int $collaboratorID
+        private Folder $folder,
+        private User $user,
     ) {
         $this->afterCommit();
     }
@@ -40,9 +42,11 @@ final class BookmarksRemovedFromFolderNotification extends Notification implemen
     {
         return $this->formatNotificationData([
             'N-type' => $this->databaseType(),
-            'bookmarks_removed'   => $this->bookmarkIDs,
-            'removed_from_folder' => $this->folderID,
-            'removed_by'          => $this->collaboratorID
+            'bookmark_ids'    => $this->bookmarkIDs,
+            'folder_id'       => $this->folder->id,
+            'collaborator_id' => $this->user->id,
+            'full_name'       => $this->user->full_name->value,
+            'folder_name'     => $this->folder->name->value
         ]);
     }
 

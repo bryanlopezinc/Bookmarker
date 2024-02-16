@@ -6,6 +6,8 @@ namespace App\Notifications;
 
 use App\Enums\NotificationType;
 use App\Models\Folder;
+use App\Models\User;
+use App\ValueObjects\FolderName;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Bus\Queueable;
@@ -15,7 +17,7 @@ final class FolderUpdatedNotification extends Notification //implements ShouldQu
     use Queueable;
     use FormatDatabaseNotification;
 
-    public function __construct(private Folder $folder, private int $updatedBy, private string $modifiedAttributeName)
+    public function __construct(private Folder $folder, private User $updatedBy, private string $modifiedAttributeName)
     {
         if (!in_array($modifiedAttributeName, ['name', 'description'])) {
             throw new \InvalidArgumentException("Invalid modified attribute {$modifiedAttributeName}");
@@ -41,10 +43,12 @@ final class FolderUpdatedNotification extends Notification //implements ShouldQu
     public function toDatabase($notifiable): array
     {
         $data = [
-            'N-type'         => $this->databaseType(),
-            'updated_by'     => $this->updatedBy,
-            'folder_updated' => $this->folder->id,
-            'modified'       => $this->modifiedAttributeName,
+            'N-type'                 => $this->databaseType(),
+            'collaborator_id'        => $this->updatedBy->id,
+            'collaborator_full_name' => $this->updatedBy->full_name->value,
+            'folder_id'              => $this->folder->id,
+            'folder_name'            => $this->folder->getOriginal('name')->value,
+            'modified'                => $this->modifiedAttributeName,
         ];
 
         if (!empty($changes = $this->getChanges())) {
@@ -56,13 +60,20 @@ final class FolderUpdatedNotification extends Notification //implements ShouldQu
 
     private function getChanges(): array
     {
-        if (!in_array($this->modifiedAttributeName, ['name', 'description'])) {
-            return [];
+        $from = $this->folder->getOriginal($this->modifiedAttributeName);
+        $to = $this->folder->getDirty()[$this->modifiedAttributeName] ?? $this->folder->{$this->modifiedAttributeName};
+
+        if ($from instanceof FolderName) {
+            $from = $from->value;
+        }
+
+        if ($to instanceof FolderName) {
+            $to = $to->value;
         }
 
         return [
-            'from' => $this->folder->getOriginal($this->modifiedAttributeName),
-            'to'   => $this->folder->getDirty()[$this->modifiedAttributeName] ?? $this->folder->{$this->modifiedAttributeName}
+            'from' => $from,
+            'to'   => $to
         ];
     }
 

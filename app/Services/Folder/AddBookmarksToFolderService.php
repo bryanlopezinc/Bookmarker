@@ -20,33 +20,33 @@ use App\Models\FolderBookmark;
 use App\Models\Scopes\DisabledActionScope;
 use App\Models\Scopes\IsMutedCollaboratorScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
+use App\Models\User;
 use App\Notifications\BookmarksAddedToFolderNotification as Notification;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
-use App\Repositories\NotificationRepository;
 use App\ValueObjects\FolderStorage;
-use App\ValueObjects\UserId;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Notification as NotificationSender;
 
 final class AddBookmarksToFolderService
 {
     public function __construct(
         private BookmarkRepository $bookmarksRepository,
         private CollaboratorPermissionsRepository $permissions,
-        private NotificationRepository $notifications
     ) {
     }
 
     public function fromRequest(Request $request): void
     {
-        $authUserId = UserId::fromAuthUser()->value();
+        /** @var User */
+        $authUser = auth()->user();
 
         $bookmarkIds = $request->getBookmarkIds();
 
-        $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'bookmarks_count'])
+        $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'bookmarks_count', 'name'])
             ->tap(new WhereFolderOwnerExists())
             ->tap(new DisabledActionScope(Permission::ADD_BOOKMARKS))
-            ->tap(new IsMutedCollaboratorScope($authUserId))
+            ->tap(new IsMutedCollaboratorScope($authUser->id))
             ->find($request->integer('folder'));
 
         if (is_null($folder)) {
@@ -55,10 +55,10 @@ final class AddBookmarksToFolderService
 
         $bookmarks = $this->bookmarksRepository->findManyById($bookmarkIds, ['user_id', 'id', 'url']);
 
-        $this->ensureUserHasPermissionToPerformAction($folder, $authUserId);
+        $this->ensureUserHasPermissionToPerformAction($folder, $authUser->id);
         $this->ensureFolderCanContainBookmarks($bookmarkIds, $folder);
         $this->ensureBookmarksExistAndBelongToUser($bookmarks, $bookmarkIds);
-        $this->ensureCollaboratorCannotMarkBookmarksAsHidden($request, $folder, $authUserId);
+        $this->ensureCollaboratorCannotMarkBookmarksAsHidden($request, $folder, $authUser->id);
         $this->ensureFolderDoesNotContainBookmarks($folder->id, $bookmarkIds);
 
         $this->add($folder->id, $bookmarkIds, $request->input('make_hidden', []));
@@ -67,7 +67,7 @@ final class AddBookmarksToFolderService
 
         dispatch(new CheckBookmarksHealth($bookmarks));
 
-        $this->notifyFolderOwner($bookmarkIds, $folder);
+        $this->notifyFolderOwner($bookmarkIds, $folder, $authUser);
     }
 
     /**
@@ -162,14 +162,12 @@ final class AddBookmarksToFolderService
         }
     }
 
-    private function notifyFolderOwner(array $bookmarkIDs, Folder $folder): void
+    private function notifyFolderOwner(array $bookmarkIDs, Folder $folder, User $authUser): void
     {
-        $collaboratorID = UserId::fromAuthUser()->value();
-
         $settings = $folder->settings;
 
         if (
-            $collaboratorID === $folder->user_id ||
+            $authUser->id === $folder->user_id ||
             $settings->notificationsAreDisabled()  ||
             $settings->newBookmarksNotificationIsDisabled() ||
             $folder->collaboratorIsMuted
@@ -177,9 +175,9 @@ final class AddBookmarksToFolderService
             return;
         }
 
-        $this->notifications->notify(
-            $folder->user_id,
-            new Notification($bookmarkIDs, $folder->id, $collaboratorID)
+        NotificationSender::send(
+            new User(['id' => $folder->user_id]),
+            new Notification($bookmarkIDs, $folder, $authUser)
         );
     }
 }

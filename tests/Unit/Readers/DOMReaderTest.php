@@ -76,7 +76,7 @@ class DOMReaderTest extends TestCase
 
     public function test_will_read_description_meta_tag_when_og_description_tag_is_not_present(): void
     {
-        $description = $this->faker->sentence;
+        $description = fake()->sentence;
 
         $html = $this->html(<<<HTML
                 <meta name="description" content="$description">
@@ -101,7 +101,7 @@ class DOMReaderTest extends TestCase
 
     public function test_will_read_twitter_tag_when_no_description_tags_are_present(): void
     {
-        $description = $this->faker->sentence;
+        $description = fake()->sentence;
 
         $html = $this->html(<<<HTML
                 <meta name="twitter:description" content="$description">
@@ -206,7 +206,7 @@ class DOMReaderTest extends TestCase
 
     public function test_will_read_title_tag_when_og_title_tag_Is_absent(): void
     {
-        $title = $this->faker->title;
+        $title = fake()->title;
 
         $html = $this->html(<<<HTML
                 <title>$title</title>
@@ -231,7 +231,7 @@ class DOMReaderTest extends TestCase
 
     public function test_will_read_twitter_tag_when_no_title_tags_are_found(): void
     {
-        $title = $this->faker->title;
+        $title = fake()->title;
 
         $html = $this->html(<<<HTML
                 <meta name="twitter:title" content="$title">

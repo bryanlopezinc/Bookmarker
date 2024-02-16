@@ -293,13 +293,15 @@ class RemoveFolderBookmarksTest extends TestCase
 
         $notificationData = $folderOwner->notifications()->sole(['data', 'type']);
 
-        $this->assertEquals('bookmarksRemovedFromFolder', $notificationData->type);
+        $this->assertEquals('BookmarksRemovedFromFolder', $notificationData->type);
         $this->assertEquals($notificationData->data, [
-            'N-type'  => 'bookmarksRemovedFromFolder',
-            'version' => '1.0.0',
-            'removed_from_folder' => $folder->id,
-            'removed_by' => $collaborator->id,
-            'bookmarks_removed' => $bookmarkIDs->all()
+            'N-type'          => 'BookmarksRemovedFromFolder',
+            'version'         => '1.0.0',
+            'folder_id'       => $folder->id,
+            'collaborator_id' => $collaborator->id,
+            'bookmark_ids'    => $bookmarkIDs->all(),
+            'full_name'       => $collaborator->full_name->value,
+            'folder_name'     => $folder->name->value,
         ]);
     }
 

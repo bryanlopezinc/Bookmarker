@@ -3,13 +3,11 @@
 namespace Tests\Feature\Notifications;
 
 use Tests\TestCase;
-use Illuminate\Support\Str;
-use Laravel\Passport\Passport;
 use Database\Factories\UserFactory;
-use App\Enums\NotificationType;
 use App\Notifications\CollaboratorExitNotification;
+use App\Notifications\YouHaveBeenBootedOutNotification;
 use Database\Factories\FolderFactory;
-use Illuminate\Notifications\DatabaseNotification;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\AssertValidPaginationData;
 
 class FetchUserNotificationsTest extends TestCase
@@ -29,41 +27,42 @@ class FetchUserNotificationsTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->assertValidPaginationData($this, 'fetchUserNotifications');
     }
 
     public function testWillReturnEmptyDatasetWhenUserHasNoNotifications(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
         $this->fetchNotificationsResponse()
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }
 
-    public function testWillFetchOnlyUnReadNotifications(): void
+    #[Test]
+    public function filterByUnReadNotifications(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->for($user)->create();
+        $notifications = [
+            new YouHaveBeenBootedOutNotification(FolderFactory::new()->create()),
+            (new CollaboratorExitNotification(FolderFactory::new()->create(), UserFactory::new()->create()))
+        ];
 
-        $data = (new CollaboratorExitNotification(
-            $folder->id,
-            UserFactory::new()->create()->id,
-        ))->toDatabase($user);
+        $user->notify($notifications[0]);
 
-        DatabaseNotification::query()->create([
-            'id'              => Str::uuid()->toString(),
-            'type'            => NotificationType::FOLDER_UPDATED,
-            'notifiable_type' => 'user',
-            'notifiable_id'   => $user->id,
-            'data'            => $data,
-            'read_at'         => now()
-        ]);
+        $user->notifications()->get()->markAsRead();
 
-        $this->fetchNotificationsResponse()
+        $user->notify($notifications[1]);
+
+        $this->fetchNotificationsResponse(['filter' => 'unread'])
             ->assertOk()
-            ->assertJsonCount(0, 'data');
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.type', 'CollaboratorExitNotification');
+
+        $this->fetchNotificationsResponse(['filter' => 'foo'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['filter' => 'The selected filter is invalid.']);
     }
 }

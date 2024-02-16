@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Notifications;
 
-use App\DataTransferObjects\Notifications\FolderUpdated;
-use App\Filesystem\ProfileImageFileSystem;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\DataTransferObjects\Notifications\FolderUpdatedNotificationData;
+use App\ValueObjects\FolderName;
 
 final class FolderUpdatedNotificationResource extends JsonResource
 {
-    public function __construct(private FolderUpdated $notification)
+    public function __construct(private FolderUpdatedNotificationData $notification)
     {
     }
 
@@ -19,29 +19,28 @@ final class FolderUpdatedNotificationResource extends JsonResource
      */
     public function toArray($request)
     {
-        $updatedBy = $this->notification->collaborator;
-
-        $folder = $this->notification->folder;
-
         return [
             'type'       => 'FolderUpdatedNotification',
             'attributes' => [
-                'modified'            => $this->notification->modifiedAttribute,
-                'changes'             => $this->notification->changes,
                 'id'                  => $this->notification->uuid,
-                'collaborator_exists' => $updatedBy !== null,
-                'folder_exists'       => $folder !== null,
-                'notified_on'         => $this->notification->notifiedOn,
-                'collaborator'        => $this->when($updatedBy !== null, [
-                    'id'   => $updatedBy?->id,
-                    'name' => $updatedBy?->full_name,
-                    'profile_image_url' => (new ProfileImageFileSystem())->publicUrl($updatedBy?->profile_image_path)
-                ]),
-                'folder'              => $this->when($folder !== null, [
-                    'name' => $folder?->name,
-                    'id'   => $folder?->id
-                ]),
+                'collaborator_exists' => $this->notification->collaborator !== null,
+                'folder_exists'       => $this->notification->folder !== null,
+                'notified_on'          => $this->notification->notifiedOn,
+                'collaborator_id'     => $this->notification->collaboratorId,
+                'folder_id'           => $this->notification->folderId,
+                'message'             => $this->notificationMessage(),
             ]
         ];
+    }
+
+    private function notificationMessage(): string
+    {
+        return sprintf('%s changed %s %s from %s to %s.', ...[
+            $this->notification->collaborator?->full_name?->present() ?: $this->notification->collaboratorFullName->present(),
+            $this->notification->folder?->name?->present() ?: $this->notification->folderName->present(),
+            $this->notification->modifiedAttribute,
+            (new FolderName($this->notification->changes['from']))->present(),
+            (new FolderName($this->notification->changes['to']))->present(),
+        ]);
     }
 }

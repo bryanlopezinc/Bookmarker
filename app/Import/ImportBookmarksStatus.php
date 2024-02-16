@@ -74,4 +74,16 @@ enum ImportBookmarksStatus: int
             default => throw new LogicException('only a failed outcome can have a reason')
         };
     }
+
+    public function toNotificationMessage(): string
+    {
+        return match ($this) {
+            self::FAILED_DUE_TO_INVALID_TAG          => 'Import could not be completed because an invalid tag was found.',
+            self::FAILED_DUE_TO_MERGE_TAGS_EXCEEDED  => 'Import could not be completed because an tags could not be merged.',
+            self::FAILED_DUE_TO_SYSTEM_ERROR         => 'Import could not be completed due to a system error.',
+            self::FAILED_DUE_TO_INVALID_BOOKMARK_URL => 'Import could not be completed because an invalid bookmark was found.',
+            self::FAILED_DUE_TO_TO_MANY_TAGS         => 'Import could not be completed because bookmark with too many tags was encountered.',
+            default => throw new LogicException('only a failed outcome can have a reason')
+        };
+    }
 }

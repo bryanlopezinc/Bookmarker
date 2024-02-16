@@ -108,12 +108,14 @@ class LeaveFolderCollaborationTest extends TestCase
 
         $notificationData = $folderOwner->notifications()->sole(['data', 'type']);
 
-        $this->assertEquals('collaboratorExitedFolder', $notificationData->type);
+        $this->assertEquals('CollaboratorExitedFolder', $notificationData->type);
         $this->assertEquals($notificationData->data, [
-            'N-type'  => 'collaboratorExitedFolder',
+            'N-type'  => 'CollaboratorExitedFolder',
             'version' => '1.0.0',
-            'exited_from_folder' => $folder->id,
-            'exited_by' => $collaborator->id,
+            'folder_id' => $folder->id,
+            'collaborator_id' => $collaborator->id,
+            'folder_name' => $folder->name->value,
+            'collaborator_full_name' => $collaborator->full_name->value
         ]);
     }
 

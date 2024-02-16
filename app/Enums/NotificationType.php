@@ -7,14 +7,10 @@ namespace App\Enums;
 enum NotificationType: string
 {
     case FOLDER_UPDATED                = 'FolderUpdated';
-    case BOOKMARKS_ADDED_TO_FOLDER     = 'bookmarksAddedToFolder';
-    case BOOKMARKS_REMOVED_FROM_FOLDER = 'bookmarksRemovedFromFolder';
-    case COLLABORATOR_EXIT             = 'collaboratorExitedFolder';
-    case NEW_COLLABORATOR              = 'collaboratorAddedToFolder';
+    case BOOKMARKS_ADDED_TO_FOLDER     = 'BookmarksAddedToFolder';
+    case BOOKMARKS_REMOVED_FROM_FOLDER = 'BookmarksRemovedFromFolder';
+    case YOU_HAVE_BEEN_KICKED_OUT      = 'YouHaveBeenKickedOut';
+    case COLLABORATOR_EXIT             = 'CollaboratorExitedFolder';
+    case NEW_COLLABORATOR              = 'CollaboratorAddedToFolder';
     case IMPORT_FAILED                 = 'ImportFailed';
-
-    public static function values(): array
-    {
-        return array_column(self::cases(), 'value');
-    }
 }

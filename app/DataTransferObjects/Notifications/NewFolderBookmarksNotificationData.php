@@ -7,8 +7,10 @@ namespace App\DataTransferObjects\Notifications;
 use App\Models\Folder;
 use App\Models\User;
 use App\Models\Bookmark;
+use App\ValueObjects\FolderName;
+use App\ValueObjects\FullName;
 
-final class BookmarksRemovedFromFolder
+final class NewFolderBookmarksNotificationData
 {
     /**
      * @param array<Bookmark> $bookmarks
@@ -16,8 +18,12 @@ final class BookmarksRemovedFromFolder
     public function __construct(
         public readonly ?Folder $folder,
         public readonly ?User $collaborator,
+        public readonly FullName $collaboratorFullName,
+        public readonly int $collaboratorId,
+        public readonly int $folderId,
+        public readonly FolderName $folderName,
         public readonly array $bookmarks,
-        public readonly string $uuid,
+        public readonly string $notificationId,
         public readonly string $notifiedOn
     ) {
     }

@@ -8,6 +8,7 @@ use App\Enums\Permission;
 use App\Models\Folder;
 use App\Services\Folder\ToggleFolderCollaborationRestriction;
 use App\UAC;
+use App\ValueObjects\FolderName;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -77,7 +78,7 @@ class UpdateFolderTest extends TestCase
 
         $name = $this->faker->word;
         $this->updateFolderResponse($query = ['name' => $name, 'folder_id' => $folder->id])->assertOk();
-        $this->assertUpdated($folder, ['name' => $name]);
+        $this->assertUpdated($folder, ['name' => new FolderName($name)]);
         $this->updateFolderResponse($query)->assertNoContent();
     }
 
@@ -368,12 +369,14 @@ class UpdateFolderTest extends TestCase
 
         $notificationData = $folderOwner->notifications()->get(['data', 'type']);
 
-        $this->assertEquals(['FolderUpdated', 'FolderUpdated'], $notificationData->pluck('type')->all());
+        $this->assertEqualsCanonicalizing(['FolderUpdated', 'FolderUpdated'], $notificationData->pluck('type')->all());
         $expected = [
-            'N-type'         => 'FolderUpdated',
-            'version'        => '1.0.0',
-            'updated_by'     => $collaborator->id,
-            'folder_updated' => $folder->id,
+            'N-type'          => 'FolderUpdated',
+            'version'         => '1.0.0',
+            'collaborator_id' => $collaborator->id,
+            'folder_id'       => $folder->id,
+            'collaborator_full_name' => $collaborator->full_name->value,
+            'folder_name' => $folder->name->value,
         ];
 
         $this->assertCount(2, $notificationData);
@@ -396,7 +399,7 @@ class UpdateFolderTest extends TestCase
                 ...$expected,
                 'modified' => 'name',
                 'changes' => [
-                    'from' => $folder->name,
+                    'from' => $folder->name->value,
                     'to' => $newName,
                 ],
             ]
@@ -493,6 +496,6 @@ class UpdateFolderTest extends TestCase
         $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->id])->assertNotFound();
 
         $this->loginUser($folderOwner);
-        $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->id])->assertOk();
+        $this->updateFolderResponse(['name' => 'Docker Problems', 'folder_id' => $folder->id])->assertOk();
     }
 }

@@ -18,6 +18,7 @@ use Laravel\Passport\Passport;
 use Tests\TestCase;
 use App\Models\Folder;
 use App\Models\FolderCollaborator;
+use App\Models\User;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\Services\Folder\MuteCollaboratorService;
 use App\UAC;
@@ -313,7 +314,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $this->acceptInviteResponse(['invite_hash' => $id])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'UserNotFound']);
+            ->assertExactJson(['message' => 'FolderNotFound']);
 
         $this->assertDatabaseMissing(FolderCollaboratorPermission::class, ['folder_id' => $folder->id,]);
     }
@@ -371,6 +372,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
+        /** @var User */
         [$collaborator, $invitee, $folderOwner] = UserFactory::new()->count(3)->create();
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
@@ -387,13 +389,16 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $notificationData = $folderOwner->notifications()->sole(['data', 'type']);
 
-        $this->assertEquals('collaboratorAddedToFolder', $notificationData->type);
+        $this->assertEquals('CollaboratorAddedToFolder', $notificationData->type);
         $this->assertEquals($notificationData->data, [
-            'N-type' => 'collaboratorAddedToFolder',
+            'N-type' => 'CollaboratorAddedToFolder',
             'version' => '1.0.0',
-            'new_collaborator_id'   => $invitee->id,
-            'added_to_folder'       => $folder->id,
-            'added_by_collaborator' => $collaborator->id
+            'new_collaborator_id' => $invitee->id,
+            'folder_id'           => $folder->id,
+            'collaborator_id'     => $collaborator->id,
+            'folder_name'         => $folder->name->value,
+            'collaborator_full_name' => $collaborator->full_name->value,
+            'new_collaborator_full_name' => $invitee->full_name->value
         ]);
     }
 

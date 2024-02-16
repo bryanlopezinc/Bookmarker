@@ -23,7 +23,7 @@ final class MutedCollaboratorResource extends JsonResource
             'type' => 'mutedCollaborator',
             'attributes' => [
                 'id'   => $this->collaborator->id,
-                'name' => $this->collaborator->full_name,
+                'name' => $this->collaborator->full_name->present(),
                 'profile_image_url' => (new ProfileImageFileSystem())->publicUrl($this->collaborator->profile_image_path),
             ]
         ];

@@ -388,13 +388,15 @@ class AddBookmarksToFolderTest extends TestCase
 
         $notificationData = $folderOwner->notifications()->first(['data', 'type']);
 
-        $this->assertEquals('bookmarksAddedToFolder', $notificationData->type);
+        $this->assertEquals('BookmarksAddedToFolder', $notificationData->type);
         $this->assertEquals($notificationData->data, [
-            'N-type' => 'bookmarksAddedToFolder',
+            'N-type' => 'BookmarksAddedToFolder',
             'version' => '1.0.0',
-            'added_by' => $collaborator->id,
-            'added_to_folder' => $folder->id,
-            'bookmarks_added_to_folder' => [$bookmark->id]
+            'collaborator_id' => $collaborator->id,
+            'folder_id' => $folder->id,
+            'full_name' => $collaborator->full_name->value,
+            'folder_name' => $folder->name->value,
+            'bookmark_ids' => [$bookmark->id]
         ]);
     }
 

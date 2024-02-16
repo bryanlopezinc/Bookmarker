@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Notifications;
 
-use App\DataTransferObjects\Notifications\CollaboratorExit;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\DataTransferObjects\Notifications\CollaboratorExitNotificationData;
 
 final class CollaboratorExitNotificationResource extends JsonResource
 {
-    public function __construct(private CollaboratorExit $notification)
+    public function __construct(private CollaboratorExitNotificationData $notification)
     {
     }
 
@@ -18,24 +18,25 @@ final class CollaboratorExitNotificationResource extends JsonResource
      */
     public function toArray($request)
     {
-        $collaboratorThatLeft = $this->notification->collaborator;
-        $folder = $this->notification->folder;
-
         return [
             'type'       => 'CollaboratorExitNotification',
             'attributes' => [
                 'id'                  => $this->notification->uuid,
-                'collaborator_exists' => $collaboratorThatLeft !== null,
-                'folder_exists'       => $folder !== null,
-                'notified_on'         => $this->notification->notifiedOn,
-                'collaborator'        => $this->when($collaboratorThatLeft !== null, [
-                    'name' => $collaboratorThatLeft?->full_name,
-                ]),
-                'folder' => $this->when($folder !== null, [
-                    'name' => $folder?->name,
-                    'id'   => $folder?->id
-                ]),
+                'collaborator_exists' =>  $this->notification->collaborator !== null,
+                'folder_exists'       =>  $this->notification->folder !== null,
+                'notified_on'          => $this->notification->notifiedOn,
+                'collaborator_id'     =>  $this->notification->collaboratorId,
+                'folder_id'           =>  $this->notification->folderId,
+                'message'             => $this->notificationMessage(),
             ]
         ];
+    }
+
+    private function notificationMessage(): string
+    {
+        return sprintf('%s left %s folder.', ...[
+            $this->notification->collaborator?->full_name?->present() ?: $this->notification->collaboratorFullName->present(),
+            $this->notification->folder?->name?->present() ?: $this->notification->folderName->present()
+        ]);
     }
 }

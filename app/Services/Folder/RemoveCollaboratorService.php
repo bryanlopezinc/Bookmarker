@@ -9,9 +9,12 @@ use App\Exceptions\HttpException;
 use App\Models\BannedCollaborator;
 use App\Models\Folder;
 use App\Models\Scopes\UserIsACollaboratorScope;
+use App\Models\User;
+use App\Notifications\YouHaveBeenBootedOutNotification;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\Repositories\Folder\CollaboratorRepository;
 use App\ValueObjects\UserId;
+use Illuminate\Support\Facades\Notification;
 
 final class RemoveCollaboratorService
 {
@@ -49,6 +52,11 @@ final class RemoveCollaboratorService
                 'user_id'   => $collaboratorID
             ]);
         }
+
+        Notification::send(
+            new User(['id' => $collaboratorID]),
+            new YouHaveBeenBootedOutNotification($folder)
+        );
     }
 
     private function ensureIsNotRemovingSelf(int $collaboratorID, int $authUserId): void

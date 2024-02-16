@@ -89,7 +89,7 @@ class FetchFolderCollaboratorsTest extends TestCase
             ->assertJsonPath('data.0.attributes.added_by.is_auth_user', true)
             ->assertJsonPath('data.0.type', 'folderCollaborator')
             ->assertJsonPath('data.0.attributes.id', $collaborator->id)
-            ->assertJsonPath('data.0.attributes.name', $collaborator->first_name . ' ' . $collaborator->last_name)
+            ->assertJsonPath('data.0.attributes.name', $collaborator->full_name->present())
             ->assertJsonPath('data.0.attributes.permissions', UAC::all()->toExternalIdentifiers())
             ->assertJsonStructure([
                 'data' => [

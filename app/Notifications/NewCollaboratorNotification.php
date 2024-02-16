@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Notifications;
 
 use App\Enums\NotificationType;
+use App\Models\Folder;
+use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Bus\Queueable;
@@ -15,9 +17,9 @@ final class NewCollaboratorNotification extends Notification implements ShouldQu
     use FormatDatabaseNotification;
 
     public function __construct(
-        private int $newCollaboratorID,
-        private int $folderID,
-        private int $addedByCollaboratorID
+        private User $newCollaborator,
+        private Folder $folder,
+        private User $collaborator
     ) {
         $this->afterCommit();
     }
@@ -39,10 +41,13 @@ final class NewCollaboratorNotification extends Notification implements ShouldQu
     public function toDatabase($notifiable): array
     {
         return $this->formatNotificationData([
-            'N-type'                => $this->databaseType(),
-            'added_by_collaborator' => $this->addedByCollaboratorID,
-            'added_to_folder'       => $this->folderID,
-            'new_collaborator_id'   => $this->newCollaboratorID
+            'N-type'                 => $this->databaseType(),
+            'collaborator_id'        => $this->collaborator->id,
+            'collaborator_full_name' => $this->collaborator->full_name->value,
+            'folder_id'              => $this->folder->id,
+            'folder_name'            => $this->folder->name->value,
+            'new_collaborator_id'    => $this->newCollaborator->id,
+            'new_collaborator_full_name' => $this->newCollaborator->full_name->value
         ]);
     }
 

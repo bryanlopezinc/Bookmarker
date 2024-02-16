@@ -9,46 +9,46 @@ use App\Exceptions\HttpException;
 use App\Models\Folder;
 use App\Models\Scopes\UserIsACollaboratorScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
+use App\Models\User;
 use App\Notifications\CollaboratorExitNotification;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\Repositories\Folder\CollaboratorRepository;
-use App\Repositories\NotificationRepository;
 use App\UAC;
-use App\ValueObjects\UserId;
+use Illuminate\Support\Facades\Notification;
 
 final class LeaveFolderCollaborationService
 {
     public function __construct(
         private CollaboratorPermissionsRepository $permissionsRepository,
-        private NotificationRepository $notifications,
         private CollaboratorRepository $collaboratorRepository
     ) {
     }
 
     public function leave(int $folderID): void
     {
-        $collaboratorID = UserId::fromAuthUser()->value();
+        /** @var User */
+        $collaborator = auth()->user();
 
         $folder = Folder::onlyAttributes(['id', 'user_id', 'settings'])
             ->tap(new WhereFolderOwnerExists())
-            ->tap(new UserIsACollaboratorScope($collaboratorID))
+            ->tap(new UserIsACollaboratorScope($collaborator->id))
             ->find($folderID);
 
-        $collaboratorPermissions = $this->permissionsRepository->all($collaboratorID, $folderID);
+        $collaboratorPermissions = $this->permissionsRepository->all($collaborator->id, $folderID);
 
         if (is_null($folder)) {
             throw new FolderNotFoundException();
         }
 
-        $this->ensureCollaboratorDoesNotOwnFolder($collaboratorID, $folder);
+        $this->ensureCollaboratorDoesNotOwnFolder($collaborator->id, $folder);
 
         FolderNotFoundException::throwIf(!$folder->userIsACollaborator);
 
-        $this->collaboratorRepository->delete($folder->id, $collaboratorID);
+        $this->collaboratorRepository->delete($folder->id, $collaborator->id);
 
-        $this->permissionsRepository->delete($collaboratorID, $folderID);
+        $this->permissionsRepository->delete($collaborator->id, $folderID);
 
-        $this->notifyFolderOwner($collaboratorID, $folder, $collaboratorPermissions);
+        $this->notifyFolderOwner($collaborator, $folder, $collaboratorPermissions);
     }
 
     private function ensureCollaboratorDoesNotOwnFolder(int $collaboratorID, Folder $folder): void
@@ -58,7 +58,7 @@ final class LeaveFolderCollaborationService
         }
     }
 
-    private function notifyFolderOwner(int $collaborator, Folder $folder, UAC $collaboratorPermissions): void
+    private function notifyFolderOwner(User $collaborator, Folder $folder, UAC $collaboratorPermissions): void
     {
         $folderNotificationSettings = $folder->settings;
 
@@ -77,9 +77,9 @@ final class LeaveFolderCollaborationService
             return;
         }
 
-        $this->notifications->notify(
-            $folder->user_id,
-            new CollaboratorExitNotification($folder->id, $collaborator)
+        Notification::send(
+            new User(['id' => $folder->user_id]),
+            new CollaboratorExitNotification($folder, $collaborator)
         );
     }
 }

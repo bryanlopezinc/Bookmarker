@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Notifications;
 
-use App\DataTransferObjects\Notifications\BookmarksAddedToFolder;
-use App\Models\Bookmark;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\DataTransferObjects\Notifications\NewFolderBookmarksNotificationData;
 
 final class BookmarksAddedToFolderNotificationResource extends JsonResource
 {
-    public function __construct(private BookmarksAddedToFolder $notification)
+    public function __construct(private NewFolderBookmarksNotificationData $notification)
     {
     }
 
@@ -19,30 +18,29 @@ final class BookmarksAddedToFolderNotificationResource extends JsonResource
      */
     public function toArray($request)
     {
-        $collaborator = $this->notification->collaborator;
-        $folder = $this->notification->folder;
-        $bookmarks = $this->notification->bookmarks;
-
         return [
             'type' => 'BookmarksAddedToFolderNotification',
             'attributes' => [
-                'id'                  => $this->notification->uuid,
-                'collaborator_exists' => $collaborator !== null,
-                'folder_exists'       => $folder !== null,
-                'bookmarks_count'     => count($bookmarks),
-                'notified_on'         => $this->notification->notifiedOn,
-                'by_collaborator'     => $this->when($collaborator !== null, [
-                    'id'   => $collaborator?->id,
-                    'name' => $collaborator?->full_name,
-                ]),
-                'folder'             => $this->when($folder !== null, [
-                    'name' => $folder?->name,
-                    'id'   => $folder?->id
-                ]),
-                'bookmarks' => array_map(fn (Bookmark $bookmark) => [
-                    'title' => $bookmark->title
-                ], $bookmarks)
+                'id'                  => $this->notification->notificationId,
+                'collaborator_exists' => $this->notification->collaborator !== null,
+                'folder_exists'       => $this->notification->folder !== null,
+                'message'             => $this->notificationMessage(),
+                'notified_on'          => $this->notification->notifiedOn,
+                'collaborator_id'     =>  $this->notification->collaboratorId,
+                'folder_id'           => $this->notification->folderId,
             ]
         ];
+    }
+
+    private function notificationMessage(): string
+    {
+        $bookmarksCount = count($this->notification->bookmarks);
+
+        return sprintf('%s added %s %s to %s folder.', ...[
+            $this->notification->collaborator?->full_name?->present() ?: $this->notification->collaboratorFullName->present(),
+            $bookmarksCount,
+            $bookmarksCount > 1 ? 'bookmarks' : 'bookmark',
+            $this->notification->folder?->name?->present() ?: $this->notification->folderName->present()
+        ]);
     }
 }

@@ -19,12 +19,11 @@ final class FolderCollaborationInviteMail extends Mailable
 
     public function build(): self
     {
-        return $this->subject('Folder Collaboration Invitation')
-            ->view('emails.folderInvite', [
-                'inviterName'  => $this->inviter->full_name,
-                'folderName'   => $this->folder->name,
-                'InviteLink'   => $this->inviteUrl()
-            ]);
+        return $this->subject('Folder Collaboration Invitation')->view('emails.folderInvite', [
+            'inviterName'  => $this->inviter->full_name->present(),
+            'folderName'   => $this->folder->name->present(),
+            'InviteLink'   => $this->inviteUrl()
+        ]);
     }
 
     public function inviteUrl(): string

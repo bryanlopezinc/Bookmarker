@@ -4,18 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Notifications;
 
-use App\DataTransferObjects\Notifications\BookmarksAddedToFolder;
-use App\DataTransferObjects\Notifications\BookmarksRemovedFromFolder;
-use App\DataTransferObjects\Notifications\CollaboratorExit;
-use App\DataTransferObjects\Notifications\FolderUpdated;
-use App\DataTransferObjects\Notifications\NewCollaborator;
+use App\DataTransferObjects\Notifications;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 final class NotificationResource extends JsonResource
 {
     public function __construct(private object $notification)
     {
-        parent::__construct($notification);
     }
 
     /**
@@ -23,14 +18,18 @@ final class NotificationResource extends JsonResource
      */
     public function toArray($request)
     {
-        //phpcs:disable
-        return match ($this->notification::class) {
-            BookmarksAddedToFolder::class     => (new BookmarksAddedToFolderNotificationResource($this->notification))->toArray($request),
-            CollaboratorExit::class           => (new CollaboratorExitNotificationResource($this->notification))->toArray($request),
-            BookmarksRemovedFromFolder::class => (new FolderBookmarksRemovedNotificationResource($this->notification))->toArray($request),
-            FolderUpdated::class              => (new FolderUpdatedNotificationResource($this->notification))->toArray($request),
-            NewCollaborator::class            => (new NewCollaboratorNotificationResource($this->notification))->toArray($request),
-            default                           => new ImportFailedNotificationResource($this->notification) //@phpstan-ignore-line
+        /** @var mixed */
+        $notification = $this->notification;
+
+        return match ($type = $notification::class) {
+            Notifications\NewFolderBookmarksNotificationData::class => (new BookmarksAddedToFolderNotificationResource($notification))->toArray($request),
+            Notifications\CollaboratorExitNotificationData::class => (new CollaboratorExitNotificationResource($notification))->toArray($request),
+            Notifications\BookmarksRemovedFromFolderNotificationData::class => (new FolderBookmarksRemovedNotificationResource($notification))->toArray($request),
+            Notifications\FolderUpdatedNotificationData::class => (new FolderUpdatedNotificationResource($notification))->toArray($request),
+            Notifications\NewCollaboratorNotificationData::class => (new NewCollaboratorNotificationResource($notification))->toArray($request),
+            Notifications\YouHaveBeenKickedOutNotificationData::class => (new YouHaveBeenBootedOutNotificationResource($notification))->toArray($request),
+            Notifications\ImportFailedNotificationData::class => new ImportFailedNotificationResource($notification),
+            default => throw new \RuntimeException("Invalid notification type $type")
         };
     }
 }

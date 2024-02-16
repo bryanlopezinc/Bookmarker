@@ -15,28 +15,27 @@ use App\Models\FolderBookmark;
 use App\Models\Scopes\DisabledActionScope;
 use App\Models\Scopes\IsMutedCollaboratorScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
+use App\Models\User;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\Notifications\BookmarksRemovedFromFolderNotification as Notification;
-use App\Repositories\NotificationRepository;
-use App\ValueObjects\UserId;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Notification as NotificationSender;
 
 final class RemoveFolderBookmarksService
 {
-    public function __construct(
-        private CollaboratorPermissionsRepository $permissions,
-        private NotificationRepository $notifications
-    ) {
+    public function __construct(private CollaboratorPermissionsRepository $permissions)
+    {
     }
 
     public function remove(array $bookmarkIDs, int $folderID): void
     {
-        $authUserId = UserId::fromAuthUser()->value();
+        /** @var User */
+        $authUser = auth()->user();
 
-        $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'updated_at'])
+        $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'updated_at', 'name'])
             ->tap(new WhereFolderOwnerExists())
             ->tap(new DisabledActionScope(Permission::DELETE_BOOKMARKS))
-            ->tap(new IsMutedCollaboratorScope($authUserId))
+            ->tap(new IsMutedCollaboratorScope($authUser->id))
             ->find($folderID);
 
         if (is_null($folder)) {
@@ -53,13 +52,13 @@ final class RemoveFolderBookmarksService
             })
             ->get();
 
-        $this->ensureUserCanPerformAction($folder, $authUserId);
+        $this->ensureUserCanPerformAction($folder, $authUser->id);
 
         $this->ensureBookmarksExistsInFolder($bookmarkIDs, $folderBookmarks);
 
         $this->delete($folderBookmarks, $folder);
 
-        $this->notifyFolderOwner($bookmarkIDs, $folder, $authUserId);
+        $this->notifyFolderOwner($bookmarkIDs, $folder, $authUser);
     }
 
     private function delete(Collection $folderBookmarks, Folder $folder): void
@@ -103,12 +102,12 @@ final class RemoveFolderBookmarksService
         }
     }
 
-    private function notifyFolderOwner(array $bookmarkIDs, Folder $folder, int $authUserId): void
+    private function notifyFolderOwner(array $bookmarkIDs, Folder $folder, User $authUser): void
     {
         $folderSettings = $folder->settings;
 
         if (
-            $authUserId === $folder->user_id                          ||
+            $authUser->id === $folder->user_id                          ||
             $folderSettings->notificationsAreDisabled()               ||
             $folderSettings->bookmarksRemovedNotificationIsDisabled() ||
             $folder->collaboratorIsMuted
@@ -116,9 +115,9 @@ final class RemoveFolderBookmarksService
             return;
         }
 
-        $this->notifications->notify(
-            $folder->user_id,
-            new Notification($bookmarkIDs, $folder->id, $authUserId)
+        NotificationSender::send(
+            new User(['id' => $folder->user_id]),
+            new Notification($bookmarkIDs, $folder, $authUser)
         );
     }
 }

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
  * Retrieve all the resource ids stored in the notification from the database
  * to reduce the amount of database queries.
  */
-class FetchNotificationResourcesRepository
+final class FetchNotificationResourcesRepository
 {
     /**
      * The key names in the notification data array used to store user ids.
@@ -21,12 +21,8 @@ class FetchNotificationResourcesRepository
      * @var array<string>
      */
     private const USER_ID_KEYS = [
-        'added_by_collaborator',
-        'removed_by',
+        'collaborator_id',
         'new_collaborator_id',
-        'updated_by',
-        'exited_by',
-        'added_by'
     ];
 
     /**
@@ -34,22 +30,14 @@ class FetchNotificationResourcesRepository
      *
      * @var array<string>
      */
-    private const FOLDER_ID_KEYS = [
-        'added_to_folder',
-        'removed_from_folder',
-        'exited_from_folder',
-        'folder_updated'
-    ];
+    private const FOLDER_ID_KEYS = ['folder_id'];
 
     /**
      * The key names in the notification data array used to store bookmark ids.
      *
      * @var array<string>
      */
-    private const BOOKMARK_ID_KEYS = [
-        'bookmarks_added_to_folder',
-        'bookmarks_removed',
-    ];
+    private const BOOKMARK_ID_KEYS = ['bookmark_ids'];
 
     /**
      * The notification resources retrieved from database.
@@ -68,12 +56,11 @@ class FetchNotificationResourcesRepository
 
     /**
      * The notifications collection
+     *
+     * @var Collection<DatabaseNotification>
      */
     private Collection $notifications;
 
-    /**
-     * @param Collection<DatabaseNotification> $notifications
-     */
     public function __construct(Collection $notifications)
     {
         $this->notifications = $notifications;
@@ -102,7 +89,7 @@ class FetchNotificationResourcesRepository
         if (!empty($userIds = $this->extractIds('users'))) {
             $query->addSelect([
                 'users' => User::query()
-                    ->select(DB::raw("JSON_ARRAYAGG(JSON_OBJECT('id', id, 'first_name', first_name, 'last_name', last_name, 'profile_image_path', profile_image_path))")) //phpcs:ignore
+                    ->select(DB::raw("JSON_ARRAYAGG(JSON_OBJECT('id', id, 'full_name', full_name, 'profile_image_path', profile_image_path))"))
                     ->whereIntegerInRaw('id', $userIds)
             ]);
         }
@@ -130,20 +117,20 @@ class FetchNotificationResourcesRepository
 
                 return [$key => collect($data)->mapInto($model)->all()];
             })
-            ->each(fn (array $data, string $key) => $this->notificationResources[$key] = $data);//@phpstan-ignore-line
+            ->each(fn (array $data, string $key) => $this->notificationResources[$key] = $data); //@phpstan-ignore-line
     }
 
     private function extractIds(string $type): array
     {
+        $keys = match ($type) {
+            'users'     => self::USER_ID_KEYS,
+            'folders'   => self::FOLDER_ID_KEYS,
+            'bookmarks' => self::BOOKMARK_ID_KEYS,
+        };
+
         return $this->notifications
             ->pluck('data')
-            ->map(function (array $notificationData) use ($type) {
-                $keys = match ($type) {
-                    'users'     => self::USER_ID_KEYS,
-                    'folders'   => self::FOLDER_ID_KEYS,
-                    'bookmarks' => self::BOOKMARK_ID_KEYS,
-                };
-
+            ->map(function (array $notificationData) use ($keys) {
                 return collect($notificationData)->only($keys)->flatten()->unique()->all();
             })
             ->flatten()

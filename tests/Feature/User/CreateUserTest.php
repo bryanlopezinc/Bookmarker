@@ -165,7 +165,7 @@ class CreateUserTest extends TestCase
         $this->assertEquals($username, $user->username);
         $this->assertEquals($firstName, $user->first_name);
         $this->assertEquals($lastName, $user->last_name);
-        $this->assertEquals("{$firstName} {$lastName}", $user->full_name);
+        $this->assertEquals("{$firstName} {$lastName}", $user->full_name->value);
         $this->assertEquals(TwoFaMode::NONE, $user->two_fa_mode);
         $this->assertNull($user->email_verified_at);
         $this->assertTrue(Hash::check($password, $user->password));

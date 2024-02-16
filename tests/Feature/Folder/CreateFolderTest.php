@@ -64,9 +64,10 @@ class CreateFolderTest extends TestCase
                 'description' => $description = $this->faker->sentence,
             ])->assertCreated();
 
+        /** @var Folder */
         $folder = Folder::query()->where('user_id', $user->id)->sole();
 
-        $this->assertEquals($name, $folder->name);
+        $this->assertEquals($name, $folder->name->value);
         $this->assertEquals($description, $folder->description);
         $this->assertTrue($folder->visibility->isPublic());
         $this->assertTrue($folder->created_at->isSameMinute());

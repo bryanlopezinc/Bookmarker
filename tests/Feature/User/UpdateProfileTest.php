@@ -81,7 +81,7 @@ class UpdateProfileTest extends TestCase
         $user = User::query()->whereKey($user->id)->first();
 
         $this->assertEquals($firstName, $user->first_name);
-        $this->assertEquals($user->full_name, "{$firstName} {$user->last_name}");
+        $this->assertEquals($user->full_name->value, "{$firstName} {$user->last_name}");
     }
 
     #[Test]
@@ -95,7 +95,7 @@ class UpdateProfileTest extends TestCase
         $user = User::query()->whereKey($user->id)->first();
 
         $this->assertEquals($lastName, $user->last_name);
-        $this->assertEquals($user->full_name, "{$user->first_name} {$lastName}");
+        $this->assertEquals($user->full_name->value, "{$user->first_name} {$lastName}");
     }
 
     #[Test]

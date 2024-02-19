@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder;
 
-use App\Cache\InviteTokensStore;
+use App\Cache\FolderInviteDataRepository;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Models\FolderCollaboratorPermission;
 use App\Enums\Permission;
@@ -30,13 +30,13 @@ class AcceptFolderCollaborationInviteTest extends TestCase
     use WithFaker;
     use CreatesCollaboration;
 
-    protected InviteTokensStore $tokenStore;
+    protected FolderInviteDataRepository $tokenStore;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->tokenStore = app(InviteTokensStore::class);
+        $this->tokenStore = app(FolderInviteDataRepository::class);
     }
 
     protected function acceptInviteResponse(array $parameters = []): TestResponse
@@ -89,7 +89,10 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $this->acceptInviteResponse(['invite_hash' => $this->faker->uuid])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'InvitationNotFoundOrExpired']);
+            ->assertExactJson([
+                'message' => 'InvitationNotFoundOrExpired',
+                'info'    => 'The invitation token is expired or is invalid.'
+            ]);
     }
 
     #[Test]
@@ -140,15 +143,16 @@ class AcceptFolderCollaborationInviteTest extends TestCase
     #[Test]
     public function whenFolderVisibilityIsPrivate(): void
     {
+        Notification::fake();
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        [$folderOwner, $invitee] = UserFactory::new()->count(2)->create();
+        [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
 
-        $folder = FolderFactory::new()->private()->for($folderOwner)->create();
+        $folder = FolderFactory::new()->private()->create();
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $folderOwner->id,
+            $collaborator->id,
             $invitee->id,
             $folder->id,
             new UAC(Permission::ADD_BOOKMARKS)
@@ -156,7 +160,14 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $this->acceptInviteResponse(['invite_hash' => $id])
             ->assertForbidden()
-            ->assertExactJson(['message' => 'PrivateFolder']);
+            ->assertExactJson([
+                'message' => 'FolderIsMarkedAsPrivate',
+                'info' => 'Folder has been marked as private by owner.'
+            ]);
+
+        $this->assertTrue($folder->collaborators->isEmpty());
+
+        Notification::assertNothingSent();
     }
 
     #[Test]
@@ -178,7 +189,10 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $this->acceptInviteResponse(['invite_hash' => $id])
             ->assertForbidden()
-            ->assertExactJson(['message' => 'FolderIsPasswordProtected']);
+            ->assertExactJson([
+                'message' => 'FolderIsPasswordProtected',
+                'info' => 'Folder has been marked as protected by owner.'
+            ]);
     }
 
     public function testAcceptInviteWithPermissions(): void
@@ -239,16 +253,22 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             UAC::all()
         );
 
-        $this->acceptInviteResponse(['invite_hash' => $id])->assertConflict()->assertExactJson(['message' => 'InvitationAlreadyAccepted']);
+        $this->acceptInviteResponse(['invite_hash' => $id])
+            ->assertConflict()
+            ->assertExactJson([
+                'message' => 'InvitationAlreadyAccepted',
+                'info' => 'The invitation has already been accepted.'
+            ]);
     }
 
     public function testWillReturnNotFoundWhenFolderHasBeenDeleted(): void
     {
+        Notification::fake();
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         [$user, $invitee] = UserFactory::new()->count(2)->create();
 
-        $folder = FolderFactory::new()->for($user)->create();
+        $folder = FolderFactory::new()->create();
 
         Passport::actingAs($user);
 
@@ -264,9 +284,14 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $this->acceptInviteResponse(['invite_hash' => $id])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertExactJson([
+                'message' => 'FolderNotFound',
+                'info' => 'The folder could not be found.'
+            ]);
 
-        $this->assertDatabaseMissing(FolderCollaboratorPermission::class, ['folder_id' => $folder->id]);
+        $this->assertDatabaseMissing(FolderCollaborator::class, ['folder_id' => $folder->id]);
+
+        Notification::assertNothingSent();
     }
 
     public function testWillReturnNotFoundWhenInviteeHasDeletedAccount(): void
@@ -289,7 +314,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $this->acceptInviteResponse(['invite_hash' => $id])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'UserNotFound']);
+            ->assertJsonFragment(['message' => 'InvitationNotFoundOrExpired']);
 
         $this->assertDatabaseMissing(FolderCollaboratorPermission::class, ['folder_id' => $folder->id]);
     }
@@ -300,7 +325,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         [$user, $invitee] = UserFactory::new()->count(2)->create();
 
-        $folder = FolderFactory::new()->for($user)->create();
+        $folder = FolderFactory::new()->create();
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
@@ -314,7 +339,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $this->acceptInviteResponse(['invite_hash' => $id])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'InvitationNotFoundOrExpired']);
 
         $this->assertDatabaseMissing(FolderCollaboratorPermission::class, ['folder_id' => $folder->id,]);
     }
@@ -329,7 +354,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         Folder::retrieved(function (Folder $retrieved) {
-            $retrieved->collaboratorsCount = 1000;
+            $retrieved->collaborators_count = 1000;
         });
 
         $this->tokenStore->store(
@@ -342,7 +367,10 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $this->acceptInviteResponse(['invite_hash' => $id])
             ->assertForbidden()
-            ->assertExactJson(['message' => 'MaxCollaboratorsLimitReached']);
+            ->assertExactJson([
+                'message' => 'MaxCollaboratorsLimitReached',
+                'info' => 'Folder has reached its max collaborators limit.'
+            ]);
     }
 
     public function testWillNotNotifyFolderOwnerWhenInvitationWasSentByFolderOwner(): void

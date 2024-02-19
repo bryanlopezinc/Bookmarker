@@ -32,7 +32,7 @@ final class FolderResource extends JsonResource
                 'date_created'        => $this->folder->created_at->toDateTimeString(),
                 'last_updated'        => $this->folder->updated_at->toDateTimeString(),
                 'visibility'          => $this->folder->visibility->toWord(),
-                'collaborators_count' => $this->folder->collaboratorsCount,
+                'collaborators_count' => $this->folder->collaborators_count,
                 'storage' => [
                     'items_count'     => $storage->total,
                     'capacity'        => $storage::MAX_ITEMS,

@@ -1,5 +1,6 @@
 <?php
 
+use App\Providers\ProvidersCollection;
 use Illuminate\Support\Facades\Facade;
 
 return [
@@ -171,18 +172,11 @@ return [
         /*
          * Application Service Providers...
          */
-        App\Providers\AppServiceProvider::class,
-        App\Providers\AuthServiceProvider::class,
-        // App\Providers\BroadcastServiceProvider::class,
-        App\Providers\EventServiceProvider::class,
-        App\Providers\RouteServiceProvider::class,
-
-        App\IpGeoLocation\ServiceProvider::class,
-        App\DeviceDetector\ServiceProvider::class,
-        App\Providers\ReaderServiceProvider::class,
-        App\Providers\ImportersFilesystemServiceProvider::class,
-        App\Providers\RepositoryServiceProvider::class,
-        App\Providers\Cache\RegisterProviders::class,
+        ...ProvidersCollection::getProviders()
+            ->merge([
+                App\IpGeoLocation\ServiceProvider::class,
+                App\DeviceDetector\ServiceProvider::class,
+            ])->all()
     ],
 
     /*

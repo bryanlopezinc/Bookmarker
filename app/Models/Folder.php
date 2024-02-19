@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use App\ValueObjects\FolderSettings;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 
 /**
@@ -24,7 +25,7 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  * @property int $bookmarksCount
- * @property int $collaboratorsCount
+ * @property int $collaborators_count
  * @method static Builder|QueryBuilder onlyAttributes(array $attributes = [])
  */
 final class Folder extends Model
@@ -68,6 +69,13 @@ final class Folder extends Model
         );
     }
 
+    public function collaborators(): HasMany
+    {
+        $whereExists = User::whereRaw('id = folders_collaborators.collaborator_id');
+
+        return $this->hasMany(FolderCollaborator::class, 'folder_id')->whereExists($whereExists);
+    }
+
     /**
      * @param \Illuminate\Database\Eloquent\Builder $builder
      *
@@ -83,18 +91,9 @@ final class Folder extends Model
 
         if (!$attributes->isEmpty()) {
             $builder->addSelect(
-                $this->qualifyColumns($attributes->except(['bookmarks_count', 'collaboratorsCount'])->all())
+                $this->qualifyColumns($attributes->except(['bookmarks_count'])->all())
             );
         }
-
-        $builder->when($attributes->has('collaboratorsCount') || $attributes->isEmpty(), function ($query) {
-            $query->addSelect([
-                'collaboratorsCount' => FolderCollaborator::query()
-                    ->selectRaw('COUNT(*)')
-                    ->whereRaw("folder_id = {$this->getQualifiedKeyName()}")
-                    ->whereExists(User::whereRaw('id = folders_collaborators.collaborator_id'))
-            ]);
-        });
 
         $builder->when($attributes->has('bookmarks_count') || $attributes->isEmpty(), function ($query) {
             $query->addSelect([

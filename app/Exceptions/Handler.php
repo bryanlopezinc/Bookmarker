@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Override;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -39,9 +40,7 @@ class Handler extends ExceptionHandler
         });
     }
 
-    /**
-     * {@inheritdoc}
-     */
+    #[Override]
     protected function shouldReturnJson($request, Throwable $e)
     {
         return true;

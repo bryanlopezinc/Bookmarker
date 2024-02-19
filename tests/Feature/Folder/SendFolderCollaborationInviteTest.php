@@ -227,7 +227,7 @@ class SendFolderCollaborationInviteTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
 
         Folder::retrieved(function (Folder $folder) {
-            $folder->collaboratorsCount = 1000;
+            $folder->collaborators_count = 1000;
         });
 
         Passport::actingAs($folderOwner);

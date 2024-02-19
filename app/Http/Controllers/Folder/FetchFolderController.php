@@ -22,7 +22,7 @@ final class FetchFolderController extends Controller
         ]);
 
         /** @var Folder|null */
-        $folder = Folder::onlyAttributes()->find($request->integer('id'));
+        $folder = Folder::onlyAttributes()->withCount('collaborators')->find($request->integer('id'));
 
         if (is_null($folder)) {
             throw new FolderNotFoundException();

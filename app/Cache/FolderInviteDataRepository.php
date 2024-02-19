@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 namespace App\Cache;
 
+use App\DataTransferObjects\FolderInviteData;
 use App\UAC;
 use Illuminate\Contracts\Cache\Repository;
+use OutOfBoundsException;
 
-final class InviteTokensStore
+final class FolderInviteDataRepository
 {
-    public const INVITER_ID  = 'inviterID';
-    public const INVITEE_ID  = 'inviteeID';
-    public const FOLDER_ID   = 'folderID';
-    public const PERMISSIONS = 'permission';
-
     public function __construct(private readonly Repository $repository, private readonly int $ttl)
     {
     }
@@ -36,16 +33,22 @@ final class InviteTokensStore
         $this->repository->put($uuid, $data, $this->ttl);
     }
 
-    /**
-     * @return array{
-     *   inviterId: int,
-     *   inviteeId: int,
-     *   folderId: int,
-     *   permissions: string[]
-     *  }
-     */
-    public function get(string $token): array
+    public function has(string $inviteId): bool
     {
-        return $this->repository->get($token, []);
+        return $this->repository->has($inviteId);
+    }
+
+    /**
+     * @throws OutOfBoundsException
+     */
+    public function get(string $inviteId): FolderInviteData
+    {
+        $payload = $this->repository->get($inviteId, []);
+
+        if (empty($payload)) {
+            throw new OutOfBoundsException("The invitation Id {$inviteId} does not exists.");
+        }
+
+        return new FolderInviteData(...$payload);
     }
 }

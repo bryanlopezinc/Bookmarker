@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Folder;
 
-use App\Cache\InviteTokensStore;
+use App\Cache\FolderInviteDataRepository;
 use App\Enums\Permission;
 use App\Exceptions\FolderActionDisabledException;
 use App\Exceptions\FolderNotFoundException;
@@ -27,7 +27,7 @@ final class SendFolderCollaborationInviteService
 {
     public function __construct(
         private CollaboratorPermissionsRepository $permissions,
-        private InviteTokensStore $inviteTokensStore
+        private FolderInviteDataRepository $inviteTokensStore
     ) {
     }
 
@@ -73,7 +73,8 @@ final class SendFolderCollaborationInviteService
 
     private function fetchFolderAndAttributesForValidation(int $folderId, string $inviteeEmail): ?Folder
     {
-        return Folder::onlyAttributes(['id', 'user_id', 'name', 'collaboratorsCount', 'visibility'])
+        return Folder::onlyAttributes(['id', 'user_id', 'name', 'visibility'])
+            ->withCount('collaborators')
             ->tap(new WhereFolderOwnerExists())
             ->tap(new DisabledActionScope(Permission::INVITE_USER))
             ->addSelect([
@@ -102,7 +103,7 @@ final class SendFolderCollaborationInviteService
 
         UserNotFoundException::throwIf(!$folder->inviteeId);
 
-        FolderCollaboratorsLimitExceededException::throwIfExceeded($folder->collaboratorsCount);
+        FolderCollaboratorsLimitExceededException::throwIfExceeded($folder->collaborators_count);
 
         $this->ensureIsNotSendingInvitationSelf($folder->inviteeId, $inviter);
 

@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Folder;
 
-use App\Services\Folder\AcceptFolderCollaborationInviteService as Service;
+use App\Actions\AcceptFolderInvite\AcceptFolderInviteRequestHandler as Handler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 final class AcceptFolderCollaborationInviteController
 {
-    public function __invoke(Request $request, Service $service): JsonResponse
+    public function __invoke(Request $request, Handler $handler): JsonResponse
     {
-        $request->validate(['invite_hash' => ['required', 'uuid']]);
+        $inviteId = $request->validate(['invite_hash' => ['required', 'uuid']])['invite_hash'];
 
-        $service->fromRequest($request);
+        $handler->handle($inviteId);
 
-        return response()->json(status: Response::HTTP_CREATED);
+        return new JsonResponse(status: Response::HTTP_CREATED);
     }
 }

@@ -29,4 +29,6 @@ return [
     //The accept invite url that will be sent to the user.
     //The url should contain placeholders for the 'invite_hash', 'signature', and 'expires' parameters.
     'ACCEPT_INVITE_URL' => Env::getOrFail('ACCEPT_INVITE_URL'),
+
+    'MAX_FOLDER_COLLABORATORS_LIMIT' => 1000
 ];

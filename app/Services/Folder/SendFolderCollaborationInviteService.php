@@ -15,7 +15,7 @@ use App\Exceptions\PermissionDeniedException;
 use App\Exceptions\UserNotFoundException;
 use App\Http\Requests\SendFolderCollaborationInviteRequest as Request;
 use App\Mail\FolderCollaborationInviteMail as InvitationMail;
-use App\Models\Scopes\DisabledActionScope;
+use App\Models\Scopes\DisabledFeatureScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\UAC;
@@ -76,7 +76,7 @@ final class SendFolderCollaborationInviteService
         return Folder::onlyAttributes(['id', 'user_id', 'name', 'visibility'])
             ->withCount('collaborators')
             ->tap(new WhereFolderOwnerExists())
-            ->tap(new DisabledActionScope(Permission::INVITE_USER))
+            ->tap(new DisabledFeatureScope(Permission::INVITE_USER))
             ->addSelect([
                 'inviteeId' => User::select('users.id')
                     ->leftJoin('users_emails', 'users.id', '=', 'users_emails.user_id')
@@ -141,7 +141,7 @@ final class SendFolderCollaborationInviteService
                 throw HttpException::forbidden(['message' => 'CollaboratorCannotSendInviteWithPermissions']);
             }
 
-            if ($folder->actionIsDisable) {
+            if ($folder->featureIsDisabled) {
                 throw new FolderActionDisabledException(Permission::INVITE_USER);
             }
         }

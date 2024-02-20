@@ -157,7 +157,7 @@ class FilterFolderResourceTest extends TestCase
         /** @var Folder */
         $folder = FolderFactory::new()->make(['id' => 200]);
         $folder->tags = collect();
-        $folder->bookmarksCount = 2;
+        $folder->bookmarks_count = 2;
         $folder->created_at = now();
         $folder->updated_at = now();
 

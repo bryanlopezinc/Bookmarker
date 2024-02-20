@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Folder;
 
+use App\Actions\AddBookmarksToFolder\CreateNewFolderBookmarksHandler;
 use App\Enums\Permission;
 use App\Models\Favorite;
-use App\Services\Folder\AddBookmarksToFolderService;
 use App\Services\Folder\MuteCollaboratorService;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
@@ -24,13 +24,13 @@ class FetchFolderBookmarksTest extends TestCase
     use AssertValidPaginationData;
     use CreatesCollaboration;
 
-    private AddBookmarksToFolderService $addBookmarksToFolder;
+    private CreateNewFolderBookmarksHandler $addBookmarksToFolder;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->addBookmarksToFolder = app(AddBookmarksToFolderService::class);
+        $this->addBookmarksToFolder = app(CreateNewFolderBookmarksHandler::class);
     }
 
     protected function folderBookmarksResponse(array $parameters = []): TestResponse
@@ -65,7 +65,7 @@ class FetchFolderBookmarksTest extends TestCase
         $privateFolder = FolderFactory::new()->private()->for($folderOwner)->create();
         $bookmark = BookmarkFactory::new()->for($folderOwner)->create();
 
-        $this->addBookmarksToFolder->add($privateFolder->id, $bookmark->id);
+        $this->addBookmarksToFolder->create($privateFolder->id, $bookmark->id);
 
         //when user is not loggedIn
         $this->folderBookmarksResponse($query = ['folder_id' => $privateFolder->id])
@@ -89,7 +89,7 @@ class FetchFolderBookmarksTest extends TestCase
         $folder = FolderFactory::new()->visibleToCollaboratorsOnly()->for($folderOwner)->create();
         $bookmark = BookmarkFactory::new()->for($folderOwner)->create();
 
-        $this->addBookmarksToFolder->add($folder->id, $bookmark->id);
+        $this->addBookmarksToFolder->create($folder->id, $bookmark->id);
 
         $this->CreateCollaborationRecord($collaborator, $folder);
 
@@ -118,7 +118,7 @@ class FetchFolderBookmarksTest extends TestCase
         $publicFolder = FolderFactory::new()->for($folderOwner)->create();
         $bookmark = BookmarkFactory::new()->for($folderOwner)->create();
 
-        $this->addBookmarksToFolder->add($publicFolder->id, $bookmark->id);
+        $this->addBookmarksToFolder->create($publicFolder->id, $bookmark->id);
 
         $this->CreateCollaborationRecord($collaborator, $publicFolder);
 
@@ -145,7 +145,7 @@ class FetchFolderBookmarksTest extends TestCase
         $folder = FolderFactory::new()->for($folderOwner)->passwordProtected()->create();
         $bookmark = BookmarkFactory::new()->for($folderOwner)->create();
 
-        $this->addBookmarksToFolder->add($folder->id, $bookmark->id);
+        $this->addBookmarksToFolder->create($folder->id, $bookmark->id);
 
         //when user is not loggedIn
         $this->folderBookmarksResponse(['folder_id' => $folder->id])
@@ -176,7 +176,7 @@ class FetchFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->addBookmarksToFolder->add($folder->id, $bookmarkIds, [$bookmarkIds[0]]);
+        $this->addBookmarksToFolder->create($folder->id, $bookmarkIds, [$bookmarkIds[0]]);
 
         $this->folderBookmarksResponse(['folder_id' => $folder->id])
             ->assertOk()
@@ -192,7 +192,7 @@ class FetchFolderBookmarksTest extends TestCase
         $folder = FolderFactory::new()->for($folderOwner)->create();
         $bookmark = BookmarkFactory::new()->for($folderOwner)->create();
 
-        $this->addBookmarksToFolder->add($folder->id, $bookmark->id);
+        $this->addBookmarksToFolder->create($folder->id, $bookmark->id);
 
         $collaborator = UserFactory::new()->create();
         $this->CreateCollaborationRecord($collaborator, $folder);
@@ -228,7 +228,7 @@ class FetchFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->addBookmarksToFolder->add($folder->id, [$authUserBookmark->id, $collaboratorBookmark->id]);
+        $this->addBookmarksToFolder->create($folder->id, [$authUserBookmark->id, $collaboratorBookmark->id]);
 
         //when user is not logged in.
         $this->folderBookmarksResponse(['folder_id' => $folder->id])
@@ -253,8 +253,8 @@ class FetchFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->addBookmarksToFolder->add($folder->id, $bookmarks[0]->id);
-        $this->addBookmarksToFolder->add($folder->id, $bookmarks[1]->id);
+        $this->addBookmarksToFolder->create($folder->id, $bookmarks[0]->id);
+        $this->addBookmarksToFolder->create($folder->id, $bookmarks[1]->id);
 
         $this->folderBookmarksResponse(['folder_id' => $folder->id])
             ->assertOk()
@@ -270,7 +270,7 @@ class FetchFolderBookmarksTest extends TestCase
         $bookmarkIDs = BookmarkFactory::new()->count(5)->for($user)->create()->pluck('id');
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->addBookmarksToFolder->add($folder->id, $bookmarkIDs->all());
+        $this->addBookmarksToFolder->create($folder->id, $bookmarkIDs->all());
 
         $this->folderBookmarksResponse(['folder_id' => $folder->id])->assertOk();
 
@@ -331,7 +331,7 @@ class FetchFolderBookmarksTest extends TestCase
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
-        $this->addBookmarksToFolder->add($folder->id, $collaboratorBookmark->id);
+        $this->addBookmarksToFolder->create($folder->id, $collaboratorBookmark->id);
         Favorite::create(['user_id' => $collaborator->id, 'bookmark_id' => $collaboratorBookmark->id]);
 
         Passport::actingAs($collaborator);
@@ -356,7 +356,7 @@ class FetchFolderBookmarksTest extends TestCase
         $bookmark = BookmarkFactory::new()->for($user)->create();
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->addBookmarksToFolder->add($folder->id, $bookmark->id);
+        $this->addBookmarksToFolder->create($folder->id, $bookmark->id);
 
         $this->folderBookmarksResponse(['folder_id' => $folder->id])
             ->assertOk()
@@ -370,7 +370,7 @@ class FetchFolderBookmarksTest extends TestCase
         $bookmarks = BookmarkFactory::new()->for($users[0])->count(2)->create();
         $folder = FolderFactory::new()->for($users[0])->create();
 
-        $this->addBookmarksToFolder->add($folder->id, $bookmarks->pluck('id')->all(), [$bookmarks[0]->id]);
+        $this->addBookmarksToFolder->create($folder->id, $bookmarks->pluck('id')->all(), [$bookmarks[0]->id]);
 
         $this->CreateCollaborationRecord($users[1], $folder);
 
@@ -386,7 +386,7 @@ class FetchFolderBookmarksTest extends TestCase
         $bookmarks = BookmarkFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->create();
 
-        $this->addBookmarksToFolder->add($folder->id, $bookmarks->pluck('id')->all(), [$bookmarks[0]->id]);
+        $this->addBookmarksToFolder->create($folder->id, $bookmarks->pluck('id')->all(), [$bookmarks[0]->id]);
 
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
         $this->folderBookmarksResponse(['folder_id' => $folder->id])
@@ -406,7 +406,7 @@ class FetchFolderBookmarksTest extends TestCase
         $bookmark = BookmarkFactory::new()->for($collaborator)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        $this->addBookmarksToFolder->add($folder->id, $bookmark->id);
+        $this->addBookmarksToFolder->create($folder->id, $bookmark->id);
         $muteCollaboratorService->mute($folder->id, $collaborator->id, $folderOwner->id);
 
         $this->folderBookmarksResponse(['folder_id' => $folder->id])
@@ -435,7 +435,7 @@ class FetchFolderBookmarksTest extends TestCase
         $bookmark = BookmarkFactory::new()->for($collaborator)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        $this->addBookmarksToFolder->add($folder->id, $bookmark->id);
+        $this->addBookmarksToFolder->create($folder->id, $bookmark->id);
         $muteCollaboratorService->mute($folder->id, $collaborator->id, $folderOwner->id, now(), 2);
 
         $this->loginUser($folderOwner);

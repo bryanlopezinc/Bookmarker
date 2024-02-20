@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Actions\AcceptFolderInvite;
+namespace App\Actions\AddBookmarksToFolder;
 
-use App\Exceptions\AcceptFolderInviteException;
+use App\Exceptions\AddBookmarksToFolderException;
 use App\Models\Folder;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use Illuminate\Database\Query\Builder;
@@ -12,8 +12,11 @@ use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class FolderExistsConstraint implements HandlerInterface, Scope
+final class FolderExistConstraint implements HandlerInterface, Scope
 {
+    /**
+     * @inheritdoc
+     */
     public function apply(Builder|EloquentBuilder $builder, Model $model): void
     {
         $builder->tap(new WhereFolderOwnerExists());
@@ -22,10 +25,10 @@ final class FolderExistsConstraint implements HandlerInterface, Scope
     /**
      * @inheritdoc
      */
-    public function handle(Folder $folder): void
+    public function handle(Folder $folder, array $bookmarkIds): void
     {
         if (!$folder->exists) {
-            throw AcceptFolderInviteException::dueToFolderNotFound();
+            throw AddBookmarksToFolderException::folderNotFound();
         }
     }
 }

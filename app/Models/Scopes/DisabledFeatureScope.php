@@ -12,11 +12,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class DisabledActionScope implements Scope
+final class DisabledFeatureScope implements Scope
 {
     public function __construct(
         private readonly ?Permission $permission = null,
-        private readonly string $alias = 'actionIsDisable'
+        private readonly string $alias = 'featureIsDisabled'
     ) {
     }
     public function __invoke(Builder|QueryBuilder $query): void

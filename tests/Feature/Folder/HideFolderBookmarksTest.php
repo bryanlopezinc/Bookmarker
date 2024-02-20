@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Folder;
 
+use App\Actions\AddBookmarksToFolder\CreateNewFolderBookmarksHandler;
 use App\Enums\FolderBookmarkVisibility;
 use App\Models\FolderBookmark;
-use App\Services\Folder\AddBookmarksToFolderService;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -18,13 +18,13 @@ class HideFolderBookmarksTest extends TestCase
 {
     use WithFaker;
 
-    private AddBookmarksToFolderService $addBookmarksToFolder;
+    private CreateNewFolderBookmarksHandler $addBookmarksToFolder;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->addBookmarksToFolder = app(AddBookmarksToFolderService::class);
+        $this->addBookmarksToFolder = new CreateNewFolderBookmarksHandler();
     }
 
     protected function hideFolderResponse(array $parameters = []): TestResponse
@@ -74,7 +74,7 @@ class HideFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->addBookmarksToFolder->add($folder->id, $bookmarkIds);
+        $this->addBookmarksToFolder->create($folder->id, $bookmarkIds);
 
         $this->withRequestId()
             ->hideFolderResponse([
@@ -103,7 +103,7 @@ class HideFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->addBookmarksToFolder->add($folder->id, $bookmarkIds);
+        $this->addBookmarksToFolder->create($folder->id, $bookmarkIds);
 
         $this->withRequestId()
             ->hideFolderResponse($query = [
@@ -164,7 +164,7 @@ class HideFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->addBookmarksToFolder->add($folder->id, $bookmarks->pluck('id')->all());
+        $this->addBookmarksToFolder->create($folder->id, $bookmarks->pluck('id')->all());
 
         $bookmarks->first()->delete();
 
@@ -183,7 +183,7 @@ class HideFolderBookmarksTest extends TestCase
         $bookmarkIds = BookmarkFactory::new()->count(5)->create()->pluck('id');
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->addBookmarksToFolder->add($folder->id, $bookmarkIds->all());
+        $this->addBookmarksToFolder->create($folder->id, $bookmarkIds->all());
 
         $this->withRequestId()
             ->hideFolderResponse([

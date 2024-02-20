@@ -19,7 +19,7 @@ final class UserFoldersRepository
         PaginationData $pagination,
         SortCriteria $sortCriteria = SortCriteria::NEWEST
     ): Paginator {
-        $query = Model::onlyAttributes()->where('user_id', $userId);
+        $query = Model::query()->withCount('bookmarks')->where('user_id', $userId);
 
         $this->addSortQuery($query, $sortCriteria);
 
@@ -32,8 +32,8 @@ final class UserFoldersRepository
             SortCriteria::NEWEST           => $query->latest('id'),
             SortCriteria::OLDEST           => $query->oldest('id'),
             SortCriteria::RECENTLY_UPDATED => $query->latest('updated_at'),
-            SortCriteria::MOST_ITEMS       => $query->orderByDesc('bookmarksCount'),
-            SortCriteria::LEAST_ITEMS      => $query->orderBy('bookmarksCount'),
+            SortCriteria::MOST_ITEMS       => $query->orderByDesc('bookmarks_count'),
+            SortCriteria::LEAST_ITEMS      => $query->orderBy('bookmarks_count'),
         };
     }
 }

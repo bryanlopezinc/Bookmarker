@@ -12,7 +12,7 @@ use App\Exceptions\PermissionDeniedException;
 use App\Models\Bookmark;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
-use App\Models\Scopes\DisabledActionScope;
+use App\Models\Scopes\DisabledFeatureScope;
 use App\Models\Scopes\IsMutedCollaboratorScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\Models\User;
@@ -34,7 +34,7 @@ final class RemoveFolderBookmarksService
 
         $folder = Folder::onlyAttributes(['id', 'user_id', 'settings', 'updated_at', 'name'])
             ->tap(new WhereFolderOwnerExists())
-            ->tap(new DisabledActionScope(Permission::DELETE_BOOKMARKS))
+            ->tap(new DisabledFeatureScope(Permission::DELETE_BOOKMARKS))
             ->tap(new IsMutedCollaboratorScope($authUser->id))
             ->find($folderID);
 
@@ -85,7 +85,7 @@ final class RemoveFolderBookmarksService
                 throw $e;
             }
 
-            if ($folder->actionIsDisable) {
+            if ($folder->featureIsDisabled) {
                 throw new FolderActionDisabledException(Permission::DELETE_BOOKMARKS);
             }
 

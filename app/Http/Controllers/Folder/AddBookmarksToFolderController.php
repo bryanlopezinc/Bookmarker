@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Folder;
 
-use App\Http\Requests\AddBookmarksToFolderRequest;
-use App\Services\Folder\AddBookmarksToFolderService as Service;
+use App\Actions\AddBookmarksToFolder\RequestHandler;
+use App\Http\Requests\AddBookmarksToFolderRequest as Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 
 final class AddBookmarksToFolderController
 {
-    public function __invoke(AddBookmarksToFolderRequest $request, Service $service): JsonResponse
+    public function __invoke(Request $request, RequestHandler $handler): JsonResponse
     {
-        $service->fromRequest($request);
+        $handler->handle($request->getBookmarkIds(), $request->integer('folder'));
 
         return response()->json(status: Response::HTTP_CREATED);
     }

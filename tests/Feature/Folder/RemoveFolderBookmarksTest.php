@@ -2,11 +2,11 @@
 
 namespace Tests\Feature\Folder;
 
+use App\Actions\AddBookmarksToFolder\CreateNewFolderBookmarksHandler;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Enums\Permission;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
-use App\Services\Folder\AddBookmarksToFolderService;
 use App\Services\Folder\MuteCollaboratorService;
 use App\Services\Folder\ToggleFolderCollaborationRestriction;
 use App\UAC;
@@ -218,10 +218,9 @@ class RemoveFolderBookmarksTest extends TestCase
 
     private function addBookmarksToFolder(int|array $bookmarkIDs, int $folderID): void
     {
-        /** @var AddBookmarksToFolderService */
-        $service = app(AddBookmarksToFolderService::class);
+        $service = new CreateNewFolderBookmarksHandler();
 
-        $service->add($folderID, $bookmarkIDs);
+        $service->create($folderID, $bookmarkIDs);
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotExists(): void
@@ -413,14 +412,13 @@ class RemoveFolderBookmarksTest extends TestCase
         /** @var ToggleFolderCollaborationRestriction */
         $updateCollaboratorActionService = app(ToggleFolderCollaborationRestriction::class);
 
-        /** @var AddBookmarksToFolderService */
-        $addBooksService = app(AddBookmarksToFolderService::class);
+        $addBooksService = new CreateNewFolderBookmarksHandler();
 
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarks = BookmarkFactory::times(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        $addBooksService->add($folder->id, $bookmarks->pluck('id')->all());
+        $addBooksService->create($folder->id, $bookmarks->pluck('id')->all());
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::DELETE_BOOKMARKS);
 

@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Folder;
 
+use App\Actions\AddBookmarksToFolder\CreateNewFolderBookmarksHandler;
 use App\Models\Folder as Model;
-use App\Services\Folder\AddBookmarksToFolderService;
 use App\UAC;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
@@ -99,14 +99,13 @@ class FetchFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        /** @var AddBookmarksToFolderService */
-        $repository = app(AddBookmarksToFolderService::class);
+        $repository = new CreateNewFolderBookmarksHandler();
 
         /** @var Model */
         $folder = FolderFactory::new()->for($user)->create();
         $bookmarks = BookmarkFactory::times(2)->for($user)->create();
 
-        $repository->add($folder->id, $bookmarks->pluck('id')->all());
+        $repository->create($folder->id, $bookmarks->pluck('id')->all());
 
         $this->fetchFolderResponse(['id' => $folder->id])
             ->assertOk()

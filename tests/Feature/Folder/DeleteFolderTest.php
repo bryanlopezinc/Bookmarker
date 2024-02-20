@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Folder;
 
+use App\Actions\AddBookmarksToFolder\CreateNewFolderBookmarksHandler;
 use App\Models\Bookmark;
 use App\Models\Folder;
-use App\Services\Folder\AddBookmarksToFolderService;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -18,6 +18,15 @@ class DeleteFolderTest extends TestCase
 {
     use WithFaker;
     use WillCheckBookmarksHealth;
+
+    private CreateNewFolderBookmarksHandler $createBookmarkAction;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->createBookmarkAction = new CreateNewFolderBookmarksHandler();
+    }
 
     protected function deleteFolderResponse($folderId = 50, array $parameters = []): TestResponse
     {
@@ -47,10 +56,7 @@ class DeleteFolderTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        /** @var AddBookmarksToFolderService */
-        $service = app(AddBookmarksToFolderService::class);
-
-        $service->add($folder->id, $bookmarkId = BookmarkFactory::new()->create()->id);
+        $this->createBookmarkAction->create($folder->id, $bookmarkId = BookmarkFactory::new()->create()->id);
 
         $this->deleteFolderResponse($folder->id)->assertOk();
 
@@ -64,10 +70,7 @@ class DeleteFolderTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        /** @var AddBookmarksToFolderService */
-        $service = app(AddBookmarksToFolderService::class);
-
-        $service->add($folder->id, $bookmarkId = BookmarkFactory::new()->for($user)->create()->id);
+        $this->createBookmarkAction->create($folder->id, $bookmarkId = BookmarkFactory::new()->for($user)->create()->id);
 
         $this->deleteFolderResponse($folder->id, ['delete_bookmarks' => true])->assertOk();
 
@@ -102,10 +105,7 @@ class DeleteFolderTest extends TestCase
         $collaboratorBookmark = BookmarkFactory::new()->for($collaborator)->create();
         $folderID = FolderFactory::new()->for($folderOwner)->create(['created_at' => now()])->id;
 
-        /** @var AddBookmarksToFolderService */
-        $service = app(AddBookmarksToFolderService::class);
-
-        $service->add($folderID, $collaboratorBookmark->id);
+        $this->createBookmarkAction->create($folderID, $collaboratorBookmark->id);
 
         Passport::actingAs($folderOwner);
         $this->deleteFolderResponse($folderID, ['delete_bookmarks' => true])->assertOk();

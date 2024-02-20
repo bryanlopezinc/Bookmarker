@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Folder;
 
-use App\Services\Folder\AddBookmarksToFolderService;
+use App\Actions\AddBookmarksToFolder\CreateNewFolderBookmarksHandler;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -17,13 +17,13 @@ class FetchUserFoldersTest extends TestCase
     use WithFaker;
     use AssertValidPaginationData;
 
-    private AddBookmarksToFolderService $addBookmarksToFolder;
+    private CreateNewFolderBookmarksHandler $addBookmarksToFolder;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->addBookmarksToFolder = app(AddBookmarksToFolderService::class);
+        $this->addBookmarksToFolder = app(CreateNewFolderBookmarksHandler::class);
     }
 
     protected function userFoldersResponse(array $parameters = []): TestResponse
@@ -151,7 +151,7 @@ class FetchUserFoldersTest extends TestCase
 
         $folders = FolderFactory::new()->count(3)->for($user)->create();
 
-        $this->addBookmarksToFolder->add($folders[1]->id, BookmarkFactory::new()->create()->id);
+        $this->addBookmarksToFolder->create($folders[1]->id, BookmarkFactory::new()->create()->id);
 
         $this->userFoldersResponse(['sort' => 'most_items'])
             ->assertOk()
@@ -165,8 +165,8 @@ class FetchUserFoldersTest extends TestCase
 
         $folders = FolderFactory::new()->count(3)->for($user)->create();
 
-        $this->addBookmarksToFolder->add($folders[1]->id, BookmarkFactory::times(3)->create()->pluck('id')->all());
-        $this->addBookmarksToFolder->add($folders[0]->id, BookmarkFactory::times(2)->create()->pluck('id')->all());
+        $this->addBookmarksToFolder->create($folders[1]->id, BookmarkFactory::times(3)->create()->pluck('id')->all());
+        $this->addBookmarksToFolder->create($folders[0]->id, BookmarkFactory::times(2)->create()->pluck('id')->all());
 
         $this->userFoldersResponse(['sort' => 'least_items'])
             ->assertOk()

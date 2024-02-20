@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace App\Actions\AcceptFolderInvite;
 
+use App\Actions\Concerns\ValidatesRequestHandler;
 use App\Cache\FolderInviteDataRepository;
 use App\Exceptions\AcceptFolderInviteException;
 use App\Models\Folder;
 use Illuminate\Database\Eloquent\Scope;
 
-final class AcceptFolderInviteRequestHandler
+final class RequestHandler
 {
+    use ValidatesRequestHandler;
+
     /** @var array<class-string,HandlerInterface> */
     private array $requestHandlersQueue = [];
     private readonly FolderInviteDataRepository $folderInviteDataRepository;
@@ -22,9 +25,7 @@ final class AcceptFolderInviteRequestHandler
 
     public function queue(HandlerInterface $handler): void
     {
-        if (array_key_exists($key = $handler::class, $this->requestHandlersQueue)) {
-            throw new \Exception("Handler [{$key}] has already been queued.");
-        }
+        $this->assertHandlersAreUnique($handler, $this->requestHandlersQueue);
 
         $this->requestHandlersQueue[$handler::class] = $handler;
     }
@@ -38,9 +39,7 @@ final class AcceptFolderInviteRequestHandler
         //as other handlers would use addSelect() ideally.
         $query = Folder::query()->select(['id']);
 
-        if (empty($this->requestHandlersQueue)) {
-            throw new \LogicException("A handler has not been set for the request.");
-        }
+        $this->assertHandlersQueueIsNotEmpty($this->requestHandlersQueue);
 
         if (!$this->folderInviteDataRepository->has($inviteId)) {
             throw AcceptFolderInviteException::dueToExpiredOrInvalidInvitationToken();

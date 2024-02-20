@@ -20,7 +20,7 @@ final class FolderResource extends JsonResource
      */
     public function toArray($request)
     {
-        $storage = new FolderStorage($this->folder->bookmarksCount);
+        $storage = new FolderStorage($this->folder->bookmarks_count);
 
         return [
             'type'       => 'folder',

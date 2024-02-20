@@ -12,6 +12,7 @@ use App\ValueObjects\FolderSettings;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 
 /**
@@ -24,7 +25,7 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
  * @property int $user_id
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
- * @property int $bookmarksCount
+ * @property int $bookmarks_count
  * @property int $collaborators_count
  * @method static Builder|QueryBuilder onlyAttributes(array $attributes = [])
  */
@@ -76,6 +77,18 @@ final class Folder extends Model
         return $this->hasMany(FolderCollaborator::class, 'folder_id')->whereExists($whereExists);
     }
 
+    public function bookmarks(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            Bookmark::class,
+            FolderBookmark::class,
+            'folder_id', // Foreign key on the FolderBookmark table
+            'id', // Foreign key on the Bookmark table
+            'id', // Local key on the Folder table
+            'bookmark_id' // Local key on the FolderBookmark table
+        )->whereExists(Bookmark::whereRaw('id = folders_bookmarks.bookmark_id'));
+    }
+
     /**
      * @param \Illuminate\Database\Eloquent\Builder $builder
      *
@@ -83,26 +96,9 @@ final class Folder extends Model
      */
     public function scopeOnlyAttributes($builder, array $attributes = [])
     {
-        $attributes = collect($attributes)->mapWithKeys(fn (string $col) => [$col => $col]);
-
-        if ($attributes->isEmpty()) {
-            $builder->addSelect('folders.*');
+        if (empty($attributes)) {
+            $builder->addSelect('folders.*')->withCount(['bookmarks', 'collaborators']);
         }
-
-        if (!$attributes->isEmpty()) {
-            $builder->addSelect(
-                $this->qualifyColumns($attributes->except(['bookmarks_count'])->all())
-            );
-        }
-
-        $builder->when($attributes->has('bookmarks_count') || $attributes->isEmpty(), function ($query) {
-            $query->addSelect([
-                'bookmarksCount' => FolderBookmark::query()
-                    ->selectRaw('COUNT(*)')
-                    ->whereRaw("folder_id = {$this->qualifyColumn('id')}")
-                    ->whereExists(Bookmark::whereRaw('id = folders_bookmarks.bookmark_id'))
-            ]);
-        });
 
         return $builder;
     }

@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Actions\AcceptFolderInvite\AcceptFolderInviteRequestHandler;
+use App\Actions\AcceptFolderInvite\RequestHandler;
 use App\Actions\AcceptFolderInvite as Handlers;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
@@ -16,10 +16,10 @@ class AcceptFolderInviteRequestHandlerServiceProvider extends ServiceProvider im
      */
     public function boot()
     {
-        $this->app->bind(AcceptFolderInviteRequestHandler::class, function () {
-            $handler = new AcceptFolderInviteRequestHandler();
+        $this->app->bind(RequestHandler::class, function () {
+            $handler = new RequestHandler();
 
-            $handler->queue(new Handlers\FolderExistsConstraint());
+            $handler->queue(new Handlers\FolderExistConstraint());
             $handler->queue(new Handlers\UniqueCollaboratorsConstraint());
             $handler->queue(new Handlers\InviterAndInviteeExistsConstraint());
             $handler->queue(new Handlers\VisibilityConstraint());
@@ -33,6 +33,6 @@ class AcceptFolderInviteRequestHandlerServiceProvider extends ServiceProvider im
 
     public function provides()
     {
-        return [AcceptFolderInviteRequestHandler::class];
+        return [RequestHandler::class];
     }
 }

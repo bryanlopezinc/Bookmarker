@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Folder;
 
-use App\Actions\AddBookmarksToFolder\CreateNewFolderBookmarksHandler;
+use App\Actions\CreateFolderBookmarks;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Enums\Permission;
 use App\Models\Folder;
@@ -125,7 +125,7 @@ class RemoveFolderBookmarksTest extends TestCase
             'bookmarks' => $bookmarkIDs->all(),
             'folder'    => $folderID
         ])->assertNotFound()
-            ->assertExactJson($error = ['message' => "BookmarkNotFound"]);
+            ->assertJsonFragment($error = ['message' => "BookmarkNotFound"]);
 
         $this->addBookmarksToFolder($bookmarkIDs[0], $folderID);
 
@@ -134,7 +134,7 @@ class RemoveFolderBookmarksTest extends TestCase
             'bookmarks' => $bookmarkIDs->all(),
             'folder'    => $folderID
         ])->assertNotFound()
-            ->assertExactJson($error);
+            ->assertJsonFragment($error);
     }
 
     public function testWillReturnNotFoundWhenBookmarkHasBeenDeleted(): void
@@ -153,7 +153,7 @@ class RemoveFolderBookmarksTest extends TestCase
             'folder'    => $folder->id,
             'bookmarks' => $bookmarks->pluck('id')->all()
         ])->assertNotFound()
-            ->assertExactJson(['message' => 'BookmarkNotFound']);
+            ->assertJsonFragment(['message' => 'BookmarkNotFound']);
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotBelongToUser(): void
@@ -168,7 +168,7 @@ class RemoveFolderBookmarksTest extends TestCase
             'bookmarks' => $bookmarks->pluck('id')->all(),
             'folder'    => $folder->id
         ])->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     public function testUserWithPermissionCanRemoveBookmarksFromFolder(): void
@@ -213,12 +213,12 @@ class RemoveFolderBookmarksTest extends TestCase
             'bookmarks' => $bookmarkIDs->all(),
             'folder'    => $folder->id
         ])->assertForbidden()
-            ->assertExactJson(['message' => 'NoRemoveBookmarksPermission']);
+            ->assertJsonFragment(['message' => 'PermissionDenied']);
     }
 
     private function addBookmarksToFolder(int|array $bookmarkIDs, int $folderID): void
     {
-        $service = new CreateNewFolderBookmarksHandler();
+        $service = new CreateFolderBookmarks();
 
         $service->create($folderID, $bookmarkIDs);
     }
@@ -234,7 +234,7 @@ class RemoveFolderBookmarksTest extends TestCase
             'bookmarks' => $bookmarks->pluck('id')->all(),
             'folder'    => $folder->id + 1
         ])->assertNotFound()
-            ->assertExactJson(['message' => "FolderNotFound"]);
+            ->assertJsonFragment(['message' => "FolderNotFound"]);
     }
 
     public function test_user_with_permission_cannot_remove_bookmarks_when_folder_owner_has_deleted_account(): void
@@ -252,7 +252,7 @@ class RemoveFolderBookmarksTest extends TestCase
             'bookmarks' => [1, 2],
             'folder'    => $folder->id,
         ])->assertNotFound()
-            ->assertExactJson(['message' => "FolderNotFound"]);
+            ->assertJsonFragment(['message' => "FolderNotFound"]);
     }
 
     public function testWillNotSendNotificationWhenBookmarksWereRemovedByFolderOwner(): void
@@ -412,7 +412,7 @@ class RemoveFolderBookmarksTest extends TestCase
         /** @var ToggleFolderCollaborationRestriction */
         $updateCollaboratorActionService = app(ToggleFolderCollaborationRestriction::class);
 
-        $addBooksService = new CreateNewFolderBookmarksHandler();
+        $addBooksService = new CreateFolderBookmarks();
 
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $bookmarks = BookmarkFactory::times(2)->create();
@@ -434,7 +434,7 @@ class RemoveFolderBookmarksTest extends TestCase
 
         $this->removeFolderBookmarksResponse($query = ['bookmarks' => $bookmarks[1]->id, 'folder' => $folder->id])
             ->assertForbidden()
-            ->assertExactJson(['message' => 'RemoveBookmarksActionDisabled']);
+            ->assertJsonFragment(['message' => 'FolderFeatureDisAbled']);
 
         //when user is not a collaborator
         $this->loginUser(UserFactory::new()->create());

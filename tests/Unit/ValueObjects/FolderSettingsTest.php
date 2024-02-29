@@ -3,50 +3,79 @@
 namespace Tests\Unit\ValueObjects;
 
 use App\ValueObjects\FolderSettings;
-use App\Enums\FolderSettingKey as Key;
 use App\Exceptions\InvalidFolderSettingException;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class FolderSettingsTest extends TestCase
 {
-    public function testWillThrowExceptionWhenKeyIsInvalid(): void
+    #[Test]
+    public function default(): void
     {
-        $this->assertFalse($this->isValid(['foo' => 'baz'], 1778));
-    }
+        $settings = new FolderSettings([]);
 
-    public function testWillThrowExceptionWhenValuesAreInvalid(): void
-    {
-        $this->assertFalse($this->isValid([Key::ENABLE_NOTIFICATIONS => '1']));
-        $this->assertFalse($this->isValid([Key::NEW_COLLABORATOR_NOTIFICATION => '0']));
-        $this->assertFalse($this->isValid([Key::ONLY_COLLABORATOR_INVITED_BY_USER_NOTIFICATION => 'true']));
-        $this->assertFalse($this->isValid([Key::NOTIFy_ON_UPDATE => 'false']));
-        $this->assertFalse($this->isValid([Key::NOTIFY_ON_NEW_BOOKMARK => 0]));
-        $this->assertFalse($this->isValid([Key::NOTIFY_ON_BOOKMARK_DELETED => 1]));
-        $this->assertFalse($this->isValid([Key::NEW_COLLABORATOR_NOTIFICATION => 'baz']));
-        $this->assertFalse($this->isValid([Key::NOTIFY_ON_COLLABORATOR_EXIT => 'baz']));
-        $this->assertFalse($this->isValid([Key::NOTIFY_ON_COLLABORATOR_EXIT_ONLY_WHEN_HAS_WRITE_PERMISSION => 'baz']));
+        $this->assertTrue($settings->notificationsAreEnabled);
+        $this->assertFalse($settings->notificationsAreDisabled);
+
+        $this->assertTrue($settings->newCollaboratorNotificationIsEnabled);
+        $this->assertFalse($settings->newCollaboratorNotificationIsDisabled);
+        $this->assertTrue($settings->newCollaboratorNotificationMode->notifyOnAllActivity());
+        $this->assertFalse($settings->newCollaboratorNotificationMode->notifyWhenCollaboratorWasInvitedByMe());
+
+        $this->assertTrue($settings->folderUpdatedNotificationIsEnabled);
+        $this->assertFalse($settings->folderUpdatedNotificationIsDisabled);
+
+        $this->assertTrue($settings->newBookmarksNotificationIsEnabled);
+        $this->assertFalse($settings->newBookmarksNotificationIsDisabled);
+
+        $this->assertTrue($settings->bookmarksRemovedNotificationIsEnabled);
+        $this->assertFalse($settings->bookmarksRemovedNotificationIsDisabled);
+
+        $this->assertTrue($settings->collaboratorExitNotificationIsEnabled);
+        $this->assertFalse($settings->collaboratorExitNotificationIsDisabled);
+        $this->assertTrue($settings->collaboratorExitNotificationMode->notifyOnAllActivity());
+        $this->assertFalse($settings->collaboratorExitNotificationMode->notifyWhenCollaboratorHasWritePermission());
     }
 
     #[Test]
-    public function valid(): void
+    public function willThrowExceptionWhenKeyIsInvalid(): void
     {
-        $this->assertTrue($this->isValid([Key::ENABLE_NOTIFICATIONS => true]));
-        $this->assertTrue($this->isValid([Key::NEW_COLLABORATOR_NOTIFICATION => false]));
-        $this->assertTrue($this->isValid([Key::ONLY_COLLABORATOR_INVITED_BY_USER_NOTIFICATION => true]));
-        $this->assertTrue($this->isValid([Key::NOTIFy_ON_UPDATE => false]));
-        $this->assertTrue($this->isValid([Key::NOTIFY_ON_NEW_BOOKMARK => true]));
-        $this->assertTrue($this->isValid([Key::NOTIFY_ON_BOOKMARK_DELETED => false]));
-        $this->assertTrue($this->isValid([Key::NEW_COLLABORATOR_NOTIFICATION => true]));
-        $this->assertTrue($this->isValid([Key::NOTIFY_ON_COLLABORATOR_EXIT => false]));
-        $this->assertTrue($this->isValid([Key::NOTIFY_ON_COLLABORATOR_EXIT_ONLY_WHEN_HAS_WRITE_PERMISSION => true]));
+        $this->assertFalse($this->isValid(['foo' => 'baz'], $errorCode = 1778));
+        $this->assertFalse($this->isValid(['notifications' => ['newCollaborator' => ['foo' => 'bar']]], $errorCode));
+        $this->assertFalse($this->isValid(['notifications' => ['collaboratorExit' => ['foo' => 'bar']]], $errorCode));
     }
 
-    public function test_settings_can_be_empty(): void
+    #[Test]
+    public function willThrowExceptionWhenValuesAreInvalid(): void
+    {
+        $this->assertFalse($this->isValid(['notifications' => ['enabled' => 1]]));
+        $this->assertFalse($this->isValid(['notifications' => ['enabled' => 'on']]));
+        $this->assertFalse($this->isValid(['notifications' => ['enabled' => 'off']]));
+        $this->assertFalse($this->isValid(['notifications' => ['enabled' => 0]]));
+        $this->assertFalse($this->isValid(['notifications' => ['enabled' => null]]));
+        $this->assertFalse($this->isValid(['version' => '3']));
+        $this->assertFalse($this->isValid(['notifications' => ['newCollaborator' => ['mode' => 'bar']]]));
+        $this->assertFalse($this->isValid(['notifications' => ['collaboratorExit' => ['mode' => 'foo']]]));
+    }
+
+    #[Test]
+    public function settings_can_be_empty(): void
     {
         $this->expectNotToPerformAssertions();
 
         new FolderSettings([]);
+    }
+
+    #[Test]
+    public function whenKeyIsSet(): void
+    {
+        $settings = new FolderSettings(['notifications' => ['enabled' => false]]);
+        $this->assertFalse($settings->notificationsAreEnabled);
+        $this->assertTrue($settings->notificationsAreDisabled);
+
+        $settings = new FolderSettings(['notifications' => ['newCollaborator' => ['enabled' => false]]]);
+        $this->assertFalse($settings->newCollaboratorNotificationIsEnabled);
+        $this->assertTrue($settings->newCollaboratorNotificationIsDisabled);
     }
 
     private function isValid(array $data, int $errorCode = 1777): bool
@@ -58,5 +87,19 @@ class FolderSettingsTest extends TestCase
             $this->assertEquals($errorCode, $e->getCode());
             return false;
         }
+    }
+
+    #[Test]
+    public function toArray(): void
+    {
+        $settings = new FolderSettings(['notifications' => ['enabled' => false]]);
+        $this->assertEquals($settings->toArray(), ['version' => '1.0.0', 'notifications' => ['enabled' => false]]);
+    }
+
+    #[Test]
+    public function toJson(): void
+    {
+        $settings = new FolderSettings(['notifications' => ['enabled' => false]]);
+        $this->assertEquals($settings->toJson(), json_encode(['version' => '1.0.0', 'notifications' => ['enabled' => false]]));
     }
 }

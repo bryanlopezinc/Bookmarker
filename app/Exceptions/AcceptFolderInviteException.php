@@ -17,7 +17,11 @@ final class AcceptFolderInviteException extends RuntimeException implements Resp
     ) {
     }
 
-    public static function dueToExpiredOrInvalidInvitationToken(): self
+    public function report(): void
+    {
+    }
+
+    public static function expiredOrInvalidInvitationToken(): self
     {
         return new self(
             'InvitationNotFoundOrExpired',
@@ -26,53 +30,17 @@ final class AcceptFolderInviteException extends RuntimeException implements Resp
         );
     }
 
-    public static function dueToFolderNotFound(): self
+    public static function inviteeAccountNoLongerExists(): self
     {
-        return new self(
-            (new FolderNotFoundException())->message,
-            JsonResponse::HTTP_NOT_FOUND,
-            'The folder could not be found.'
-        );
+        return self::expiredOrInvalidInvitationToken();
     }
 
-    public static function dueToInviteeAccountNoLongerExists(): self
+    public static function inviterAccountNoLongerExists(): self
     {
-        return self::dueToExpiredOrInvalidInvitationToken();
+        return self::expiredOrInvalidInvitationToken();
     }
 
-    public static function dueToInviterAccountNoLongerExists(): self
-    {
-        return self::dueToExpiredOrInvalidInvitationToken();
-    }
-
-    public static function dueToFolderCollaboratorsLimitReached(): self
-    {
-        return new self(
-            'MaxCollaboratorsLimitReached',
-            JsonResponse::HTTP_FORBIDDEN,
-            'Folder has reached its max collaborators limit.'
-        );
-    }
-
-    public static function dueToPrivateFolder(): self
-    {
-        return new self(
-            'FolderIsMarkedAsPrivate',
-            JsonResponse::HTTP_FORBIDDEN,
-            'Folder has been marked as private by owner.'
-        );
-    }
-
-    public static function dueToPasswordProtectedFolder(): self
-    {
-        return new self(
-            'FolderIsPasswordProtected',
-            JsonResponse::HTTP_FORBIDDEN,
-            'Folder has been marked as protected by owner.'
-        );
-    }
-
-    public static function dueToInviteeHasAlreadyAcceptedInvitation(): self
+    public static function inviteeHasAlreadyAcceptedInvitation(): self
     {
         return new self(
             'InvitationAlreadyAccepted',

@@ -4,23 +4,45 @@ declare(strict_types=1);
 
 namespace App\ValueObjects;
 
-use App\Enums\FolderSettingKey as Key;
 use App\Utils\FolderSettingsValidator;
 use Illuminate\Contracts\Support\Arrayable;
+use App\Enums\NewCollaboratorNotificationMode;
+use App\Enums\CollaboratorExitNotificationMode;
+use Error;
 
+/**
+ * @property-read bool $notificationsAreEnabled
+ * @property-read bool $notificationsAreDisabled
+ * @property-read bool $newCollaboratorNotificationIsDisabled
+ * @property-read bool $newCollaboratorNotificationIsEnabled
+ * @property-read NewCollaboratorNotificationMode $newCollaboratorNotificationMode
+ * @property-read bool $folderUpdatedNotificationIsEnabled
+ * @property-read bool $folderUpdatedNotificationIsDisabled
+ * @property-read bool $newBookmarksNotificationIsEnabled
+ * @property-read bool $newBookmarksNotificationIsDisabled
+ * @property-read bool $bookmarksRemovedNotificationIsEnabled
+ * @property-read bool $bookmarksRemovedNotificationIsDisabled
+ * @property-read bool $collaboratorExitNotificationIsEnabled
+ * @property-read bool $collaboratorExitNotificationIsDisabled
+ * @property-read CollaboratorExitNotificationMode $collaboratorExitNotificationMode
+ */
 final class FolderSettings implements Arrayable
 {
-    /**
-     * @param array<string,mixed> $settings
-     */
-    public function __construct(private array $settings)
-    {
-        $this->settings = $settings;
+    private readonly array $settings;
+    private readonly array $resolvedSetting;
 
-        $this->ensureIsValid();
+    public function __construct(array $settings)
+    {
+        $default = $this->default();
+
+        $this->settings = array_replace(['version' => $default['version']], $settings);
+
+        $this->validate($this->settings);
+
+        $this->resolvedSetting = array_replace_recursive($default, $this->settings);
     }
 
-    public static function make(string|FolderSettings|array $settings = null): FolderSettings
+    public static function make(string|FolderSettings|array $settings = null): self
     {
         if (is_string($settings)) {
             $settings = json_decode($settings, true, flags: JSON_THROW_ON_ERROR);
@@ -30,18 +52,87 @@ final class FolderSettings implements Arrayable
             $settings = $settings->toArray();
         }
 
-        return new FolderSettings($settings ?? []);
+        if (is_null($settings)) {
+            $settings = [];
+        }
+
+        return new self($settings);
     }
 
-    private function ensureIsValid(): void
+    public static function default(): array
     {
-        if (empty($this->settings)) {
+        return [
+            'version' => '1.0.0',
+            'notifications' => [
+                'enabled' => true,
+                'newCollaborator' => [
+                    'enabled' => true,
+                    'mode'    => '*'
+                ],
+                'collaboratorExit' => [
+                    'enabled' => true,
+                    'mode'    => '*'
+                ],
+                'folderUpdated'    => ['enabled' => true],
+                'newBookmarks'     => ['enabled' => true],
+                'bookmarksRemoved' => ['enabled' => true],
+            ]
+        ];
+    }
+
+    private function resolve(string $classProperty): mixed
+    {
+        $notifications = $this->resolvedSetting['notifications'];
+
+        return match ($classProperty) {
+            'notificationsAreEnabled'                => $notifications['enabled'],
+            'newCollaboratorNotificationIsEnabled'   => $notifications['newCollaborator']['enabled'],
+            'newCollaboratorNotificationMode'        => NewCollaboratorNotificationMode::from($notifications['newCollaborator']['mode']),
+            'folderUpdatedNotificationIsEnabled'     => $notifications['folderUpdated']['enabled'],
+            'newBookmarksNotificationIsEnabled'      => $notifications['newBookmarks']['enabled'],
+            'bookmarksRemovedNotificationIsEnabled'  => $notifications['bookmarksRemoved']['enabled'],
+            'collaboratorExitNotificationIsEnabled'  => $notifications['collaboratorExit']['enabled'],
+            'collaboratorExitNotificationMode'       => CollaboratorExitNotificationMode::from($notifications['collaboratorExit']['mode']),
+
+            'notificationsAreDisabled'               => !$this->resolve('notificationsAreEnabled'),
+            'newCollaboratorNotificationIsDisabled'  => !$this->resolve('newCollaboratorNotificationIsEnabled'),
+            'folderUpdatedNotificationIsDisabled'    => !$this->resolve('folderUpdatedNotificationIsEnabled'),
+            'newBookmarksNotificationIsDisabled'     => !$this->resolve('newBookmarksNotificationIsEnabled'),
+            'bookmarksRemovedNotificationIsDisabled' => !$this->resolve('bookmarksRemovedNotificationIsEnabled'),
+            'collaboratorExitNotificationIsDisabled' => !$this->resolve('collaboratorExitNotificationIsEnabled'),
+            default => throw new Error(sprintf("Call to undefined property %s::$%s", __CLASS__, $classProperty)),
+        };
+    }
+
+    /**
+     * @param string $name
+     * @return mixed
+     */
+    public function __get($name)
+    {
+        return $this->resolve($name);
+    }
+
+    /**
+     * @param string $name
+     * @param mixed $value
+     * 
+     * @return void
+     */
+    public function __set($name, $value)
+    {
+        throw new Error(sprintf('Cannot modify or set property %s::$%s', __CLASS__, $name));
+    }
+
+    private function validate(array $settings): void
+    {
+        if (empty($settings)) {
             return;
         }
 
         $validator = new FolderSettingsValidator();
 
-        $validator->validate($this);
+        $validator->validate($settings);
     }
 
     public function toJson(): string
@@ -49,99 +140,6 @@ final class FolderSettings implements Arrayable
         return json_encode($this->toArray(), JSON_THROW_ON_ERROR);
     }
 
-    public function notificationsAreEnabled(): bool
-    {
-        return $this->get(key::ENABLE_NOTIFICATIONS);
-    }
-
-    private function get(string $key, mixed $default = true): mixed
-    {
-        if (!array_key_exists($key, $this->settings)) {
-            return $default;
-        }
-
-        return $this->settings[$key];
-    }
-
-    public function notificationsAreDisabled(): bool
-    {
-        return !$this->notificationsAreEnabled();
-    }
-
-    public function newCollaboratorNotificationIsEnabled(): bool
-    {
-        return $this->get(key::NEW_COLLABORATOR_NOTIFICATION);
-    }
-
-    public function newCollaboratorNotificationIsDisabled(): bool
-    {
-        return !$this->newCollaboratorNotificationIsEnabled();
-    }
-
-    /**
-     * Notify user when a new collaborator joins IF the collaborator was invited by user.
-     */
-    public function onlyCollaboratorsInvitedByMeNotificationIsEnabled(): bool
-    {
-        return $this->get(key::ONLY_COLLABORATOR_INVITED_BY_USER_NOTIFICATION, false);
-    }
-
-    public function onlyCollaboratorsInvitedByMeNotificationIsDisabled(): bool
-    {
-        return !$this->onlyCollaboratorsInvitedByMeNotificationIsEnabled();
-    }
-
-    public function folderUpdatedNotificationIsEnabled(): bool
-    {
-        return $this->get(key::NOTIFy_ON_UPDATE);
-    }
-
-    public function folderUpdatedNotificationIsDisabled(): bool
-    {
-        return !$this->folderUpdatedNotificationIsEnabled();
-    }
-
-    public function newBookmarksNotificationIsEnabled(): bool
-    {
-        return $this->get(key::NOTIFY_ON_NEW_BOOKMARK);
-    }
-
-    public function newBookmarksNotificationIsDisabled(): bool
-    {
-        return !$this->newBookmarksNotificationIsEnabled();
-    }
-
-    public function bookmarksRemovedNotificationIsEnabled(): bool
-    {
-        return $this->get(key::NOTIFY_ON_BOOKMARK_DELETED);
-    }
-
-    public function bookmarksRemovedNotificationIsDisabled(): bool
-    {
-        return !$this->bookmarksRemovedNotificationIsEnabled();
-    }
-
-    public function collaboratorExitNotificationIsEnabled(): bool
-    {
-        return $this->get(key::NOTIFY_ON_COLLABORATOR_EXIT);
-    }
-
-    public function collaboratorExitNotificationIsDisabled(): bool
-    {
-        return !$this->collaboratorExitNotificationIsEnabled();
-    }
-
-    /**
-     * Notify user when collaborator leaves IF the collaborator had any write permission
-     */
-    public function onlyCollaboratorWithWritePermissionNotificationIsEnabled(): bool
-    {
-        return $this->get(key::NOTIFY_ON_COLLABORATOR_EXIT_ONLY_WHEN_HAS_WRITE_PERMISSION, false);
-    }
-
-    /**
-     * @return array<string,mixed>
-     */
     public function toArray(): array
     {
         return $this->settings;

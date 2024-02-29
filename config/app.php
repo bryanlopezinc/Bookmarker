@@ -174,8 +174,10 @@ return [
          */
         ...ProvidersCollection::getProviders()
             ->merge([
-                App\IpGeoLocation\ServiceProvider::class,
+                App\ExternalServices\IpApi\ServiceProvider::class,
                 App\DeviceDetector\ServiceProvider::class,
+                App\Importing\Providers\ImportersFilesystemServiceProvider::class,
+                App\Importing\Providers\ImportStatRepositoryServiceProvider::class,
             ])->all()
     ],
 

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\IpGeoLocation\IpApi;
 
-use App\IpGeoLocation\IpAddress;
-use App\IpGeoLocation\IpApi\IpGeoLocationHttpClient;
+use App\ExternalServices\IpApi\IpGeoLocationHttpClient;
+use App\ValueObjects\IpAddress;
 use Illuminate\Support\Facades\Http;
 use Psr\Log\LoggerInterface;
 use Tests\TestCase;

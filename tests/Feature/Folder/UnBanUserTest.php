@@ -69,7 +69,7 @@ class UnBanUserTest extends TestCase
         Passport::actingAs(UserFactory::new()->create());
         $this->unBanUserResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotExists(): void
@@ -83,12 +83,12 @@ class UnBanUserTest extends TestCase
         Passport::actingAs($folderOwner);
         $this->unBanUserResponse(['folder_id' => $folder->id + 1, 'collaborator_id' => $collaborator->id])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
 
         Passport::actingAs(UserFactory::new()->create());
         $this->unBanUserResponse(['folder_id' => $folder->id + 1, 'collaborator_id' => $collaborator->id])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     public function testWillReturnNotFoundWhenUserIsNotBanned(): void

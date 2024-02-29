@@ -9,6 +9,8 @@ parameters:
     paths:
         -   app
         -   tests/TestHttpClient.php
+    excludePaths:
+        -   app/Importing/tests
 
     ignoreErrors:
         -

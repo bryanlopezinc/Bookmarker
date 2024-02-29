@@ -82,7 +82,7 @@ final class RevokeFolderCollaboratorPermissionsService
         UAC $collaboratorPermissions,
         UAC $permissionsToRevoke
     ): void {
-        if (!$collaboratorPermissions->containsAll($permissionsToRevoke)) {
+        if (!$collaboratorPermissions->hasAll($permissionsToRevoke)) {
             throw HttpException::notFound(['message' => 'UserHasNoSuchPermissions']);
         }
     }

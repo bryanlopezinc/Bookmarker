@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Folder;
 
-use App\Actions\AddBookmarksToFolder\CreateNewFolderBookmarksHandler;
+use App\Actions\CreateFolderBookmarks;
 use App\Models\Folder as Model;
 use App\UAC;
 use Database\Factories\BookmarkFactory;
@@ -99,7 +99,7 @@ class FetchFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $repository = new CreateNewFolderBookmarksHandler();
+        $repository = new CreateFolderBookmarks();
 
         /** @var Model */
         $folder = FolderFactory::new()->for($user)->create();
@@ -175,7 +175,7 @@ class FetchFolderTest extends TestCase
 
         $this->fetchFolderResponse(['id' => $folder->id + 1])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotBelongToUser(): void
@@ -184,7 +184,7 @@ class FetchFolderTest extends TestCase
 
         $this->fetchFolderResponse(['id' => FolderFactory::new()->create()->id])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     public function testRequestPartialResource(): void

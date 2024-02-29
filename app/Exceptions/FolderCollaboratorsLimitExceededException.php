@@ -15,20 +15,15 @@ final class FolderCollaboratorsLimitExceededException extends RuntimeException
     }
 
     /**
-     * @throws self
-     */
-    public static function throwIfExceeded(int $currentCollaboratorsCount): void
-    {
-        if ($currentCollaboratorsCount >= 1000) {
-            throw new self();
-        }
-    }
-
-    /**
      * Render the exception into an HTTP Response.
      */
     public function render(Request $request): JsonResponse
     {
-        return new JsonResponse(['message' => 'MaxCollaboratorsLimitReached'], JsonResponse::HTTP_FORBIDDEN);
+        $data = [
+            'message' => 'MaxCollaboratorsLimitReached',
+            'info' => 'Folder has reached its max collaborators limit.'
+        ];
+
+        return new JsonResponse($data, JsonResponse::HTTP_FORBIDDEN);
     }
 }

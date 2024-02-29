@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Folder;
 
-use App\Actions\AddBookmarksToFolder\CreateNewFolderBookmarksHandler;
+use App\Actions\CreateFolderBookmarks;
 use App\Enums\Permission;
 use App\Models\Favorite;
 use App\Services\Folder\MuteCollaboratorService;
@@ -24,13 +24,13 @@ class FetchFolderBookmarksTest extends TestCase
     use AssertValidPaginationData;
     use CreatesCollaboration;
 
-    private CreateNewFolderBookmarksHandler $addBookmarksToFolder;
+    private CreateFolderBookmarks $addBookmarksToFolder;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->addBookmarksToFolder = app(CreateNewFolderBookmarksHandler::class);
+        $this->addBookmarksToFolder = new CreateFolderBookmarks();
     }
 
     protected function folderBookmarksResponse(array $parameters = []): TestResponse
@@ -70,12 +70,12 @@ class FetchFolderBookmarksTest extends TestCase
         //when user is not loggedIn
         $this->folderBookmarksResponse($query = ['folder_id' => $privateFolder->id])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
 
         Passport::actingAs($user);
         $this->folderBookmarksResponse($query)
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
 
         Passport::actingAs($folderOwner);
         $this->folderBookmarksResponse($query)->assertOk()->assertJsonCount(1, 'data');
@@ -96,12 +96,12 @@ class FetchFolderBookmarksTest extends TestCase
         //when user is not loggedIn
         $this->folderBookmarksResponse($query = ['folder_id' => $folder->id])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
 
         Passport::actingAs($user);
         $this->folderBookmarksResponse($query)
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
 
         Passport::actingAs($folderOwner);
         $this->folderBookmarksResponse($query)->assertOk()->assertJsonCount(1, 'data');
@@ -150,11 +150,11 @@ class FetchFolderBookmarksTest extends TestCase
         //when user is not loggedIn
         $this->folderBookmarksResponse(['folder_id' => $folder->id])
             ->assertBadRequest()
-            ->assertExactJson(['message' => 'PasswordRequired']);
+            ->assertJsonFragment(['message' => 'PasswordRequired']);
 
         $this->folderBookmarksResponse(['folder_id' => $folder->id, 'folder_password' => 'notPassword'])
             ->assertUnauthorized()
-            ->assertExactJson(['message' => 'InvalidFolderPassword']);
+            ->assertJsonFragment(['message' => 'InvalidFolderPassword']);
 
         $this->folderBookmarksResponse($query = ['folder_id' => $folder->id, 'folder_password' => 'password'])
             ->assertOk()
@@ -287,7 +287,7 @@ class FetchFolderBookmarksTest extends TestCase
 
         $this->folderBookmarksResponse(['folder_id' => $folder->id])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     public function testWillReturnEmptyResponseWhenFolderHasNoBookmarks(): void
@@ -314,12 +314,12 @@ class FetchFolderBookmarksTest extends TestCase
         Passport::actingAs($collaborator);
         $this->folderBookmarksResponse(['folder_id' => $folder->id])
             ->assertNotFound()
-            ->assertExactJson(['message' => "FolderNotFound"]);
+            ->assertJsonFragment(['message' => "FolderNotFound"]);
 
         $this->loginUser(UserFactory::new()->create());
         $this->folderBookmarksResponse(['folder_id' => $folder->id])
             ->assertNotFound()
-            ->assertExactJson(['message' => "FolderNotFound"]);
+            ->assertJsonFragment(['message' => "FolderNotFound"]);
     }
 
     public function testFavoriteParametersForBookmarkOwner(): void

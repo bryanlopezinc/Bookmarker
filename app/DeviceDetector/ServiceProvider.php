@@ -2,6 +2,7 @@
 
 namespace App\DeviceDetector;
 
+use App\Contracts\DeviceDetectorInterface;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider as Provider;
 

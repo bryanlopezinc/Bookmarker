@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('folders_disabled_actions', function (Blueprint $table) {
+        Schema::create('folders_disabled_features', function (Blueprint $table) {
             $table->id();
             $table->foreignId('folder_id');
-            $table->string('action');
-            $table->unique(['folder_id', 'action']);
+            $table->string('feature');
+            $table->unique(['folder_id', 'feature']);
         });
     }
 };

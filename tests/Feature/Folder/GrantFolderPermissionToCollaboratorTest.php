@@ -196,6 +196,6 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
             'folder_id'   => FolderFactory::new()->create()->id + 1,
             'permissions' => 'addBookmarks'
         ])->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 }

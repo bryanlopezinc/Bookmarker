@@ -82,7 +82,7 @@ class UnmuteCollaboratorTest extends TestCase
         $this->loginUser($folderOwner);
         $this->UnMuteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => 3])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     #[Test]
@@ -95,7 +95,7 @@ class UnmuteCollaboratorTest extends TestCase
         $this->loginUser($folderOwner);
         $this->UnMuteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => 3])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     #[Test]

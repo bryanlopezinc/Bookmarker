@@ -166,67 +166,67 @@ class CreateFolderTest extends TestCase
     public function testCreateFolderWithNotifications(): void
     {
         $this->assertCreateWithNotifications(['enable_notifications' => false], function (FS $s) {
-            return $s->notificationsAreDisabled();
+            return $s->notificationsAreDisabled;
         });
 
         $this->assertCreateWithNotifications(['enable_notifications' => true], function (FS $s) {
-            return $s->notificationsAreEnabled();
+            return $s->notificationsAreEnabled;
         });
 
         $this->assertCreateWithNotifications(['notify_on_new_collaborator' => false], function (FS $s) {
-            return $s->newCollaboratorNotificationIsDisabled();
+            return $s->newCollaboratorNotificationIsDisabled;
         });
 
         $this->assertCreateWithNotifications(['notify_on_new_collaborator' => true], function (FS $s) {
-            return $s->newCollaboratorNotificationIsEnabled();
+            return $s->newCollaboratorNotificationIsEnabled;
         });
 
         $this->assertCreateWithNotifications(['notify_on_update' => false], function (FS $s) {
-            return $s->folderUpdatedNotificationIsDisabled();
+            return $s->folderUpdatedNotificationIsDisabled;
         });
 
         $this->assertCreateWithNotifications(['notify_on_update' => true], function (FS $s) {
-            return $s->folderUpdatedNotificationIsEnabled();
+            return $s->folderUpdatedNotificationIsEnabled;
         });
 
         $this->assertCreateWithNotifications(['notify_on_new_bookmark' => false], function (FS $s) {
-            return $s->newBookmarksNotificationIsDisabled();
+            return $s->newBookmarksNotificationIsDisabled;
         });
 
         $this->assertCreateWithNotifications(['notify_on_new_bookmark' => true], function (FS $s) {
-            return $s->newBookmarksNotificationIsEnabled();
+            return $s->newBookmarksNotificationIsEnabled;
         });
 
         $this->assertCreateWithNotifications(['notify_on_bookmark_delete' => false], function (FS $s) {
-            return $s->bookmarksRemovedNotificationIsDisabled();
+            return $s->bookmarksRemovedNotificationIsDisabled;
         });
 
         $this->assertCreateWithNotifications(['notify_on_bookmark_delete' => true], function (FS $s) {
-            return $s->bookmarksRemovedNotificationIsEnabled();
+            return $s->bookmarksRemovedNotificationIsEnabled;
         });
 
         $this->assertCreateWithNotifications(['notify_on_collaborator_exit' => false], function (FS $s) {
-            return $s->collaboratorExitNotificationIsDisabled();
+            return $s->collaboratorExitNotificationIsDisabled;
         });
 
         $this->assertCreateWithNotifications(['notify_on_collaborator_exit' => true], function (FS $s) {
-            return $s->collaboratorExitNotificationIsEnabled();
+            return $s->collaboratorExitNotificationIsEnabled;
         });
 
         $this->assertCreateWithNotifications(['notify_on_new_collaborator_by_user' => false], function (FS $s) {
-            return $s->onlyCollaboratorsInvitedByMeNotificationIsDisabled();
+            return !$s->newCollaboratorNotificationMode->notifyWhenCollaboratorWasInvitedByMe();
         });
 
         $this->assertCreateWithNotifications(['notify_on_new_collaborator_by_user' => true], function (FS $s) {
-            return $s->onlyCollaboratorsInvitedByMeNotificationIsEnabled();
+            return $s->newCollaboratorNotificationMode->notifyWhenCollaboratorWasInvitedByMe();
         });
 
         $this->assertCreateWithNotifications(['notify_on_collaborator_exit_with_write' => false], function (FS $s) {
-            return !$s->onlyCollaboratorWithWritePermissionNotificationIsEnabled();
+            return !$s->collaboratorExitNotificationMode->notifyWhenCollaboratorHasWritePermission();
         });
 
         $this->assertCreateWithNotifications(['notify_on_collaborator_exit_with_write' => true], function (FS $s) {
-            return $s->onlyCollaboratorWithWritePermissionNotificationIsEnabled();
+            return $s->collaboratorExitNotificationMode->notifyWhenCollaboratorHasWritePermission();
         });
 
         $this->assertCreateWithNotifications(
@@ -236,9 +236,9 @@ class CreateFolderTest extends TestCase
                 'notify_on_collaborator_exit' => false
             ],
             function (FS $s) {
-                return $s->newCollaboratorNotificationIsDisabled() &&
-                    $s->folderUpdatedNotificationIsDisabled() &&
-                    $s->collaboratorExitNotificationIsDisabled();
+                return $s->newCollaboratorNotificationIsDisabled &&
+                    $s->folderUpdatedNotificationIsDisabled &&
+                    $s->collaboratorExitNotificationIsDisabled;
             }
         );
     }

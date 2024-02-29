@@ -7,7 +7,7 @@ namespace App\Services\Folder;
 use App\Exceptions\FolderNotFoundException;
 use App\Http\Requests\UpdateCollaboratorActionRequest as Request;
 use App\Models\Folder;
-use App\Models\FolderDisabledAction as Model;
+use App\Models\FolderDisabledFeature as Model;
 use App\Enums\Permission;
 use Illuminate\Support\Collection;
 
@@ -25,39 +25,39 @@ final class ToggleFolderCollaborationRestriction
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 
-        $disabledActions = Model::query() //@phpstan-ignore-line
+        $disabledFeatures = Model::query() //@phpstan-ignore-line
             ->where('folder_id', $folderId)
-            ->get(['action'])
-            ->pluck('action');
+            ->get(['feature'])
+            ->pluck('feature');
 
-        $this->mapActions($request)
-            ->tap(function (Collection $actions) {
-                $actions->filter()->whenNotEmpty(function (Collection $actions) {
-                    Model::whereIn('action', $actions->keys())->delete();
+        $this->mapFeatures($request)
+            ->tap(function (Collection $features) {
+                $features->filter()->whenNotEmpty(function (Collection $features) {
+                    Model::whereIn('feature', $features->keys())->delete();
                 });
             })
             ->filter(fn (bool $enabled) => !$enabled)
-            ->forget($disabledActions)
-            ->whenNotEmpty(function (Collection $actions) use ($folderId) {
-                $disabledActions = $actions->map(fn ($enabled, string $action) => [
+            ->forget($disabledFeatures)
+            ->whenNotEmpty(function (Collection $features) use ($folderId) {
+                $disabledFeatures = $features->map(fn ($enabled, string $feature) => [
                     'folder_id' => $folderId,
-                    'action'    => $action
+                    'feature'   => $feature
                 ]);
 
-                Model::insert($disabledActions->all());
+                Model::insert($disabledFeatures->all());
             });
     }
 
-    private function mapActions(Request $request): Collection
+    private function mapFeatures(Request $request): Collection
     {
-        $actions = [
+        $features = [
             Permission::ADD_BOOKMARKS->value    => $request->validated('addBookmarks', null),
             Permission::DELETE_BOOKMARKS->value => $request->validated('removeBookmarks', null),
             Permission::INVITE_USER->value      => $request->validated('inviteUsers', null),
             Permission::UPDATE_FOLDER->value    => $request->validated('updateFolder', null)
         ];
 
-        return collect($actions)
+        return collect($features)
             ->reject(fn ($value) => $value === null)
             ->map(fn ($value) => boolval($value));
     }
@@ -67,7 +67,7 @@ final class ToggleFolderCollaborationRestriction
         if ($enable) {
             Model::where('folder_id', $folderId)->delete();
         } else {
-            Model::query()->create(['folder_id' => $folderId, 'action' => $permission->value]);
+            Model::query()->create(['folder_id' => $folderId, 'feature' => $permission->value]);
         }
     }
 }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\DataTransferObjects\Import\ImportedBookmark;
+use App\Importing\DataTransferObjects\ImportedBookmark;
 use App\Enums\BookmarkCreationSource;
 use App\ValueObjects\Url;
 use App\Http\Requests\CreateOrUpdateBookmarkRequest;

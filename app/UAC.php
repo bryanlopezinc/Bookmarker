@@ -141,7 +141,7 @@ final class UAC implements Countable, Arrayable
         return $this->permissions->isNotEmpty();
     }
 
-    public function containsAll(UAC $uac): bool
+    public function hasAll(UAC $uac): bool
     {
         if ($uac->isEmpty()) {
             return false;
@@ -156,7 +156,7 @@ final class UAC implements Countable, Arrayable
         return true;
     }
 
-    public function containsAny(UAC $uac): bool
+    public function hasAny(UAC $uac): bool
     {
         foreach ($uac->permissions as $permission) {
             if ($this->permissions->contains($permission)) {

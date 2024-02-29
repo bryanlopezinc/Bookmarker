@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Folder;
 
-use App\Actions\AddBookmarksToFolder\CreateNewFolderBookmarksHandler;
+use App\Actions\CreateFolderBookmarks;
 use App\Enums\FolderBookmarkVisibility;
 use App\Models\FolderBookmark;
 use Database\Factories\BookmarkFactory;
@@ -18,13 +18,13 @@ class HideFolderBookmarksTest extends TestCase
 {
     use WithFaker;
 
-    private CreateNewFolderBookmarksHandler $addBookmarksToFolder;
+    private CreateFolderBookmarks $addBookmarksToFolder;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->addBookmarksToFolder = new CreateNewFolderBookmarksHandler();
+        $this->addBookmarksToFolder = new CreateFolderBookmarks();
     }
 
     protected function hideFolderResponse(array $parameters = []): TestResponse
@@ -138,7 +138,7 @@ class HideFolderBookmarksTest extends TestCase
                 'folder_id' => $folder->id + 1,
                 'bookmarks' => collect()->times(30)->implode(','),
             ])->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     public function testWillReturnNotFoundWhenBookmarksDoesNotExistsInFolder(): void

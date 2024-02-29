@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Listeners\Login;
 
-use App\DeviceDetector\Device;
-use App\DeviceDetector\DeviceDetectorInterface;
-use App\DeviceDetector\DeviceType;
+use App\Contracts\DeviceDetectorInterface;
+use App\Contracts\IpGeoLocatorInterface;
+use App\ValueObjects\Device;
 use App\Events\LoginEvent;
-use App\IpGeoLocation\IpGeoLocatorInterface;
-use App\IpGeoLocation\Location;
+use App\DataTransferObjects\Location;
+use App\Enums\DeviceType;
 use App\LoginInformation;
 use App\Mail\NewLoginMail;
 use Illuminate\Contracts\Mail\Mailer;

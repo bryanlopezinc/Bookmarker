@@ -46,6 +46,9 @@ final class FolderNotFoundException extends RuntimeException
      */
     public function render(Request $request): JsonResponse
     {
-        return new JsonResponse(['message' => $this->message], JsonResponse::HTTP_NOT_FOUND);
+        return new JsonResponse(
+            ['message' => $this->message, 'info' => 'The folder could not be found.'],
+            JsonResponse::HTTP_NOT_FOUND
+        );
     }
 }

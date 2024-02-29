@@ -19,7 +19,7 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
  * @property int $id
  * @property string|null $description
  * @property FolderName $name
- * @property string $password
+ * @property string|null $password
  * @property FolderSettings $settings
  * @property FolderVisibility $visibility
  * @property int $user_id

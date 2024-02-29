@@ -4,14 +4,14 @@ namespace Tests\Feature\Notifications;
 
 use Tests\TestCase;
 use Database\Factories\UserFactory;
-use App\Import\ImportBookmarksOutcome;
-use App\Import\ImportBookmarksStatus;
-use App\Import\ImportStats;
+use App\Importing\DataTransferObjects\ImportStats;
+use App\Importing\Enums\ImportBookmarksStatus;
+use App\Importing\ImportBookmarksOutcome;
 use App\Notifications\BookmarksAddedToFolderNotification;
 use App\Notifications\BookmarksRemovedFromFolderNotification;
 use App\Notifications\CollaboratorExitNotification;
 use App\Notifications\FolderUpdatedNotification;
-use App\Notifications\ImportFailedNotification;
+use App\Importing\Notifications\ImportFailedNotification;
 use App\Notifications\NewCollaboratorNotification;
 use App\Notifications\YouHaveBeenBootedOutNotification;
 use Database\Factories\BookmarkFactory;

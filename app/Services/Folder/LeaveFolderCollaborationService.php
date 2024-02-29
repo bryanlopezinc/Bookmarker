@@ -62,17 +62,17 @@ final class LeaveFolderCollaborationService
     {
         $folderNotificationSettings = $folder->settings;
 
-        if ($folderNotificationSettings->notificationsAreDisabled()) {
+        if ($folderNotificationSettings->notificationsAreDisabled) {
             return;
         }
 
-        if ($folderNotificationSettings->collaboratorExitNotificationIsDisabled()) {
+        if ($folderNotificationSettings->collaboratorExitNotificationIsDisabled) {
             return;
         }
 
         if (
             $collaboratorPermissions->isEmpty() &&
-            $folderNotificationSettings->onlyCollaboratorWithWritePermissionNotificationIsEnabled()
+            $folderNotificationSettings->collaboratorExitNotificationMode->notifyWhenCollaboratorHasWritePermission()
         ) {
             return;
         }

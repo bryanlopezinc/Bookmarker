@@ -9,7 +9,7 @@ use App\Events\LoginEvent;
 use App\Exceptions\InvalidUsernameException;
 use App\Http\Requests\LoginUserRequest;
 use App\Http\Resources\AccessTokenResource;
-use App\IpGeoLocation\IpAddress;
+use App\ValueObjects\IpAddress;
 use App\Repositories\UserRepository;
 use App\ValueObjects\Username;
 use Laravel\Passport\Http\Controllers\AccessTokenController;

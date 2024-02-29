@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\User;
 
-use App\DeviceDetector\DeviceType;
+use App\Enums\DeviceType;
 use App\Mail\NewLoginMail;
 use App\Models\User;
 use Database\Factories\UserFactory;

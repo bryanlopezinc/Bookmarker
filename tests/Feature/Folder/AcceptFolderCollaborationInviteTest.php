@@ -189,10 +189,7 @@ class AcceptFolderCollaborationInviteTest extends TestCase
 
         $this->acceptInviteResponse(['invite_hash' => $id])
             ->assertForbidden()
-            ->assertExactJson([
-                'message' => 'FolderIsPasswordProtected',
-                'info' => 'Folder has been marked as protected by owner.'
-            ]);
+            ->assertJsonFragment(['message' => 'FolderIsMarkedAsPrivate',]);
     }
 
     public function testAcceptInviteWithPermissions(): void

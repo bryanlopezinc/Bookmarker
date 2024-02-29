@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Folder;
 
-use App\Actions\AddBookmarksToFolder\CreateNewFolderBookmarksHandler;
+use App\Actions\CreateFolderBookmarks;
 use App\Models\Bookmark;
 use App\Models\Folder;
 use Database\Factories\BookmarkFactory;
@@ -19,13 +19,13 @@ class DeleteFolderTest extends TestCase
     use WithFaker;
     use WillCheckBookmarksHealth;
 
-    private CreateNewFolderBookmarksHandler $createBookmarkAction;
+    private CreateFolderBookmarks $createBookmarkAction;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->createBookmarkAction = new CreateNewFolderBookmarksHandler();
+        $this->createBookmarkAction = new CreateFolderBookmarks();
     }
 
     protected function deleteFolderResponse($folderId = 50, array $parameters = []): TestResponse
@@ -96,7 +96,7 @@ class DeleteFolderTest extends TestCase
 
         $this->deleteFolderResponse($folderID + 1)
             ->assertNotFound()
-            ->assertExactJson(['message' => "FolderNotFound"]);
+            ->assertJsonFragment(['message' => "FolderNotFound"]);
     }
 
     public function test_will_not_delete_bookmarks_added_by_collaborators_when_deleting_folder_and_its_bookmarks(): void

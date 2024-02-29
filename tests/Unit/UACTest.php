@@ -17,29 +17,29 @@ class UACTest extends TestCase
         new UAC([Permission::ADD_BOOKMARKS, Permission::ADD_BOOKMARKS]);
     }
 
-    public function testContainsAllMethod(): void
+    public function testHasAllMethod(): void
     {
         $uac = new UAC([Permission::UPDATE_FOLDER]);
-        $this->assertFalse($uac->containsAll(new UAC([Permission::INVITE_USER, Permission::ADD_BOOKMARKS])));
-        $this->assertTrue($uac->containsAll(new UAC([Permission::UPDATE_FOLDER])));
-        $this->assertFalse($uac->containsAll(new UAC([])));
+        $this->assertFalse($uac->hasAll(new UAC([Permission::INVITE_USER, Permission::ADD_BOOKMARKS])));
+        $this->assertTrue($uac->hasAll(new UAC([Permission::UPDATE_FOLDER])));
+        $this->assertFalse($uac->hasAll(new UAC([])));
 
         $uac = new UAC([Permission::UPDATE_FOLDER, Permission::INVITE_USER]);
-        $this->assertTrue($uac->containsAll(new UAC([Permission::UPDATE_FOLDER])));
+        $this->assertTrue($uac->hasAll(new UAC([Permission::UPDATE_FOLDER])));
 
-        $this->assertFalse((new UAC([]))->containsAll(new UAC([Permission::UPDATE_FOLDER])));
+        $this->assertFalse((new UAC([]))->hasAll(new UAC([Permission::UPDATE_FOLDER])));
     }
 
-    public function testContainsAnyMethod(): void
+    public function testHasAnyMethod(): void
     {
         $uac = new UAC([Permission::UPDATE_FOLDER]);
-        $this->assertFalse($uac->containsAny(new UAC([Permission::INVITE_USER, Permission::ADD_BOOKMARKS])));
-        $this->assertFalse($uac->containsAny(new UAC([])));
-        $this->assertTrue($uac->containsAny(new UAC([Permission::UPDATE_FOLDER, Permission::ADD_BOOKMARKS])));
-        $this->assertTrue($uac->containsAny(new UAC([Permission::UPDATE_FOLDER])));
+        $this->assertFalse($uac->hasAny(new UAC([Permission::INVITE_USER, Permission::ADD_BOOKMARKS])));
+        $this->assertFalse($uac->hasAny(new UAC([])));
+        $this->assertTrue($uac->hasAny(new UAC([Permission::UPDATE_FOLDER, Permission::ADD_BOOKMARKS])));
+        $this->assertTrue($uac->hasAny(new UAC([Permission::UPDATE_FOLDER])));
 
-        $this->assertFalse((new UAC([]))->containsAny(new UAC([Permission::UPDATE_FOLDER])));
-        $this->assertFalse((new UAC([Permission::UPDATE_FOLDER]))->containsAny(new UAC([])));
+        $this->assertFalse((new UAC([]))->hasAny(new UAC([Permission::UPDATE_FOLDER])));
+        $this->assertFalse((new UAC([Permission::UPDATE_FOLDER]))->hasAny(new UAC([])));
     }
 
     public function testCanAddBookmarksMethod(): void

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Import\BookmarkImportStatus;
-use App\Models\ImportHistory;
+use App\Importing\Enums\BookmarkImportStatus;
+use App\Importing\Models\ImportHistory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

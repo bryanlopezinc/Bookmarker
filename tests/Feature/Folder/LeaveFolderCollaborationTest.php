@@ -73,7 +73,7 @@ class LeaveFolderCollaborationTest extends TestCase
         Passport::actingAs(UserFactory::new()->create());
         $this->leaveFolderCollaborationResponse(['folder_id' =>  FolderFactory::new()->create()->id])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotExist(): void
@@ -82,7 +82,7 @@ class LeaveFolderCollaborationTest extends TestCase
         $this->leaveFolderCollaborationResponse([
             'folder_id' =>  FolderFactory::new()->create()->id + 1
         ])->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     public function testWillReturnForbiddenWenFolderBelongsToUser(): void

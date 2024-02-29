@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Folder;
 
-use App\Models\FolderDisabledAction;
+use App\Models\FolderDisabledFeature;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Collection;
@@ -82,7 +82,7 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
                     'data' => ['addBookmarks' => false],
                     'expectation' => function (Collection $disabledActions) {
                         $this->assertCount(1, $disabledActions);
-                        $this->assertEquals($disabledActions->first()->action, 'ADD_BOOKMARKS');
+                        $this->assertEquals($disabledActions->first()->feature, 'ADD_BOOKMARKS');
                     }
                 ],
 
@@ -90,7 +90,7 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
                     'data' => ['addBookmarks' => false],
                     'expectation' => function (Collection $disabledActions) {
                         $this->assertCount(1, $disabledActions);
-                        $this->assertEquals($disabledActions->first()->action, 'ADD_BOOKMARKS');
+                        $this->assertEquals($disabledActions->first()->feature, 'ADD_BOOKMARKS');
                     }
                 ],
 
@@ -114,10 +114,10 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
             $response = $this->updateFolderResponse(array_merge(['folder_id' => $folderId], $test['data']));
             $response->assertOk();
 
-            $disabledAction = FolderDisabledAction::where('folder_id', $folderId)->get();
+            $disabledFeature = FolderDisabledFeature::where('folder_id', $folderId)->get();
 
             foreach (Arr::wrap($test['expectation']) as $expectation) {
-                $expectation($disabledAction, $response);
+                $expectation($disabledFeature, $response);
             }
         }
 
@@ -148,7 +148,7 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
                     'data' => ['removeBookmarks' => false],
                     'expectation' => function (Collection $disabledActions) {
                         $this->assertCount(1, $disabledActions);
-                        $this->assertEquals($disabledActions->first()->action, 'DELETE_BOOKMARKS');
+                        $this->assertEquals($disabledActions->first()->feature, 'DELETE_BOOKMARKS');
                     }
                 ],
 
@@ -156,7 +156,7 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
                     'data' => ['removeBookmarks' => false],
                     'expectation' => function (Collection $disabledActions) {
                         $this->assertCount(1, $disabledActions);
-                        $this->assertEquals($disabledActions->first()->action, 'DELETE_BOOKMARKS');
+                        $this->assertEquals($disabledActions->first()->feature, 'DELETE_BOOKMARKS');
                     }
                 ],
 
@@ -192,7 +192,7 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
                     'data' => ['inviteUsers' => false],
                     'expectation' => function (Collection $disabledActions) {
                         $this->assertCount(1, $disabledActions);
-                        $this->assertEquals($disabledActions->first()->action, 'INVITE_USER');
+                        $this->assertEquals($disabledActions->first()->feature, 'INVITE_USER');
                     }
                 ],
 
@@ -200,7 +200,7 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
                     'data' => ['inviteUsers' => false],
                     'expectation' => function (Collection $disabledActions) {
                         $this->assertCount(1, $disabledActions);
-                        $this->assertEquals($disabledActions->first()->action, 'INVITE_USER');
+                        $this->assertEquals($disabledActions->first()->feature, 'INVITE_USER');
                     }
                 ],
 
@@ -236,7 +236,7 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
                     'data' => ['updateFolder' => false],
                     'expectation' => function (Collection $disabledActions) {
                         $this->assertCount(1, $disabledActions);
-                        $this->assertEquals($disabledActions->first()->action, 'UPDATE_FOLDER');
+                        $this->assertEquals($disabledActions->first()->feature, 'UPDATE_FOLDER');
                     }
                 ],
 
@@ -244,7 +244,7 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
                     'data' => ['updateFolder' => false],
                     'expectation' => function (Collection $disabledActions) {
                         $this->assertCount(1, $disabledActions);
-                        $this->assertEquals($disabledActions->first()->action, 'UPDATE_FOLDER');
+                        $this->assertEquals($disabledActions->first()->feature, 'UPDATE_FOLDER');
                     }
                 ],
 
@@ -267,7 +267,7 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
 
         $this->updateFolderResponse(['folder_id' => $folderId, 'addBookmarks' => false])->assertNotFound();
 
-        $this->assertDatabaseMissing(FolderDisabledAction::class, ['folder_id' => $folderId]);
+        $this->assertDatabaseMissing(FolderDisabledFeature::class, ['folder_id' => $folderId]);
     }
 
     #[Test]
@@ -279,6 +279,6 @@ class ToggleFolderCollaborationRestrictionTest extends TestCase
 
         $this->updateFolderResponse(['folder_id' => $folder->id + 1, 'addBookmarks' => false])->assertNotFound();
 
-        $this->assertDatabaseMissing(FolderDisabledAction::class, ['folder_id' => $folder->id + 1]);
+        $this->assertDatabaseMissing(FolderDisabledFeature::class, ['folder_id' => $folder->id + 1]);
     }
 }

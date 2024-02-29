@@ -2,9 +2,9 @@
 
 namespace Tests\Unit\Mail;
 
-use App\DeviceDetector\Device;
-use App\DeviceDetector\DeviceType;
-use App\IpGeoLocation\Location;
+use App\ValueObjects\Device;
+use App\Enums\DeviceType;
+use App\DataTransferObjects\Location;
 use App\LoginInformation;
 use App\Mail\NewLoginMail;
 use Illuminate\Http\Response;

@@ -63,7 +63,7 @@ class RemoveCollaboratorTest extends TestCase
             'collaborator_id' => UserFactory::new()->create()->id,
             'folder_id' => $folder->id + 1
         ])->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     public function testWillReturnNotWhenFolderDoesNotBelongToUser(): void
@@ -74,7 +74,7 @@ class RemoveCollaboratorTest extends TestCase
             'collaborator_id' => UserFactory::new()->create()->id,
             'folder_id' => FolderFactory::new()->create()->id
         ])->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     public function testWillReturnNotFoundWhenUserIsNotACollaborator(): void

@@ -4,17 +4,12 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
-use App\Enums\Permission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
 
 final class PermissionDeniedException extends RuntimeException
 {
-    public function __construct(private readonly Permission $permission)
-    {
-    }
-
     public function report(): void
     {
     }
@@ -24,13 +19,9 @@ final class PermissionDeniedException extends RuntimeException
      */
     public function render(Request $request): JsonResponse
     {
-        $message = match ($this->permission) {
-            Permission::UPDATE_FOLDER    => 'NoUpdatePermission',
-            Permission::DELETE_BOOKMARKS => 'NoRemoveBookmarksPermission',
-            Permission::ADD_BOOKMARKS    => 'NoAddBookmarkPermission',
-            Permission::INVITE_USER      => 'NoSendInvitePermission'
-        };
-
-        return new JsonResponse(['message' => $message], JsonResponse::HTTP_FORBIDDEN);
+        return new JsonResponse(
+            ['message' => 'PermissionDenied', 'info' => 'Request could not be completed because the user does not have required permission.'],
+            JsonResponse::HTTP_FORBIDDEN
+        );
     }
 }

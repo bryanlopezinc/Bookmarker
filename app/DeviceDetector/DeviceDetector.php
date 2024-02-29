@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\DeviceDetector;
 
+use App\Contracts\DeviceDetectorInterface;
+use App\Enums\DeviceType;
+use App\ValueObjects\Device;
 use Jenssegers\Agent\Agent;
 
 final class DeviceDetector implements DeviceDetectorInterface

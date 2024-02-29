@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories\NotificationMapper;
 
-use App\DataTransferObjects\Notifications\ImportFailedNotificationData;
+use App\Importing\DataTransferObjects\ImportFailedNotificationData;
 use App\Enums\NotificationType;
 use App\Repositories\FetchNotificationResourcesRepository;
 use Illuminate\Notifications\DatabaseNotification;

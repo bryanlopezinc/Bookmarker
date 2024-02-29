@@ -4,21 +4,26 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects\Builders;
 
+use App\Enums\CollaboratorExitNotificationMode;
 use App\ValueObjects\FolderSettings;
-use App\Enums\FolderSettingKey as Key;
+use App\Enums\NewCollaboratorNotificationMode;
+use BackedEnum;
+use Illuminate\Support\Arr;
 
 final class FolderSettingsBuilder
 {
-    /**
-     * @param array<mixed> $attributes
-     */
-    public function __construct(protected array $attributes = [])
+    protected array $attributes = [];
+
+    public function __construct(array $attributes = [])
     {
+        $this->attributes = $attributes;
     }
 
-    /**
-     * @return array<string, mixed>
-     */
+    public function build(): FolderSettings
+    {
+        return new FolderSettings($this->attributes);
+    }
+
     public function toArray(): array
     {
         return $this->attributes;
@@ -34,19 +39,34 @@ final class FolderSettingsBuilder
         $settings = [];
 
         $map = [
-            'enable_notifications'                   => Key::ENABLE_NOTIFICATIONS,
-            'notify_on_new_collaborator'             => Key::NEW_COLLABORATOR_NOTIFICATION,
-            'notify_on_new_collaborator_by_user'     => Key::ONLY_COLLABORATOR_INVITED_BY_USER_NOTIFICATION,
-            'notify_on_update'                       => Key::NOTIFy_ON_UPDATE,
-            'notify_on_new_bookmark'                 => Key::NOTIFY_ON_NEW_BOOKMARK,
-            'notify_on_bookmark_delete'              => Key::NOTIFY_ON_BOOKMARK_DELETED,
-            'notify_on_collaborator_exit'            => Key::NOTIFY_ON_COLLABORATOR_EXIT,
-            'notify_on_collaborator_exit_with_write' => Key::NOTIFY_ON_COLLABORATOR_EXIT_ONLY_WHEN_HAS_WRITE_PERMISSION // phpcs:ignore
+            'enable_notifications'                    => 'notifications.enabled',
+            'notify_on_new_collaborator'             => 'notifications.newCollaborator.enabled',
+            'notify_on_new_collaborator_by_user'     => 'notifications.newCollaborator.mode',
+            'notify_on_update'                       => 'notifications.folderUpdated.enabled',
+            'notify_on_new_bookmark'                 => 'notifications.newBookmarks.enabled',
+            'notify_on_bookmark_delete'              => 'notifications.bookmarksRemoved.enabled',
+            'notify_on_collaborator_exit'            => 'notifications.collaboratorExit.enabled',
+            'notify_on_collaborator_exit_with_write' => 'notifications.collaboratorExit.mode'
         ];
 
         foreach ($data as $key => $value) {
-            $key = $map[$key] ?? $key;
-            $settings[$key] = $value;
+            if (!array_key_exists($key, $map)) {
+                return (new self([$key => $value]));
+            }
+
+            if ($key === 'notify_on_new_collaborator_by_user') {
+                $value = $value ? NewCollaboratorNotificationMode::INVITED_BY_ME->value : NewCollaboratorNotificationMode::ALL->value;
+            }
+
+            if ($key === 'notify_on_collaborator_exit_with_write') {
+                $value = $value ? CollaboratorExitNotificationMode::HAS_WRITE_PERMISSION->value : CollaboratorExitNotificationMode::ALL->value;
+            }
+
+            if ($value instanceof BackedEnum) {
+                $value = $value->value;
+            }
+
+            Arr::set($settings, $map[$key], $value);
         }
 
         return new self($settings);
@@ -54,7 +74,7 @@ final class FolderSettingsBuilder
 
     public function enableNotifications(bool $enable = true): self
     {
-        $this->attributes[Key::ENABLE_NOTIFICATIONS] = $enable;
+        Arr::set($this->attributes, 'notifications.enabled', $enable);
 
         return $this;
     }
@@ -66,7 +86,7 @@ final class FolderSettingsBuilder
 
     public function enableFolderUpdatedNotification(bool $enable = true): self
     {
-        $this->attributes[Key::NOTIFy_ON_UPDATE] = $enable;
+        Arr::set($this->attributes, 'notifications.folderUpdated.enabled', $enable);
 
         return $this;
     }
@@ -78,7 +98,7 @@ final class FolderSettingsBuilder
 
     public function enableNewBookmarksNotification(bool $enable = true): self
     {
-        $this->attributes[Key::NOTIFY_ON_NEW_BOOKMARK] = $enable;
+        Arr::set($this->attributes, 'notifications.newBookmarks.enabled', $enable);
 
         return $this;
     }
@@ -90,7 +110,7 @@ final class FolderSettingsBuilder
 
     public function enableBookmarksRemovedNotification(bool $notify = true): self
     {
-        $this->attributes[Key::NOTIFY_ON_BOOKMARK_DELETED] = $notify;
+        Arr::set($this->attributes, 'notifications.bookmarksRemoved.enabled', $notify);
 
         return $this;
     }
@@ -102,7 +122,7 @@ final class FolderSettingsBuilder
 
     public function enableNewCollaboratorNotification(bool $enable = true): self
     {
-        $this->attributes[Key::NEW_COLLABORATOR_NOTIFICATION] = $enable;
+        Arr::set($this->attributes, 'notifications.newCollaborator.enabled', $enable);
 
         return $this;
     }
@@ -114,14 +134,16 @@ final class FolderSettingsBuilder
 
     public function enableOnlyCollaboratorsInvitedByMeNotification(bool $enable = true): self
     {
-        $this->attributes[Key::ONLY_COLLABORATOR_INVITED_BY_USER_NOTIFICATION] = $enable;
+        $mode = $enable ? NewCollaboratorNotificationMode::INVITED_BY_ME : NewCollaboratorNotificationMode::ALL;
+
+        Arr::set($this->attributes, 'notifications.newCollaborator.mode', $mode->value);
 
         return $this;
     }
 
     public function enableCollaboratorExitNotification(bool $enable = true): self
     {
-        $this->attributes[Key::NOTIFY_ON_COLLABORATOR_EXIT] = $enable;
+        Arr::set($this->attributes, 'notifications.collaboratorExit.enabled', $enable);
 
         return $this;
     }
@@ -133,13 +155,10 @@ final class FolderSettingsBuilder
 
     public function enableOnlyCollaboratorWithWritePermissionNotification(bool $enable = true): self
     {
-        $this->attributes[Key::NOTIFY_ON_COLLABORATOR_EXIT_ONLY_WHEN_HAS_WRITE_PERMISSION] = $enable;
+        $mode = $enable ? CollaboratorExitNotificationMode::HAS_WRITE_PERMISSION : CollaboratorExitNotificationMode::ALL;
+
+        Arr::set($this->attributes, 'notifications.collaboratorExit.mode', $mode->value);
 
         return $this;
-    }
-
-    public function build(): FolderSettings
-    {
-        return new FolderSettings($this->attributes);
     }
 }

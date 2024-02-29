@@ -83,7 +83,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             'folder_id'   =>  FolderFactory::new()->create()->id + 1,
             'permissions' => 'addBookmarks'
         ])->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotBelongToUser(): void
@@ -95,7 +95,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             'folder_id'   => FolderFactory::new()->create()->id,
             'permissions' => 'addBookmarks'
         ])->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     public function testWillReturnForbiddenWhenUserIsACollaboratorButDoesNotOwnFolder(): void

@@ -59,7 +59,7 @@ final class GrantPermissionsToCollaboratorService
 
     private function ensureCollaboratorDoesNotHavePermissions(UAC $currentPermissions, UAC $grant): void
     {
-        if ($currentPermissions->containsAny($grant)) {
+        if ($currentPermissions->hasAny($grant)) {
             throw HttpException::conflict(['message' => 'DuplicatePermissions']);
         }
     }

@@ -188,7 +188,7 @@ class FetchMutedCollaboratorsTest extends TestCase
         $this->loginUser($folderOwner);
         $this->fetchMuteCollaboratorsResponse(['folder_id' => $folder->id])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     #[Test]
@@ -201,7 +201,7 @@ class FetchMutedCollaboratorsTest extends TestCase
         $this->loginUser($folderOwner);
         $this->fetchMuteCollaboratorsResponse(['folder_id' => $folder->id + 1])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     #[Test]

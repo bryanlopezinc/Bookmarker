@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Folder;
 
-use App\Actions\AddBookmarksToFolder\CreateNewFolderBookmarksHandler;
+use App\Actions\CreateFolderBookmarks;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -17,13 +17,13 @@ class FetchUserFoldersTest extends TestCase
     use WithFaker;
     use AssertValidPaginationData;
 
-    private CreateNewFolderBookmarksHandler $addBookmarksToFolder;
+    private CreateFolderBookmarks $addBookmarksToFolder;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->addBookmarksToFolder = app(CreateNewFolderBookmarksHandler::class);
+        $this->addBookmarksToFolder = new CreateFolderBookmarks();
     }
 
     protected function userFoldersResponse(array $parameters = []): TestResponse

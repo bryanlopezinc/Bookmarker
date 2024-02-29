@@ -161,7 +161,7 @@ class AddBookmarksToFolderTest extends TestCase
                 'bookmarks' => (string) $collaboratorBookmark->id,
                 'folder'    => $folder->id,
             ])->assertForbidden()
-            ->assertJsonFragment(['message' => 'NoAddBookmarkPermission']);
+            ->assertJsonFragment(['message' => 'PermissionDenied']);
     }
 
     public function testWillReturnForbiddenWhenFolderHas_200_Bookmarks(): void
@@ -541,6 +541,6 @@ class AddBookmarksToFolderTest extends TestCase
                 'bookmarks' => (string) $collaboratorBookmarks[1]->id,
                 'folder'    => $folder->id,
             ])->assertForbidden()
-            ->assertJsonFragment(['message' => 'AddBookmarksActionDisabled']);
+            ->assertJsonFragment(['message' => 'FolderFeatureDisAbled']);
     }
 }

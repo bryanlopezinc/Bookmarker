@@ -296,7 +296,7 @@ class FetchFolderCollaboratorsTest extends TestCase
 
         $this->fetchCollaboratorsResponse(['folder_id' => FolderFactory::new()->create()->id])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotExists(): void

@@ -121,7 +121,7 @@ class FetchFolderBannedUsersTest extends TestCase
         Passport::actingAs(UserFactory::new()->create());
         $this->fetchBannedCollaboratorsResponse(['folder_id' => $folder->id])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotExists(): void
@@ -135,12 +135,12 @@ class FetchFolderBannedUsersTest extends TestCase
         Passport::actingAs($folderOwner);
         $this->fetchBannedCollaboratorsResponse(['folder_id' => $folder->id + 1])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
 
         Passport::actingAs(UserFactory::new()->create());
         $this->fetchBannedCollaboratorsResponse(['folder_id' => $folder->id + 1])
             ->assertNotFound()
-            ->assertExactJson(['message' => 'FolderNotFound']);
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     public function testWilReturnOnlyFolderBannedCollaborators(): void

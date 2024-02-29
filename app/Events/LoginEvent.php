@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Events;
 
 use App\Models\User;
-use App\IpGeoLocation\IpAddress;
+use App\ValueObjects\IpAddress;
 
 final class LoginEvent
 {

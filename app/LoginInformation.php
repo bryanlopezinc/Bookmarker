@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App;
 
-use App\DeviceDetector\Device;
-use App\IpGeoLocation\Location;
+use App\ValueObjects\Device;
+use App\DataTransferObjects\Location;
 
 final class LoginInformation
 {

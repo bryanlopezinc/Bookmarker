@@ -5,7 +5,7 @@ use App\Http\Controllers\Auth as A;
 use App\Http\Controllers\Folder as F;
 use App\Http\Middleware\ExplodeString as StringToArray;
 use App\Http\Middleware\HandleDbTransactionsMiddleware as DBTransaction;
-use App\Http\Middleware\PreventsDuplicateImportMiddleware;
+use App\Importing\Http\Middleware\PreventsDuplicateImportMiddleware;
 use App\Http\Middleware\PreventsDuplicatePostRequestMiddleware;
 use Illuminate\Support\Facades\Route;
 use Laravel\Passport\Http\Middleware\CheckClientCredentials;
@@ -45,8 +45,8 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
         Route::get('bookmarks/{bookmark_id}/duplicates', C\FetchDuplicateBookmarksController::class)->name('fetchPossibleDuplicates');
         Route::delete('folders/{folder_id}', F\DeleteFolderController::class)->name('deleteFolder');
 
-        Route::get('imports', C\FetchUserImportsController::class)->name('fetchUserImports');
-        Route::get('imports/{import_id}/history', [C\ImportController::class, 'history'])->whereUuid('import_id')->name('fetchImportHistory');
+        Route::get('imports', App\Importing\Http\Controllers\FetchUserImportsController::class)->name('fetchUserImports');
+        Route::get('imports/{import_id}/history', [App\Importing\Http\Controllers\ImportController::class, 'history'])->whereUuid('import_id')->name('fetchImportHistory');
     });
 
     Route::prefix('bookmarks')->group(function () {
@@ -54,7 +54,7 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
         Route::delete('/', C\DeleteBookmarkController::class)->middleware([StringToArray::keys('ids')])->name('deleteBookmark');
         Route::patch('/', C\UpdateBookmarkController::class)->middleware([StringToArray::keys('tags')])->name('updateBookmark');
         Route::delete('tags/remove', C\DeleteBookmarkTagsController::class)->middleware([StringToArray::keys('tags')])->name('deleteBookmarkTags');
-        Route::post('import', [C\ImportController::class, 'store'])
+        Route::post('import', [App\Importing\Http\Controllers\ImportController::class, 'store'])
             ->middleware([StringToArray::keys('tags'), PreventsDuplicateImportMiddleware::class])
             ->withoutMiddleware(DBTransaction::class)
             ->name('importBookmark');

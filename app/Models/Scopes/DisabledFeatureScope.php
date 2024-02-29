@@ -6,7 +6,7 @@ namespace App\Models\Scopes;
 
 use App\Enums\Permission;
 use App\Models\Folder;
-use App\Models\FolderDisabledAction;
+use App\Models\FolderDisabledFeature;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -24,9 +24,9 @@ final class DisabledFeatureScope implements Scope
         $folderModel = new Folder();
 
         $query->addSelect([
-            $this->alias => FolderDisabledAction::select('id')
+            $this->alias => FolderDisabledFeature::select('id')
                 ->whereRaw("folder_id = {$folderModel->getQualifiedKeyName()}")
-                ->when($this->permission, fn ($query) => $query->where('action', $this->permission?->value))
+                ->when($this->permission, fn ($query) => $query->where('feature', $this->permission?->value))
                 ->when(!$this->permission, fn ($query) => $query->limit(1))
         ]);
     }

@@ -8,6 +8,7 @@ use Illuminate\Support\ServiceProvider;
 use App\Http\Handlers\Constraints\FeatureMustBeEnabledConstraint;
 use App\Http\Handlers\Constraints\PermissionConstraint;
 use App\DataTransferObjects\RemoveFolderBookmarksRequestData;
+use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Http\Handlers\RemoveFolderBookmarks\Handler;
 use Illuminate\Contracts\Support\DeferrableProvider;
@@ -42,7 +43,7 @@ class RemoveFolderBookmarksRequestServiceProvider extends ServiceProvider implem
 
         $app->bind(
             FeatureMustBeEnabledConstraint::class,
-            fn () => new FeatureMustBeEnabledConstraint($authUser, Permission::DELETE_BOOKMARKS)
+            fn () => new FeatureMustBeEnabledConstraint($authUser, Feature::DELETE_BOOKMARKS)
         );
     }
 

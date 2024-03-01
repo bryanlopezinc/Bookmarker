@@ -3,12 +3,13 @@
 namespace Tests\Feature\Folder;
 
 use App\Actions\CreateFolderBookmarks;
+use App\Actions\ToggleFolderFeature;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Services\Folder\MuteCollaboratorService;
-use App\Services\Folder\ToggleFolderCollaborationRestriction;
 use App\UAC;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
@@ -409,8 +410,8 @@ class RemoveFolderBookmarksTest extends TestCase
     #[Test]
     public function willReturnCorrectResponseWhenActionsIsDisabled(): void
     {
-        /** @var ToggleFolderCollaborationRestriction */
-        $updateCollaboratorActionService = app(ToggleFolderCollaborationRestriction::class);
+        /** @var ToggleFolderFeature */
+        $updateCollaboratorActionService = app(ToggleFolderFeature::class);
 
         $addBooksService = new CreateFolderBookmarks();
 
@@ -423,14 +424,14 @@ class RemoveFolderBookmarksTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::DELETE_BOOKMARKS);
 
         //Assert collaborator can remove bookmark when disabled action is not remove bookmark action
-        $updateCollaboratorActionService->update($folder->id, Permission::INVITE_USER, false);
+        $updateCollaboratorActionService->disAble($folder->id, Feature::SEND_INVITES);
         $this->loginUser($collaborator);
         $this->removeFolderBookmarksResponse([
             'bookmarks' => $bookmarks[0]->id,
             'folder'    => $folder->id
         ])->assertOk();
 
-        $updateCollaboratorActionService->update($folder->id, Permission::DELETE_BOOKMARKS, false);
+        $updateCollaboratorActionService->disAble($folder->id, Feature::DELETE_BOOKMARKS);
 
         $this->removeFolderBookmarksResponse($query = ['bookmarks' => $bookmarks[1]->id, 'folder' => $folder->id])
             ->assertForbidden()

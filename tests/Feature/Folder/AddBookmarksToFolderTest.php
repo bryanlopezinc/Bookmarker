@@ -2,12 +2,13 @@
 
 namespace Tests\Feature\Folder;
 
+use App\Actions\ToggleFolderFeature;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Services\Folder\MuteCollaboratorService;
-use App\Services\Folder\ToggleFolderCollaborationRestriction;
 use App\UAC;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
@@ -500,8 +501,8 @@ class AddBookmarksToFolderTest extends TestCase
     #[Test]
     public function willReturnCorrectResponseWhenActionsIsDisabled(): void
     {
-        /** @var ToggleFolderCollaborationRestriction */
-        $updateCollaboratorActionService = app(ToggleFolderCollaborationRestriction::class);
+        /** @var ToggleFolderFeature */
+        $updateCollaboratorActionService = app(ToggleFolderFeature::class);
 
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
 
@@ -512,7 +513,7 @@ class AddBookmarksToFolderTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         //Assert collaborator can add bookmark when disabled action is not addBookmarks action
-        $updateCollaboratorActionService->update($folder->id, Permission::INVITE_USER, false);
+        $updateCollaboratorActionService->disAble($folder->id, Feature::SEND_INVITES);
         $this->loginUser($collaborator);
         $this->withRequestId()
             ->addBookmarksToFolderResponse([
@@ -520,7 +521,7 @@ class AddBookmarksToFolderTest extends TestCase
                 'folder'    => $folder->id,
             ])->assertCreated();
 
-        $updateCollaboratorActionService->update($folder->id, Permission::ADD_BOOKMARKS, false);
+        $updateCollaboratorActionService->disAble($folder->id, Feature::ADD_BOOKMARKS);
 
         $this->loginUser($folderOwner);
         $this->withRequestId()

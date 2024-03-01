@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('folders_disabled_features', function (Blueprint $table) {
             $table->id();
             $table->foreignId('folder_id');
-            $table->string('feature');
-            $table->unique(['folder_id', 'feature']);
+            $table->foreignId('feature_id');
+            $table->unique(['folder_id', 'feature_id']);
         });
     }
 };

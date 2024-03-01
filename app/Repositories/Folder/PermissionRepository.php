@@ -30,9 +30,7 @@ final class PermissionRepository
      */
     public function findManyById(iterable $ids): Collection
     {
-        return collect(self::ROWS)
-            ->whereIn('id', collect($ids))
-            ->map(fn (array $record) => new FolderPermission($record));
+        return collect(self::ROWS)->whereIn('id', collect($ids))->mapInto(FolderPermission::class);
     }
 
     /**
@@ -42,8 +40,6 @@ final class PermissionRepository
      */
     public function findManyByName(iterable $names): Collection
     {
-        return collect(self::ROWS)
-            ->whereIn('name', collect($names))
-            ->map(fn (array $record) => new FolderPermission($record));
+        return collect(self::ROWS)->whereIn('name', collect($names))->mapInto(FolderPermission::class);
     }
 }

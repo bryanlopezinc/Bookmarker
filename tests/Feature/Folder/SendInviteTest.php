@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Folder;
 
+use App\Actions\ToggleFolderFeature;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\Enums\Feature;
 use App\Enums\Permission;
 use Tests\TestCase;
 use Illuminate\Support\Str;
@@ -17,7 +19,6 @@ use App\Mail\FolderCollaborationInviteMail;
 use Illuminate\Foundation\Testing\WithFaker;
 use App\Models\BannedCollaborator;
 use App\Models\Folder;
-use App\Services\Folder\ToggleFolderCollaborationRestriction;
 use App\UAC;
 use Database\Factories\EmailFactory;
 use PHPUnit\Framework\Attributes\Test;
@@ -28,13 +29,13 @@ class SendInviteTest extends TestCase
     use WithFaker;
     use CreatesCollaboration;
 
-    protected ToggleFolderCollaborationRestriction $toggleFolderCollaborationRestriction;
+    protected ToggleFolderFeature $toggleFolderCollaborationRestriction;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->toggleFolderCollaborationRestriction = app(ToggleFolderCollaborationRestriction::class);
+        $this->toggleFolderCollaborationRestriction = app(ToggleFolderFeature::class);
     }
 
     protected function tearDown(): void
@@ -447,7 +448,7 @@ class SendInviteTest extends TestCase
             ->assertJsonFragment($expectation = ['message' => 'PermissionDenied']);
 
         //Assert will return same response when invite user action is disabled
-        $this->toggleFolderCollaborationRestriction->update($folder->id, Permission::INVITE_USER, false);
+        $this->toggleFolderCollaborationRestriction->disAble($folder->id, Feature::SEND_INVITES);
         $this->sendInviteResponse($query)->assertForbidden()->assertJsonFragment($expectation);
     }
 
@@ -490,7 +491,7 @@ class SendInviteTest extends TestCase
             ->assertJsonFragment($expectation = ['message' => 'CollaboratorCannotSendInviteWithPermissions']);
 
         //Assert will return same response when invite user action is disabled
-        $this->toggleFolderCollaborationRestriction->update($folder->id, Permission::INVITE_USER, false);
+        $this->toggleFolderCollaborationRestriction->disAble($folder->id, Feature::SEND_INVITES);
         $this->sendInviteResponse(array_replace($query, ['request_id' => $this->faker->uuid]))->assertBadRequest()->assertJsonFragment($expectation);
     }
 
@@ -597,13 +598,13 @@ class SendInviteTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
 
         //Assert collaborator can update when disabled action is not invite user action
-        $this->toggleFolderCollaborationRestriction->update($folder->id, Permission::UPDATE_FOLDER, false);
+        $this->toggleFolderCollaborationRestriction->disAble($folder->id, Feature::UPDATE_FOLDER);
         $this->loginUser($collaborator);
         $this->withRequestId()
             ->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->id])
             ->assertOk();
 
-        $this->toggleFolderCollaborationRestriction->update($folder->id, Permission::INVITE_USER, false);
+        $this->toggleFolderCollaborationRestriction->disAble($folder->id, Feature::SEND_INVITES);
 
         $this->withRequestId()
             ->sendInviteResponse($query = ['email' => $otherInvitee->email, 'folder_id' => $folder->id])

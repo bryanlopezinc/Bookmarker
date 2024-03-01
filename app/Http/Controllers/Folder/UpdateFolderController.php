@@ -7,7 +7,7 @@ namespace App\Http\Controllers\Folder;
 use App\Http\Handlers\UpdateFolder\Handler;
 use App\Http\Requests\CreateOrUpdateFolderRequest as Request;
 use App\Http\Requests\UpdateCollaboratorActionRequest;
-use App\Services\Folder\ToggleFolderCollaborationRestriction;
+use App\Services\Folder\ToggleFolderFeature;
 use Illuminate\Http\JsonResponse;
 
 final class UpdateFolderController
@@ -21,7 +21,7 @@ final class UpdateFolderController
 
     public function updateAction(
         UpdateCollaboratorActionRequest $request,
-        ToggleFolderCollaborationRestriction $service
+        ToggleFolderFeature $service
     ): JsonResponse {
         $service->fromRequest($request);
 

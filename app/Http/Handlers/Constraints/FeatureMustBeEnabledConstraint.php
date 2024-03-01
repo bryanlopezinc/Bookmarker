@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Handlers\Constraints;
 
 use App\Contracts\FolderRequestHandlerInterface;
-use App\Enums\Permission;
+use App\Enums\Feature;
 use App\Exceptions\FolderFeatureDisabledException;
 use App\Models\Folder;
 use App\Models\Scopes\DisabledFeatureScope;
@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Model;
 
 final class FeatureMustBeEnabledConstraint implements Scope, FolderRequestHandlerInterface
 {
-    public function __construct(private readonly User $authUser, private readonly Permission $feature)
+    public function __construct(private readonly User $authUser, private readonly Feature $feature)
     {
     }
 

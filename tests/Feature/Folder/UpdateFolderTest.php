@@ -2,11 +2,12 @@
 
 namespace Tests\Feature\Folder;
 
+use App\Actions\ToggleFolderFeature;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\Enums\Feature;
 use App\Enums\FolderVisibility;
 use App\Enums\Permission;
 use App\Models\Folder;
-use App\Services\Folder\ToggleFolderCollaborationRestriction;
 use App\UAC;
 use App\ValueObjects\FolderName;
 use Database\Factories\FolderFactory;
@@ -494,8 +495,8 @@ class UpdateFolderTest extends TestCase
     #[Test]
     public function whenUpdateFolderFeatureIsDisabled(): void
     {
-        /** @var ToggleFolderCollaborationRestriction */
-        $updateCollaboratorActionService = app(ToggleFolderCollaborationRestriction::class);
+        /** @var ToggleFolderFeature */
+        $updateCollaboratorActionService = app(ToggleFolderFeature::class);
 
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
@@ -503,11 +504,11 @@ class UpdateFolderTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER);
 
         //Assert collaborator can update when disabled action is not remove bookmark action
-        $updateCollaboratorActionService->update($folder->id, Permission::INVITE_USER, false);
+        $updateCollaboratorActionService->disAble($folder->id, Feature::SEND_INVITES);
         $this->loginUser($collaborator);
         $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->id])->assertOk();
 
-        $updateCollaboratorActionService->update($folder->id, Permission::UPDATE_FOLDER, false);
+        $updateCollaboratorActionService->disAble($folder->id, Feature::UPDATE_FOLDER);
 
         $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->id])
             ->assertForbidden()

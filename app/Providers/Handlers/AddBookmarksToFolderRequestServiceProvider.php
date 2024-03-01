@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use App\DataTransferObjects\AddBookmarksToFolderRequestData;
+use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Http\Handlers\AddBookmarksToFolder\Handler;
 use Illuminate\Contracts\Support\DeferrableProvider;
@@ -42,7 +43,7 @@ class AddBookmarksToFolderRequestServiceProvider extends ServiceProvider impleme
 
         $app->bind(
             FeatureMustBeEnabledConstraint::class,
-            fn () => new FeatureMustBeEnabledConstraint($authUser, Permission::ADD_BOOKMARKS)
+            fn () => new FeatureMustBeEnabledConstraint($authUser, Feature::ADD_BOOKMARKS)
         );
     }
 

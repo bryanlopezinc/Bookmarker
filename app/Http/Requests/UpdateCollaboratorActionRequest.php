@@ -15,12 +15,14 @@ final class UpdateCollaboratorActionRequest extends FormRequest
      */
     public function rules(): array
     {
+        $onAndOfRule = 'in:enable,disable';
+
         return [
-            'folder_id'       => ['required', new ResourceIdRule()],
-            'addBookmarks'    => ['boolean', Rule::requiredIf(!$this->hasAny('removeBookmarks', 'inviteUsers', 'updateFolder'))],
-            'removeBookmarks' => ['sometimes', 'boolean'],
-            'inviteUsers'      => ['sometimes', 'boolean'],
-            'updateFolder'    => ['sometimes', 'boolean'],
+            'folder_id'        => ['required', new ResourceIdRule()],
+            'addBookmarks'     => ['string', $onAndOfRule, Rule::requiredIf(!$this->hasAny('removeBookmarks', 'inviteUsers', 'updateFolder'))],
+            'removeBookmarks'  => ['sometimes', 'string', $onAndOfRule],
+            'inviteUsers'      => ['sometimes', 'string', $onAndOfRule],
+            'updateFolder'     => ['sometimes', 'string', $onAndOfRule],
         ];
     }
 }

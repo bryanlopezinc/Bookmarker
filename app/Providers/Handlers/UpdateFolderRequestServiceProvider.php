@@ -9,6 +9,7 @@ use App\Http\Handlers\Constraints\FeatureMustBeEnabledConstraint;
 use App\Http\Handlers\Constraints\PermissionConstraint;
 use App\Http\Handlers\UpdateFolder\SendFolderUpdatedNotification;
 use App\DataTransferObjects\UpdateFolderRequestData;
+use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Http\Handlers\UpdateFolder\Handler;
 use App\Http\Handlers\UpdateFolder\UpdateFolder;
@@ -44,7 +45,7 @@ class UpdateFolderRequestServiceProvider extends ServiceProvider implements Defe
 
         $app->bind(
             FeatureMustBeEnabledConstraint::class,
-            fn () => new FeatureMustBeEnabledConstraint($authUser, Permission::UPDATE_FOLDER)
+            fn () => new FeatureMustBeEnabledConstraint($authUser, Feature::UPDATE_FOLDER)
         );
 
         $app->bind(UpdateFolder::class, function () use ($app) {

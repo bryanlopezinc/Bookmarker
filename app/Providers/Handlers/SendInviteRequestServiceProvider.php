@@ -8,6 +8,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use App\Http\Handlers\Constraints\PermissionConstraint;
 use App\DataTransferObjects\SendInviteRequestData;
+use App\Enums\Feature;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use App\Http\Handlers\Constraints\FeatureMustBeEnabledConstraint;
 use App\Http\Handlers\SendInvite\Handler;
@@ -42,7 +43,7 @@ class SendInviteRequestServiceProvider extends ServiceProvider implements Deferr
 
         $app->bind(
             FeatureMustBeEnabledConstraint::class,
-            fn () => new FeatureMustBeEnabledConstraint($authUser, Permission::INVITE_USER)
+            fn () => new FeatureMustBeEnabledConstraint($authUser, Feature::SEND_INVITES)
         );
     }
 

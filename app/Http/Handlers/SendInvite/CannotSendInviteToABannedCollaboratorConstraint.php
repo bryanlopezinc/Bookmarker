@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class BannedCollaboratorConstraint implements FolderRequestHandlerInterface, Scope, InviteeAwareInterface
+final class CannotSendInviteToABannedCollaboratorConstraint implements FolderRequestHandlerInterface, Scope, InviteeAwareInterface
 {
     use Concerns\HasInviteeData;
 

@@ -28,7 +28,7 @@ final class Handler
         CannotSendInviteToSelfConstraint::class,
         UniqueCollaboratorConstraint::class,
         CannotSendInviteToFolderOwnerConstraint::class,
-        BannedCollaboratorConstraint::class,
+        CannotSendInviteToABannedCollaboratorConstraint::class,
         RateLimitConstraint::class,
         SendInvitationToInvitee::class
     ];

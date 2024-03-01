@@ -18,12 +18,12 @@ use Illuminate\Database\Eloquent\Model;
 final class PermissionConstraint implements Scope, FolderRequestHandlerInterface
 {
     private readonly Repository $repository;
-    private readonly User $authUser;
+    private readonly User $user;
     private readonly Permission $permission;
 
-    public function __construct(User $authUser, Permission $permission, Repository $repository = null)
+    public function __construct(User $user, Permission $permission, Repository $repository = null)
     {
-        $this->authUser = $authUser;
+        $this->user = $user;
         $this->permission = $permission;
         $this->repository = $repository ?: new Repository();
     }
@@ -38,13 +38,13 @@ final class PermissionConstraint implements Scope, FolderRequestHandlerInterface
 
     public function handle(Folder $folder): void
     {
-        $folderBelongsToAuthUser = $folder->user_id === $this->authUser->id;
+        $folderBelongsToAuthUser = $folder->user_id === $this->user->id;
 
         if ($folderBelongsToAuthUser) {
             return;
         }
 
-        $userPermissions = $this->repository->all($this->authUser->id, $folder->id);
+        $userPermissions = $this->repository->all($this->user->id, $folder->id);
 
         if (!$userPermissions->hasAny(new UAC($this->permission))) {
             throw new PermissionDeniedException();

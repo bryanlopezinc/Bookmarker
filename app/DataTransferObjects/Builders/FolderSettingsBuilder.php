@@ -168,4 +168,26 @@ final class FolderSettingsBuilder
 
         return $this;
     }
+
+    public function enableCannotAcceptInviteIfInviterIsNotAnActiveCollaborator(): self
+    {
+        $acceptInviteConstraints = Arr::pull($this->attributes, 'acceptInviteConstraints', []);
+
+        $acceptInviteConstraints[] = 'InviterMustBeAnActiveCollaborator';
+
+        Arr::set($this->attributes, 'acceptInviteConstraints', $acceptInviteConstraints);
+
+        return $this;
+    }
+
+    public function enableCannotAcceptInviteIfInviterNoLongerHasRequiredPermission(): self
+    {
+        $acceptInviteConstraints = Arr::pull($this->attributes, 'acceptInviteConstraints', []);
+
+        $acceptInviteConstraints[] = 'InviterMustHaveRequiredPermission';
+
+        Arr::set($this->attributes, 'acceptInviteConstraints', $acceptInviteConstraints);
+
+        return $this;
+    }
 }

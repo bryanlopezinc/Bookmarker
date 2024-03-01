@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\ValueObjects;
 
+use App\Contracts\FolderSettingValueInterface;
 use App\Utils\FolderSettingsValidator;
 use Illuminate\Contracts\Support\Arrayable;
 use App\Enums\NewCollaboratorNotificationMode;
 use App\Enums\CollaboratorExitNotificationMode;
-use BackedEnum;
 use Error;
 
 /**
@@ -27,6 +27,7 @@ use Error;
  * @property-read bool $collaboratorExitNotificationIsDisabled
  * @property-read CollaboratorExitNotificationMode $collaboratorExitNotificationMode
  * @property-read int $maxCollaboratorsLimit
+ * @property-read AcceptInviteConstraints $acceptInviteConstraints
  */
 final class FolderSettings implements Arrayable
 {
@@ -66,6 +67,7 @@ final class FolderSettings implements Arrayable
         return [
             'version' => '1.0.0',
             'maxCollaboratorsLimit' => -1,
+            'acceptInviteConstraints' => [],
             'notifications' => [
                 'enabled' => true,
                 'newCollaborator' => [
@@ -83,12 +85,13 @@ final class FolderSettings implements Arrayable
         ];
     }
 
-    private function resolve(string $classProperty): bool|BackedEnum|int
+    private function resolve(string $classProperty): bool|int|FolderSettingValueInterface
     {
         $notifications = $this->resolvedSetting['notifications'];
 
         return match ($classProperty) {
             'maxCollaboratorsLimit'                 => $this->resolvedSetting['maxCollaboratorsLimit'],
+            'acceptInviteConstraints'               => new AcceptInviteConstraints($this->resolvedSetting['acceptInviteConstraints']),
             'notificationsAreEnabled'                => $notifications['enabled'],
             'newCollaboratorNotificationIsEnabled'   => $notifications['newCollaborator']['enabled'],
             'newCollaboratorNotificationMode'        => NewCollaboratorNotificationMode::from($notifications['newCollaborator']['mode']),

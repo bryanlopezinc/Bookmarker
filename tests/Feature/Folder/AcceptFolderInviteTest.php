@@ -402,6 +402,80 @@ class AcceptFolderInviteTest extends TestCase
             ]);
     }
 
+    #[Test]
+    public function whenInviteeIsNotAnActiveCollaborator(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$folderOwner, $invitee, $collaborator, $otherInvitee] = UserFactory::times(4)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $collaborator->id,
+            $invitee->id,
+            $folder->id,
+            new UAC([])
+        );
+
+        $this->tokenStore->store(
+            $otherInviteeInviteHash = $this->faker->uuid,
+            $collaborator->id,
+            $otherInvitee->id,
+            $folder->id,
+            new UAC([])
+        );
+
+        // can accept new collaborators when inviter is not an active collaborator by default.
+        $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
+
+        $folder->settings = FolderSettingsBuilder::new()->enableCannotAcceptInviteIfInviterIsNotAnActiveCollaborator()->build();
+        $folder->save();
+
+        $this->acceptInviteResponse(['invite_hash' => $otherInviteeInviteHash])
+            ->assertForbidden()
+            ->assertJsonFragment(['message' => 'InviterIsNotAnActiveCollaborator']);
+    }
+
+    #[Test]
+    public function whenCollaboratorPermissionHasBeenRevoked(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$folderOwner, $invitee, $collaborator, $otherInvitee] = UserFactory::times(4)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $collaborator->id,
+            $invitee->id,
+            $folder->id,
+            new UAC([])
+        );
+
+        $this->tokenStore->store(
+            $otherInviteeInviteHash = $this->faker->uuid,
+            $collaborator->id,
+            $otherInvitee->id,
+            $folder->id,
+            new UAC([])
+        );
+
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
+
+        // can accept new collaborators when inviter permissions is revoked by default.
+        $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
+
+        $folder->settings = FolderSettingsBuilder::new()->enableCannotAcceptInviteIfInviterNoLongerHasRequiredPermission()->build();
+        $folder->save();
+
+        $this->acceptInviteResponse(['invite_hash' => $otherInviteeInviteHash])
+            ->assertForbidden()
+            ->assertJsonFragment(['message' => 'InviterCanNoLongerSendInvites']);
+    }
+
     public function testWillNotNotifyFolderOwnerWhenInvitationWasSentByFolderOwner(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());

@@ -14,7 +14,10 @@ class FolderSettingsTest extends TestCase
     {
         $settings = $this->make();
 
+        $this->assertEquals(17, count(FolderSettings::default(), COUNT_RECURSIVE));
         $this->assertEquals(-1, $settings->maxCollaboratorsLimit);
+        $this->assertFalse($settings->acceptInviteConstraints->inviterMustBeAnActiveCollaborator());
+        $this->assertFalse($settings->acceptInviteConstraints->inviterMustHaveRequiredPermission());
 
         $this->assertTrue($settings->notificationsAreEnabled);
         $this->assertFalse($settings->notificationsAreDisabled);
@@ -42,6 +45,22 @@ class FolderSettingsTest extends TestCase
     private function make(array $settings = []): FolderSettings
     {
         return new FolderSettings($settings);
+    }
+
+    #[Test]
+    public function testAcceptInviteConstraints(): void
+    {
+        $validName = 'InviterMustBeAnActiveCollaborator';
+
+        $this->assertFalse($this->isValid(['acceptInviteConstraints' => $validName]));
+        $this->assertFalse($this->isValid(['acceptInviteConstraints' => ['baz']]));
+        $this->assertFalse($this->isValid(['acceptInviteConstraints' => null]));
+        $this->assertFalse($this->isValid(['acceptInviteConstraints' => ['baz', $validName]]));
+        $this->assertFalse($this->isValid(['acceptInviteConstraints' => [$validName, null]]));
+        $this->assertFalse($this->isValid(['acceptInviteConstraints' => [$validName, $validName]])); //must be unique
+
+        $this->assertTrue($this->isValid(['acceptInviteConstraints' => [$validName]]));
+        $this->assertTrue($this->isValid(['acceptInviteConstraints' => []]));
     }
 
     #[Test]

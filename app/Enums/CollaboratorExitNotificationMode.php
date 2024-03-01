@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
-enum CollaboratorExitNotificationMode: string
+use App\Contracts\FolderSettingValueInterface;
+
+enum CollaboratorExitNotificationMode: string implements FolderSettingValueInterface
 {
     case ALL                  = '*';
     case HAS_WRITE_PERMISSION = 'hasWritePermission';

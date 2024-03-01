@@ -10,4 +10,5 @@ enum Feature: string
     case DELETE_BOOKMARKS = 'DELETE_BOOKMARKS';
     case SEND_INVITES     = 'SEND_INVITES';
     case UPDATE_FOLDER    = 'UPDATE_FOLDER';
+    case JOIN_FOLDER      = 'JOIN_FOLDER';
 }

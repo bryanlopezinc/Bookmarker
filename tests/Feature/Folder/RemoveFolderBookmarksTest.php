@@ -424,14 +424,14 @@ class RemoveFolderBookmarksTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::DELETE_BOOKMARKS);
 
         //Assert collaborator can remove bookmark when disabled action is not remove bookmark action
-        $updateCollaboratorActionService->disAble($folder->id, Feature::SEND_INVITES);
+        $updateCollaboratorActionService->disable($folder->id, Feature::SEND_INVITES);
         $this->loginUser($collaborator);
         $this->removeFolderBookmarksResponse([
             'bookmarks' => $bookmarks[0]->id,
             'folder'    => $folder->id
         ])->assertOk();
 
-        $updateCollaboratorActionService->disAble($folder->id, Feature::DELETE_BOOKMARKS);
+        $updateCollaboratorActionService->disable($folder->id, Feature::DELETE_BOOKMARKS);
 
         $this->removeFolderBookmarksResponse($query = ['bookmarks' => $bookmarks[1]->id, 'folder' => $folder->id])
             ->assertForbidden()

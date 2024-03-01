@@ -513,7 +513,7 @@ class AddBookmarksToFolderTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         //Assert collaborator can add bookmark when disabled action is not addBookmarks action
-        $updateCollaboratorActionService->disAble($folder->id, Feature::SEND_INVITES);
+        $updateCollaboratorActionService->disable($folder->id, Feature::SEND_INVITES);
         $this->loginUser($collaborator);
         $this->withRequestId()
             ->addBookmarksToFolderResponse([
@@ -521,7 +521,7 @@ class AddBookmarksToFolderTest extends TestCase
                 'folder'    => $folder->id,
             ])->assertCreated();
 
-        $updateCollaboratorActionService->disAble($folder->id, Feature::ADD_BOOKMARKS);
+        $updateCollaboratorActionService->disable($folder->id, Feature::ADD_BOOKMARKS);
 
         $this->loginUser($folderOwner);
         $this->withRequestId()

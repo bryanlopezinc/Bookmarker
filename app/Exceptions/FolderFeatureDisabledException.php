@@ -20,7 +20,10 @@ final class FolderFeatureDisabledException extends RuntimeException
     public function render(Request $request): JsonResponse
     {
         return new JsonResponse(
-            ['message' => 'FolderFeatureDisAbled', 'info' => 'Request could not be completed because this feature has been disabled by folder owner.'],
+            [
+                'message' => 'FolderFeatureDisAbled',
+                'info' => 'Request could not be completed because this feature has been disabled by folder owner.'
+            ],
             JsonResponse::HTTP_FORBIDDEN
         );
     }

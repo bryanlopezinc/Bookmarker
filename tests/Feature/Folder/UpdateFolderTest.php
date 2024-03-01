@@ -504,11 +504,11 @@ class UpdateFolderTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER);
 
         //Assert collaborator can update when disabled action is not remove bookmark action
-        $updateCollaboratorActionService->disAble($folder->id, Feature::SEND_INVITES);
+        $updateCollaboratorActionService->disable($folder->id, Feature::SEND_INVITES);
         $this->loginUser($collaborator);
         $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->id])->assertOk();
 
-        $updateCollaboratorActionService->disAble($folder->id, Feature::UPDATE_FOLDER);
+        $updateCollaboratorActionService->disable($folder->id, Feature::UPDATE_FOLDER);
 
         $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->id])
             ->assertForbidden()

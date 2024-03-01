@@ -22,7 +22,7 @@ final class ToggleFolderFeature
         $this->update($folderId, $feature, true);
     }
 
-    public function disAble(int $folderId, Feature $feature): void
+    public function disable(int $folderId, Feature $feature): void
     {
         $this->update($folderId, $feature, false);
     }

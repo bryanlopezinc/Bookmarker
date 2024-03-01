@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder;
 
+use App\Actions\ToggleFolderFeature;
 use App\Cache\FolderInviteDataRepository;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\Enums\Feature;
 use App\Models\FolderCollaboratorPermission;
 use App\Enums\Permission;
 use Database\Factories\FolderFactory;
@@ -474,6 +476,44 @@ class AcceptFolderInviteTest extends TestCase
         $this->acceptInviteResponse(['invite_hash' => $otherInviteeInviteHash])
             ->assertForbidden()
             ->assertJsonFragment(['message' => 'InviterCanNoLongerSendInvites']);
+    }
+
+    #[Test]
+    public function willReturnForbiddenResponseWhenFeatureIsDisabled(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        $toggleFolderFeature = new ToggleFolderFeature();
+
+        [$collaborator, $folderOwner, $invitedByCollaborator, $invitedByFolderOwner] = UserFactory::times(4)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $toggleFolderFeature->disable($folder->id, Feature::JOIN_FOLDER);
+
+        $this->tokenStore->store(
+            $inviteIdSentToInviteeInvitedByCollaborator = $this->faker->uuid,
+            $folderOwner->id,
+            $invitedByCollaborator->id,
+            $folder->id,
+            new UAC([])
+        );
+
+        $this->tokenStore->store(
+            $inviteIdSentToInviteeInvitedByFolderOwner = $this->faker->uuid,
+            $collaborator->id,
+            $invitedByFolderOwner->id,
+            $folder->id,
+            new UAC([])
+        );
+
+        $this->acceptInviteResponse(['invite_hash' => $inviteIdSentToInviteeInvitedByCollaborator])
+            ->assertForbidden()
+            ->assertJsonFragment($expectedError = ['message' => 'FolderFeatureDisAbled']);
+
+        $this->acceptInviteResponse(['invite_hash' => $inviteIdSentToInviteeInvitedByFolderOwner])
+            ->assertForbidden()
+            ->assertJsonFragment($expectedError);
     }
 
     public function testWillNotNotifyFolderOwnerWhenInvitationWasSentByFolderOwner(): void

@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Model;
 
 final class FeatureMustBeEnabledConstraint implements Scope, FolderRequestHandlerInterface
 {
-    public function __construct(private readonly User $authUser, private readonly Feature $feature)
+    public function __construct(private readonly ?User $authUser, private readonly Feature $feature)
     {
     }
 
@@ -34,7 +34,7 @@ final class FeatureMustBeEnabledConstraint implements Scope, FolderRequestHandle
      */
     public function handle(Folder $folder): void
     {
-        $folderBelongsToAuthUser = $folder->user_id === $this->authUser->id;
+        $folderBelongsToAuthUser = $folder->user_id === $this->authUser?->id;
 
         if ($folderBelongsToAuthUser) {
             return;

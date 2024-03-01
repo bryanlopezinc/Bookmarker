@@ -25,6 +25,7 @@ final class Handler implements AcceptFolderInviteRequestHandlerInterface
         Constraints\UserDefinedFolderCollaboratorsLimitConstraint::class,
         InviterMustBeAnActiveCollaboratorConstraint::class,
         InviterMustStillHaveRequiredPermissionConstraint::class,
+        Constraints\FeatureMustBeEnabledConstraint::class,
         CreateNewCollaborator::class,
         SendNewCollaboratorNotification::class,
     ];

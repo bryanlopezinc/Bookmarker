@@ -22,6 +22,7 @@ final class FeaturesRepository
         ['id' => 2, 'name' => 'DELETE_BOOKMARKS', 'created_at' => '2023-12-12 15:48:29'],
         ['id' => 3, 'name' => 'SEND_INVITES',     'created_at' => '2023-12-12 15:48:29'],
         ['id' => 4, 'name' => 'UPDATE_FOLDER',    'created_at' => '2023-12-12 15:48:29'],
+        ['id' => 5, 'name' => 'JOIN_FOLDER',      'created_at' => '2023-12-12 15:48:29'],
     ];
 
     public function findByName(Feature $feature): FolderFeature

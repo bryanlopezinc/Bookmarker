@@ -448,7 +448,7 @@ class SendInviteTest extends TestCase
             ->assertJsonFragment($expectation = ['message' => 'PermissionDenied']);
 
         //Assert will return same response when invite user action is disabled
-        $this->toggleFolderCollaborationRestriction->disAble($folder->id, Feature::SEND_INVITES);
+        $this->toggleFolderCollaborationRestriction->disable($folder->id, Feature::SEND_INVITES);
         $this->sendInviteResponse($query)->assertForbidden()->assertJsonFragment($expectation);
     }
 
@@ -491,7 +491,7 @@ class SendInviteTest extends TestCase
             ->assertJsonFragment($expectation = ['message' => 'CollaboratorCannotSendInviteWithPermissions']);
 
         //Assert will return same response when invite user action is disabled
-        $this->toggleFolderCollaborationRestriction->disAble($folder->id, Feature::SEND_INVITES);
+        $this->toggleFolderCollaborationRestriction->disable($folder->id, Feature::SEND_INVITES);
         $this->sendInviteResponse(array_replace($query, ['request_id' => $this->faker->uuid]))->assertBadRequest()->assertJsonFragment($expectation);
     }
 
@@ -598,13 +598,13 @@ class SendInviteTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
 
         //Assert collaborator can update when disabled action is not invite user action
-        $this->toggleFolderCollaborationRestriction->disAble($folder->id, Feature::UPDATE_FOLDER);
+        $this->toggleFolderCollaborationRestriction->disable($folder->id, Feature::UPDATE_FOLDER);
         $this->loginUser($collaborator);
         $this->withRequestId()
             ->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->id])
             ->assertOk();
 
-        $this->toggleFolderCollaborationRestriction->disAble($folder->id, Feature::SEND_INVITES);
+        $this->toggleFolderCollaborationRestriction->disable($folder->id, Feature::SEND_INVITES);
 
         $this->withRequestId()
             ->sendInviteResponse($query = ['email' => $otherInvitee->email, 'folder_id' => $folder->id])

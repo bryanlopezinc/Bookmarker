@@ -25,7 +25,7 @@ use App\UAC;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Traits\CreatesCollaboration;
 
-class AcceptFolderCollaborationInviteTest extends TestCase
+class AcceptFolderInviteTest extends TestCase
 {
     use WithFaker;
     use CreatesCollaboration;
@@ -367,6 +367,38 @@ class AcceptFolderCollaborationInviteTest extends TestCase
             ->assertExactJson([
                 'message' => 'MaxCollaboratorsLimitReached',
                 'info' => 'Folder has reached its max collaborators limit.'
+            ]);
+    }
+
+    #[Test]
+    public function willReturnForbiddenWhenCollaboratorsLimitSetByFolderOwnerIsExceeded(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$user, $invitee] = UserFactory::new()->count(2)->create();
+
+        $folder = FolderFactory::new()
+            ->for($user)
+            ->settings(FolderSettingsBuilder::new()->setMaxCollaboratorsLimit(500))
+            ->create();
+
+        Folder::retrieved(function (Folder $retrieved) {
+            $retrieved->collaborators_count = 500;
+        });
+
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            $user->id,
+            $invitee->id,
+            $folder->id,
+            UAC::all()
+        );
+
+        $this->acceptInviteResponse(['invite_hash' => $id])
+            ->assertForbidden()
+            ->assertExactJson([
+                'message' => 'MaxFolderCollaboratorsLimitReached',
+                'info' => 'The Folder has reached its max collaborators limit set by the folder owner.'
             ]);
     }
 

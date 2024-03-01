@@ -12,7 +12,9 @@ class FolderSettingsTest extends TestCase
     #[Test]
     public function default(): void
     {
-        $settings = new FolderSettings([]);
+        $settings = $this->make();
+
+        $this->assertEquals(-1, $settings->maxCollaboratorsLimit);
 
         $this->assertTrue($settings->notificationsAreEnabled);
         $this->assertFalse($settings->notificationsAreDisabled);
@@ -35,6 +37,11 @@ class FolderSettingsTest extends TestCase
         $this->assertFalse($settings->collaboratorExitNotificationIsDisabled);
         $this->assertTrue($settings->collaboratorExitNotificationMode->notifyOnAllActivity());
         $this->assertFalse($settings->collaboratorExitNotificationMode->notifyWhenCollaboratorHasWritePermission());
+    }
+
+    private function make(array $settings = []): FolderSettings
+    {
+        return new FolderSettings($settings);
     }
 
     #[Test]
@@ -63,17 +70,18 @@ class FolderSettingsTest extends TestCase
     {
         $this->expectNotToPerformAssertions();
 
-        new FolderSettings([]);
+        $this->make([]);
     }
 
     #[Test]
     public function whenKeyIsSet(): void
     {
-        $settings = new FolderSettings(['notifications' => ['enabled' => false]]);
+        $settings = $this->make(['notifications' => ['enabled' => false]]);
         $this->assertFalse($settings->notificationsAreEnabled);
         $this->assertTrue($settings->notificationsAreDisabled);
+        $this->assertEquals(3, count($settings->toArray(), COUNT_RECURSIVE));
 
-        $settings = new FolderSettings(['notifications' => ['newCollaborator' => ['enabled' => false]]]);
+        $settings = $this->make(['notifications' => ['newCollaborator' => ['enabled' => false]]]);
         $this->assertFalse($settings->newCollaboratorNotificationIsEnabled);
         $this->assertTrue($settings->newCollaboratorNotificationIsDisabled);
     }
@@ -81,7 +89,7 @@ class FolderSettingsTest extends TestCase
     private function isValid(array $data, int $errorCode = 1777): bool
     {
         try {
-            new FolderSettings($data);
+            $this->make($data);
             return true;
         } catch (InvalidFolderSettingException $e) {
             $this->assertEquals($errorCode, $e->getCode());
@@ -92,8 +100,9 @@ class FolderSettingsTest extends TestCase
     #[Test]
     public function toArray(): void
     {
-        $settings = new FolderSettings(['notifications' => ['enabled' => false]]);
-        $this->assertEquals($settings->toArray(), ['version' => '1.0.0', 'notifications' => ['enabled' => false]]);
+        $settings = $this->make(['notifications' => ['enabled' => false]])->toArray();
+        $this->assertEquals($settings, ['version' => '1.0.0', 'notifications' => ['enabled' => false]]);
+        $this->assertEquals(3, count($settings, COUNT_RECURSIVE));
     }
 
     #[Test]

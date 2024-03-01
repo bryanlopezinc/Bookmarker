@@ -44,6 +44,7 @@ final class FolderSettingsValidator
 
         return [
             'version'                               => ['required', 'string', 'in:1.0.0'],
+            'maxCollaboratorsLimit'                 => ['sometimes', 'int', 'min:-1', 'max:'. setting('MAX_FOLDER_COLLABORATORS_LIMIT')],
             'notifications.enabled'                  => ['sometimes', $booleanRule],
             'notifications.newCollaborator.enabled'  => ['sometimes', $booleanRule],
             'notifications.newCollaborator.mode'     => ['sometimes', 'in:*,invitedByMe'],

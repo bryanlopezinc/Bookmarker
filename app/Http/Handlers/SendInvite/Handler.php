@@ -24,6 +24,7 @@ final class Handler
         Constraints\FeatureMustBeEnabledConstraint::class,
         InviteeExistConstraint::class,
         Constraints\CollaboratorsLimitConstraint::class,
+        Constraints\UserDefinedFolderCollaboratorsLimitConstraint::class,
         CannotSendInviteToSelfConstraint::class,
         UniqueCollaboratorConstraint::class,
         CannotSendInviteToFolderOwnerConstraint::class,

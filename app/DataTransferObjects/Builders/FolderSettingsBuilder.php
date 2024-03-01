@@ -72,6 +72,13 @@ final class FolderSettingsBuilder
         return new self($settings);
     }
 
+    public function setMaxCollaboratorsLimit(int $limit): self
+    {
+        Arr::set($this->attributes, 'maxCollaboratorsLimit', $limit);
+
+        return $this;
+    }
+
     public function enableNotifications(bool $enable = true): self
     {
         Arr::set($this->attributes, 'notifications.enabled', $enable);

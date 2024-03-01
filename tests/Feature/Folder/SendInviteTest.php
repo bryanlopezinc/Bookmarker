@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Folder;
 
+use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Enums\Permission;
 use Tests\TestCase;
 use Illuminate\Support\Str;
@@ -22,7 +23,7 @@ use Database\Factories\EmailFactory;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Traits\CreatesCollaboration;
 
-class SendFolderCollaborationInviteTest extends TestCase
+class SendInviteTest extends TestCase
 {
     use WithFaker;
     use CreatesCollaboration;
@@ -243,6 +244,40 @@ class SendFolderCollaborationInviteTest extends TestCase
             ->sendInviteResponse($params)
             ->assertForbidden()
             ->assertJsonFragment($expectation);
+    }
+
+    #[Test]
+    public function willReturnForbiddenWhenCollaboratorsLimitSetByFolderOwnerIsExceeded(): void
+    {
+        [$folderOwner, $collaborator, $invitee] = UserFactory::times(3)->create();
+
+        $folder = FolderFactory::new()
+            ->for($folderOwner)
+            ->settings(FolderSettingsBuilder::new()->setMaxCollaboratorsLimit(500))
+            ->create();
+
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
+
+        Folder::retrieved(function (Folder $folder) {
+            $folder->collaborators_count = 500;
+        });
+
+        Passport::actingAs($folderOwner);
+        $this->withRequestId()
+            ->sendInviteResponse($params = [
+                'email'     => $invitee->email,
+                'folder_id' => $folder->id,
+            ])->assertForbidden()
+            ->assertExactJson($expectation = [
+                'message' => 'MaxFolderCollaboratorsLimitReached',
+                'info' => 'The Folder has reached its max collaborators limit set by the folder owner.'
+            ]);
+
+        Passport::actingAs($collaborator);
+        $this->withRequestId()
+            ->sendInviteResponse($params)
+            ->assertForbidden()
+            ->assertExactJson($expectation);
     }
 
     public function testSendInviteToPrimaryEmail(): void

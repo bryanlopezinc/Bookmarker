@@ -8,6 +8,7 @@ use App\Utils\FolderSettingsValidator;
 use Illuminate\Contracts\Support\Arrayable;
 use App\Enums\NewCollaboratorNotificationMode;
 use App\Enums\CollaboratorExitNotificationMode;
+use BackedEnum;
 use Error;
 
 /**
@@ -25,6 +26,7 @@ use Error;
  * @property-read bool $collaboratorExitNotificationIsEnabled
  * @property-read bool $collaboratorExitNotificationIsDisabled
  * @property-read CollaboratorExitNotificationMode $collaboratorExitNotificationMode
+ * @property-read int $maxCollaboratorsLimit
  */
 final class FolderSettings implements Arrayable
 {
@@ -63,6 +65,7 @@ final class FolderSettings implements Arrayable
     {
         return [
             'version' => '1.0.0',
+            'maxCollaboratorsLimit' => -1,
             'notifications' => [
                 'enabled' => true,
                 'newCollaborator' => [
@@ -80,11 +83,12 @@ final class FolderSettings implements Arrayable
         ];
     }
 
-    private function resolve(string $classProperty): mixed
+    private function resolve(string $classProperty): bool|BackedEnum|int
     {
         $notifications = $this->resolvedSetting['notifications'];
 
         return match ($classProperty) {
+            'maxCollaboratorsLimit'                 => $this->resolvedSetting['maxCollaboratorsLimit'],
             'notificationsAreEnabled'                => $notifications['enabled'],
             'newCollaboratorNotificationIsEnabled'   => $notifications['newCollaborator']['enabled'],
             'newCollaboratorNotificationMode'        => NewCollaboratorNotificationMode::from($notifications['newCollaborator']['mode']),
@@ -93,7 +97,6 @@ final class FolderSettings implements Arrayable
             'bookmarksRemovedNotificationIsEnabled'  => $notifications['bookmarksRemoved']['enabled'],
             'collaboratorExitNotificationIsEnabled'  => $notifications['collaboratorExit']['enabled'],
             'collaboratorExitNotificationMode'       => CollaboratorExitNotificationMode::from($notifications['collaboratorExit']['mode']),
-
             'notificationsAreDisabled'               => !$this->resolve('notificationsAreEnabled'),
             'newCollaboratorNotificationIsDisabled'  => !$this->resolve('newCollaboratorNotificationIsEnabled'),
             'folderUpdatedNotificationIsDisabled'    => !$this->resolve('folderUpdatedNotificationIsEnabled'),
@@ -116,7 +119,7 @@ final class FolderSettings implements Arrayable
     /**
      * @param string $name
      * @param mixed $value
-     * 
+     *
      * @return void
      */
     public function __set($name, $value)

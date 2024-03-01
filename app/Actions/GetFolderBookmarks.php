@@ -20,20 +20,20 @@ final class GetFolderBookmarks
      */
     public function handle(?int $authUserId, Folder $folder, PaginationData $pagination): Paginator
     {
+        $isLoggedIn = $authUserId !== null;
         $folderBelongsToAuthUser = $folder->user_id !== $authUserId;
-
-        $fetchOnlyPublicBookmarks = !$authUserId || $folderBelongsToAuthUser;
+        $fetchOnlyPublicBookmarks = !$isLoggedIn || $folderBelongsToAuthUser;
 
         $shouldNotIncludeMutedCollaboratorsBookmarks = ($folder->visibility->isPublic() ||
             $folder->visibility->isVisibleToCollaboratorsOnly()) &&
-            $authUserId !== null;
+            $isLoggedIn;
 
         /** @var Paginator */
         $result = Bookmark::WithQueryOptions()
             ->join('folders_bookmarks', 'folders_bookmarks.bookmark_id', '=', 'bookmarks.id')
             ->when($fetchOnlyPublicBookmarks, fn ($query) => $query->where('visibility', FolderBookmarkVisibility::PUBLIC->value))
             ->when(!$fetchOnlyPublicBookmarks, fn ($query) => $query->addSelect(['visibility']))
-            ->when($authUserId, function ($query) use ($authUserId) {
+            ->when($isLoggedIn, function ($query) use ($authUserId) {
                 $query->addSelect([
                     'isUserFavorite' => Favorite::query()
                         ->select('id')
@@ -57,16 +57,20 @@ final class GetFolderBookmarks
             ->simplePaginate($pagination->perPage(), [], page: $pagination->page());
 
         $result->setCollection(
-            $result->getCollection()->map($this->buildFolderBookmarkObject($fetchOnlyPublicBookmarks))
+            $result->getCollection()->map($this->buildFolderBookmarkObject($fetchOnlyPublicBookmarks, $isLoggedIn))
         );
 
         return $result;
     }
 
-    private function buildFolderBookmarkObject(bool $onlyPublic): \Closure
+    private function buildFolderBookmarkObject(bool $onlyPublic, bool $isLoggedIn): \Closure
     {
-        return function (Bookmark $model) use ($onlyPublic) {
-            $model->isUserFavorite = is_int($model->isUserFavorite);
+        return function (Bookmark $model) use ($onlyPublic, $isLoggedIn) {
+            if ($isLoggedIn) {
+                $model->isUserFavorite = is_int($model->isUserFavorite);
+            } else {
+                $model->isUserFavorite = false;
+            }
 
             if ($onlyPublic) {
                 $model->visibility = FolderBookmarkVisibility::PUBLIC->value;

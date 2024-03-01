@@ -19,7 +19,7 @@ final class UserFoldersRepository
         PaginationData $pagination,
         SortCriteria $sortCriteria = SortCriteria::NEWEST
     ): Paginator {
-        $query = Model::query()->withCount('bookmarks')->where('user_id', $userId);
+        $query = Model::query()->withCount(['bookmarks', 'collaborators'])->where('user_id', $userId);
 
         $this->addSortQuery($query, $sortCriteria);
 

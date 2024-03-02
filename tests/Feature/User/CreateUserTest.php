@@ -47,8 +47,6 @@ class CreateUserTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->withRequestId();
-
         $this->createUserResponse()
             ->assertUnprocessable()
             ->assertJsonCount(5, 'errors')
@@ -89,8 +87,6 @@ class CreateUserTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->withRequestId();
-
         $this->createUserResponse(['username' => UserFactory::new()->create()->username])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['username' => 'The username has already been taken.']);
@@ -112,8 +108,7 @@ class CreateUserTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->withRequestId()
-            ->createUserResponse(['email' => UserFactory::new()->create()->email])
+        $this->createUserResponse(['email' => UserFactory::new()->create()->email])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['email' => 'The email has already been taken.']);
     }
@@ -130,8 +125,7 @@ class CreateUserTest extends TestCase
             'verified_at' => now()
         ]);
 
-        $this->withRequestId()
-            ->createUserResponse(['email' => $userSecondaryEmail])
+        $this->createUserResponse(['email' => $userSecondaryEmail])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['email' => 'The email has already been taken.']);
     }
@@ -143,8 +137,6 @@ class CreateUserTest extends TestCase
         config(['settings.EMAIL_VERIFICATION_URL' => 'https://laravel.com/:id?hash=:hash&signature=:signature&expires=:expires&t=f']);
 
         Notification::fake();
-
-        $this->withRequestId();
 
         $this->createUserResponse([
             'first_name'            => $firstName = $this->faker->firstName,
@@ -213,19 +205,18 @@ class CreateUserTest extends TestCase
 
         Passport::actingAsClient($client = ClientFactory::new()->asPasswordClient()->create());
 
-        $this->withRequestId()
-            ->createUserResponse([
-                'first_name'            => $this->faker->firstName,
-                'last_name'             => $this->faker->lastName,
-                'username'              =>  Str::random(Username::MAX_LENGTH - 2) . '_' . rand(0, 9),
-                'email'                 => $email = $this->faker->safeEmail,
-                'password'              => $password = str::random(7) . rand(0, 9),
-                'password_confirmation' => $password,
-                'client_id'             => $client->id,
-                'client_secret'         => $client->secret,
-                'grant_type'            => 'password',
-                'profile_photo'         => UploadedFile::fake()->image('myPicture.jpg')->size(1000)
-            ])->assertCreated();
+        $this->createUserResponse([
+            'first_name'            => $this->faker->firstName,
+            'last_name'             => $this->faker->lastName,
+            'username'              =>  Str::random(Username::MAX_LENGTH - 2) . '_' . rand(0, 9),
+            'email'                 => $email = $this->faker->safeEmail,
+            'password'              => $password = str::random(7) . rand(0, 9),
+            'password_confirmation' => $password,
+            'client_id'             => $client->id,
+            'client_secret'         => $client->secret,
+            'grant_type'            => 'password',
+            'profile_photo'         => UploadedFile::fake()->image('myPicture.jpg')->size(1000)
+        ])->assertCreated();
 
         /** @var User */
         $user = User::query()->where('email', $email)->sole();

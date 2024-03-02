@@ -39,8 +39,6 @@ class CreateFolderTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->withRequestId();
-
         $this->createFolderResponse()
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
@@ -58,11 +56,10 @@ class CreateFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->withRequestId()
-            ->createFolderResponse([
-                'name'        => $name = $this->faker->word,
-                'description' => $description = $this->faker->sentence,
-            ])->assertCreated();
+        $this->createFolderResponse([
+            'name'        => $name = $this->faker->word,
+            'description' => $description = $this->faker->sentence,
+        ])->assertCreated();
 
         /** @var Folder */
         $folder = Folder::query()->where('user_id', $user->id)->sole();
@@ -74,26 +71,11 @@ class CreateFolderTest extends TestCase
         $this->assertTrue($folder->updated_at->isSameMinute());
     }
 
-    #[Test]
-    public function whenRequestHasBeenCompleted(): void
-    {
-        $this->loginUser(UserFactory::new()->create());
-
-        $this->withRequestId()
-            ->createFolderResponse($query = ['name' => $this->faker->word])
-            ->assertCreated();
-
-        $this->assertRequestAlreadyCompleted($this->createFolderResponse($query));
-        $this->assertRequestAlreadyCompleted($this->createFolderResponse($query));
-    }
-
     public function testCreateFolderWithoutDescription(): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->withRequestId()
-            ->createFolderResponse(['name' => $this->faker->word])
-            ->assertCreated();
+        $this->createFolderResponse(['name' => $this->faker->word])->assertCreated();
 
         $folder = Folder::query()->where('user_id', $user->id)->sole();
 
@@ -104,9 +86,7 @@ class CreateFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->withRequestId()
-            ->createFolderResponse(['name' => $this->faker->word, 'visibility' => 'public'])
-            ->assertCreated();
+        $this->createFolderResponse(['name' => $this->faker->word, 'visibility' => 'public'])->assertCreated();
 
         $folder = Folder::where('user_id', $user->id)->first();
 
@@ -118,9 +98,7 @@ class CreateFolderTest extends TestCase
     {
         $this->loginUser($user = UserFactory::new()->create());
 
-        $this->withRequestId()
-            ->createFolderResponse(['name' => $this->faker->word, 'visibility' => 'collaborators'])
-            ->assertCreated();
+        $this->createFolderResponse(['name' => $this->faker->word, 'visibility' => 'collaborators'])->assertCreated();
 
         $folder = Folder::where('user_id', $user->id)->first();
 
@@ -131,8 +109,7 @@ class CreateFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->withRequestId()
-            ->createFolderResponse(['name' => $this->faker->word, 'visibility' => 'private'])
+        $this->createFolderResponse(['name' => $this->faker->word, 'visibility' => 'private'])
             ->assertCreated();
 
         $folder = Folder::where('user_id', $user->id)->first();
@@ -144,8 +121,6 @@ class CreateFolderTest extends TestCase
     public function createPasswordProtectedFolder(): void
     {
         $this->loginUser($user = UserFactory::new()->create());
-
-        $this->withRequestId();
 
         $this->createFolderResponse(['name' => $this->faker->word, 'visibility' => 'password_protected'])
             ->assertUnprocessable()
@@ -247,11 +222,10 @@ class CreateFolderTest extends TestCase
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->withRequestId()
-            ->createFolderResponse([
-                'name'     => $this->faker->word,
-                'settings' => $settings,
-            ])->assertCreated();
+        $this->createFolderResponse([
+            'name'     => $this->faker->word,
+            'settings' => $settings,
+        ])->assertCreated();
 
         $settings = Folder::onlyAttributes()
             ->where('user_id', $user->id)
@@ -264,8 +238,6 @@ class CreateFolderTest extends TestCase
     public function testWillReturnUnprocessableWhenFolderSettingsIsInValid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
-
-        $this->withRequestId();
 
         $this->createFolderResponse(['settings' => 'foo'])
             ->assertUnprocessable()

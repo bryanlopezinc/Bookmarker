@@ -37,16 +37,12 @@ class AddEmailTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->withRequestId();
-
         $this->addEmailToAccount()->assertUnprocessable()->assertJsonValidationErrorFor('email');
         $this->addEmailToAccount(['email' => 'foo bar'])->assertJsonValidationErrorFor('email');
     }
 
     public function testAddEmail(): void
     {
-        $this->withRequestId();
-
         Mail::fake();
 
         Passport::actingAs(UserFactory::new()->create());
@@ -58,8 +54,6 @@ class AddEmailTest extends TestCase
 
     public function testCanAddAnotherEmailAfter_5_minutes_WithoutVerifyingFirstEmail(): void
     {
-        $this->withRequestId();
-
         Passport::actingAs(UserFactory::new()->create());
 
         $this->addEmailToAccount(['email' => $this->faker->unique()->email])->assertOk();
@@ -74,8 +68,6 @@ class AddEmailTest extends TestCase
 
     public function testWillReturnForbiddenWhenSecondaryEmailsIsMoreThan_3(): void
     {
-        $this->withRequestId();
-
         Passport::actingAs($user = UserFactory::new()->create());
 
         EmailFactory::times(3)->for($user)->create();
@@ -89,18 +81,15 @@ class AddEmailTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->withRequestId()->addEmailToAccount(['email' => $this->faker->unique()->email]);
+        $this->addEmailToAccount(['email' => $this->faker->unique()->email]);
 
-        $this->withRequestId()
-            ->addEmailToAccount(['email' => $this->faker->unique()->email])
+        $this->addEmailToAccount(['email' => $this->faker->unique()->email])
             ->assertStatus(Response::HTTP_BAD_REQUEST)
             ->assertExactJson(['message'    => 'AwaitingVerification']);
     }
 
     public function testWillReturnUnprocessableWhenEmailAlreadyExists(): void
     {
-        $this->withRequestId();
-
         [$user, $otherUser] = UserFactory::times(2)->create();
 
         SecondaryEmail::create([

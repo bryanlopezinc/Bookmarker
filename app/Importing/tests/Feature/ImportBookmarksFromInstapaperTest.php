@@ -15,8 +15,6 @@ class ImportBookmarksFromInstapaperTest extends ImportBookmarkBaseTest
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->withRequestId();
-
         $this->importBookmarkResponse()
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
@@ -56,7 +54,6 @@ class ImportBookmarksFromInstapaperTest extends ImportBookmarkBaseTest
     public function testImportBookmarks(): void
     {
         Passport::actingAs(UserFactory::new()->create());
-        $this->withRequestId();
 
         $this->importBookmarkResponse([
             'source' => 'instapaperFile',

@@ -35,8 +35,7 @@ class ResetPasswordTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->withRequestId()
-            ->resetPasswordResponse([])
+        $this->resetPasswordResponse([])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['email', 'password', 'token']);
     }
@@ -45,14 +44,12 @@ class ResetPasswordTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this
-            ->withRequestId()
-            ->resetPasswordResponse([
-                'email'                 => 'non-existentUser@yahoo.com',
-                'password'              => self::NEW_PASSWORD,
-                'password_confirmation' => self::NEW_PASSWORD,
-                'token'                 => 'token'
-            ])->assertNotFound()
+        $this->resetPasswordResponse([
+            'email'                 => 'non-existentUser@yahoo.com',
+            'password'              => self::NEW_PASSWORD,
+            'password_confirmation' => self::NEW_PASSWORD,
+            'token'                 => 'token'
+        ])->assertNotFound()
             ->assertExactJson(['message' => 'UserNotFound']);
     }
 
@@ -60,13 +57,12 @@ class ResetPasswordTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->withRequestId()
-            ->resetPasswordResponse([
-                'email'                 => UserFactory::new()->create([])->email,
-                'password'              => self::NEW_PASSWORD,
-                'password_confirmation' => self::NEW_PASSWORD,
-                'token'                 => 'token'
-            ])->assertStatus(400)
+        $this->resetPasswordResponse([
+            'email'                 => UserFactory::new()->create([])->email,
+            'password'              => self::NEW_PASSWORD,
+            'password_confirmation' => self::NEW_PASSWORD,
+            'token'                 => 'token'
+        ])->assertStatus(400)
             ->assertExactJson(['message' => 'InvalidResetToken']);
     }
 
@@ -85,17 +81,15 @@ class ResetPasswordTest extends TestCase
             $token = $hash;
         });
 
-        $this->withRequestId()
-            ->resetPasswordResponse($query = [
-                'email'                 => $user->email,
-                'password'              => self::NEW_PASSWORD,
-                'password_confirmation' => self::NEW_PASSWORD,
-                'token'                 => $token
-            ])->assertOk();
+        $this->resetPasswordResponse($query = [
+            'email'                 => $user->email,
+            'password'              => self::NEW_PASSWORD,
+            'password_confirmation' => self::NEW_PASSWORD,
+            'token'                 => $token
+        ])->assertOk();
 
         //assert token will be deleted.
-        $this->withRequestId()
-            ->resetPasswordResponse($query)
+        $this->resetPasswordResponse($query)
             ->assertBadRequest()
             ->assertExactJson(['message' => 'InvalidResetToken']);
 
@@ -113,8 +107,7 @@ class ResetPasswordTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->withRequestId()
-            ->resetPasswordResponse(['password' => 'secured'])
+        $this->resetPasswordResponse(['password' => 'secured'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['password' => 'The password must be at least 8 characters.']);
     }
@@ -123,8 +116,7 @@ class ResetPasswordTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->withRequestId()
-            ->resetPasswordResponse(['password' => 'password_password'])
+        $this->resetPasswordResponse(['password' => 'password_password'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['password' => 'The password must contain at least one number.']);
     }

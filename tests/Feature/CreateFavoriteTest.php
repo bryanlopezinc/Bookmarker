@@ -33,8 +33,6 @@ class CreateFavoriteTest extends TestCase
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->withRequestId();
-
         $this->createFavoriteResponse()
             ->assertUnprocessable()
             ->assertJsonValidationErrorFor('bookmarks');
@@ -65,7 +63,6 @@ class CreateFavoriteTest extends TestCase
 
         $bookmarks = BookmarkFactory::times(2)->for($user)->create();
 
-        $this->withRequestId();
         $this->createFavoriteResponse(['bookmarks' => $bookmarks->pluck('id')->implode(',')])->assertCreated();
 
         $favorites = Favorite::query()->where('user_id', $user->id)->get();
@@ -83,9 +80,7 @@ class CreateFavoriteTest extends TestCase
 
         $bookmarks = BookmarkFactory::new()->count(5)->for($user)->create();
 
-        $this->withRequestId()
-            ->createFavoriteResponse(['bookmarks' => $bookmarks->pluck('id')->implode(',')])
-            ->assertCreated();
+        $this->createFavoriteResponse(['bookmarks' => $bookmarks->pluck('id')->implode(',')])->assertCreated();
 
         $this->assertBookmarksHealthWillBeChecked($bookmarks->pluck('id')->all());
     }
@@ -100,10 +95,9 @@ class CreateFavoriteTest extends TestCase
             ->pluck('id')
             ->map(fn (int $id) => (string) $id);
 
-        $this->withRequestId()->createFavoriteResponse(['bookmarks' => $userBookmarksIds[0]])->assertCreated();
+        $this->createFavoriteResponse(['bookmarks' => $userBookmarksIds[0]])->assertCreated();
 
-        $this->withRequestId()
-            ->createFavoriteResponse(['bookmarks' => $userBookmarksIds->implode(',')])
+        $this->createFavoriteResponse(['bookmarks' => $userBookmarksIds->implode(',')])
             ->assertConflict()
             ->assertExactJson([
                 'message' => 'FavoritesAlreadyExists',
@@ -117,7 +111,6 @@ class CreateFavoriteTest extends TestCase
 
         $bookmark = BookmarkFactory::new()->create();
 
-        $this->withRequestId();
         $this->createFavoriteResponse(['bookmarks' => (string) $bookmark->id])
             ->assertNotFound()
             ->assertExactJson(['message' => 'BookmarkNotFound']);
@@ -129,7 +122,6 @@ class CreateFavoriteTest extends TestCase
 
         $bookmark = BookmarkFactory::new()->for($user)->create();
 
-        $this->withRequestId();
         $this->createFavoriteResponse(['bookmarks' => (string) ($bookmark->id + 1)])
             ->assertNotFound()
             ->assertExactJson(['message' => "BookmarkNotFound"]);

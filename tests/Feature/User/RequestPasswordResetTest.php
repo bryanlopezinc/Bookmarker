@@ -35,8 +35,6 @@ class RequestPasswordResetTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asClientCredentials()->create());
 
-        $this->withRequestId();
-
         $this->requestPasswordResetResponse([])->assertUnprocessable()->assertJsonValidationErrors(['email']);
         $this->requestPasswordResetResponse(['email' => 'my mail@yahoo.com'])->assertUnprocessable();
     }
@@ -45,8 +43,7 @@ class RequestPasswordResetTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asClientCredentials()->create());
 
-        $this->withRequestId()
-            ->requestPasswordResetResponse(['email'  => $this->faker->email])
+        $this->requestPasswordResetResponse(['email'  => $this->faker->email])
             ->assertNotFound()
             ->assertExactJson(['message' => 'UserNotFound']);
     }
@@ -61,8 +58,7 @@ class RequestPasswordResetTest extends TestCase
 
         $user = UserFactory::new()->create();
 
-        $this->withRequestId()
-            ->requestPasswordResetResponse(['email'  => $user->email,])
+        $this->requestPasswordResetResponse(['email'  => $user->email,])
             ->assertOk()
             ->assertExactJson(['message' => 'success']);
 
@@ -85,17 +81,14 @@ class RequestPasswordResetTest extends TestCase
 
         $user = UserFactory::new()->create();
 
-        $this->withRequestId()
-            ->requestPasswordResetResponse(['email' => $user->email,])
+        $this->requestPasswordResetResponse(['email' => $user->email,])
             ->assertOk()
             ->assertExactJson(['message' => 'success']);
 
-        $this->withRequestId()
-            ->requestPasswordResetResponse(['email' => $user->email,])
-            ->assertTooManyRequests();
+        $this->requestPasswordResetResponse(['email' => $user->email,])->assertTooManyRequests();
 
         $this->travel(61)->seconds(function () use ($user) {
-            $this->withRequestId()->requestPasswordResetResponse(['email' => $user->email,])->assertOk();
+            $this->requestPasswordResetResponse(['email' => $user->email,])->assertOk();
         });
     }
 }

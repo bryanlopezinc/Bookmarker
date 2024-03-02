@@ -2,19 +2,17 @@
 
 namespace App\Importing\tests\Feature;
 
-use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 
 class ImportBookmarkBaseTest extends TestCase
 {
     use WithFaker;
 
-    protected function importBookmarkResponse(array $parameters = []): TestResponse
+    protected function importBookmarkResponse(array $parameters = [], array $headers = []): TestResponse
     {
-        return $this->postJson(route('importBookmark'), $parameters);
+        return $this->postJson(route('importBookmark'), $parameters, $headers);
     }
 
     final public function testIsAccessibleViaPath(): void
@@ -25,14 +23,5 @@ class ImportBookmarkBaseTest extends TestCase
     final public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
         $this->importBookmarkResponse()->assertUnauthorized();
-    }
-
-    final public function testWillReturnUnprocessableWhenRequestIdIsNotAValidUuid(): void
-    {
-        Passport::actingAs(UserFactory::new()->create());
-
-        $this->importBookmarkResponse(['request_id' => 'foo'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['request_id' => 'The request id must be a valid UUID.']);
     }
 }

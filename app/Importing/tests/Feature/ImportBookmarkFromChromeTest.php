@@ -18,8 +18,6 @@ class ImportBookmarkFromChromeTest extends ImportBookmarkBaseTest
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->withRequestId();
-
         $this->importBookmarkResponse()
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
@@ -67,8 +65,6 @@ class ImportBookmarkFromChromeTest extends ImportBookmarkBaseTest
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->withRequestId();
-
         $this->importBookmarkResponse([
             'source' => 'chromeExportFile',
             'html'   => UploadedFile::fake()->createWithContent('file.html', $this->getViewInstance()->render()),
@@ -90,7 +86,6 @@ class ImportBookmarkFromChromeTest extends ImportBookmarkBaseTest
         $view = $this->getViewInstance()->with(['includeBookmarksBar' => true]);
 
         $this->loginUser($user = UserFactory::new()->create());
-        $this->withRequestId();
         $this->importBookmarkResponse([
             'source'     => 'chromeExportFile',
             'html'       => UploadedFile::fake()->createWithContent('file.html', $view->render()),

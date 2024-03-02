@@ -38,8 +38,7 @@ class Request2FACodeForLoginTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->withRequestId()
-            ->twoFARequestResponse([])
+        $this->twoFARequestResponse([])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['username', 'password']);
     }
@@ -48,11 +47,10 @@ class Request2FACodeForLoginTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->withRequestId()
-            ->twoFARequestResponse([
-                'username'  => UserFactory::randomUsername(),
-                'password' => 'password',
-            ])->assertUnauthorized()
+        $this->twoFARequestResponse([
+            'username'  => UserFactory::randomUsername(),
+            'password' => 'password',
+        ])->assertUnauthorized()
             ->assertExactJson(['message' => 'InvalidCredentials']);
     }
 
@@ -60,11 +58,10 @@ class Request2FACodeForLoginTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
-        $this->withRequestId()
-            ->twoFARequestResponse([
-                'username'  => UserFactory::new()->create()->username,
-                'password' => 'wrong-password',
-            ])->assertUnauthorized()
+        $this->twoFARequestResponse([
+            'username'  => UserFactory::new()->create()->username,
+            'password' => 'wrong-password',
+        ])->assertUnauthorized()
             ->assertExactJson(['message' => 'InvalidCredentials']);
     }
 
@@ -77,11 +74,10 @@ class Request2FACodeForLoginTest extends TestCase
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
         Mail::fake();
 
-        $this->withRequestId()
-            ->twoFARequestResponse([
-                'username'  => $user->username,
-                'password' => 'password',
-            ])->assertOk();
+        $this->twoFARequestResponse([
+            'username'  => $user->username,
+            'password' => 'password',
+        ])->assertOk();
 
         Mail::assertQueued(function (TwoFACodeMail $mail) use ($user, $verificationCode) {
             $this->assertSame($user->email, $mail->to[0]['address']);
@@ -100,11 +96,10 @@ class Request2FACodeForLoginTest extends TestCase
 
         $user = UserFactory::new()->create();
 
-        $this->withRequestId()
-            ->twoFARequestResponse([
-                'username'  => $user->email,
-                'password' => 'password',
-            ])->assertOk();
+        $this->twoFARequestResponse([
+            'username'  => $user->email,
+            'password' => 'password',
+        ])->assertOk();
     }
 
     #[Test]
@@ -114,14 +109,12 @@ class Request2FACodeForLoginTest extends TestCase
 
         $username = UserFactory::new()->create()->username;
 
-        $this->withRequestId()
-            ->twoFARequestResponse($query = [
-                'username'  => $username,
-                'password' => 'password',
-            ])->assertOk();
+        $this->twoFARequestResponse($query = [
+            'username'  => $username,
+            'password' => 'password',
+        ])->assertOk();
 
-        $this->withRequestId()
-            ->twoFARequestResponse($query)
+        $this->twoFARequestResponse($query)
             ->assertTooManyRequests()
             ->assertHeader('request-2FA-after')
             ->tap(function (TestResponse $response) {
@@ -129,7 +122,7 @@ class Request2FACodeForLoginTest extends TestCase
             });
 
         $this->travel(61)->seconds(function () use ($query) {
-            $this->withRequestId()->twoFARequestResponse($query)->assertOk();
+            $this->twoFARequestResponse($query)->assertOk();
         });
     }
 }

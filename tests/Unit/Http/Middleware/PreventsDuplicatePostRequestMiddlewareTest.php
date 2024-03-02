@@ -6,48 +6,87 @@ namespace Tests\Unit\Http\Middleware;
 
 use App\Http\Middleware\PreventsDuplicatePostRequestMiddleware as Middleware;
 use Illuminate\Contracts\Cache\Repository;
-use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Contracts\Validation\Factory;
-use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
+use Symfony\Component\HttpFoundation\HeaderBag;
+use Tests\TestCase;
 
 class PreventsDuplicatePostRequestMiddlewareTest extends TestCase
 {
     #[Test]
-    public function willThrowExceptionWhenRequestMethodIsNotPost(): void
+    public function willOnlyHandlePostMethod(): void
     {
-        $this->expectExceptionMessage('Cannot use middleware in GET request');
-
         $cache = $this->getCacheMock(function ($mock) {
             $mock->expects($this->never())->method('has');
             $mock->expects($this->never())->method('put');
         });
 
-        $middleware = new Middleware($cache, $this->getValidatorFactory(), $this->getApplicationInstance());
+        $middleware = new Middleware($cache);
 
-        $middleware->handle(new Request(server: ['REQUEST_METHOD' => 'GET']), fn () => new Response());
+        $request = $this->getRequest();
+        $request->setMethod('GET');
+        $middleware->handle($request, fn () => new Response());
+
+        $request = $this->getRequest();
+        $request->setMethod('PATCH');
+        $middleware->handle($request, fn () => new Response());
+
+        $request = $this->getRequest();
+        $request->setMethod('PUT');
+        $middleware->handle($request, fn () => new Response());
+
+        $request = $this->getRequest();
+        $request->setMethod('DELETE');
+        $middleware->handle($request, fn () => new Response());
     }
 
     #[Test]
-    public function whenRequestIdExistsInCache(): void
+    public function headerMustNotBeGreaterThan_64_Chars(): void
+    {
+        $this->expectExceptionMessage('The idempotency key must not be greater than 64 characters.');
+
+        $request = new Request(
+            server: [
+                'REQUEST_METHOD' => 'POST',
+                'HTTP_idempotency_key' => str_repeat('F', 65)
+            ]
+        );
+
+        $middleware = new Middleware();
+
+        $middleware->handle($request, fn () => new Response());
+    }
+
+    #[Test]
+    public function willNotCacheResultWhenIdempotencyKeyIsMissing(): void
+    {
+        $cache = $this->getCacheMock(function ($mock) {
+            $mock->expects($this->never())->method('has');
+            $mock->expects($this->never())->method('put');
+        });
+
+        $request = $this->getRequest();
+        $request->headers = new HeaderBag();
+
+        $middleware = new Middleware($cache);
+
+        $middleware->handle($request, fn () => new Response('', 403));
+    }
+
+    #[Test]
+    public function whenIdExistsInCache(): void
     {
         $cache = $this->getCacheMock(function ($mock) {
             $mock->expects($this->once())->method('has')->willReturn(true);
             $mock->expects($this->never())->method('put');
+            $mock->expects($this->once())->method('get')->willReturn(new Response(status: 403));
         });
 
-        $middleware = new Middleware($cache, $this->getValidatorFactory(), $this->getApplicationInstance());
+        $middleware = new Middleware($cache);
         $response = $middleware->handle($this->getRequest(), fn () => new Response());
 
-        $this->assertEquals(200, $response->status());
-        $this->assertEquals($response->getData(true), [
-            'message'    => 'RequestAlreadyCompleted',
-            'info'       => 'A request with the provider request id has already been completed.',
-            'request_id' => 'a3a9ca1c-b738-3329-ac76-dfa19933c2e9'
-        ]);
+        $this->assertEquals(403, $response->status());
     }
 
     /**
@@ -60,72 +99,46 @@ class PreventsDuplicatePostRequestMiddlewareTest extends TestCase
         return $cache;
     }
 
-    /**
-     * @return Application
-     */
-    private function getApplicationInstance()
-    {
-        $app = $this->getMockBuilder(Application::class)->getMock();
-
-        $app->method('environment')->willReturn(false);
-
-        return $app;
-    }
-
-    /**
-     * @return Factory
-     */
-    private function getValidatorFactory()
-    {
-        $validatorFactory = $this->getMockBuilder(Factory::class)->getMock();
-        $validator = $this->getMockBuilder(Validator::class)->getMock();
-
-        $validator->method('validate')->willReturn(['request_id' => 'a3a9ca1c-b738-3329-ac76-dfa19933c2e9']);
-        $validatorFactory->method('make')->willReturn($validator);
-
-        return $validatorFactory;
-    }
-
     private function getRequest()
     {
-        return new Request(['request_id' => 'a3a9ca1c-b738-3329-ac76-dfa19933c2e9'], server: ['REQUEST_METHOD' => 'POST']);
+        return new Request(
+            server: [
+                'REQUEST_METHOD' => 'POST',
+                'HTTP_idempotency_key' => 'a3a9ca1c-b738-3329-ac76-dfa19933c2e9'
+            ]
+        );
     }
 
     #[Test]
-    public function willNotCacheRequestIdWhenResponseWasNotSuccessful(): void
+    public function willNotCacheRequestIdWhenResponseIsAValidationErrorResponse(): void
     {
         $cache = $this->getCacheMock(function ($mock) {
             $mock->expects($this->any())->method('has')->willReturn(false);
             $mock->expects($this->never())->method('put');
         });
 
-        $middleware = new Middleware($cache, $this->getValidatorFactory(), $this->getApplicationInstance());
+        $middleware = new Middleware($cache);
 
-        $response = $middleware->handle($request = $this->getRequest(), fn () => new Response('', 404));
-        $this->assertEquals(404, $response->status());
-
-        $response = $middleware->handle($request, fn () => new Response('', 400));
-        $this->assertEquals(400, $response->status());
-
-        $response = $middleware->handle($request, fn () => new Response('', 403));
-        $this->assertEquals(403, $response->status());
+        $response = $middleware->handle($this->getRequest(), fn () => new Response('', 422));
+        $this->assertEquals(422, $response->status());
     }
 
     #[Test]
-    public function willCacheRequestId(): void
+    public function willCacheResponse(): void
     {
         $cache = $this->getCacheMock(function ($mock) {
             $mock->expects($this->any())->method('has')->willReturn(false);
             $mock->expects($this->once())
                 ->method('put')
-                ->willReturnCallback(function (string $key) {
+                ->willReturnCallback(function (string $key, Response $response) {
+                    $this->assertEquals(201, $response->status());
                     $this->assertEquals('a3a9ca1c-b738-3329-ac76-dfa19933c2e9', $key);
                 });
         });
 
-        $middleware = new Middleware($cache, $this->getValidatorFactory(), $this->getApplicationInstance());
+        $middleware = new Middleware($cache);
 
-        $response = $middleware->handle($this->getRequest(), fn () => new Response('', 200));
-        $this->assertEquals(200, $response->status());
+        $response = $middleware->handle($this->getRequest(), fn () => new Response('', 201));
+        $this->assertEquals(201, $response->status());
     }
 }

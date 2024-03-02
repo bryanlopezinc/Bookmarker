@@ -5,28 +5,20 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use Illuminate\Contracts\Cache\Repository;
-use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Validation\Factory;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use LogicException;
 use Symfony\Component\HttpFoundation\Response;
 
-class PreventsDuplicatePostRequestMiddleware
+final class PreventsDuplicatePostRequestMiddleware
 {
     private readonly Repository $repository;
     private readonly Factory $validatorFactory;
-    private readonly Application $application;
 
-    public function __construct(
-        Repository $repository = null,
-        Factory $validatorFactory = null,
-        Application $application = null
-    ) {
+    public function __construct(Repository $repository = null, Factory $validatorFactory = null)
+    {
         $this->repository = $repository ?: Cache::store();
         $this->validatorFactory = $validatorFactory ?: app(Factory::class);
-        $this->application = $application ?: app();
     }
 
     /**
@@ -34,49 +26,36 @@ class PreventsDuplicatePostRequestMiddleware
      *
      * @return mixed
      */
-    final public function handle(Request $request, \Closure $next)
+    public function handle(Request $request, \Closure $next)
     {
-        if (!$request->isMethod('POST')) {
-            throw new LogicException(sprintf('Cannot use middleware in %s request', $request->method()));
-        }
+        $key = 'idempotency_key';
 
-        if ($this->application->environment('local')) {
+        if (!$request->isMethod('POST') || !$request->hasHeader($key)) {
             return $next($request);
         }
 
         $validator = $this->validatorFactory->make(
-            $request->only('request_id'),
-            ['request_id' => ['required', 'uuid']]
+            [$key => $request->header($key)],
+            [$key => ['sometimes', 'string', 'filled', 'max:64']]
         );
 
-        $requestId = $validator->validate()['request_id'];
+        $idempotencyKey = $validator->validate()[$key];
 
-        if ($this->repository->has($requestId)) {
-            return $this->requestAlreadyCompletedResponse($request);
+        if ($this->repository->has($idempotencyKey)) {
+            return $this->repository->get($idempotencyKey);
         }
 
         $response = $next($request);
 
-        if ($this->isSuccessful($response)) {
-            $this->repository->put($requestId, true, now()->addDay());
+        if ($this->shouldCacheResponse($response)) {
+            $this->repository->put($idempotencyKey, $response, now()->addDay());
         }
 
         return $response;
     }
 
-    protected function requestAlreadyCompletedResponse(Request $request): JsonResponse
+    protected function shouldCacheResponse(Response $response): bool
     {
-        $data = [
-            'message'    => 'RequestAlreadyCompleted',
-            'info'       => 'A request with the provider request id has already been completed.',
-            'request_id' => $request->input('request_id')
-        ];
-
-        return new JsonResponse($data, JsonResponse::HTTP_OK);
-    }
-
-    protected function isSuccessful(Response $response): bool
-    {
-        return $response->isSuccessful();
+        return $response->getStatusCode() !== Response::HTTP_UNPROCESSABLE_ENTITY;
     }
 }

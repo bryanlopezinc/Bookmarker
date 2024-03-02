@@ -16,8 +16,6 @@ class ImportBookmarksFromFirefoxBrowserTest extends ImportBookmarkBaseTest
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->withRequestId();
-
         $this->importBookmarkResponse()
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
@@ -43,7 +41,6 @@ class ImportBookmarksFromFirefoxBrowserTest extends ImportBookmarkBaseTest
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
-        $this->withRequestId();
         $this->importBookmarkResponse([
             'source' => 'firefoxFile',
             'html' => UploadedFile::fake()->createWithContent('file.html', $this->getViewInstance()->render()),

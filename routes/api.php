@@ -5,13 +5,16 @@ use App\Http\Controllers\Auth as A;
 use App\Http\Controllers\Folder as F;
 use App\Http\Middleware\ExplodeString as StringToArray;
 use App\Http\Middleware\HandleDbTransactionsMiddleware as DBTransaction;
-use App\Importing\Http\Middleware\PreventsDuplicateImportMiddleware;
 use App\Http\Middleware\PreventsDuplicatePostRequestMiddleware;
 use Illuminate\Support\Facades\Route;
 use Laravel\Passport\Http\Middleware\CheckClientCredentials;
 use Laravel\Passport\Http\Controllers\AccessTokenController;
 
-Route::middleware(['auth:api', DBTransaction::class])->group(function () {
+Route::middleware([
+    'auth:api',
+    DBTransaction::class,
+    PreventsDuplicatePostRequestMiddleware::class
+])->group(function () {
 
     Route::prefix('users')->group(function () {
         Route::post('logout', A\LogoutController::class)->name('logoutUser');
@@ -24,13 +27,13 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
         Route::delete('folders/collaborations/{folder_id}', F\LeaveFolderCollaborationController::class)->name('leaveFolderCollaboration');
         Route::get('folders/collaborators/{collaborator_id}', C\FetchUserFoldersWhereContainsCollaboratorController::class)->middleware(StringToArray::keys('fields'))->name('fetchUserFoldersWhereHasCollaborator');
 
-        Route::post('emails/add', C\AddEmailToAccountController::class)->middleware(PreventsDuplicatePostRequestMiddleware::class)->name('addEmailToAccount');
+        Route::post('emails/add', C\AddEmailToAccountController::class)->name('addEmailToAccount');
         Route::delete('emails/remove', C\DeleteEmailController::class)->name('removeEmailFromAccount');
         Route::post('emails/verify/secondary', A\VerifySecondaryEmailController::class)->name('verifySecondaryEmail');
 
         Route::get('favorites', C\FetchUserFavoritesController::class)->name('fetchUserFavorites');
         Route::post('bookmarks/favorites', C\CreateFavoriteController::class)
-            ->middleware([StringToArray::keys('bookmarks'), PreventsDuplicatePostRequestMiddleware::class])
+            ->middleware([StringToArray::keys('bookmarks')])
             ->name('createFavorite');
         Route::delete('favorites', C\DeleteFavoriteController::class)->middleware([StringToArray::keys('bookmarks')])->name('deleteFavorite');
 
@@ -50,33 +53,31 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
     });
 
     Route::prefix('bookmarks')->group(function () {
-        Route::post('/', C\CreateBookmarkController::class)->middleware([StringToArray::keys('tags'), PreventsDuplicatePostRequestMiddleware::class])->name('createBookmark');
+        Route::post('/', C\CreateBookmarkController::class)->middleware([StringToArray::keys('tags')])->name('createBookmark');
         Route::delete('/', C\DeleteBookmarkController::class)->middleware([StringToArray::keys('ids')])->name('deleteBookmark');
         Route::patch('/', C\UpdateBookmarkController::class)->middleware([StringToArray::keys('tags')])->name('updateBookmark');
         Route::delete('tags/remove', C\DeleteBookmarkTagsController::class)->middleware([StringToArray::keys('tags')])->name('deleteBookmarkTags');
         Route::post('import', [App\Importing\Http\Controllers\ImportController::class, 'store'])
-            ->middleware([StringToArray::keys('tags'), PreventsDuplicateImportMiddleware::class])
+            ->middleware([StringToArray::keys('tags')])
             ->withoutMiddleware(DBTransaction::class)
             ->name('importBookmark');
     });
 
     Route::prefix('folders')->group(function () {
         Route::get('/', F\FetchFolderController::class)->middleware([StringToArray::keys('fields')])->name('fetchFolder');
-        Route::post('/', F\CreateFolderController::class)->middleware([PreventsDuplicatePostRequestMiddleware::class])->name('createFolder');
+        Route::post('/', F\CreateFolderController::class)->name('createFolder');
         Route::patch('/{folder_id}', F\UpdateFolderController::class)->middleware([StringToArray::keys('tags')])->name('updateFolder');
         Route::get('/{folder_id}/bookmarks', F\FetchFolderBookmarksController::class)->withoutMiddleware('auth:api')->name('folderBookmarks');
 
         Route::prefix('bookmarks')->group(function () {
             Route::post('/', F\AddBookmarksToFolderController::class)
                 ->middleware(StringToArray::keys('bookmarks', 'make_hidden'))
-                ->middleware(PreventsDuplicatePostRequestMiddleware::class)
                 ->name('addBookmarksToFolder');
 
             Route::delete('/', F\RemoveBookmarksFromFolderController::class)->middleware(StringToArray::keys('bookmarks'))->name('removeBookmarksFromFolder');
 
             Route::post('hide', F\HideFolderBookmarksController::class)
                 ->middleware(StringToArray::keys('bookmarks'))
-                ->middleware(PreventsDuplicatePostRequestMiddleware::class)
                 ->name('hideFolderBookmarks');
         });
 
@@ -87,13 +88,12 @@ Route::middleware(['auth:api', DBTransaction::class])->group(function () {
         Route::patch('/{folder_id}/collaborators/{collaborator_id}/permissions', F\GrantPermissionsToCollaboratorController::class)->middleware([StringToArray::keys('permissions')])->name('grantPermission');
         Route::post('invite', F\SendFolderCollaborationInviteController::class)
             ->middleware([StringToArray::keys('permissions')])
-            ->middleware(PreventsDuplicatePostRequestMiddleware::class)
             ->name('sendFolderCollaborationInvite');
 
         Route::get('/{folder_id}/banned', F\FetchBannedCollaboratorsController::class)->name('fetchBannedCollaborator');
         Route::delete('/{folder_id}/collaborators/{collaborator_id}/ban', F\UnBanUserController::class)->name('unBanUser');
 
-        Route::post('/{folder_id}/collaborators/{collaborator_id}/mute', [F\MuteCollaboratorController::class, 'post'])->middleware(PreventsDuplicatePostRequestMiddleware::class)->name('muteCollaborator');
+        Route::post('/{folder_id}/collaborators/{collaborator_id}/mute', [F\MuteCollaboratorController::class, 'post'])->name('muteCollaborator');
         Route::delete('/{folder_id}/collaborators/{collaborator_id}/mute', [F\MuteCollaboratorController::class, 'delete'])->name('UnMuteCollaborator');
         Route::get('mute', F\FetchMutedCollaboratorsController::class)->name('fetchMutedCollaborator');
     });
@@ -114,21 +114,17 @@ Route::middleware([CheckClientCredentials::class])->group(function () {
 
     Route::post('users', A\UserController::class)
         ->middleware([DBTransaction::class])
-        ->middleware(PreventsDuplicatePostRequestMiddleware::class)
         ->name('createUser');
 
     Route::post('users/password/reset-token', A\RequestPasswordResetController::class)
         ->middleware([DBTransaction::class])
-        ->middleware(PreventsDuplicatePostRequestMiddleware::class)
         ->name('requestPasswordResetToken');
 
     Route::post('users/password/reset', A\ResetPasswordController::class)
         ->middleware([DBTransaction::class])
-        ->middleware(PreventsDuplicatePostRequestMiddleware::class)
         ->name('resetPassword');
 
     Route::post('users/request-verification-code', A\Request2FACodeController::class)
         ->middleware([DBTransaction::class])
-        ->middleware(PreventsDuplicatePostRequestMiddleware::class)
         ->name('requestVerificationCode');
 });

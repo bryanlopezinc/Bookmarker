@@ -14,8 +14,6 @@ class ImportBookmarksFromPocketExportFileTest extends ImportBookmarkBaseTest
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->withRequestId();
-
         $this->importBookmarkResponse()
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
@@ -34,7 +32,6 @@ class ImportBookmarksFromPocketExportFileTest extends ImportBookmarkBaseTest
     public function testImportBookmarks(): void
     {
         Passport::actingAs(UserFactory::new()->create());
-        $this->withRequestId();
 
         $this->importBookmarkResponse([
             'source' => 'pocketExportFile',

@@ -25,8 +25,6 @@ class TagsTest extends TestCase
     {
         $this->loginUser($user = UserFactory::new()->create());
 
-        $this->withRequestId();
-
         $view = View::file(__DIR__ . '/../stubs/chromeExportFile.blade.php')
             ->with(['includeBookmarksBar' => false])
             ->with('bookmarks', [
@@ -51,8 +49,6 @@ class TagsTest extends TestCase
     {
         $this->loginUser($user = UserFactory::new()->create());
 
-        $this->withRequestId();
-
         $view = $this->getViewInstance()
             ->with('bookmarks', [['url' => 'https://www.rottentomatoes.com/m/vhs99', 'tags' => 'vhs99,horror']])
             ->render();
@@ -74,7 +70,6 @@ class TagsTest extends TestCase
     {
         $this->loginUser($user = UserFactory::new()->create());
 
-        $this->withRequestId();
         $tags = $this->generateTags(16);
 
         $view = $this->getViewInstance()
@@ -97,7 +92,6 @@ class TagsTest extends TestCase
     {
         $this->loginUser($user = UserFactory::new()->create());
 
-        $this->withRequestId();
         $tags = $this->generateTags(16);
 
         $view = $this->getViewInstance()
@@ -124,7 +118,6 @@ class TagsTest extends TestCase
     {
         $this->loginUser($user = UserFactory::new()->create());
 
-        $this->withRequestId();
         $tags = $this->generateTags(16);
 
         $view = $this->getViewInstance()
@@ -154,7 +147,6 @@ class TagsTest extends TestCase
             ->with('bookmarks', [['url' => 'https://www.rottentomatoes.com/m/vhs99', 'tags' => 'vhs99,horror']])
             ->render();
 
-        $this->withRequestId();
         $this->importBookmarkResponse([
             'source' => 'firefoxFile',
             'html' => UploadedFile::fake()->createWithContent('file.html', $view),
@@ -185,7 +177,6 @@ class TagsTest extends TestCase
             ->with('bookmarks', [['url' => 'https://www.rottentomatoes.com/m/vhs99', 'tags' => 'vhs99,horror']])
             ->render();
 
-        $this->withRequestId();
         $this->importBookmarkResponse([
             'source' => 'firefoxFile',
             'html' => UploadedFile::fake()->createWithContent('file.html', $view),
@@ -211,7 +202,6 @@ class TagsTest extends TestCase
             ])
             ->render();
 
-        $this->withRequestId();
         $this->importBookmarkResponse([
             'source' => 'firefoxFile',
             'html' => UploadedFile::fake()->createWithContent('file.html', $view),
@@ -236,7 +226,6 @@ class TagsTest extends TestCase
             ])
             ->render();
 
-        $this->withRequestId();
         $this->importBookmarkResponse([
             'source' => 'firefoxFile',
             'html' => UploadedFile::fake()->createWithContent('file.html', $view),
@@ -260,7 +249,6 @@ class TagsTest extends TestCase
             ])
             ->render();
 
-        $this->withRequestId();
         $this->importBookmarkResponse([
             'source' => 'firefoxFile',
             'html' => UploadedFile::fake()->createWithContent('file.html', $view),
@@ -285,7 +273,6 @@ class TagsTest extends TestCase
             ])
             ->render();
 
-        $this->withRequestId();
         $this->importBookmarkResponse([
             'source' => 'firefoxFile',
             'html' => UploadedFile::fake()->createWithContent('file.html', $view),
@@ -309,7 +296,6 @@ class TagsTest extends TestCase
             ])
             ->render();
 
-        $this->withRequestId();
         $this->importBookmarkResponse([
             'source' => 'firefoxFile',
             'html' => UploadedFile::fake()->createWithContent('file.html', $view),
@@ -363,7 +349,6 @@ class TagsTest extends TestCase
             $parameters['merge_strategy'] = $data['merge_strategy'];
         }
 
-        $this->withRequestId();
         $this->importBookmarkResponse($parameters)->assertStatus(Response::HTTP_PROCESSING);
 
         $userBookmark = Bookmark::query()->with('tags')->where('user_id', $user->id)->sole();

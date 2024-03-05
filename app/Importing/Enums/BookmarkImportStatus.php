@@ -8,15 +8,22 @@ use Exception;
 
 enum BookmarkImportStatus: int
 {
-    case SUCCESS                            = 3;
-    case FAILED_DUE_TO_INVALID_TAG          = 5;
-    case FAILED_DUE_TO_MERGE_TAGS_EXCEEDED  = 6;
-    case FAILED_DUE_TO_SYSTEM_ERROR         = 7;
-    case FAILED_DUE_TO_INVALID_URL          = 8;
-    case FAILED_DUE_TO_TOO_MANY_TAGS        = 9;
-    case SKIPPED_DUE_TO_INVALID_TAG         = 10;
-    case SKIPPED_DUE_TO_MERGE_TAGS_EXCEEDED = 11;
-    case SKIPPED_DUE_TO_TOO_MANY_TAGS       = 12;
+        // Each category of should follow a
+        // numerical sequence for easy filtering
+        // Eg `where status Between 2 and 6` will fetch all cases within that category.
+    case SUCCESS                            = 1;
+
+        //failed
+    case FAILED_DUE_TO_INVALID_TAG          = 101;
+    case FAILED_DUE_TO_MERGE_TAGS_EXCEEDED  = 102;
+    case FAILED_DUE_TO_SYSTEM_ERROR         = 103;
+    case FAILED_DUE_TO_INVALID_URL          = 104;
+    case FAILED_DUE_TO_TOO_MANY_TAGS        = 105;
+
+        //skipped
+    case SKIPPED_DUE_TO_INVALID_TAG         = 201;
+    case SKIPPED_DUE_TO_MERGE_TAGS_EXCEEDED = 202;
+    case SKIPPED_DUE_TO_TOO_MANY_TAGS       = 203;
 
     public static function fromSkippedOutcome(ReasonForSkippingBookmark $reason): self
     {
@@ -44,11 +51,7 @@ enum BookmarkImportStatus: int
      */
     public static function failedCases(): array
     {
-        return collect(self::cases())
-            ->filter(fn (self $status) => str_starts_with($status->name, 'FAILED'))
-            ->map(fn (self $status) => $status->value)
-            ->values()
-            ->all();
+        return range(101, 105);
     }
 
     /**
@@ -56,11 +59,7 @@ enum BookmarkImportStatus: int
      */
     public static function skippedCases(): array
     {
-        return collect(self::cases())
-            ->filter(fn (self $status) => str_starts_with($status->name, 'SKIPPED'))
-            ->map(fn (self $status) => $status->value)
-            ->values()
-            ->all();
+        return range(201, 203);
     }
 
     public function isSuccessful(): bool

@@ -42,12 +42,12 @@ final class ImportController
         $result = ImportHistory::query()
             ->where('import_id', $importId)
             ->when($request->input('filter'), function ($query, string $filterBy) {
-                $query->useIndex('imports_history_import_id_status_index');
-
                 if ($filterBy === 'failed') {
-                    $query->whereIn('status', Status::failedCases());
+                    $failedCases = Status::failedCases();
+                    $query->whereBetween('status', [$failedCases[0], end($failedCases)]);
                 } else {
-                    $query->whereIn('status', Status::skippedCases());
+                    $skipped = Status::skippedCases();
+                    $query->whereBetween('status', [$skipped[0], end($skipped)]);
                 }
             })
             ->latest('id')

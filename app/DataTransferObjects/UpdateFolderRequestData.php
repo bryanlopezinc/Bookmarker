@@ -17,6 +17,7 @@ final class UpdateFolderRequestData
         public readonly ?string $name,
         public readonly ?string $description,
         public readonly bool $hasDescription,
+        public readonly array $settings
     ) {
     }
 
@@ -33,6 +34,7 @@ final class UpdateFolderRequestData
             $request->input('name'),
             $request->input('description'),
             $request->has('description'),
+            $request->input('settings', [])
         );
     }
 }

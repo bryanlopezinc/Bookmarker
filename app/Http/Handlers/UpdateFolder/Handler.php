@@ -18,7 +18,7 @@ final class Handler
         Constraints\FolderExistConstraint::class,
         Constraints\MustBeACollaboratorConstraint::class,
         Constraints\PermissionConstraint::class,
-        CanUpdateVisibilityConstraint::class,
+        CanUpdateAttributesConstraint::class,
         CannotMakeFolderWithCollaboratorPrivateConstraint::class,
         Constraints\FeatureMustBeEnabledConstraint::class,
         PasswordCheckConstraint::class,

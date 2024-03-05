@@ -7,7 +7,6 @@ namespace App\DataTransferObjects\Builders;
 use App\Enums\CollaboratorExitNotificationMode;
 use App\ValueObjects\FolderSettings;
 use App\Enums\NewCollaboratorNotificationMode;
-use BackedEnum;
 use Illuminate\Support\Arr;
 
 final class FolderSettingsBuilder
@@ -29,47 +28,9 @@ final class FolderSettingsBuilder
         return $this->attributes;
     }
 
-    public static function new(): FolderSettingsBuilder
+    public static function new(array $attributes = []): FolderSettingsBuilder
     {
-        return new FolderSettingsBuilder();
-    }
-
-    public static function fromRequest(array $data): self
-    {
-        $settings = [];
-
-        $map = [
-            'enable_notifications'                    => 'notifications.enabled',
-            'notify_on_new_collaborator'             => 'notifications.newCollaborator.enabled',
-            'notify_on_new_collaborator_by_user'     => 'notifications.newCollaborator.mode',
-            'notify_on_update'                       => 'notifications.folderUpdated.enabled',
-            'notify_on_new_bookmark'                 => 'notifications.newBookmarks.enabled',
-            'notify_on_bookmark_delete'              => 'notifications.bookmarksRemoved.enabled',
-            'notify_on_collaborator_exit'            => 'notifications.collaboratorExit.enabled',
-            'notify_on_collaborator_exit_with_write' => 'notifications.collaboratorExit.mode'
-        ];
-
-        foreach ($data as $key => $value) {
-            if (!array_key_exists($key, $map)) {
-                return (new self([$key => $value]));
-            }
-
-            if ($key === 'notify_on_new_collaborator_by_user') {
-                $value = $value ? NewCollaboratorNotificationMode::INVITED_BY_ME->value : NewCollaboratorNotificationMode::ALL->value;
-            }
-
-            if ($key === 'notify_on_collaborator_exit_with_write') {
-                $value = $value ? CollaboratorExitNotificationMode::HAS_WRITE_PERMISSION->value : CollaboratorExitNotificationMode::ALL->value;
-            }
-
-            if ($value instanceof BackedEnum) {
-                $value = $value->value;
-            }
-
-            Arr::set($settings, $map[$key], $value);
-        }
-
-        return new self($settings);
+        return new FolderSettingsBuilder($attributes);
     }
 
     public function setMaxCollaboratorsLimit(int $limit): self

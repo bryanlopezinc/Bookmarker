@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\ValueObjects;
 
-use App\Contracts\FolderSettingValueInterface;
-use App\Utils\FolderSettingsValidator;
+use Error;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Contracts\Support\Arrayable;
+use App\Contracts\FolderSettingValueInterface;
 use App\Enums\NewCollaboratorNotificationMode;
 use App\Enums\CollaboratorExitNotificationMode;
-use Error;
+use App\Exceptions\InvalidFolderSettingException;
+use App\Repositories\Folder\FolderSettingsSchema as Schema;
 
 /**
  * @property-read bool $notificationsAreEnabled
@@ -45,6 +48,21 @@ final class FolderSettings implements Arrayable
         $this->resolvedSetting = array_replace_recursive($default, $this->settings);
     }
 
+    private function validate(array $settings): void
+    {
+        if (empty($settings)) {
+            return;
+        }
+
+        $repository = new Schema();
+
+        $validator = Validator::make($settings, $repository->rules());
+
+        if ($validator->fails()) {
+            throw new InvalidFolderSettingException($validator->errors()->all());
+        }
+    }
+
     public static function make(string|FolderSettings|array $settings = null): self
     {
         if (is_string($settings)) {
@@ -64,25 +82,15 @@ final class FolderSettings implements Arrayable
 
     public static function default(): array
     {
-        return [
-            'version' => '1.0.0',
-            'maxCollaboratorsLimit' => -1,
-            'acceptInviteConstraints' => [],
-            'notifications' => [
-                'enabled' => true,
-                'newCollaborator' => [
-                    'enabled' => true,
-                    'mode'    => '*'
-                ],
-                'collaboratorExit' => [
-                    'enabled' => true,
-                    'mode'    => '*'
-                ],
-                'folderUpdated'    => ['enabled' => true],
-                'newBookmarks'     => ['enabled' => true],
-                'bookmarksRemoved' => ['enabled' => true],
-            ]
-        ];
+        $repository = new Schema();
+
+        $default = [];
+
+        foreach ($repository->schema() as $schema) {
+            Arr::set($default, $schema->Id, $schema->defaultValue);
+        }
+
+        return $default;
     }
 
     private function resolve(string $classProperty): bool|int|FolderSettingValueInterface
@@ -128,17 +136,6 @@ final class FolderSettings implements Arrayable
     public function __set($name, $value)
     {
         throw new Error(sprintf('Cannot modify or set property %s::$%s', __CLASS__, $name));
-    }
-
-    private function validate(array $settings): void
-    {
-        if (empty($settings)) {
-            return;
-        }
-
-        $validator = new FolderSettingsValidator();
-
-        $validator->validate($settings);
     }
 
     public function toJson(): string

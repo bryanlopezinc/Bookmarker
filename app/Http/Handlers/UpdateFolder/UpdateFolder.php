@@ -9,17 +9,27 @@ use App\DataTransferObjects\UpdateFolderRequestData;
 use App\Enums\FolderVisibility;
 use App\Exceptions\FolderNotModifiedAfterOperationException;
 use App\Models\Folder;
+use App\Utils\FolderSettingsNormalizer;
 use App\ValueObjects\FolderName;
+use App\ValueObjects\FolderSettings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
 final class UpdateFolder implements FolderRequestHandlerInterface, Scope
 {
+    private readonly UpdateFolderRequestData $data;
+    private readonly FolderRequestHandlerInterface $notificationSender;
+    private readonly FolderSettingsNormalizer $normalizer;
+
     public function __construct(
-        private readonly UpdateFolderRequestData $data,
-        private readonly FolderRequestHandlerInterface $notificationSender
+        UpdateFolderRequestData $data,
+        FolderRequestHandlerInterface $notificationSender,
+        FolderSettingsNormalizer $normalizer = null
     ) {
+        $this->data = $data;
+        $this->notificationSender = $notificationSender;
+        $this->normalizer = $normalizer ??= new FolderSettingsNormalizer();
     }
 
     /**
@@ -27,7 +37,7 @@ final class UpdateFolder implements FolderRequestHandlerInterface, Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
-        $builder->addSelect(['name', 'description']);
+        $builder->addSelect(['name', 'description', 'settings']);
 
         if ($this->notificationSender instanceof Scope) {
             $this->notificationSender->apply($builder, $model);
@@ -37,9 +47,11 @@ final class UpdateFolder implements FolderRequestHandlerInterface, Scope
     /**
      * @inheritdoc
      */
-    public function handle(Folder $folder): void
+    public function handle(Folder $updatable): void
     {
+        $folder = clone $updatable;
         $newVisibility = FolderVisibility::fromRequest($this->data->visibility);
+        $newSettings =  $this->normalizer->fromRequest($this->data->settings);
 
         if (!is_null($newName = $this->data->name)) {
             $folder->name = new FolderName($newName);
@@ -47,6 +59,10 @@ final class UpdateFolder implements FolderRequestHandlerInterface, Scope
 
         if ($this->data->hasDescription) {
             $folder->description = $this->data->description;
+        }
+
+        if (!empty($this->data->settings)) {
+            $folder->settings = new FolderSettings(array_replace_recursive($folder->settings->toArray(), $newSettings));
         }
 
         if (!is_null($this->data->visibility)) {

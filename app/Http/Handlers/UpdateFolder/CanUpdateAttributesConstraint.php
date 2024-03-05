@@ -8,23 +8,11 @@ use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\UpdateFolderRequestData;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
-use Illuminate\Database\Query\Builder;
-use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Scope;
 
-final class CanUpdateVisibilityConstraint implements FolderRequestHandlerInterface, Scope
+final class CanUpdateAttributesConstraint implements FolderRequestHandlerInterface
 {
     public function __construct(private readonly UpdateFolderRequestData $data)
     {
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function apply(Builder|EloquentBuilder $builder, Model $model): void
-    {
-        $builder->addSelect(['visibility']);
     }
 
     /**
@@ -38,9 +26,9 @@ final class CanUpdateVisibilityConstraint implements FolderRequestHandlerInterfa
             return;
         }
 
-        if ($this->data->visibility !== null) {
+        if ($this->data->visibility !== null || !empty($this->data->settings)) {
             throw HttpException::forbidden([
-                'message' => 'CannotUpdateFolderPrivacy',
+                'message' => 'CannotUpdateFolderAttribute',
                 'info' => 'The request could not be completed due to inadequate permission.'
             ]);
         }

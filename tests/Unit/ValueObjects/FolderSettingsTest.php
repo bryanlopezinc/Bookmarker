@@ -48,48 +48,71 @@ class FolderSettingsTest extends TestCase
     }
 
     #[Test]
-    public function testAcceptInviteConstraints(): void
+    public function willThrowExceptionWhenValuesAreInvalid(): void
     {
-        $validName = 'InviterMustBeAnActiveCollaborator';
+        $this->assertFalse($this->isValid(['foo' => 'baz']));
 
-        $this->assertFalse($this->isValid(['acceptInviteConstraints' => $validName]));
+        $this->assertFalse($this->isValid(['version' => '3']));
+        $this->assertFalse($this->isValid(['version' => 1]));
+
+        $this->assertFalse($this->isValid(['maxCollaboratorsLimit' => -2]));
+        $this->assertFalse($this->isValid(['maxCollaboratorsLimit' => 1001]));
+        $this->assertFalse($this->isValid(['maxCollaboratorsLimit' => '500'], 'The maxCollaboratorsLimit is not an integer value.'));
+
+        $this->assertFalse($this->isValid(['acceptInviteConstraints' => $validName = 'InviterMustBeAnActiveCollaborator']));
         $this->assertFalse($this->isValid(['acceptInviteConstraints' => ['baz']]));
-        $this->assertFalse($this->isValid(['acceptInviteConstraints' => null]));
         $this->assertFalse($this->isValid(['acceptInviteConstraints' => ['baz', $validName]]));
         $this->assertFalse($this->isValid(['acceptInviteConstraints' => [$validName, null]]));
         $this->assertFalse($this->isValid(['acceptInviteConstraints' => [$validName, $validName]])); //must be unique
 
-        $this->assertTrue($this->isValid(['acceptInviteConstraints' => [$validName]]));
-        $this->assertTrue($this->isValid(['acceptInviteConstraints' => []]));
-    }
+        $this->assertFalse($this->isValid(['notifications' => ['foo' => true]]));
+        $this->assertFalse($this->isValid(['notifications' => true]));
 
-    #[Test]
-    public function willThrowExceptionWhenKeyIsInvalid(): void
-    {
-        $this->assertFalse($this->isValid(['foo' => 'baz'], $errorCode = 1778));
-        $this->assertFalse($this->isValid(['notifications' => ['newCollaborator' => ['foo' => 'bar']]], $errorCode));
-        $this->assertFalse($this->isValid(['notifications' => ['collaboratorExit' => ['foo' => 'bar']]], $errorCode));
-    }
-
-    #[Test]
-    public function willThrowExceptionWhenValuesAreInvalid(): void
-    {
-        $this->assertFalse($this->isValid(['notifications' => ['enabled' => 1]]));
-        $this->assertFalse($this->isValid(['notifications' => ['enabled' => 'on']]));
-        $this->assertFalse($this->isValid(['notifications' => ['enabled' => 'off']]));
+        $this->assertFalse($this->isValid(['notifications' => ['enabled' => '1']]));
+        $this->assertFalse($this->isValid(['notifications' => ['enabled' => '0']]));
         $this->assertFalse($this->isValid(['notifications' => ['enabled' => 0]]));
-        $this->assertFalse($this->isValid(['notifications' => ['enabled' => null]]));
-        $this->assertFalse($this->isValid(['version' => '3']));
-        $this->assertFalse($this->isValid(['notifications' => ['newCollaborator' => ['mode' => 'bar']]]));
+        $this->assertFalse($this->isValid(['notifications' => ['enabled' => 1]]));
+        $this->assertFalse($this->isValid(['notifications' => ['enabled' => 'true']]));
+
+        $this->assertFalse($this->isValid(['notifications' => ['newCollaborator' => ['foo' => true]]]));
+        $this->assertFalse($this->isValid(['notifications' => ['newCollaborator' => true]]));
+        $this->assertFalse($this->isValid(['notifications' => ['newCollaborator' => ['enabled' => '1']]]));
+        $this->assertFalse($this->isValid(['notifications' => ['newCollaborator' => ['enabled' => '0']]]));
+        $this->assertFalse($this->isValid(['notifications' => ['newCollaborator' => ['enabled' => 0]]]));
+        $this->assertFalse($this->isValid(['notifications' => ['newCollaborator' => ['enabled' => 1]]]));
+        $this->assertFalse($this->isValid(['notifications' => ['newCollaborator' => ['mode' => 2]]]));
+        $this->assertFalse($this->isValid(['notifications' => ['newCollaborator' => ['mode' => 'foo']]]));
+
+        $this->assertFalse($this->isValid(['notifications' => ['collaboratorExit' => ['foo' => true]]]));
+        $this->assertFalse($this->isValid(['notifications' => ['collaboratorExit' => true]]));
+        $this->assertFalse($this->isValid(['notifications' => ['collaboratorExit' => ['enabled' => '1']]]));
+        $this->assertFalse($this->isValid(['notifications' => ['collaboratorExit' => ['enabled' => '0']]]));
+        $this->assertFalse($this->isValid(['notifications' => ['collaboratorExit' => ['enabled' => 0]]]));
+        $this->assertFalse($this->isValid(['notifications' => ['collaboratorExit' => ['enabled' => 1]]]));
+        $this->assertFalse($this->isValid(['notifications' => ['collaboratorExit' => ['mode' => 2]]]));
         $this->assertFalse($this->isValid(['notifications' => ['collaboratorExit' => ['mode' => 'foo']]]));
+
+        $this->assertFalse($this->isValid(['notifications' => ['folderUpdated' => ['foo' => true]]]));
+        $this->assertFalse($this->isValid(['notifications' => ['folderUpdated' => ['enabled' => '1']]]));
+        $this->assertFalse($this->isValid(['notifications' => ['folderUpdated' => ['enabled' => '0']]]));
+        $this->assertFalse($this->isValid(['notifications' => ['folderUpdated' => ['enabled' => 0]]]));
+        $this->assertFalse($this->isValid(['notifications' => ['folderUpdated' => ['enabled' => 1]]]));
+
+        $this->assertFalse($this->isValid(['notifications' => ['newBookmarks' => ['foo' => true]]]));
+        $this->assertFalse($this->isValid(['notifications' => ['newBookmarks' => ['enabled' => '1']]]));
+        $this->assertFalse($this->isValid(['notifications' => ['newBookmarks' => ['enabled' => '0']]]));
+
+        $this->assertFalse($this->isValid(['notifications' => ['bookmarksRemoved' => ['foo' => true]]]));
+        $this->assertFalse($this->isValid(['notifications' => ['bookmarksRemoved' => ['enabled' => '1']]]));
+        $this->assertFalse($this->isValid(['notifications' => ['bookmarksRemoved' => ['enabled' => '0']]]));
     }
 
     #[Test]
-    public function settings_can_be_empty(): void
+    public function empty(): void
     {
-        $this->expectNotToPerformAssertions();
-
-        $this->make([]);
+        $settings = $this->make([])->toArray();
+        $this->assertCount(1, $settings);
+        $this->assertArrayHasKey('version', $settings);
     }
 
     #[Test]
@@ -105,13 +128,16 @@ class FolderSettingsTest extends TestCase
         $this->assertTrue($settings->newCollaboratorNotificationIsDisabled);
     }
 
-    private function isValid(array $data, int $errorCode = 1777): bool
+    private function isValid(array $data, string $message = null): bool
     {
         try {
             $this->make($data);
             return true;
         } catch (InvalidFolderSettingException $e) {
-            $this->assertEquals($errorCode, $e->getCode());
+            if ($message) {
+                $this->assertContains($message, $e->errorMessages);
+            }
+
             return false;
         }
     }

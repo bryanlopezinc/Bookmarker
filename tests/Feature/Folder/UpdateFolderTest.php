@@ -10,6 +10,7 @@ use App\Enums\Permission;
 use App\Models\Folder;
 use App\UAC;
 use App\ValueObjects\FolderName;
+use App\ValueObjects\FolderSettings;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -26,6 +27,7 @@ class UpdateFolderTest extends TestCase
 {
     use WithFaker;
     use CreatesCollaboration;
+    use Concerns\TestsFolderSettings;
 
     protected function updateFolderResponse(array $parameters = []): TestResponse
     {
@@ -338,24 +340,39 @@ class UpdateFolderTest extends TestCase
             ->assertJsonFragment(['message' => 'PermissionDenied']);
     }
 
-    public function testWillReturnForbiddenWhenCollaboratorIsUpdatingVisibility(): void
+    public function testWillReturnForbiddenWhenCollaboratorIsUpdatingRestrictedAttribute(): void
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
-        $folder = FolderFactory::new()->for($folderOwner)->private()->create();
 
-        $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER);
+        $privateFolder = FolderFactory::new()->for($folderOwner)->private()->create();
+        $publicFolder = FolderFactory::new()->for($folderOwner)->create();
 
-        Passport::actingAs($collaborator);
+        $this->CreateCollaborationRecord($collaborator, $privateFolder, Permission::UPDATE_FOLDER);
+        $this->CreateCollaborationRecord($collaborator, $publicFolder, Permission::UPDATE_FOLDER);
+
+        $this->loginUser($collaborator);
+
         $this->updateFolderResponse($query = [
-            'folder_id'   => $folder->id,
+            'folder_id'   => $privateFolder->id,
             'visibility'  => 'public',
             'password'    => 'password'
-        ])->assertForbidden()
-            ->assertJsonFragment($error = ['message' => 'CannotUpdateFolderPrivacy']);
+        ])->assertForbidden()->assertJsonFragment($error = ['message' => 'CannotUpdateFolderAttribute']);
 
         $this->updateFolderResponse(array_replace($query, ['visibility' => 'password_protected', 'folder_password' => 'password']))->assertForbidden()->assertJsonFragment($error);
         $this->updateFolderResponse(array_replace($query, ['visibility' => 'private']))->assertForbidden()->assertJsonFragment($error);
         $this->updateFolderResponse(array_replace($query, ['visibility' => 'collaborators']))->assertForbidden()->assertJsonFragment($error);
+
+        $this->updateFolderResponse(['folder_id' => $publicFolder->id, 'visibility'  => 'private'])
+            ->assertForbidden()
+            ->assertJsonFragment($error);
+
+        $this->updateFolderResponse(['folder_id' => $publicFolder->id, 'visibility'  => 'collaborators'])
+            ->assertForbidden()
+            ->assertJsonFragment($error);
+
+        $this->updateFolderResponse(['folder_id' => $privateFolder->id, 'settings'  => ['maxCollaboratorsLimit' => 450]])
+            ->assertForbidden()
+            ->assertJsonFragment($error);
     }
 
     public function testWillReturnNotFoundWhenFolderOwnerHasDeletedAccount(): void
@@ -374,6 +391,43 @@ class UpdateFolderTest extends TestCase
             'folder_id'  => $folder->id
         ])->assertNotFound()
             ->assertJsonFragment(['message' => "FolderNotFound"]);
+    }
+
+    #[Test]
+    public function willReturnUnprocessableWhenFolderSettingsIsInValid(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->for($user)->create();
+
+        $this->assertWillReturnUnprocessableWhenFolderSettingsIsInValid(
+            ['folder_id' => $folder->id],
+            function (array $parameters) {
+                return $this->updateFolderResponse($parameters);
+            }
+        );
+    }
+
+    #[Test]
+    public function updateSettings(): void
+    {
+        Passport::actingAs($user = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()
+            ->for($user)
+            ->settings(FolderSettingsBuilder::new()->setMaxCollaboratorsLimit(450))
+            ->create();
+
+        $this->updateFolderResponse([
+            'folder_id' => $folder->id,
+            'settings' => ['notifications' => ['newCollaborator' => ['enabled' => 0]]]
+        ])->assertOk();
+
+        /** @var FolderSettings */
+        $updatedFolderSettings = Folder::query()->whereKey($folder->id)->sole(['settings'])->settings;
+
+        $this->assertEquals(450, $updatedFolderSettings->maxCollaboratorsLimit);
+        $this->assertTrue($updatedFolderSettings->newCollaboratorNotificationIsDisabled);
     }
 
     public function testWillNotifyFolderOwnerWhenCollaboratorUpdatesFolder(): void

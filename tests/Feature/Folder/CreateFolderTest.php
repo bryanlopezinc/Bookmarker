@@ -2,10 +2,12 @@
 
 namespace Tests\Feature\Folder;
 
+use App\DataTransferObjects\Builders\FolderSettingsBuilder as Builder;
 use App\ValueObjects\FolderSettings as FS;
 use App\Models\Folder;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
@@ -15,13 +17,10 @@ use Tests\TestCase;
 class CreateFolderTest extends TestCase
 {
     use WithFaker;
+    use Concerns\TestsFolderSettings;
 
     protected function createFolderResponse(array $data = []): TestResponse
     {
-        if (array_key_exists('settings', $data)) {
-            $data['settings'] = json_encode($data['settings']);
-        }
-
         return $this->postJson(route('createFolder'), $data);
     }
 
@@ -138,77 +137,101 @@ class CreateFolderTest extends TestCase
         $this->assertTrue(Hash::check('password', $folder->password));
     }
 
-    public function testCreateFolderWithNotifications(): void
+    public function testCreateFolderWithSettings(): void
     {
-        $this->assertCreateWithNotifications(['enable_notifications' => false], function (FS $s) {
-            return $s->notificationsAreDisabled;
+        $this->assertCreateWithSettings(['maxCollaboratorsLimit' => '500'], function (FS $s) {
+            $this->assertEquals(Builder::new()->setMaxCollaboratorsLimit(500)->build(), $s);
         });
 
-        $this->assertCreateWithNotifications(['enable_notifications' => true], function (FS $s) {
+        $this->assertCreateWithSettings(['acceptInviteConstraints' => ['InviterMustHaveRequiredPermission']], function (FS $s) {
+            $this->assertEquals(Builder::new()->enableCannotAcceptInviteIfInviterNoLongerHasRequiredPermission()->build(), $s);
+        });
+
+        $this->assertCreateWithSettings(['notifications.enabled' => false], function (FS $s) {
+            $this->assertEquals(Builder::new()->disableNotifications()->build(), $s);
+        });
+
+        $this->assertCreateWithSettings(['notifications.enabled' => 0], function (FS $s) {
+            $this->assertEquals(Builder::new()->disableNotifications()->build(), $s);
+        });
+
+        $this->assertCreateWithSettings(['notifications.enabled' => '0'], function (FS $s) {
+            $this->assertEquals(Builder::new()->disableNotifications()->build(), $s);
+        });
+
+        $this->assertCreateWithSettings(['notifications.enabled' => true], function (FS $s) {
             return $s->notificationsAreEnabled;
         });
 
-        $this->assertCreateWithNotifications(['notify_on_new_collaborator' => false], function (FS $s) {
-            return $s->newCollaboratorNotificationIsDisabled;
+        $this->assertCreateWithSettings(['notifications.enabled' => 1], function (FS $s) {
+            return $s->notificationsAreEnabled;
         });
 
-        $this->assertCreateWithNotifications(['notify_on_new_collaborator' => true], function (FS $s) {
+        $this->assertCreateWithSettings(['notifications.enabled' => '1'], function (FS $s) {
+            return $s->notificationsAreEnabled;
+        });
+
+        $this->assertCreateWithSettings(['notifications.newCollaborator.enabled' => false], function (FS $s) {
+            $this->assertEquals(Builder::new()->disableNewCollaboratorNotification()->build(), $s);
+        });
+
+        $this->assertCreateWithSettings(['notifications.newCollaborator.enabled' => true], function (FS $s) {
             return $s->newCollaboratorNotificationIsEnabled;
         });
 
-        $this->assertCreateWithNotifications(['notify_on_update' => false], function (FS $s) {
-            return $s->folderUpdatedNotificationIsDisabled;
+        $this->assertCreateWithSettings(['notifications.folderUpdated.enabled' => false], function (FS $s) {
+            $this->assertEquals(Builder::new()->disableFolderUpdatedNotification()->build(), $s);
         });
 
-        $this->assertCreateWithNotifications(['notify_on_update' => true], function (FS $s) {
+        $this->assertCreateWithSettings(['notifications.folderUpdated.enabled' => true], function (FS $s) {
             return $s->folderUpdatedNotificationIsEnabled;
         });
 
-        $this->assertCreateWithNotifications(['notify_on_new_bookmark' => false], function (FS $s) {
-            return $s->newBookmarksNotificationIsDisabled;
+        $this->assertCreateWithSettings(['notifications.newBookmarks.enabled' => false], function (FS $s) {
+            $this->assertEquals(Builder::new()->disableNewBookmarksNotification()->build(), $s);
         });
 
-        $this->assertCreateWithNotifications(['notify_on_new_bookmark' => true], function (FS $s) {
+        $this->assertCreateWithSettings(['notifications.newBookmarks.enabled' => true], function (FS $s) {
             return $s->newBookmarksNotificationIsEnabled;
         });
 
-        $this->assertCreateWithNotifications(['notify_on_bookmark_delete' => false], function (FS $s) {
-            return $s->bookmarksRemovedNotificationIsDisabled;
+        $this->assertCreateWithSettings(['notifications.bookmarksRemoved.enabled' => false], function (FS $s) {
+            $this->assertEquals(Builder::new()->disableBookmarksRemovedNotification()->build(), $s);
         });
 
-        $this->assertCreateWithNotifications(['notify_on_bookmark_delete' => true], function (FS $s) {
+        $this->assertCreateWithSettings(['notifications.bookmarksRemoved.enabled' => true], function (FS $s) {
             return $s->bookmarksRemovedNotificationIsEnabled;
         });
 
-        $this->assertCreateWithNotifications(['notify_on_collaborator_exit' => false], function (FS $s) {
-            return $s->collaboratorExitNotificationIsDisabled;
+        $this->assertCreateWithSettings(['notifications.collaboratorExit.enabled' => false], function (FS $s) {
+            $this->assertEquals(Builder::new()->disableCollaboratorExitNotification()->build(), $s);
         });
 
-        $this->assertCreateWithNotifications(['notify_on_collaborator_exit' => true], function (FS $s) {
+        $this->assertCreateWithSettings(['notifications.collaboratorExit.enabled' => true], function (FS $s) {
             return $s->collaboratorExitNotificationIsEnabled;
         });
 
-        $this->assertCreateWithNotifications(['notify_on_new_collaborator_by_user' => false], function (FS $s) {
+        $this->assertCreateWithSettings(['notifications.newCollaborator.mode' => '*'], function (FS $s) {
             return !$s->newCollaboratorNotificationMode->notifyWhenCollaboratorWasInvitedByMe();
         });
 
-        $this->assertCreateWithNotifications(['notify_on_new_collaborator_by_user' => true], function (FS $s) {
-            return $s->newCollaboratorNotificationMode->notifyWhenCollaboratorWasInvitedByMe();
+        $this->assertCreateWithSettings(['notifications.newCollaborator.mode' => 'invitedByMe'], function (FS $s) {
+            $this->assertEquals(Builder::new()->enableOnlyCollaboratorsInvitedByMeNotification()->build(), $s);
         });
 
-        $this->assertCreateWithNotifications(['notify_on_collaborator_exit_with_write' => false], function (FS $s) {
+        $this->assertCreateWithSettings(['notifications.collaboratorExit.mode' => '*'], function (FS $s) {
             return !$s->collaboratorExitNotificationMode->notifyWhenCollaboratorHasWritePermission();
         });
 
-        $this->assertCreateWithNotifications(['notify_on_collaborator_exit_with_write' => true], function (FS $s) {
-            return $s->collaboratorExitNotificationMode->notifyWhenCollaboratorHasWritePermission();
+        $this->assertCreateWithSettings(['notifications.collaboratorExit.mode' => 'hasWritePermission'], function (FS $s) {
+            $this->assertEquals(Builder::new()->enableOnlyCollaboratorWithWritePermissionNotification()->build(), $s);
         });
 
-        $this->assertCreateWithNotifications(
+        $this->assertCreateWithSettings(
             [
-                'notify_on_new_collaborator'  => false,
-                'notify_on_update'            => false,
-                'notify_on_collaborator_exit' => false
+                'notifications.newCollaborator.enabled'  => false,
+                'notifications.folderUpdated.enabled'    => false,
+                'notifications.collaboratorExit.enabled' => false
             ],
             function (FS $s) {
                 return $s->newCollaboratorNotificationIsDisabled &&
@@ -218,54 +241,31 @@ class CreateFolderTest extends TestCase
         );
     }
 
-    private function assertCreateWithNotifications(array $settings, \Closure $assertion): void
+    private function assertCreateWithSettings(array $settings, \Closure $assertion): void
     {
         Passport::actingAs($user = UserFactory::new()->create());
 
         $this->createFolderResponse([
             'name'     => $this->faker->word,
-            'settings' => $settings,
+            'settings' => Arr::undot($settings)
         ])->assertCreated();
 
-        $settings = Folder::onlyAttributes()
-            ->where('user_id', $user->id)
-            ->first()
-            ->settings;
+        $settings = Folder::onlyAttributes()->where('user_id', $user->id)->first()->settings;
 
-        $this->assertTrue($assertion($settings));
+        if (!is_null($expectation = $assertion($settings))) {
+            $this->assertTrue($expectation);
+        }
     }
 
     public function testWillReturnUnprocessableWhenFolderSettingsIsInValid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->createFolderResponse(['settings' => 'foo'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['settings']);
-
-        //Assert settings cannot be empty
-        $this->createFolderResponse(['settings' => '{}'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['settings']);
-
-        //Assert settings must have a valid value and settings.N-enable must be a boolean
-        $this->createFolderResponse([
-            'settings' => ['N-enable' => 'foo']
-        ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['settings']);
-
-        //Assert all values must be a boolean.
-        $this->createFolderResponse([
-            'settings' => [
-                'notify_on_new_collaborator'               => 'foo',
-                'notify_on_new_collaborator_by_user'       => 'foo',
-                'notify_on_update'                         => 'foo',
-                'notify_on_new_bookmark'                   => 'foo',
-                'notify_on_bookmark_delete'                => 'foo',
-                'notify_on_collaborator_exit'              => 'foo',
-                'N-notify_on_collaborator_exit_with_write' => 'foo'
-            ]
-        ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['settings']);
+        $this->assertWillReturnUnprocessableWhenFolderSettingsIsInValid(
+            ['name' => $this->faker->name],
+            function (array $parameters) {
+                return $this->createFolderResponse($parameters);
+            }
+        );
     }
 }

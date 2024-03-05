@@ -381,12 +381,12 @@ class AcceptFolderInviteTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($user)
-            ->settings(FolderSettingsBuilder::new()->setMaxCollaboratorsLimit(500))
+            ->settings(FolderSettingsBuilder::new()->setMaxCollaboratorsLimit(12))
             ->create();
 
-        Folder::retrieved(function (Folder $retrieved) {
-            $retrieved->collaborators_count = 500;
-        });
+        for ($i = 0; $i < 13; $i++) {
+            $this->CreateCollaborationRecord(UserFactory::new()->create(), $folder);
+        }
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,

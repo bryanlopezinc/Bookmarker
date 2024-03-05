@@ -236,14 +236,14 @@ class SendInviteTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->setMaxCollaboratorsLimit(500))
+            ->settings(FolderSettingsBuilder::new()->setMaxCollaboratorsLimit(10))
             ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
 
-        Folder::retrieved(function (Folder $folder) {
-            $folder->collaborators_count = 500;
-        });
+        for ($i = 0; $i < 10; $i++) {
+            $this->CreateCollaborationRecord(UserFactory::new()->create(), $folder);
+        }
 
         Passport::actingAs($folderOwner);
         $this->sendInviteResponse($params = [

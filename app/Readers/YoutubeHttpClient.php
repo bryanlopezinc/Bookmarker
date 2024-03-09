@@ -6,9 +6,10 @@ namespace App\Readers;
 
 use App\Models\Bookmark;
 use App\ValueObjects\Url;
+use Illuminate\Support\Str;
+use Psr\Log\LoggerInterface;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
-use Psr\Log\LoggerInterface;
 
 final class YoutubeHttpClient implements HttpClientInterface
 {
@@ -63,8 +64,6 @@ final class YoutubeHttpClient implements HttpClientInterface
         /** @var string[] */
         $parts = parse_url($url);
 
-        parse_str($parts['query'], $query);
-
-        return $query['v']; //@phpstan-ignore-line
+        return Str::after($parts['query'], 'v=');
     }
 }

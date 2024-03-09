@@ -23,7 +23,7 @@ final class UserController
     public function __invoke(CreateUserRequest $request): JsonResponse
     {
         $profileImagePath = $request->has('profile_photo') ?
-            $this->filesystem->store($request->file('profile_photo')) : //@phpstan-ignore-line
+            $this->filesystem->store($request->allFiles()['profile_photo']) :
             null;
 
         $user = User::query()->create([

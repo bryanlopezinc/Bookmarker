@@ -8,8 +8,7 @@ use App\Contracts\FolderRequestHandlerInterface;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
 use App\ValueObjects\FolderStorage;
-use Illuminate\Database\Query\Builder;
-use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use App\DataTransferObjects\AddBookmarksToFolderRequestData as Data;
@@ -23,9 +22,9 @@ final class FolderCanContainBookmarksValidator implements FolderRequestHandlerIn
     /**
      * @inheritdoc
      */
-    public function apply(Builder|EloquentBuilder $builder, Model $model): void
+    public function apply(Builder $builder, Model $model): void
     {
-        $builder->withCount('bookmarks'); //@phpstan-ignore-line
+        $builder->withCount('bookmarks');
     }
 
     /**

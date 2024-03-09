@@ -12,9 +12,9 @@ use Illuminate\Http\JsonResponse;
 
 final class UpdateFolderController
 {
-    public function __invoke(Request $request, Handler $requestHandler): JsonResponse
+    public function __invoke(Request $request, Handler $requestHandler, string $folderId): JsonResponse
     {
-        $requestHandler->handle((int) $request->route('folder_id'));//@phpstan-ignore-line
+        $requestHandler->handle((int) $folderId);
 
         return new JsonResponse();
     }

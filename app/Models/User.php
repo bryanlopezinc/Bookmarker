@@ -11,6 +11,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
 /**
@@ -51,6 +52,14 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
         'two_fa_mode' => TwoFaMode::class
     ];
+
+    public static function fromRequest(Request $request): User
+    {
+        /** @var User */
+        $user = $request->user();
+
+        return $user;
+    }
 
     public function findForPassport(string $emailOrUsername): ?self
     {

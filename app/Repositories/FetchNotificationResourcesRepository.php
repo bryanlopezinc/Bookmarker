@@ -7,6 +7,7 @@ namespace App\Repositories;
 use Illuminate\Support\Collection;
 use App\Models\{Folder, Bookmark, User};
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -39,15 +40,6 @@ final class FetchNotificationResourcesRepository
      */
     private const BOOKMARK_ID_KEYS = ['bookmark_ids'];
 
-    /**
-     * The notification resources retrieved from database.
-     *
-     * @var array{
-     *   bookmarks: Bookmark[],
-     *   users: User[],
-     *   folders: Folder[]
-     *  }
-     */
     private array $notificationResources = [
         'bookmarks' => [],
         'users'     => [],
@@ -106,7 +98,7 @@ final class FetchNotificationResourcesRepository
             return;
         }
 
-        collect($query->get()->first()) //@phpstan-ignore-line
+        collect((array) $query->first())
             ->mapWithKeys(fn (?string $json, string $key) => [$key => json_decode($json ?? '{}', true)])
             ->mapWithKeys(function (array $data, string $key) {
                 $model = match ($key) {
@@ -117,7 +109,9 @@ final class FetchNotificationResourcesRepository
 
                 return [$key => collect($data)->mapInto($model)->all()];
             })
-            ->each(fn (array $data, string $key) => $this->notificationResources[$key] = $data); //@phpstan-ignore-line
+            ->each(function ($data, string $key) {
+                $this->notificationResources[$key] = $data;
+            });
     }
 
     private function extractIds(string $type): array

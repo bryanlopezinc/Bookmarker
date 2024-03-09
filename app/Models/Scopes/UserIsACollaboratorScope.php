@@ -6,7 +6,6 @@ namespace App\Models\Scopes;
 
 use App\Models\Folder;
 use App\Models\FolderCollaborator;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
@@ -19,11 +18,11 @@ final class UserIsACollaboratorScope implements Scope
     ) {
     }
 
-    public function __invoke(Builder|QueryBuilder $query): void
+    public function __invoke(Builder $query): void
     {
         $folderModel = new Folder();
 
-        $query->withCasts([$this->as => 'boolean']) //@phpstan-ignore-line
+        $query->withCasts([$this->as => 'boolean'])
             ->addSelect([
                 $this->as => FolderCollaborator::select('id')
                     ->whereColumn('folder_id', $folderModel->getQualifiedKeyName())

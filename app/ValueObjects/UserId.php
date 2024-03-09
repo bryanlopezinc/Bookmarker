@@ -28,7 +28,10 @@ final class UserId
 
     public static function fromAuthUser(): self
     {
-        return new self(auth('api')->id()); // @phpstan-ignore-line
+        /** @var int */
+        $id = auth()->id();
+
+        return new self($id);
     }
 
     public function equals(UserId $userId): bool

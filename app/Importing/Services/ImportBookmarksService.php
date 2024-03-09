@@ -28,7 +28,7 @@ final class ImportBookmarksService
 
         $importId = Str::uuid()->toString();
 
-        $this->filesystem->put($request->file('html')->getContent(), $userID, $importId); //@phpstan-ignore-line
+        $this->filesystem->put($request->allFiles()['html']->getContent(), $userID, $importId);
 
         // Remove the file from the request data because
         // \Illuminate\Http\UploadedFile cannot be serialized

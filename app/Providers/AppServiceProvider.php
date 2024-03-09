@@ -34,7 +34,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        Model::preventLazyLoading($this->app->environment('local', 'testing')); //@phpstan-ignore-line
+        /** @var bool */
+        $preventLazyLoading = $this->app->environment('local', 'testing');
+
+        Model::preventLazyLoading($preventLazyLoading);
         Model::preventAccessingMissingAttributes();
 
         if ($this->app->environment('testing')) {

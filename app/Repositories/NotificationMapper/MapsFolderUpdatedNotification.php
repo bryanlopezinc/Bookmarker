@@ -16,6 +16,9 @@ final class MapsFolderUpdatedNotification implements NotificationMapper
     {
         $data = $notification->data;
 
+        /** @var \Carbon\Carbon */
+        $notifiedOn = $notification->created_at;
+
         return new FolderUpdatedNotificationData(...[
             'folder'               => $repository->findFolderByID($data['folder_id']),
             'collaborator'         => $repository->findUserByID($data['collaborator_id']),
@@ -25,7 +28,7 @@ final class MapsFolderUpdatedNotification implements NotificationMapper
             'collaboratorId'       => $data['collaborator_id'],
             'changes'              => $notification->data['changes'],
             'uuid'                 => $notification->id,
-            'notifiedOn'            => $notification->created_at->toDateTimeString(), //@phpstan-ignore-line
+            'notifiedOn'            => $notifiedOn->toDateTimeString(),
             'modifiedAttribute'     => $data['modified']
         ]);
     }

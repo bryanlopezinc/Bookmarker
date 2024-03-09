@@ -16,6 +16,9 @@ final class MapsCollaboratorExitNotification implements NotificationMapper
     {
         $data = $notification->data;
 
+        /** @var \Carbon\Carbon */
+        $notifiedOn = $notification->created_at;
+
         return new CollaboratorExitNotificationData(...[
             'collaborator'         => $repository->findUserByID($data['collaborator_id']),
             'folder'               => $repository->findFolderByID($data['folder_id']),
@@ -24,7 +27,7 @@ final class MapsCollaboratorExitNotification implements NotificationMapper
             'folderName'           => new FolderName($data['folder_name']),
             'collaboratorFullName' => new FullName($data['collaborator_full_name']),
             'uuid'                 => $notification->id,
-            'notifiedOn'            => $notification->created_at->toDateTimeString() //@phpstan-ignore-line
+            'notifiedOn'            => $notifiedOn->toDateTimeString()
         ]);
     }
 }

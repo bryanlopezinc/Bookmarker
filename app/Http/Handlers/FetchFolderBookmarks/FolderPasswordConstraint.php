@@ -55,7 +55,7 @@ final class FolderPasswordConstraint implements FolderRequestHandlerInterface, S
             );
         }
 
-        if (!$this->hasher->check($this->data->password, $folder->password)) { //@phpstan-ignore-line
+        if ($folder->password && !$this->hasher->check($this->data->password, $folder->password)) {
             throw new HttpException(
                 ['message' => 'InvalidFolderPassword', 'info' => 'The given folder password is invalid'],
                 Response::HTTP_UNAUTHORIZED

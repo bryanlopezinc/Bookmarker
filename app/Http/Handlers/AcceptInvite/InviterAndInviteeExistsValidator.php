@@ -8,8 +8,7 @@ use App\Contracts\FolderRequestHandlerInterface;
 use App\Exceptions\AcceptFolderInviteException;
 use App\Models\Folder;
 use App\Models\User;
-use Illuminate\Database\Query\Builder;
-use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Support\Facades\DB;
@@ -18,13 +17,13 @@ final class InviterAndInviteeExistsValidator implements FolderRequestHandlerInte
 {
     use Concerns\HasInvitationData;
 
-    public function apply(Builder|EloquentBuilder $builder, Model $model): void
+    public function apply(Builder $builder, Model $model): void
     {
         $invitationData = $this->invitationData;
 
         $expression = DB::raw("JSON_OBJECT('id', id, 'full_name', full_name)");
 
-        $builder->withCasts(['inviter' => 'json', 'invitee' => 'json']) //@phpstan-ignore-line
+        $builder->withCasts(['inviter' => 'json', 'invitee' => 'json'])
             ->addSelect(['inviter' => User::select($expression)->where('id', $invitationData->inviterId)])
             ->addSelect(['invitee' => User::select($expression)->where('id', $invitationData->inviteeId)]);
     }

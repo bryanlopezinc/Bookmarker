@@ -10,6 +10,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use GuzzleHttp\Exception\ConnectException;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 final class DefaultClient implements HttpClientInterface
 {
@@ -29,7 +30,7 @@ final class DefaultClient implements HttpClientInterface
                 ->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36') //phpcs:ignore
                 ->get($bookmark->url);
         } catch (ConnectionException $e) {
-            return $this->handleException($e->getPrevious(), $bookmark); //@phpstan-ignore-line
+            return $this->handleException($e, $bookmark);
         }
 
         if (!$response->successful() || !str_contains($response->header('content-type'), 'text/html')) {
@@ -48,8 +49,15 @@ final class DefaultClient implements HttpClientInterface
         ]);
     }
 
-    private function handleException(ConnectException $exception, Bookmark $bookmark): BookmarkMetaData | false
+    private function handleException(ConnectionException $exception, Bookmark $bookmark): BookmarkMetaData | false
     {
+        if (!$exception->getPrevious() instanceof ConnectException) {
+            return false;
+        }
+
+        /** @var ConnectException */
+        $exception = $exception->getPrevious();
+
         $errorCode = $exception->getHandlerContext()['errno'];
 
         if ($errorCode === \CURLE_COULDNT_RESOLVE_HOST) {

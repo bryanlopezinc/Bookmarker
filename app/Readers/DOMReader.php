@@ -129,12 +129,10 @@ class DOMReader
 
     private function filterValue(?string $value): string|false
     {
-        if (blank($value)) {
+        if (is_null($value) || blank($value)) {
             return false;
         }
 
-        //already null checked
-        // @phpstan-ignore-next-line
         return htmlspecialchars($value, ENT_QUOTES);
     }
 }

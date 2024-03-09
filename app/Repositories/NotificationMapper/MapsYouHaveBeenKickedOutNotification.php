@@ -15,12 +15,15 @@ final class MapsYouHaveBeenKickedOutNotification implements NotificationMapper
     {
         $data = $notification->data;
 
+        /** @var \Carbon\Carbon */
+        $notifiedOn = $notification->created_at;
+
         return new YouHaveBeenKickedOutNotificationData(...[
             'folder'     => $repository->findFolderByID($data['folder_id']),
             'folderId'   => $data['folder_id'],
             'folderName' => new FolderName($data['folder_name']),
             'uuid'       => $notification->id,
-            'notifiedOn'  => $notification->created_at->toDateTimeString() //@phpstan-ignore-line
+            'notifiedOn'  => $notifiedOn->toDateTimeString()
         ]);
     }
 }

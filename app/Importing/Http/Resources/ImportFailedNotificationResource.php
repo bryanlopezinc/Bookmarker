@@ -21,6 +21,9 @@ final class ImportFailedNotificationResource extends JsonResource
     {
         $data = $this->notification->notification->data;
 
+        /** @var \Carbon\Carbon */
+        $notifiedOn = $this->notification->notification->created_at;
+
         return [
             'type' => 'ImportFailedNotification',
             'attributes' => [
@@ -28,7 +31,7 @@ final class ImportFailedNotificationResource extends JsonResource
                 'import_id'  => $data['import_id'],
                 'reason'     => ImportBookmarksStatus::from($data['reason'])->reason(),
                 'message'    => ImportBookmarksStatus::from($data['reason'])->toNotificationMessage(),
-                'notified_on' => $this->notification->notification->created_at->toDateTimeString(), //@phpstan-ignore-line
+                'notified_on' => $notifiedOn->toDateTimeString(),
             ]
         ];
     }

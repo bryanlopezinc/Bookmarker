@@ -16,6 +16,9 @@ final class MapsBookmarksAddedToFolderNotification implements NotificationMapper
     {
         $data = $notification->data;
 
+        /** @var \Carbon\Carbon */
+        $notifiedOn = $notification->created_at;
+
         return new NewFolderBookmarksNotificationData(...[
             'folder'               => $repository->findFolderByID($data['folder_id']),
             'collaborator'         => $repository->findUserByID($data['collaborator_id']),
@@ -25,7 +28,7 @@ final class MapsBookmarksAddedToFolderNotification implements NotificationMapper
             'folderName'           => new FolderName($data['folder_name']),
             'bookmarks'            => $repository->findBookmarksByIDs($data['bookmark_ids']),
             'notificationId'        => $notification->id,
-            'notifiedOn'            => $notification->created_at->toDateTimeString() //@phpstan-ignore-line
+            'notifiedOn'            => $notifiedOn->toDateTimeString()
         ]);
     }
 }

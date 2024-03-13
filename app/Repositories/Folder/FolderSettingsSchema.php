@@ -74,26 +74,6 @@ final class FolderSettingsSchema implements FolderSettingSchemaProviderInterface
         return self::$rules;
     }
 
-    /**
-     * Get the setting types that expects a boolean value.
-     *
-     * @return array<FolderSettingSchema>
-     */
-    public function getBooleanTypes(): array
-    {
-        $booleanTypes = [];
-
-        foreach (self::$all as $setting) {
-            if (!$setting->isBooleanType()) {
-                continue;
-            }
-
-            $booleanTypes[] = $setting;
-        }
-
-        return $booleanTypes;
-    }
-
     public function exists(string $settingId): bool
     {
         return array_key_exists($settingId, self::$all);

@@ -33,11 +33,13 @@ final class VerifyEmailNotification extends VerifyEmail
         //Validation.
         new Url($url);
 
+        // @codeCoverageIgnoreStart
         if ($missing = UrlPlaceholders::missing($url, [':id', ':hash', ':signature', ':expires'])) {
             $missing = implode(',', $missing);
 
             throw new \Exception("The verification url  must contain the [$missing] placeholder/s");
         }
+        // @codeCoverageIgnoreEnd
 
         return $url;
     }

@@ -17,11 +17,6 @@ final class ToggleFolderFeature
         $this->featuresRepository = $featuresRepository ?? new FeaturesRepository();
     }
 
-    public function enable(int $folderId, Feature $feature): void
-    {
-        $this->update($folderId, $feature, true);
-    }
-
     public function disable(int $folderId, Feature $feature): void
     {
         $this->update($folderId, $feature, false);

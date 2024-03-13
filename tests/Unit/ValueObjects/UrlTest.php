@@ -20,6 +20,13 @@ class UrlTest extends TestCase
         new Url('foo');
     }
 
+    public function IsValid(): void
+    {
+        $this->expectException(MalformedURLException::class);
+
+        $this->assertFalse(Url::isValid(1));
+    }
+
     public function testGetHostMethod(): void
     {
         $url = new Url('https://laravel.com/docs/9.x/encryption');
@@ -60,6 +67,7 @@ class UrlTest extends TestCase
     {
         foreach ([
             ' ',
+            'foo',
             '/docs/9.x/encryption',
             'git://github.com/user/project-name.git',
             'webcal://example.com/calendar.ics',

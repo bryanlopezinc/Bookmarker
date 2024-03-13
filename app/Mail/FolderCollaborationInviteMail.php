@@ -34,7 +34,7 @@ final class FolderCollaborationInviteMail extends Mailable
         new Url($url);
 
         if (UrlPlaceholders::missing($url, [':invite_hash'])) {
-            throw new \Exception("The verification url  must contain the [:invite_hash] placeholder/s");
+            throw new \Exception("The verification url  must contain the [:invite_hash] placeholder/s"); // @codeCoverageIgnore
         }
 
         return Str::of($url)

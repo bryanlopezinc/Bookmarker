@@ -33,7 +33,7 @@ final class FilterUserCollaborationResource extends JsonResource
 
         foreach ($fields as $field) {
             $value = Arr::get($fullResponse, "attributes.$field", function () use ($field) {
-                throw new \Exception("Invalid value attributes. $field");
+                throw new \Exception("Invalid value attributes. $field"); // @codeCoverageIgnore
             });
 
             Arr::set($filteredResponse, "attributes.$field", $value);

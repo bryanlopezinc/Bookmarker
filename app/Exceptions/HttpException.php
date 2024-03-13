@@ -27,11 +27,6 @@ final class HttpException extends RuntimeException
         return new self($message, Response::HTTP_CONFLICT);
     }
 
-    public static function unAuthorized(mixed $message = []): self
-    {
-        return new self($message, Response::HTTP_UNAUTHORIZED);
-    }
-
     public static function forbidden(mixed $message = []): self
     {
         return new self($message, Response::HTTP_FORBIDDEN);

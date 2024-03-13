@@ -33,9 +33,4 @@ final class UserId
 
         return new self($id);
     }
-
-    public function equals(UserId $userId): bool
-    {
-        return $userId->id === $this->id;
-    }
 }

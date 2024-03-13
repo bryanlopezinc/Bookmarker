@@ -23,11 +23,6 @@ final class FolderSettingsBuilder
         return new FolderSettings($this->attributes);
     }
 
-    public function toArray(): array
-    {
-        return $this->attributes;
-    }
-
     public static function new(array $attributes = []): FolderSettingsBuilder
     {
         return new FolderSettingsBuilder($attributes);

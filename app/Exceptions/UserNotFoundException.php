@@ -15,16 +15,6 @@ final class UserNotFoundException extends RuntimeException
     }
 
     /**
-     * @throws self
-     */
-    public static function throwIf(bool $condition): void
-    {
-        if ($condition) {
-            throw new self();
-        }
-    }
-
-    /**
      * Render the exception into an HTTP Response.
      */
     public function render(Request $request): JsonResponse

@@ -22,11 +22,6 @@ final class ImportBookmarkRequestData
         return $this->userID;
     }
 
-    public function data(): array
-    {
-        return $this->data;
-    }
-
     public function source(): ImportSource
     {
         return $this->importSource;

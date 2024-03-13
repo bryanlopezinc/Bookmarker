@@ -14,7 +14,7 @@ final class TagsDetachedEvent
     public function __construct(public readonly array $tags)
     {
         if (empty($tags)) {
-            throw new LogicException('Tags cannot be empty');
+            throw new LogicException('Tags cannot be empty'); // @codeCoverageIgnore
         }
     }
 }

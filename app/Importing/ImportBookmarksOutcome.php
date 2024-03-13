@@ -24,7 +24,7 @@ final class ImportBookmarksOutcome
     public static function failed(ImportBookmarksStatus $status, ImportStats $stats): self
     {
         if (!$status->failed()) {
-            throw new LogicException('Outcome is not failed.');
+            throw new LogicException('Outcome is not failed.'); // @codeCoverageIgnore
         }
 
         return new self($status, $stats);

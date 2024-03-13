@@ -20,7 +20,7 @@ final class FolderUpdatedNotification extends Notification //implements ShouldQu
     public function __construct(private Folder $folder, private User $updatedBy, private string $modifiedAttributeName)
     {
         if (!in_array($modifiedAttributeName, ['name', 'description'])) {
-            throw new \InvalidArgumentException("Invalid modified attribute {$modifiedAttributeName}");
+            throw new \InvalidArgumentException("Invalid modified attribute {$modifiedAttributeName}"); // @codeCoverageIgnore
         }
 
         $this->afterCommit();

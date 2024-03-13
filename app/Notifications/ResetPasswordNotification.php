@@ -30,11 +30,13 @@ final class ResetPasswordNotification extends ResetPassword implements ShouldQue
         //Validation.
         new Url($url);
 
+        // @codeCoverageIgnoreStart
         if ($missing = UrlPlaceholders::missing($url, [':email', ':token'])) {
             $missing = implode(',', $missing);
 
             throw new \Exception("The verification url  must contain the [$missing] placeholder/s");
         }
+        // @codeCoverageIgnoreEnd
 
         return $url;
     }

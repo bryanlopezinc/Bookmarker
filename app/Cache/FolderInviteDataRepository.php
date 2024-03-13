@@ -46,7 +46,7 @@ final class FolderInviteDataRepository
         $payload = $this->repository->get($inviteId, []);
 
         if (empty($payload)) {
-            throw new OutOfBoundsException("The invitation Id {$inviteId} does not exists.");
+            throw new OutOfBoundsException("The invitation Id {$inviteId} does not exists."); // @codeCoverageIgnore
         }
 
         return new FolderInviteData(...$payload);

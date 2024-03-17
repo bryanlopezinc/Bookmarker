@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Utils;
 
-use App\Repositories\Folder\FolderSettingsSchema as Schema;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use App\Repositories\Folder\FolderSettingsSchema as Schema;
 
 final class FolderSettingsNormalizer
 {
@@ -18,22 +19,33 @@ final class FolderSettingsNormalizer
 
     public function fromRequest(array $folderSettings): array
     {
-        foreach ($this->folderSettingsSchema->schema() as $setting) {
-            if (!Arr::has($folderSettings, $setting->Id)) {
-                continue;
-            }
+        $normalized = [];
+
+        foreach ($this->dot($folderSettings) as $key) {
+            $setting = $this->folderSettingsSchema->findById($key);
 
             $value = Arr::get($folderSettings, $setting->Id);
 
-            $normalizedValue = match (true) {
-                $setting->isBooleanType() => (bool) $value,
-                $setting->isIntegerType() => (int) $value,
-                default => $value
-            };
-
-            Arr::set($folderSettings, $setting->Id, $normalizedValue);
+            Arr::set($normalized, $setting->Id, $setting->normalizer->normalize($value));
         }
 
-        return $folderSettings;
+        return $normalized;
+    }
+
+    private function dot(array $folderSettings): array
+    {
+        $dotted = [];
+
+        foreach (array_keys(Arr::dot($folderSettings)) as $key) {
+            $parts = explode('.', $key);
+
+            if (is_numeric($last = end($parts))) {
+                $key = Str::before($key, ".{$last}");
+            }
+
+            $dotted[] = $key;
+        }
+
+        return $dotted;
     }
 }

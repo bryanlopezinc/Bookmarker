@@ -29,18 +29,18 @@ trait TestsFolderSettings
         $json(['version' => '1.0.0'], [$key => "The given setting version is invalid."]);
 
         $json(
-            ['maxCollaboratorsLimit' => 1001],
-            ["{$key}.maxCollaboratorsLimit" => "The {$key}.maxCollaboratorsLimit must not be greater than 1000."]
+            ['max_collaborators_limit' => 1001],
+            ["{$key}.max_collaborators_limit" => "The {$key}.max_collaborators_limit must not be greater than 1000."]
         );
 
         $json(
-            ['acceptInviteConstraints' => 'foo'],
-            ["{$key}.acceptInviteConstraints" => 'The settings.acceptInviteConstraints must be an array.']
+            ['accept_invite_constraints' => 'foo'],
+            ["{$key}.accept_invite_constraints" => 'The settings.accept_invite_constraints must be an array.']
         );
 
         $json(
-            ['acceptInviteConstraints' => ['InviterMustHaveRequiredPermission', 'InviterMustHaveRequiredPermission']],
-            ["{$key}.acceptInviteConstraints" => 'The settings.acceptInviteConstraints field has a duplicate value.']
+            ['accept_invite_constraints' => ['InviterMustHaveRequiredPermission', 'InviterMustHaveRequiredPermission']],
+            ["{$key}.accept_invite_constraints" => 'The settings.accept_invite_constraints field has a duplicate value.']
         );
 
         $json(
@@ -49,38 +49,38 @@ trait TestsFolderSettings
         );
 
         $json(
-            ['notifications.newCollaborator.enabled' => 'foo'],
-            ["{$key}.notifications.newCollaborator.enabled" => "The {$key}.notifications.newCollaborator.enabled field must be true or false."]
+            ['notifications.new_collaborator.enabled' => 'foo'],
+            ["{$key}.notifications.new_collaborator.enabled" => "The {$key}.notifications.new_collaborator.enabled field must be true or false."]
         );
 
         $json(
-            ['notifications.newCollaborator.mode' => 'foo'],
-            ["{$key}.notifications.newCollaborator.mode" => "The selected {$key}.notifications.newCollaborator.mode is invalid."]
+            ['notifications.new_collaborator.mode' => 'foo'],
+            ["{$key}.notifications.new_collaborator.mode" => "The selected {$key}.notifications.new_collaborator.mode is invalid."]
         );
 
         $json(
-            ['notifications.folderUpdated.enabled' => null],
-            ["{$key}.notifications.folderUpdated.enabled" => "The {$key}.notifications.folderUpdated.enabled field must be true or false."]
+            ['notifications.folder_updated.enabled' => null],
+            ["{$key}.notifications.folder_updated.enabled" => "The {$key}.notifications.folder_updated.enabled field must be true or false."]
         );
 
         $json(
-            ['notifications.newBookmarks.enabled' => 'foo'],
-            ["{$key}.notifications.newBookmarks.enabled" => "The {$key}.notifications.newBookmarks.enabled field must be true or false."]
+            ['notifications.new_bookmarks.enabled' => 'foo'],
+            ["{$key}.notifications.new_bookmarks.enabled" => "The {$key}.notifications.new_bookmarks.enabled field must be true or false."]
         );
 
         $json(
-            ['notifications.bookmarksRemoved.enabled' => 'foo'],
-            ["{$key}.notifications.bookmarksRemoved.enabled" => "The {$key}.notifications.bookmarksRemoved.enabled field must be true or false."]
+            ['notifications.bookmarks_removed.enabled' => 'foo'],
+            ["{$key}.notifications.bookmarks_removed.enabled" => "The {$key}.notifications.bookmarks_removed.enabled field must be true or false."]
         );
 
         $json(
-            ['notifications.collaboratorExit.enabled' => 'foo'],
-            ["{$key}.notifications.collaboratorExit.enabled" => "The {$key}.notifications.collaboratorExit.enabled field must be true or false."]
+            ['notifications.collaborator_exit.enabled' => 'foo'],
+            ["{$key}.notifications.collaborator_exit.enabled" => "The {$key}.notifications.collaborator_exit.enabled field must be true or false."]
         );
 
         $json(
-            ['notifications.collaboratorExit.mode' => 'foo'],
-            ["{$key}.notifications.collaboratorExit.mode" => "The selected {$key}.notifications.collaboratorExit.mode is invalid."]
+            ['notifications.collaborator_exit.mode' => 'foo'],
+            ["{$key}.notifications.collaborator_exit.mode" => "The selected {$key}.notifications.collaborator_exit.mode is invalid."]
         );
     }
 }

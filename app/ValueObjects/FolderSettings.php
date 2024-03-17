@@ -41,7 +41,11 @@ final class FolderSettings implements Arrayable
     {
         $default = $this->default();
 
-        $this->settings = array_replace(['version' => $default['version']], $settings);
+        if (!empty($settings) && !array_key_exists('version', $settings)) {
+            $settings['version'] = $default['version'];
+        }
+
+        $this->settings = $settings;
 
         $this->validate($this->settings);
 
@@ -98,16 +102,16 @@ final class FolderSettings implements Arrayable
         $notifications = $this->resolvedSetting['notifications'];
 
         return match ($classProperty) {
-            'maxCollaboratorsLimit'                 => $this->resolvedSetting['maxCollaboratorsLimit'],
-            'acceptInviteConstraints'               => new AcceptInviteConstraints($this->resolvedSetting['acceptInviteConstraints']),
+            'maxCollaboratorsLimit'                 => $this->resolvedSetting['max_collaborators_limit'],
+            'acceptInviteConstraints'               => new AcceptInviteConstraints($this->resolvedSetting['accept_invite_constraints']),
             'notificationsAreEnabled'                => $notifications['enabled'],
-            'newCollaboratorNotificationIsEnabled'   => $notifications['newCollaborator']['enabled'],
-            'newCollaboratorNotificationMode'        => NewCollaboratorNotificationMode::from($notifications['newCollaborator']['mode']),
-            'folderUpdatedNotificationIsEnabled'     => $notifications['folderUpdated']['enabled'],
-            'newBookmarksNotificationIsEnabled'      => $notifications['newBookmarks']['enabled'],
-            'bookmarksRemovedNotificationIsEnabled'  => $notifications['bookmarksRemoved']['enabled'],
-            'collaboratorExitNotificationIsEnabled'  => $notifications['collaboratorExit']['enabled'],
-            'collaboratorExitNotificationMode'       => CollaboratorExitNotificationMode::from($notifications['collaboratorExit']['mode']),
+            'newCollaboratorNotificationIsEnabled'   => $notifications['new_collaborator']['enabled'],
+            'newCollaboratorNotificationMode'        => NewCollaboratorNotificationMode::from($notifications['new_collaborator']['mode']),
+            'folderUpdatedNotificationIsEnabled'     => $notifications['folder_updated']['enabled'],
+            'newBookmarksNotificationIsEnabled'      => $notifications['new_bookmarks']['enabled'],
+            'bookmarksRemovedNotificationIsEnabled'  => $notifications['bookmarks_removed']['enabled'],
+            'collaboratorExitNotificationIsEnabled'  => $notifications['collaborator_exit']['enabled'],
+            'collaboratorExitNotificationMode'       => CollaboratorExitNotificationMode::from($notifications['collaborator_exit']['mode']),
             'notificationsAreDisabled'               => !$this->resolve('notificationsAreEnabled'),
             'newCollaboratorNotificationIsDisabled'  => !$this->resolve('newCollaboratorNotificationIsEnabled'),
             'folderUpdatedNotificationIsDisabled'    => !$this->resolve('folderUpdatedNotificationIsEnabled'),

@@ -370,7 +370,7 @@ class UpdateFolderTest extends TestCase
             ->assertForbidden()
             ->assertJsonFragment($error);
 
-        $this->updateFolderResponse(['folder_id' => $privateFolder->id, 'settings'  => ['maxCollaboratorsLimit' => 450]])
+        $this->updateFolderResponse(['folder_id' => $privateFolder->id, 'settings'  => ['max_collaborators_limit' => 450]])
             ->assertForbidden()
             ->assertJsonFragment($error);
     }
@@ -420,7 +420,7 @@ class UpdateFolderTest extends TestCase
 
         $this->updateFolderResponse([
             'folder_id' => $folder->id,
-            'settings' => ['notifications' => ['newCollaborator' => ['enabled' => 0]]]
+            'settings' => ['notifications' => ['new_collaborator' => ['enabled' => 0]]]
         ])->assertOk();
 
         /** @var FolderSettings */

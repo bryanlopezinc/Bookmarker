@@ -38,7 +38,7 @@ final class Username
             throw new Exception('Could not retrieve username from request with key ' . $key);
         }));
     }
-    
+
     private function validate(): void
     {
         $length = mb_strlen($this->value);

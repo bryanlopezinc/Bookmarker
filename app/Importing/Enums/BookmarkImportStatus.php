@@ -8,19 +8,19 @@ use Exception;
 
 enum BookmarkImportStatus: int
 {
-        // Each category of should follow a
-        // numerical sequence for easy filtering
-        // Eg `where status Between 2 and 6` will fetch all cases within that category.
+    // Each category of should follow a
+    // numerical sequence for easy filtering
+    // Eg `where status Between 2 and 6` will fetch all cases within that category.
     case SUCCESS                            = 1;
 
-        //failed
+    //failed
     case FAILED_DUE_TO_INVALID_TAG          = 101;
     case FAILED_DUE_TO_MERGE_TAGS_EXCEEDED  = 102;
     case FAILED_DUE_TO_SYSTEM_ERROR         = 103;
     case FAILED_DUE_TO_INVALID_URL          = 104;
     case FAILED_DUE_TO_TOO_MANY_TAGS        = 105;
 
-        //skipped
+    //skipped
     case SKIPPED_DUE_TO_INVALID_TAG         = 201;
     case SKIPPED_DUE_TO_MERGE_TAGS_EXCEEDED = 202;
     case SKIPPED_DUE_TO_TOO_MANY_TAGS       = 203;

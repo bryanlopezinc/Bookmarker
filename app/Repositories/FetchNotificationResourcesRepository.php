@@ -7,7 +7,6 @@ namespace App\Repositories;
 use Illuminate\Support\Collection;
 use App\Models\{Folder, Bookmark, User};
 use Illuminate\Notifications\DatabaseNotification;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
 /**

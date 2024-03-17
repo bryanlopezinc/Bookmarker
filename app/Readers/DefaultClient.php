@@ -10,7 +10,6 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use GuzzleHttp\Exception\ConnectException;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 final class DefaultClient implements HttpClientInterface
 {

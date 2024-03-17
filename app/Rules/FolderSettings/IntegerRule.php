@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Rules\FolderSettings;
 
-use App\Contracts\HasHttpRuleInterface;
 use Illuminate\Contracts\Validation\ValidationRule;
 
-final class IntegerRule implements ValidationRule, HasHttpRuleInterface
+final class IntegerRule implements ValidationRule
 {
     /**
      * {@inheritdoc}
@@ -19,13 +18,5 @@ final class IntegerRule implements ValidationRule, HasHttpRuleInterface
 
             return;
         };
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getRuleForHttpInputValidation(): mixed
-    {
-        return 'integer';
     }
 }

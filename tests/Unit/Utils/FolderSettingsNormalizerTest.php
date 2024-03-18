@@ -17,7 +17,8 @@ class FolderSettingsNormalizerTest extends TestCase
         $normalizer = new FolderSettingsNormalizer();
 
         $settings = [
-            'max_collaborators_limit'   => 3,
+            'max_collaborators_limit'   => '3',
+            'max_bookmarks_limit'       => '100',
             'accept_invite_constraints' => ['InviterMustBeAnActiveCollaborator'],
             'notifications'              => [
                 'enabled'           => true,
@@ -36,7 +37,8 @@ class FolderSettingsNormalizerTest extends TestCase
         ];
 
         $this->assertEquals($normalizer->fromRequest($settings), [
-            'max_collaborators_limit' => 3,
+            'max_collaborators_limit'   => 3,
+            'max_bookmarks_limit'       => 100,
             'accept_invite_constraints' => ['InviterMustBeAnActiveCollaborator'],
             'notifications' => [
                 'enabled'           => true,

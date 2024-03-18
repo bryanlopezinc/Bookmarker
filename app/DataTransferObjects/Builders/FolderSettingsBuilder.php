@@ -35,6 +35,13 @@ final class FolderSettingsBuilder
         return $this;
     }
 
+    public function setMaxBookmarksLimit(int $limit): self
+    {
+        Arr::set($this->attributes, 'max_bookmarks_limit', $limit);
+
+        return $this;
+    }
+
     public function enableNotifications(bool $enable = true): self
     {
         Arr::set($this->attributes, 'notifications.enabled', $enable);

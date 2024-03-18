@@ -12,6 +12,7 @@ use App\Contracts\FolderSettingSchemaProviderInterface;
 use App\Rules\FolderSettings\IntegerRule;
 use App\Rules\FolderSettings\FolderSettingsRootNodesRule;
 use App\Utils\FolderSettingNormalizers as Normalizers;
+use App\ValueObjects\FolderStorage;
 use Illuminate\Support\Arr;
 
 final class FolderSettingsSchema implements FolderSettingSchemaProviderInterface
@@ -101,6 +102,20 @@ final class FolderSettingsSchema implements FolderSettingSchemaProviderInterface
                     'max:' . setting('MAX_FOLDER_COLLABORATORS_LIMIT')
                 ],
                 'rulesExternal' => Arr::except($maxCollaboratorsLimitKeyRules, 3),
+            ],
+            [
+                'id'            => 'max_bookmarks_limit',
+                'default'       => -1,
+                'type'          => 'integer',
+                'normalizer'    => new Normalizers\IntegerValueNormalizer(),
+                'rules'         => $maxBookmarksLimitKeyRules = [
+                    'sometimes',
+                    'int',
+                    'min:-1',
+                    new IntegerRule(),
+                    'max:' . FolderStorage::MAX_ITEMS
+                ],
+                'rulesExternal' => Arr::except($maxBookmarksLimitKeyRules, 3),
             ],
             [
                 'id'      => 'accept_invite_constraints',

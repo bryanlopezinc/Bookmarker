@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use App\DataTransferObjects\AddBookmarksToFolderRequestData as Data;
 
-final class FolderCanContainBookmarksValidator implements FolderRequestHandlerInterface, Scope
+final class MaxFolderBookmarksConstraint implements FolderRequestHandlerInterface, Scope
 {
     public function __construct(private readonly Data $data)
     {
@@ -24,7 +24,7 @@ final class FolderCanContainBookmarksValidator implements FolderRequestHandlerIn
      */
     public function apply(Builder $builder, Model $model): void
     {
-        $builder->withCount('bookmarks');
+        $builder->withCount('bookmarks')->addSelect(['settings']);
     }
 
     /**
@@ -34,10 +34,10 @@ final class FolderCanContainBookmarksValidator implements FolderRequestHandlerIn
     {
         $storage = new FolderStorage($folder->bookmarks_count);
 
-        if (!$storage->canContain($this->data->bookmarkIds)) {
+        if (!$storage->canContain($this->data->bookmarkIds) || $folder->settings->maxBookmarksLimit >= $storage->total) {
             throw HttpException::forbidden([
                 'message' => 'FolderBookmarksLimitReached',
-                'info' => 'Folder has reached its max bookmarks limit.'
+                'info'    => 'Folder has reached its max bookmarks limit.'
             ]);
         }
     }

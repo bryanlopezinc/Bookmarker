@@ -15,8 +15,9 @@ class FolderSettingsTest extends TestCase
     {
         $settings = $this->make();
 
-        $this->assertEquals(17, count(FolderSettings::default(), COUNT_RECURSIVE));
+        $this->assertEquals(18, count(FolderSettings::default(), COUNT_RECURSIVE));
         $this->assertEquals(-1, $settings->maxCollaboratorsLimit);
+        $this->assertEquals(-1, $settings->maxBookmarksLimit);
         $this->assertFalse($settings->acceptInviteConstraints->inviterMustBeAnActiveCollaborator());
         $this->assertFalse($settings->acceptInviteConstraints->inviterMustHaveRequiredPermission());
 
@@ -57,9 +58,12 @@ class FolderSettingsTest extends TestCase
         $this->assertFalse($this->isValid(['version' => 1]));
 
         $this->assertFalse($this->isValid(['max_collaborators_limit' => -2]));
-        $this->assertFalse($this->isValid(['max_collaborators_limit' => -2]));
         $this->assertFalse($this->isValid(['max_collaborators_limit' => 1001]));
         $this->assertFalse($this->isValid(['max_collaborators_limit' => '500'], 'The max_collaborators_limit is not an integer value.'));
+
+        $this->assertFalse($this->isValid(['max_bookmarks_limit' => -2]));
+        $this->assertFalse($this->isValid(['max_bookmarks_limit' => 201]));
+        $this->assertFalse($this->isValid(['max_bookmarks_limit' => '150'], 'The max_bookmarks_limit is not an integer value.'));
 
         $this->assertFalse($this->isValid(['accept_invite_constraints' => $validName = 'InviterMustBeAnActiveCollaborator']));
         $this->assertFalse($this->isValid(['accept_invite_constraints' => ['baz']]));

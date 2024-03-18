@@ -30,6 +30,7 @@ use App\Repositories\Folder\FolderSettingsSchema as Schema;
  * @property-read bool $collaboratorExitNotificationIsDisabled
  * @property-read CollaboratorExitNotificationMode $collaboratorExitNotificationMode
  * @property-read int $maxCollaboratorsLimit
+ * @property-read int $maxBookmarksLimit
  * @property-read AcceptInviteConstraints $acceptInviteConstraints
  */
 final class FolderSettings implements Arrayable
@@ -103,6 +104,7 @@ final class FolderSettings implements Arrayable
 
         return match ($classProperty) {
             'maxCollaboratorsLimit'                 => $this->resolvedSetting['max_collaborators_limit'],
+            'maxBookmarksLimit'                     => $this->resolvedSetting['max_bookmarks_limit'],
             'acceptInviteConstraints'               => new AcceptInviteConstraints($this->resolvedSetting['accept_invite_constraints']),
             'notificationsAreEnabled'                => $notifications['enabled'],
             'newCollaboratorNotificationIsEnabled'   => $notifications['new_collaborator']['enabled'],

@@ -43,7 +43,7 @@ final class Handler
             new Constraints\MustBeACollaboratorConstraint(),
             new Constraints\PermissionConstraint($data->authUser, Permission::ADD_BOOKMARKS),
             new Constraints\FeatureMustBeEnabledConstraint($data->authUser, Feature::ADD_BOOKMARKS),
-            new FolderCanContainBookmarksValidator($data),
+            new MaxFolderBookmarksConstraint($data),
             new UserOwnsBookmarksConstraint($data),
             new BookmarksExistsConstraint($data),
             new CollaboratorCannotMarkBookmarksAsHiddenConstraint($data),

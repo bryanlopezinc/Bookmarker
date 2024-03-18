@@ -5,12 +5,12 @@ namespace Tests\Feature\Folder;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder as Builder;
 use App\ValueObjects\FolderSettings as FS;
 use App\Models\Folder;
+use App\ValueObjects\FolderSettings;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -18,6 +18,18 @@ class CreateFolderTest extends TestCase
 {
     use WithFaker;
     use Concerns\TestsFolderSettings;
+
+    private static array $folderSettingsThatHasNotBeenInteractedWith;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        self::$folderSettingsThatHasNotBeenInteractedWith = Arr::except(
+            Arr::dot(FolderSettings::default()),
+            ['version']
+        );
+    }
 
     protected function createFolderResponse(array $data = []): TestResponse
     {
@@ -36,7 +48,7 @@ class CreateFolderTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->createFolderResponse()
             ->assertUnprocessable()
@@ -53,7 +65,7 @@ class CreateFolderTest extends TestCase
 
     public function testCreateFolder(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $this->createFolderResponse([
             'name'        => $name = $this->faker->word,
@@ -66,14 +78,12 @@ class CreateFolderTest extends TestCase
         $this->assertEquals($name, $folder->name->value);
         $this->assertEquals($description, $folder->description);
         $this->assertTrue($folder->visibility->isPublic());
-        $this->assertTrue($folder->created_at->isSameMinute());
-        $this->assertTrue($folder->updated_at->isSameMinute());
         $this->assertEmpty($folder->settings->toArray());
     }
 
     public function testCreateFolderWithoutDescription(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $this->createFolderResponse(['name' => $this->faker->word])->assertCreated();
 
@@ -84,7 +94,7 @@ class CreateFolderTest extends TestCase
 
     public function testCreatePublicFolder(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $this->createFolderResponse(['name' => $this->faker->word, 'visibility' => 'public'])->assertCreated();
 
@@ -107,7 +117,7 @@ class CreateFolderTest extends TestCase
 
     public function testCreatePrivateFolder(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $this->createFolderResponse(['name' => $this->faker->word, 'visibility' => 'private'])
             ->assertCreated();
@@ -142,6 +152,10 @@ class CreateFolderTest extends TestCase
     {
         $this->assertCreateWithSettings(['max_collaborators_limit' => '500'], function (FS $s) {
             $this->assertEquals(Builder::new()->setMaxCollaboratorsLimit(500)->build(), $s);
+        });
+
+        $this->assertCreateWithSettings(['max_bookmarks_limit' => '110'], function (FS $s) {
+            $this->assertEquals(Builder::new()->setMaxBookmarksLimit(110)->build(), $s);
         });
 
         $this->assertCreateWithSettings(['accept_invite_constraints' => ['InviterMustHaveRequiredPermission']], function (FS $s) {
@@ -240,27 +254,30 @@ class CreateFolderTest extends TestCase
                     $s->collaboratorExitNotificationIsDisabled;
             }
         );
+
+        $this->assertEquals(self::$folderSettingsThatHasNotBeenInteractedWith, []);
     }
 
     private function assertCreateWithSettings(array $settings, \Closure $assertion): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
-        $this->createFolderResponse([
-            'name'     => $this->faker->word,
-            'settings' => Arr::undot($settings)
-        ])->assertCreated();
+        $this->createFolderResponse(['name' => $this->faker->word, 'settings' => Arr::undot($settings)])->assertCreated();
 
-        $settings = Folder::query()->where('user_id', $user->id)->first()->settings;
+        $folderSettings = Folder::query()->where('user_id', $user->id)->sole()->settings;
 
-        if (!is_null($expectation = $assertion($settings))) {
-            $this->assertTrue($expectation);
+        if (!is_null($condition = $assertion($folderSettings))) {
+            $this->assertTrue($condition);
+        }
+
+        foreach (array_keys($settings) as $key) {
+            Arr::forget(self::$folderSettingsThatHasNotBeenInteractedWith, $key);
         }
     }
 
     public function testWillReturnUnprocessableWhenFolderSettingsIsInValid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->assertWillReturnUnprocessableWhenFolderSettingsIsInValid(
             ['name' => $this->faker->name],

@@ -214,6 +214,35 @@ class AddBookmarksToFolderTest extends TestCase
         ])->assertForbidden()->assertJsonFragment(['message' => 'FolderBookmarksLimitReached']);
     }
 
+    #[Test]
+    public function willReturnForbiddenWhenFolderOwnerSetLimitIsExceeded(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+
+        $folder = FolderFactory::new()
+            ->for($folderOwner)
+            ->settings(FolderSettingsBuilder::new()->setMaxBookmarksLimit(100))
+            ->create();
+
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
+
+        Folder::retrieved(function (Folder $retrieved) {
+            $retrieved->bookmarks_count = 100;
+        });
+
+        $this->loginUser($folderOwner);
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => (string) BookmarkFactory::new()->for($folderOwner)->create()->id,
+            'folder'    => $folder->id,
+        ])->assertForbidden()->assertJsonFragment(['message' => 'FolderBookmarksLimitReached']);
+
+        $this->loginUser($collaborator);
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => (string) BookmarkFactory::new()->for($collaborator)->create()->id,
+            'folder'    => $folder->id,
+        ])->assertForbidden()->assertJsonFragment(['message' => 'FolderBookmarksLimitReached']);
+    }
+
     public function testWillCheckBookmarksHealth(): void
     {
         $this->loginUser($user = UserFactory::new()->create());

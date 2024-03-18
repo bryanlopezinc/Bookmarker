@@ -34,6 +34,11 @@ trait TestsFolderSettings
         );
 
         $json(
+            ['max_bookmarks_limit' => 201],
+            ["{$key}.max_bookmarks_limit" => "The {$key}.max_bookmarks_limit must not be greater than 200."]
+        );
+
+        $json(
             ['accept_invite_constraints' => 'foo'],
             ["{$key}.accept_invite_constraints" => 'The settings.accept_invite_constraints must be an array.']
         );

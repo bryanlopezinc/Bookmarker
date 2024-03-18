@@ -11,17 +11,16 @@ use Illuminate\Http\Request;
 
 final class HideFolderBookmarksController
 {
-    public function __invoke(Request $request, HideFolderBookmarksService $service): JsonResponse
+    public function __invoke(Request $request, HideFolderBookmarksService $service, string $folderId): JsonResponse
     {
         $request->validate([
-            'folder_id'   => ['required', new ResourceIdRule()],
             'bookmarks'   => ['required', 'array', 'filled', 'max:50'],
             'bookmarks.*' => [new ResourceIdRule(), 'distinct:strict']
         ]);
 
         $service->hide(
             $request->input('bookmarks'),
-            $request->integer('folder_id')
+            (int) $folderId
         );
 
         return response()->json();

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\PaginationData;
+use App\Rules\RoleNameRule;
 use App\UAC;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -16,6 +17,7 @@ final class FetchFolderCollaboratorsRequest extends FormRequest
     {
         return [
             'name'        => ['sometimes', 'filled', 'string', 'max:10'],
+            'role'        => ['sometimes', new RoleNameRule()],
             'permissions' => [
                 'sometimes',
                 'array',
@@ -48,24 +50,5 @@ final class FetchFolderCollaboratorsRequest extends FormRequest
                 );
             });
         });
-    }
-
-    public function getPermissions(): ?UAC
-    {
-        $filtersCount = count($this->validated('permissions', []));
-
-        if ($filtersCount === 0) {
-            return null;
-        }
-
-        if ($filtersCount === 4) {
-            return UAC::all();
-        }
-
-        if ($this->validated('permissions.0') === 'readOnly') {
-            return new UAC([]);
-        }
-
-        return UAC::fromRequest($this, 'permissions');
     }
 }

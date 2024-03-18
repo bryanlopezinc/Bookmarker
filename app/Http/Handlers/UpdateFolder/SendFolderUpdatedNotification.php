@@ -46,10 +46,6 @@ final class SendFolderUpdatedNotification implements FolderRequestHandlerInterfa
         }
 
         foreach (array_keys($folder->getDirty()) as $modified) {
-            if (!in_array($modified, ['name', 'description'])) {
-                continue;
-            }
-
             $notifications[] = new FolderUpdatedNotification($folder, $this->data->authUser, $modified);
         }
 

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
-use App\ValueObjects\FolderSettings;
 use App\Enums\FolderVisibility;
 use App\Models\Folder;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -29,7 +28,7 @@ final class FolderFactory extends Factory
             'description' => $this->faker->sentence,
             'user_id'     => UserFactory::new(),
             'visibility'  => FolderVisibility::PUBLIC,
-            'settings'    => new FolderSettings([]),
+            'settings'    => [],
             'password'    => null
         ];
     }

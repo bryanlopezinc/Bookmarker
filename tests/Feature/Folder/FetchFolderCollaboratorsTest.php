@@ -12,11 +12,13 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\AssertValidPaginationData;
 use Tests\TestCase;
 use Tests\Traits\CreatesCollaboration;
+use Tests\Traits\CreatesRole;
 
 class FetchFolderCollaboratorsTest extends TestCase
 {
     use AssertValidPaginationData;
     use CreatesCollaboration;
+    use CreatesRole;
 
     protected function fetchCollaboratorsResponse(array $parameters = []): Response
     {
@@ -66,6 +68,10 @@ class FetchFolderCollaboratorsTest extends TestCase
         $this->fetchCollaboratorsResponse(['name' => str_repeat('A', 11), 'folder_id' => 4])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['name' => 'The name must not be greater than 10 characters.']);
+
+        $this->fetchCollaboratorsResponse(['role' => str_repeat('F', 65), 'folder_id' => 4])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['role' => 'The role must not be greater than 64 characters.']);
     }
 
     #[Test]
@@ -210,6 +216,31 @@ class FetchFolderCollaboratorsTest extends TestCase
         $this->CreateCollaborationRecord($collaborators[2], $folder, Permission::INVITE_USER);
 
         $this->fetchCollaboratorsResponse(['folder_id' => $folder->id, 'name' => 'bryan'])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.attributes.id', $collaborators[0]->id);
+    }
+
+    #[Test]
+    public function filterByRole(): void
+    {
+        $this->loginUser($user = UserFactory::new()->create());
+
+        $collaborators = UserFactory::times(3)->create();
+
+        $folder = FolderFactory::new()->for($user)->create();
+        $otherFolder = FolderFactory::new()->create();
+
+        $this->CreateCollaborationRecord($collaborators[0], $folder, Permission::INVITE_USER);
+        $this->CreateCollaborationRecord($collaborators[1], $otherFolder, Permission::ADD_BOOKMARKS);
+        $this->CreateCollaborationRecord($collaborators[2], $folder, Permission::INVITE_USER);
+
+        $this->attachRoleToUser($collaborators[0], $role = $this->createRole(folder: $folder));
+        $this->attachRoleToUser($collaborators[1], $this->createRole(folder: $folder));
+        $this->attachRoleToUser($collaborators[0], $this->createRole());
+        $this->attachRoleToUser(role: $this->createRole($role->name));
+
+        $this->fetchCollaboratorsResponse(['folder_id' => $folder->id, 'role' => $role->name])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.attributes.id', $collaborators[0]->id);

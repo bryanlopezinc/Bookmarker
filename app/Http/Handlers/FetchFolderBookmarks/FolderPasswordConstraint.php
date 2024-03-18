@@ -21,10 +21,10 @@ final class FolderPasswordConstraint implements FolderRequestHandlerInterface, S
     private readonly Hasher $hasher;
     private bool $stopRequestHandling = false;
 
-    public function __construct(Data $data, Hasher $hasher)
+    public function __construct(Data $data, Hasher $hasher = null)
     {
         $this->data = $data;
-        $this->hasher = $hasher;
+        $this->hasher = $hasher ??= app(Hasher::class);
     }
 
     public function apply(Builder $builder, Model $model)

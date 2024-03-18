@@ -27,6 +27,9 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
  * @property \Carbon\Carbon $updated_at
  * @property int $bookmarks_count
  * @property int $collaborators_count
+ * @property \Illuminate\Database\Eloquent\Collection<FolderRole> $roles
+ * @property \Illuminate\Database\Eloquent\Collection<User> $collaborators
+ * @property \Illuminate\Database\Eloquent\Collection<Bookmark> $bookmarks
  * @method static Builder|QueryBuilder onlyAttributes(array $attributes = [])
  */
 final class Folder extends Model
@@ -70,11 +73,21 @@ final class Folder extends Model
         );
     }
 
-    public function collaborators(): HasMany
+    public function collaborators(): HasManyThrough
     {
-        $whereExists = User::whereRaw('id = folders_collaborators.collaborator_id');
+        return $this->hasManyThrough(
+            User::class,
+            FolderCollaborator::class,
+            'folder_id',
+            'id',
+            'id',
+            'collaborator_id'
+        );
+    }
 
-        return $this->hasMany(FolderCollaborator::class, 'folder_id')->whereExists($whereExists);
+    public function roles(): HasMany
+    {
+        return $this->hasMany(FolderRole::class, 'folder_id', 'id');
     }
 
     public function bookmarks(): HasManyThrough

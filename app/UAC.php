@@ -11,11 +11,13 @@ use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use IteratorAggregate;
+use Traversable;
 
 /**
  * Permission a user has to a folder resource.
  */
-final class UAC implements Countable, Arrayable
+final class UAC implements Countable, Arrayable, IteratorAggregate
 {
     /**
      * @var Collection<string>
@@ -44,9 +46,25 @@ final class UAC implements Countable, Arrayable
         });
     }
 
-    public static function fromRequest(Request $request, string $key): UAC
+    /**
+     * {@inheritdoc}
+     */
+    public function getIterator(): Traversable
     {
-        $permissions = $request->input($key, []);
+        return $this->permissions->getIterator();
+    }
+
+    public static function fromRequest(Request|array|string $request, string $key = 'permissions'): UAC
+    {
+        $permissions = $request;
+
+        if (is_object($request)) {
+            $permissions = $request->input($key, []);
+        }
+
+        if (is_string($request)) {
+            $permissions = [$request];
+        }
 
         if (in_array('*', $permissions, true)) {
             return self::all();

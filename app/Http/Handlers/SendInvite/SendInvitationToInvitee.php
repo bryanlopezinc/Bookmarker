@@ -8,6 +8,7 @@ use App\Models\Folder;
 use Illuminate\Support\Str;
 use App\Cache\FolderInviteDataRepository;
 use App\Contracts\FolderRequestHandlerInterface;
+use App\DataTransferObjects\FolderInviteData;
 use App\DataTransferObjects\SendInviteRequestData;
 use App\Mail\FolderCollaborationInviteMail as InvitationMail;
 use Illuminate\Contracts\Mail\Mailer;
@@ -44,12 +45,17 @@ final class SendInvitationToInvitee implements FolderRequestHandlerInterface, In
      */
     public function handle(Folder $folder): void
     {
-        $this->repository->store(
-            $token = (string) Str::uuid(),
+        $invitationData = new FolderInviteData(
             $this->data->authUser->id,
             $this->invitee->id,
             $folder->id,
-            $this->data->permissionsToBeAssigned
+            $this->data->permissionsToBeAssigned,
+            $this->data->roles
+        );
+
+        $this->repository->store(
+            $token = (string) Str::uuid(),
+            $invitationData
         );
 
         $this->mailer

@@ -13,7 +13,8 @@ final class SendInviteRequestData
     public function __construct(
         public readonly User $authUser,
         public readonly string $inviteeEmail,
-        public readonly UAC $permissionsToBeAssigned
+        public readonly UAC $permissionsToBeAssigned,
+        public readonly array $roles,
     ) {
     }
 
@@ -25,7 +26,8 @@ final class SendInviteRequestData
         return new self(
             $authUser,
             $request->input('email'),
-            UAC::fromRequest($request, 'permissions')
+            UAC::fromRequest($request, 'permissions'),
+            $request->input('roles', [])
         );
     }
 }

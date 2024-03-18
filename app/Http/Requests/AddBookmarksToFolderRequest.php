@@ -15,18 +15,9 @@ final class AddBookmarksToFolderRequest extends FormRequest
         return [
             'bookmarks'     => ['required', 'array', 'max:50'],
             'bookmarks.*'   => [new ResourceIdRule(), 'distinct:strict'],
-            'folder'        => ['required', new ResourceIdRule()],
             'make_hidden'   => ['nullable', 'array'],
             'make_hidden.*' => [new ResourceIdRule(), 'distinct:strict',]
         ];
-    }
-
-    /**
-     * @return array<int>
-     */
-    public function getBookmarkIds(): array
-    {
-        return $this->collect('bookmarks')->map(fn (string $id) => (int) $id)->all();
     }
 
     /**

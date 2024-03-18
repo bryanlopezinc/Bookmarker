@@ -7,6 +7,7 @@ namespace App\Http\Handlers\FetchFolderBookmarks;
 use App\Models\Folder;
 use Illuminate\Database\Eloquent\Scope;
 use App\Contracts\FolderRequestHandlerInterface as HandlerInterface;
+use App\DataTransferObjects\FetchFolderBookmarksRequestData as Data;
 use App\Http\Handlers\Constraints;
 use App\DataTransferObjects\FolderBookmark;
 use App\Http\Handlers\RequestHandlersQueue;
@@ -15,36 +16,16 @@ use Illuminate\Pagination\Paginator;
 final class Handler
 {
     /**
-     * @var array<class-string<HandlerInterface>>
-     */
-    private const HANDLERS = [
-        Constraints\FolderExistConstraint::class,
-        FolderPasswordConstraint::class,
-        VisibilityConstraint::class,
-        Constraints\MustBeACollaboratorConstraint::class
-    ];
-
-    /**
-     * @var RequestHandlersQueue<HandlerInterface>
-     */
-    private RequestHandlersQueue $requestHandlersQueue;
-
-    private readonly GetFolderBookmarks $action;
-
-    public function __construct(GetFolderBookmarks $getFolderBookmarks)
-    {
-        $this->requestHandlersQueue = new RequestHandlersQueue(self::HANDLERS);
-        $this->action = $getFolderBookmarks;
-    }
-
-    /**
      * @return Paginator<FolderBookmark>
      */
-    public function handle(int $folderId): Paginator
+    public function handle(int $folderId, Data $data): Paginator
     {
         $query = Folder::query()->select(['id']);
 
-        foreach ([$this->action, ...$this->requestHandlersQueue] as $handler) {
+        $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data));
+        $getFolderBookmarks = new GetFolderBookmarks($data);
+
+        foreach ([$getFolderBookmarks, ...$requestHandlersQueue] as $handler) {
             if ($handler instanceof Scope) {
                 $handler->apply($query, $query->getModel());
             }
@@ -52,10 +33,20 @@ final class Handler
 
         $folder = $query->findOr($folderId, callback: fn () => new Folder());
 
-        $this->requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
+        $requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
             $handler->handle($folder);
         });
 
-        return $this->action->handle($folder);
+        return $getFolderBookmarks->handle($folder);
+    }
+
+    private function getConfiguredHandlers(Data $data): array
+    {
+        return [
+            new Constraints\FolderExistConstraint(),
+            new FolderPasswordConstraint($data),
+            new VisibilityConstraint($data),
+            new Constraints\MustBeACollaboratorConstraint($data->authUser)
+        ];
     }
 }

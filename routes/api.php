@@ -12,7 +12,7 @@ use Laravel\Passport\Http\Controllers\AccessTokenController;
 
 Route::middleware([
     'auth:api',
-    DBTransaction::class,
+    //DBTransaction::class,
     PreventsDuplicatePostRequestMiddleware::class
 ])->group(function () {
 
@@ -68,26 +68,17 @@ Route::middleware([
         Route::post('/', F\CreateFolderController::class)->name('createFolder');
         Route::patch('/{folder_id}', F\UpdateFolderController::class)->middleware([StringToArray::keys('tags')])->name('updateFolder');
         Route::get('/{folder_id}/bookmarks', F\FetchFolderBookmarksController::class)->withoutMiddleware('auth:api')->name('folderBookmarks');
-
-        Route::prefix('bookmarks')->group(function () {
-            Route::post('/', F\AddBookmarksToFolderController::class)
-                ->middleware(StringToArray::keys('bookmarks', 'make_hidden'))
-                ->name('addBookmarksToFolder');
-
-            Route::delete('/', F\RemoveBookmarksFromFolderController::class)->middleware(StringToArray::keys('bookmarks'))->name('removeBookmarksFromFolder');
-
-            Route::post('hide', F\HideFolderBookmarksController::class)
-                ->middleware(StringToArray::keys('bookmarks'))
-                ->name('hideFolderBookmarks');
-        });
+        Route::post('/{folder_id}/bookmarks', F\AddBookmarksToFolderController::class)->middleware(StringToArray::keys('bookmarks', 'make_hidden'))->name('addBookmarksToFolder');
+        Route::delete('/{folder_id}/bookmarks', F\RemoveBookmarksFromFolderController::class)->middleware(StringToArray::keys('bookmarks'))->name('removeBookmarksFromFolder');
+        Route::post('/{folder_id}/bookmarks/hide', F\HideFolderBookmarksController::class)->middleware(StringToArray::keys('bookmarks'))->name('hideFolderBookmarks');
 
         Route::patch('collaborators/actions', [F\UpdateFolderController::class, 'updateAction'])->name('updateFolderCollaboratorActions');
         Route::get('/{folder_id}/collaborators', F\FetchFolderCollaboratorsController::class)->middleware(StringToArray::keys('permissions'))->name('fetchFolderCollaborators');
         Route::delete('/{folder_id}/collaborators/{collaborator_id}', F\RemoveCollaboratorController::class)->name('deleteFolderCollaborator');
         Route::delete('/{folder_id}/collaborators/{collaborator_id}/permissions', F\RevokeFolderCollaboratorPermissionsController::class)->middleware([StringToArray::keys('permissions')])->name('revokePermissions');
         Route::patch('/{folder_id}/collaborators/{collaborator_id}/permissions', F\GrantPermissionsToCollaboratorController::class)->middleware([StringToArray::keys('permissions')])->name('grantPermission');
-        Route::post('invite', F\SendFolderCollaborationInviteController::class)
-            ->middleware([StringToArray::keys('permissions')])
+        Route::post('/{folder_id}/invite', F\SendFolderCollaborationInviteController::class)
+            ->middleware([StringToArray::keys('permissions', 'roles')])
             ->name('sendFolderCollaborationInvite');
 
         Route::get('/{folder_id}/banned', F\FetchBannedCollaboratorsController::class)->name('fetchBannedCollaborator');
@@ -96,6 +87,13 @@ Route::middleware([
         Route::post('/{folder_id}/collaborators/{collaborator_id}/mute', [F\MuteCollaboratorController::class, 'post'])->name('muteCollaborator');
         Route::delete('/{folder_id}/collaborators/{collaborator_id}/mute', [F\MuteCollaboratorController::class, 'delete'])->name('UnMuteCollaborator');
         Route::get('mute', F\FetchMutedCollaboratorsController::class)->name('fetchMutedCollaborator');
+
+        Route::post('/{folder_id}/roles', F\Roles\CreateRoleController::class)->middleware(StringToArray::keys('permissions'))->name('createFolderRole');
+        Route::get('/{folder_id}/roles', F\Roles\FetchFolderRolesController::class)->middleware([StringToArray::keys('permissions')])->name('fetchFolderRoles');
+        Route::patch('/{folder_id}/roles/{role_id}', F\Roles\UpdateRoleController::class)->name('updateFolderRole');
+        Route::delete('/{folder_id}/roles/{role_id}', F\Roles\DeleteRoleController::class)->name('deleteFolderRole');
+        Route::post('/{folder_id}/roles/{role_id}/permissions', F\Roles\AddPermissionToRoleController::class)->name('AddPermissionToRole');
+        Route::delete('/{folder_id}/roles/{role_id}/permissions', F\Roles\DeleteRolePermissionController::class)->name('RemoveRolePermission');
     });
 
     Route::get('email/verify/{id}/{hash}', A\VerifyEmailController::class)->middleware('signed')->name('verification.verify');

@@ -28,7 +28,7 @@ final class RequestHandlersQueue implements IteratorAggregate
     private readonly Application $app;
 
     /**
-     * @param array<class-string<THandler>> $handlers
+     * @param array<class-string<THandler>|THandler> $handlers
      */
     public function __construct(array $handlers, Application $app = null)
     {
@@ -41,8 +41,8 @@ final class RequestHandlersQueue implements IteratorAggregate
      */
     private function getHandlersInstances(array $handlers): array
     {
-        return array_map(function (string $handlerClass) {
-            return $this->app->make($handlerClass);
+        return array_map(function (string|object $handlerClass) {
+            return is_object($handlerClass) ? $handlerClass : $this->app->make($handlerClass);
         }, $handlers);
     }
 

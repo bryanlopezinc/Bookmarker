@@ -9,6 +9,7 @@ use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
@@ -28,35 +29,43 @@ class HideFolderBookmarksTest extends TestCase
 
     protected function hideFolderResponse(array $parameters = []): TestResponse
     {
-        return $this->postJson(route('hideFolderBookmarks', $parameters));
+        return $this->postJson(
+            route('hideFolderBookmarks', ['folder_id' => $parameters['folder_id']]),
+            Arr::except($parameters, ['folder_id'])
+        );
     }
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/folders/bookmarks/hide', 'hideFolderBookmarks');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/{folder_id}/bookmarks/hide', 'hideFolderBookmarks');
+    }
+
+    public function testWillReturnNotFoundWhenFolderIdIsInvalid(): void
+    {
+        $this->hideFolderResponse(['folder_id' => 'foo'])->assertNotFound();
     }
 
     public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
-        $this->hideFolderResponse()->assertUnauthorized();
+        $this->hideFolderResponse(['folder_id' => 4])->assertUnauthorized();
     }
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         Passport::actingAs(UserFactory::new()->create());
 
-        $this->hideFolderResponse()
+        $this->hideFolderResponse(['folder_id' => 44])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['folder_id', 'bookmarks']);
+            ->assertJsonValidationErrors(['bookmarks']);
 
-        $this->hideFolderResponse(['bookmarks' => '1,1,3,4,5'])
+        $this->hideFolderResponse(['bookmarks' => '1,1,3,4,5', 'folder_id' => 55])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 "bookmarks.0" => ["The bookmarks.0 field has a duplicate value."],
                 "bookmarks.1" => ["The bookmarks.1 field has a duplicate value."]
             ]);
 
-        $this->hideFolderResponse(['bookmarks' => collect()->times(51)->implode(',')])
+        $this->hideFolderResponse(['bookmarks' => collect()->times(51)->implode(','), 'folder_id' => 54])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'bookmarks' => ['The bookmarks must not have more than 50 items.']

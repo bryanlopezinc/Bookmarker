@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories\Folder;
 
+use App\Enums\Permission;
 use App\Models\FolderPermission;
 use Illuminate\Support\Collection;
 
@@ -40,6 +41,23 @@ final class PermissionRepository
      */
     public function findManyByName(iterable $names): Collection
     {
-        return collect(self::ROWS)->whereIn('name', collect($names))->mapInto(FolderPermission::class);
+        $names = collect($names)->map(function (string|Permission $name) {
+            if (!is_string($name)) {
+                $name = $name->value;
+            }
+
+            return $name;
+        });
+
+        return collect(self::ROWS)->whereIn('name', $names)->mapInto(FolderPermission::class);
+    }
+
+    public function findByName(string|Permission $name): FolderPermission
+    {
+        if ($name instanceof Permission) {
+            $name = $name->value;
+        }
+
+        return $this->findManyByName([$name])->sole();
     }
 }

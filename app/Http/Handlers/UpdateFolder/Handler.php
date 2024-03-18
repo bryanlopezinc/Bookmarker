@@ -7,42 +7,40 @@ namespace App\Http\Handlers\UpdateFolder;
 use App\Models\Folder;
 use App\Http\Handlers\Constraints;
 use App\Contracts\FolderRequestHandlerInterface as HandlerInterface;
+use App\DataTransferObjects\UpdateFolderRequestData;
+use App\Enums\Feature;
+use App\Enums\Permission;
 use App\Http\Handlers\RequestHandlersQueue;
 
 final class Handler
 {
-    /**
-     * @var array<class-string<HandlerInterface>>
-     */
-    private const HANDLERS = [
-        Constraints\FolderExistConstraint::class,
-        Constraints\MustBeACollaboratorConstraint::class,
-        Constraints\PermissionConstraint::class,
-        CanUpdateAttributesConstraint::class,
-        CannotMakeFolderWithCollaboratorPrivateConstraint::class,
-        Constraints\FeatureMustBeEnabledConstraint::class,
-        PasswordCheckConstraint::class,
-        CanUpdateOnlyProtectedFolderPasswordConstraint::class,
-        UpdateFolder::class
-    ];
-
-    private RequestHandlersQueue $requestHandlersQueue;
-
-    public function __construct()
+    public function handle(int $folderId, UpdateFolderRequestData $data): void
     {
-        $this->requestHandlersQueue = new RequestHandlersQueue(self::HANDLERS);
-    }
+        $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data));
 
-    public function handle(int $folderId): void
-    {
         $query = Folder::query()->select(['id'])->whereKey($folderId);
 
-        $this->requestHandlersQueue->scope($query);
+        $requestHandlersQueue->scope($query);
 
-        $folder = $query->firstOr(fn () => new Folder());
+        $folder = $query->firstOrNew();
 
-        $this->requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
+        $requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
             $handler->handle($folder);
         });
+    }
+
+    private function getConfiguredHandlers(UpdateFolderRequestData $data): array
+    {
+        return [
+            new Constraints\FolderExistConstraint(),
+            new Constraints\MustBeACollaboratorConstraint($data->authUser),
+            new Constraints\PermissionConstraint($data->authUser, Permission::UPDATE_FOLDER),
+            new CanUpdateAttributesConstraint($data),
+            new CannotMakeFolderWithCollaboratorPrivateConstraint($data),
+            new Constraints\FeatureMustBeEnabledConstraint($data->authUser, Feature::UPDATE_FOLDER),
+            new PasswordCheckConstraint($data),
+            new CanUpdateOnlyProtectedFolderPasswordConstraint($data),
+            new UpdateFolder($data, new SendFolderUpdatedNotification($data))
+        ];
     }
 }

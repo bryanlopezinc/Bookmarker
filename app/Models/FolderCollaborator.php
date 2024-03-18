@@ -5,7 +5,16 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $folder_id
+ * @property int $collaborator_id
+ * @property int $invited_by
+ * @property \Carbon\Carbon $joined_at
+ * @property \Illuminate\Database\Eloquent\Collection<FolderCollaboratorRole> $roles
+ */
 final class FolderCollaborator extends Model
 {
     public const UPDATED_AT = null;
@@ -20,4 +29,9 @@ final class FolderCollaborator extends Model
      * {@inheritdoc}
      */
     protected $guarded = [];
+
+    public function roles(): HasMany
+    {
+        return $this->hasMany(FolderCollaboratorRole::class, 'collaborator_id', 'collaborator_id');
+    }
 }

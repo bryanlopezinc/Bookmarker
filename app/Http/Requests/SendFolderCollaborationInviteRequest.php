@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use App\Rules\ResourceIdRule;
+use App\Rules\RoleNameRule;
 use App\UAC;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -16,11 +16,14 @@ final class SendFolderCollaborationInviteRequest extends FormRequest
      */
     public function rules(): array
     {
+        $maxRoles = setting('MAX_ROLES_ATTACHED_TO_INVITES');
+
         return [
-            'email'       => ['required', 'email'],
-            'folder_id'   => ['required', new ResourceIdRule()],
-            'permissions' => ['sometimes', 'array', Rule::in(['*', ...UAC::validExternalIdentifiers()])],
+            'email'         => ['required', 'email'],
+            'permissions'   => ['sometimes', 'array', Rule::in(['*', ...UAC::validExternalIdentifiers()])],
             'permissions.*' => ['filled', 'distinct:strict'],
+            'roles'         => ['array', 'filled', "max:{$maxRoles}"],
+            'roles.*'       => ['distinct:strict', new RoleNameRule()],
         ];
     }
 

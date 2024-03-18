@@ -12,6 +12,7 @@ use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Collection;
 
 /**
@@ -30,6 +31,7 @@ use Illuminate\Support\Collection;
  * @property \Carbon\Carbon $updated_at
  * @property TwoFaMode $two_fa_mode
  * @property string|null $profile_image_path
+ * @property \Illuminate\Database\Eloquent\Collection<FolderRole> $roles
  * @method static Builder WithQueryOptions(array $columns = [])
  */
 class User extends Authenticatable implements MustVerifyEmail
@@ -59,6 +61,18 @@ class User extends Authenticatable implements MustVerifyEmail
         $user = $request->user();
 
         return $user;
+    }
+
+    public function roles(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            FolderRole::class,
+            FolderCollaboratorRole::class,
+            'collaborator_id',
+            'id',
+            'id',
+            'role_id'
+        );
     }
 
     public function findForPassport(string $emailOrUsername): ?self

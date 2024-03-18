@@ -9,6 +9,7 @@ use App\Http\Resources\FolderBookmarkResource;
 use App\Http\Resources\PaginatedResourceCollection;
 use App\PaginationData;
 use Illuminate\Http\Request;
+use App\DataTransferObjects\FetchFolderBookmarksRequestData as Data;
 
 final class FetchFolderBookmarksController
 {
@@ -18,7 +19,7 @@ final class FetchFolderBookmarksController
 
         $request->validate(['folder_password' => ['sometimes', 'filled', 'string']]);
 
-        $result = $handler->handle((int) $folderId);
+        $result = $handler->handle((int) $folderId, Data::fromRequest($request));
 
         return new PaginatedResourceCollection($result, FolderBookmarkResource::class);
     }

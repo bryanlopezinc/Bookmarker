@@ -7,46 +7,23 @@ namespace App\Http\Handlers\AddBookmarksToFolder;
 use App\Models\Folder;
 use App\Models\Bookmark;
 use App\Contracts\FolderRequestHandlerInterface as HandlerInterface;
+use App\DataTransferObjects\AddBookmarksToFolderRequestData as Data;
+use App\Enums\Feature;
+use App\Enums\Permission;
 use App\Http\Handlers\Constraints;
 use App\Http\Handlers\RequestHandlersQueue;
 
 final class Handler
 {
-    /**
-     * @var array<class-string<HandlerInterface>>
-     */
-    private const HANDLERS = [
-        Constraints\FolderExistConstraint::class,
-        Constraints\MustBeACollaboratorConstraint::class,
-        Constraints\PermissionConstraint::class,
-        Constraints\FeatureMustBeEnabledConstraint::class,
-        FolderCanContainBookmarksValidator::class,
-        UserOwnsBookmarksConstraint::class,
-        BookmarksExistsConstraint::class,
-        CollaboratorCannotMarkBookmarksAsHiddenConstraint::class,
-        UniqueFolderBookmarkConstraint::class,
-        CreateFolderBookmarks::class,
-        SendBookmarksAddedToFolderNotification::class,
-        CheckBookmarksHealth::class,
-    ];
-
-    private RequestHandlersQueue $requestHandlersQueue;
-
-    public function __construct()
+    public function handle(int $folderId, Data $data): void
     {
-        $this->requestHandlersQueue = new RequestHandlersQueue(self::HANDLERS);
-    }
+        $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data));
 
-    /**
-     * @param array<int> $bookmarkIds
-     */
-    public function handle(array $bookmarkIds, int $folderId): void
-    {
         $query = Folder::query()->select(['id']);
 
-        $bookmarks = Bookmark::query()->findMany($bookmarkIds, ['user_id', 'id', 'url'])->all();
+        $bookmarks = Bookmark::query()->findMany($data->bookmarkIds, ['user_id', 'id', 'url'])->all();
 
-        $this->requestHandlersQueue->scope($query, function ($handler) use ($bookmarks) {
+        $requestHandlersQueue->scope($query, function ($handler) use ($bookmarks) {
             if ($handler instanceof BookmarksAwareInterface) {
                 $handler->setBookmarks($bookmarks);
             }
@@ -54,8 +31,26 @@ final class Handler
 
         $folder = $query->findOr($folderId, callback: fn () => new Folder());
 
-        $this->requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
+        $requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
             $handler->handle($folder);
         });
+    }
+
+    private function getConfiguredHandlers(Data $data): array
+    {
+        return [
+            new Constraints\FolderExistConstraint(),
+            new Constraints\MustBeACollaboratorConstraint(),
+            new Constraints\PermissionConstraint($data->authUser, Permission::ADD_BOOKMARKS),
+            new Constraints\FeatureMustBeEnabledConstraint($data->authUser, Feature::ADD_BOOKMARKS),
+            new FolderCanContainBookmarksValidator($data),
+            new UserOwnsBookmarksConstraint($data),
+            new BookmarksExistsConstraint($data),
+            new CollaboratorCannotMarkBookmarksAsHiddenConstraint($data),
+            new UniqueFolderBookmarkConstraint($data),
+            new CreateFolderBookmarks($data),
+            new SendBookmarksAddedToFolderNotification($data),
+            new CheckBookmarksHealth(),
+        ];
     }
 }

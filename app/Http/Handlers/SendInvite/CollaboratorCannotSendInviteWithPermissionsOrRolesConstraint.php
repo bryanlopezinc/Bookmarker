@@ -10,7 +10,7 @@ use App\Exceptions\HttpException;
 use App\Models\Folder;
 use Illuminate\Http\Response;
 
-final class CollaboratorCannotSendInviteWithPermissionsConstraint implements FolderRequestHandlerInterface
+final class CollaboratorCannotSendInviteWithPermissionsOrRolesConstraint implements FolderRequestHandlerInterface
 {
     public function __construct(private readonly SendInviteRequestData $data)
     {
@@ -27,10 +27,10 @@ final class CollaboratorCannotSendInviteWithPermissionsConstraint implements Fol
             return;
         }
 
-        if ($this->data->permissionsToBeAssigned->isNotEmpty()) {
+        if ($this->data->permissionsToBeAssigned->isNotEmpty() || !empty($this->data->roles)) {
             throw new HttpException([
-                'message' => 'CollaboratorCannotSendInviteWithPermissions',
-                'info' => 'Folder collaborator cannot send invites with permissions.'
+                'message' => 'CollaboratorCannotSendInviteWithPermissionsOrRoles',
+                'info'    => 'Folder collaborator cannot send invites with permissions or roles.'
             ], Response::HTTP_BAD_REQUEST);
         }
     }

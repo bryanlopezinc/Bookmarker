@@ -10,53 +10,48 @@ use App\Contracts\FolderRequestHandlerInterface as HandlerInterface;
 use App\Models\FolderBookmark;
 use App\Http\Handlers\Constraints;
 use App\Http\Handlers\RequestHandlersQueue;
+use App\DataTransferObjects\RemoveFolderBookmarksRequestData as Data;
+use App\Enums\Feature;
+use App\Enums\Permission;
 
 final class Handler
 {
-    /**
-     * @var array<class-string<HandlerInterface>>
-     */
-    private const HANDLERS = [
-        Constraints\FolderExistConstraint::class,
-        Constraints\MustBeACollaboratorConstraint::class,
-        Constraints\PermissionConstraint::class,
-        Constraints\FeatureMustBeEnabledConstraint::class,
-        FolderContainsBookmarksConstraint::class,
-        DeleteFolderBookmarks::class,
-        SendBookmarksRemovedFromFolderNotificationNotification::class,
-    ];
-
-    private RequestHandlersQueue $requestHandlersQueue;
-
-    public function __construct()
+    public function handle(int $folderId, Data $data): void
     {
-        $this->requestHandlersQueue = new RequestHandlersQueue(self::HANDLERS);
-    }
+        $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data));
 
-    /**
-     * @param array<int> $bookmarkIds
-     */
-    public function handle(array $bookmarkIds, int $folderId): void
-    {
-        $query = Folder::query()->select(['id']);
+        $query = Folder::query()->select(['id'])->whereKey($folderId);
 
         $folderBookmarks = FolderBookmark::query()
             ->where('folder_id', $folderId)
-            ->whereIntegerInRaw('bookmark_id', $bookmarkIds)
+            ->whereIntegerInRaw('bookmark_id', $data->bookmarkIds)
             ->whereExists(Bookmark::whereRaw('id = folders_bookmarks.bookmark_id'))
             ->get()
             ->all();
 
-        $this->requestHandlersQueue->scope($query, function ($handler) use ($folderBookmarks) {
+        $requestHandlersQueue->scope($query, function ($handler) use ($folderBookmarks) {
             if ($handler instanceof FolderBookmarksAwareInterface) {
                 $handler->setBookmarks($folderBookmarks);
             }
         });
 
-        $folder = $query->findOr($folderId, callback: fn () => new Folder());
+        $folder = $query->firstOrNew();
 
-        $this->requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
+        $requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
             $handler->handle($folder);
         });
+    }
+
+    private function getConfiguredHandlers(Data $data): array
+    {
+        return [
+            new Constraints\FolderExistConstraint(),
+            new Constraints\MustBeACollaboratorConstraint(),
+            new Constraints\PermissionConstraint($data->authUser, Permission::DELETE_BOOKMARKS),
+            new Constraints\FeatureMustBeEnabledConstraint($data->authUser, Feature::DELETE_BOOKMARKS),
+            new FolderContainsBookmarksConstraint($data),
+            new DeleteFolderBookmarks(),
+            new SendBookmarksRemovedFromFolderNotificationNotification($data),
+        ];
     }
 }

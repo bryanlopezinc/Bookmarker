@@ -61,7 +61,7 @@ final class Request2FACodeService
         $attributes = ['id', 'password', 'email'];
 
         try {
-            return $this->userRepository->findByUsername(Username::fromRequest($request)->value, $attributes);
+            return $this->userRepository->findByUsername((new Username($request->input('username')))->value, $attributes);
         } catch (InvalidUsernameException) {
             return $this->userRepository->findByEmail($request->validated('username'), $attributes);
         } catch (UserNotFoundException) {

@@ -57,9 +57,10 @@ class RouteServiceProvider extends ServiceProvider
     private function registerRoutePatterns(): void
     {
         Route::patterns([
-            'folder_id'       => '[0-9]+',
-            'collaborator_id' => '[0-9]+',
-            'bookmark_id'     => '[0-9]+'
+            'folder_id'       => $resourceIdRule = '[0-9]+',
+            'collaborator_id' => $resourceIdRule,
+            'bookmark_id'     => $resourceIdRule,
+            'role_id'         => $resourceIdRule
         ]);
     }
 }

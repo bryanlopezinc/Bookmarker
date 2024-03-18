@@ -7,6 +7,7 @@ namespace Tests\Feature\Folder;
 use App\Actions\ToggleFolderFeature;
 use App\Cache\FolderInviteDataRepository;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\DataTransferObjects\FolderInviteData;
 use App\Enums\Feature;
 use App\Models\FolderCollaboratorPermission;
 use App\Enums\Permission;
@@ -20,17 +21,20 @@ use Laravel\Passport\Passport;
 use Tests\TestCase;
 use App\Models\Folder;
 use App\Models\FolderCollaborator;
+use App\Models\FolderRole;
 use App\Models\User;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\Services\Folder\MuteCollaboratorService;
 use App\UAC;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Traits\CreatesCollaboration;
+use Tests\Traits\CreatesRole;
 
 class AcceptFolderInviteTest extends TestCase
 {
     use WithFaker;
     use CreatesCollaboration;
+    use CreatesRole;
 
     protected FolderInviteDataRepository $tokenStore;
 
@@ -108,10 +112,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $folderOwner->id,
-            $invitee->id,
-            $folder->id,
-            new UAC(Permission::ADD_BOOKMARKS)
+            new FolderInviteData(
+                $folderOwner->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
@@ -133,10 +140,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $folderOwner->id,
-            $invitee->id,
-            $folder->id,
-            new UAC(Permission::ADD_BOOKMARKS)
+            new FolderInviteData(
+                $folderOwner->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
@@ -154,10 +164,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $collaborator->id,
-            $invitee->id,
-            $folder->id,
-            new UAC(Permission::ADD_BOOKMARKS)
+            new FolderInviteData(
+                $collaborator->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $this->acceptInviteResponse(['invite_hash' => $id])
@@ -183,10 +196,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $folderOwner->id,
-            $invitee->id,
-            $folder->id,
-            new UAC(Permission::ADD_BOOKMARKS)
+            new FolderInviteData(
+                $folderOwner->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $this->acceptInviteResponse(['invite_hash' => $id])
@@ -220,10 +236,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $user->id,
-            $invitee->id,
-            $folder->id,
-            $permissions = new UAC($permissions)
+            new FolderInviteData(
+                $user->id,
+                $invitee->id,
+                $folder->id,
+                $permissions = new UAC($permissions),
+                []
+            )
         );
 
         $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
@@ -231,6 +250,43 @@ class AcceptFolderInviteTest extends TestCase
         $savedPermissions = (new CollaboratorPermissionsRepository())->all($invitee->id, $folder->id);
 
         $this->assertEquals(array_diff($permissions->toArray(), $savedPermissions->toArray()), []);
+    }
+
+    #[Test]
+    public function acceptInviteWithRoles(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$user, $invitee] = UserFactory::new()->count(2)->create();
+
+        $folder = FolderFactory::new()->for($user)->create();
+
+        $role = $folder->roles()->save(new FolderRole(['name' => $this->faker->word]));
+
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            new FolderInviteData(
+                $user->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([]),
+                [$role->name]
+            )
+        );
+
+        $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
+
+        $savedPermissions = (new CollaboratorPermissionsRepository())->all($invitee->id, $folder->id);
+
+        $this->assertEmpty($savedPermissions);
+
+        $this->assertEquals($invitee->roles->sole()->id, $role->id);
+        $this->assertEquals($invitee->roles->sole()->folder_id, $folder->id);
+    }
+
+    #[Test]
+    public function whenAssignedRoleNoLongerExists(): void
+    {
     }
 
     #[Test]
@@ -246,10 +302,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $user->id,
-            $invitee->id,
-            $folder->id,
-            UAC::all()
+            new FolderInviteData(
+                $user->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $this->acceptInviteResponse(['invite_hash' => $id])
@@ -273,10 +332,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $user->id,
-            $invitee->id,
-            $folder->id,
-            new UAC([Permission::ADD_BOOKMARKS])
+            new FolderInviteData(
+                $user->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $folder->delete();
@@ -303,10 +365,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $user->id,
-            $invitee->id,
-            $folder->id,
-            new UAC([Permission::ADD_BOOKMARKS])
+            new FolderInviteData(
+                $user->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $invitee->delete();
@@ -328,10 +393,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $user->id,
-            $invitee->id,
-            $folder->id,
-            new UAC([Permission::ADD_BOOKMARKS])
+            new FolderInviteData(
+                $user->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $user->delete();
@@ -358,10 +426,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $user->id,
-            $invitee->id,
-            $folder->id,
-            UAC::all()
+            new FolderInviteData(
+                $user->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $this->acceptInviteResponse(['invite_hash' => $id])
@@ -390,10 +461,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $user->id,
-            $invitee->id,
-            $folder->id,
-            UAC::all()
+            new FolderInviteData(
+                $user->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $this->acceptInviteResponse(['invite_hash' => $id])
@@ -415,18 +489,24 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $collaborator->id,
-            $invitee->id,
-            $folder->id,
-            new UAC([])
+            new FolderInviteData(
+                $collaborator->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([]),
+                []
+            )
         );
 
         $this->tokenStore->store(
             $otherInviteeInviteHash = $this->faker->uuid,
-            $collaborator->id,
-            $otherInvitee->id,
-            $folder->id,
-            new UAC([])
+            new FolderInviteData(
+                $collaborator->id,
+                $otherInvitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         // can accept new collaborators when inviter is not an active collaborator by default.
@@ -441,6 +521,39 @@ class AcceptFolderInviteTest extends TestCase
     }
 
     #[Test]
+    public function whenInviteeRoleNoLongerExists(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$folderOwner, $invitee, $collaborator] = UserFactory::times(3)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->CreateCollaborationRecord($collaborator, $folder);
+        $this->attachRoleToUser($collaborator, $role = $this->createRole(folder: $folder, permissions: Permission::INVITE_USER));
+
+        $this->tokenStore->store(
+            $id = $this->faker->uuid,
+            new FolderInviteData(
+                $collaborator->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([]),
+                []
+            )
+        );
+
+        $folder->settings = FolderSettingsBuilder::new()->enableCannotAcceptInviteIfInviterNoLongerHasRequiredPermission()->build();
+        $folder->save();
+
+        $role->delete();
+
+        $this->acceptInviteResponse(['invite_hash' => $id])
+            ->assertForbidden()
+            ->assertJsonFragment(['message' => 'InviterCanNoLongerSendInvites']);
+    }
+
+    #[Test]
     public function whenCollaboratorPermissionHasBeenRevoked(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
@@ -451,18 +564,24 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $collaborator->id,
-            $invitee->id,
-            $folder->id,
-            new UAC([])
+            new FolderInviteData(
+                $collaborator->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $this->tokenStore->store(
             $otherInviteeInviteHash = $this->faker->uuid,
-            $collaborator->id,
-            $otherInvitee->id,
-            $folder->id,
-            new UAC([])
+            new FolderInviteData(
+                $collaborator->id,
+                $otherInvitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
@@ -493,18 +612,24 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $inviteIdSentToInviteeInvitedByCollaborator = $this->faker->uuid,
-            $folderOwner->id,
-            $invitedByCollaborator->id,
-            $folder->id,
-            new UAC([])
+            new FolderInviteData(
+                $collaborator->id,
+                $invitedByCollaborator->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $this->tokenStore->store(
             $inviteIdSentToInviteeInvitedByFolderOwner = $this->faker->uuid,
-            $collaborator->id,
-            $invitedByFolderOwner->id,
-            $folder->id,
-            new UAC([])
+            new FolderInviteData(
+                $folderOwner->id,
+                $invitedByFolderOwner->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $this->acceptInviteResponse(['invite_hash' => $inviteIdSentToInviteeInvitedByCollaborator])
@@ -528,10 +653,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $folderOwner->id,
-            $invitee->id,
-            $folder->id,
-            new UAC([Permission::ADD_BOOKMARKS])
+            new FolderInviteData(
+                $folderOwner->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
@@ -550,10 +678,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $collaborator->id,
-            $invitee->id,
-            $folder->id,
-            new UAC([Permission::ADD_BOOKMARKS])
+            new FolderInviteData(
+                $collaborator->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
@@ -587,10 +718,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $collaborator->id,
-            $invitee->id,
-            $folder->id,
-            new UAC([Permission::ADD_BOOKMARKS])
+            new FolderInviteData(
+                $collaborator->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
@@ -614,10 +748,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $collaborator->id,
-            $invitee->id,
-            $folder->id,
-            new UAC([Permission::ADD_BOOKMARKS])
+            new FolderInviteData(
+                $collaborator->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $this->acceptInviteResponse(['invite_hash' => $id])->assertCreated();
@@ -637,10 +774,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $collaborator->id,
-            $invitee->id,
-            $folder->id,
-            new UAC([Permission::ADD_BOOKMARKS])
+            new FolderInviteData(
+                $collaborator->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         Notification::fake();
@@ -663,10 +803,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $folderOwner->id,
-            $invitee->id,
-            $folder->id,
-            new UAC([Permission::ADD_BOOKMARKS])
+            new FolderInviteData(
+                $folderOwner->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         Notification::fake();
@@ -692,10 +835,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $collaborator->id,
-            $invitee->id,
-            $folder->id,
-            new UAC([Permission::ADD_BOOKMARKS])
+            new FolderInviteData(
+                $collaborator->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         Notification::fake();
@@ -723,10 +869,13 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
-            $collaborator->id,
-            $invitee->id,
-            $folder->id,
-            new UAC([Permission::ADD_BOOKMARKS])
+            new FolderInviteData(
+                $collaborator->id,
+                $invitee->id,
+                $folder->id,
+                new UAC([Permission::ADD_BOOKMARKS]),
+                []
+            )
         );
 
         $this->travel(61)->minutes(function () use ($id) {

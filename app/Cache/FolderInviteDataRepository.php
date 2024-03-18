@@ -15,19 +15,15 @@ final class FolderInviteDataRepository
     {
     }
 
-    public function store(
-        string $uuid,
-        int $inviterID,
-        int $inviteeID,
-        int $folderID,
-        UAC $permissions
-    ): void {
+    public function store(string $uuid, FolderInviteData $data): void
+    {
 
         $data = [
-            'inviterId'   => $inviterID,
-            'inviteeId'   => $inviteeID,
-            'folderId'    => $folderID,
-            'permissions' => $permissions->toArray()
+            'inviterId'   => $data->inviterId,
+            'inviteeId'   => $data->inviteeId,
+            'folderId'    => $data->folderId,
+            'permissions' => $data->permissions->toArray(),
+            'roles'       => $data->roles
         ];
 
         $this->repository->put($uuid, $data, $this->ttl);
@@ -48,6 +44,8 @@ final class FolderInviteDataRepository
         if (empty($payload)) {
             throw new OutOfBoundsException("The invitation Id {$inviteId} does not exists."); // @codeCoverageIgnore
         }
+
+        $payload['permissions'] = new UAC($payload['permissions']);
 
         return new FolderInviteData(...$payload);
     }

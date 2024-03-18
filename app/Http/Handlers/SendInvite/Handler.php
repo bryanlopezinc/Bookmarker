@@ -7,59 +7,59 @@ namespace App\Http\Handlers\SendInvite;
 use App\Models\User;
 use App\Models\Folder;
 use App\Contracts\FolderRequestHandlerInterface as HandlerInterface;
+use App\DataTransferObjects\SendInviteRequestData;
+use App\Enums\Feature;
+use App\Enums\Permission;
 use App\Http\Handlers\Constraints;
 use App\Http\Handlers\RequestHandlersQueue;
 
 final class Handler
 {
-    /**
-     * @var array<class-string<HandlerInterface>>
-     */
-    private const HANDLERS = [
-        Constraints\FolderExistConstraint::class,
-        Constraints\MustBeACollaboratorConstraint::class,
-        Constraints\PermissionConstraint::class,
-        Constraints\FolderVisibilityConstraint::class,
-        CollaboratorCannotSendInviteWithPermissionsConstraint::class,
-        Constraints\FeatureMustBeEnabledConstraint::class,
-        InviteeExistConstraint::class,
-        Constraints\CollaboratorsLimitConstraint::class,
-        Constraints\UserDefinedFolderCollaboratorsLimitConstraint::class,
-        CannotSendInviteToSelfConstraint::class,
-        UniqueCollaboratorConstraint::class,
-        CannotSendInviteToFolderOwnerConstraint::class,
-        CannotSendInviteToABannedCollaboratorConstraint::class,
-        RateLimitConstraint::class,
-        SendInvitationToInvitee::class
-    ];
-
-    private RequestHandlersQueue $requestHandlersQueue;
-
-    public function __construct()
+    public function handle(int $folderId, SendInviteRequestData $data): void
     {
-        $this->requestHandlersQueue = new RequestHandlersQueue(self::HANDLERS);
-    }
+        $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data));
 
-    public function handle(string $inviteeEmail, int $folderId): void
-    {
-        $query = Folder::query()->select(['id']);
+        $query = Folder::query()->select(['id'])->whereKey($folderId);
 
         $invitee = User::select(['users.id'])
             ->leftJoin('users_emails', 'users.id', '=', 'users_emails.user_id')
-            ->where('users.email', $inviteeEmail)
-            ->orWhere('users_emails.email', $inviteeEmail)
+            ->where('users.email', $data->inviteeEmail)
+            ->orWhere('users_emails.email', $data->inviteeEmail)
             ->firstOr(fn () => new User());
 
-        $this->requestHandlersQueue->scope($query, function ($handler) use ($invitee) {
+        $requestHandlersQueue->scope($query, function ($handler) use ($invitee) {
             if ($handler instanceof InviteeAwareInterface) {
                 $handler->setInvitee($invitee);
             }
         });
 
-        $folder = $query->findOr($folderId, callback: fn () => new Folder());
+        $folder = $query->firstOrNew();
 
-        $this->requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
+        $requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
             $handler->handle($folder);
         });
+    }
+
+    private function getConfiguredHandlers(SendInviteRequestData $data): array
+    {
+        return [
+            new Constraints\FolderExistConstraint(),
+            new RateLimitConstraint($data),
+            new Constraints\MustBeACollaboratorConstraint($data->authUser),
+            new Constraints\PermissionConstraint($data->authUser, Permission::INVITE_USER),
+            new Constraints\FolderVisibilityConstraint(),
+            new CollaboratorCannotSendInviteWithPermissionsOrRolesConstraint($data),
+            new Constraints\FeatureMustBeEnabledConstraint($data->authUser, Feature::SEND_INVITES),
+            new InviteeExistConstraint(),
+            new Constraints\CollaboratorsLimitConstraint(),
+            new Constraints\UserDefinedFolderCollaboratorsLimitConstraint(),
+            new CannotSendInviteToSelfConstraint($data),
+            new UniqueCollaboratorConstraint(),
+            new CannotSendInviteToFolderOwnerConstraint(),
+            new CannotSendInviteToABannedCollaboratorConstraint(),
+            new ValidRolesConstraint($data),
+            new SendInvitationToInvitee($data),
+            new HitRateLimit($data)
+        ];
     }
 }

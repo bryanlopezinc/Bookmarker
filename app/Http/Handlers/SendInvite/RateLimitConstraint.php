@@ -15,19 +15,17 @@ final class RateLimitConstraint implements FolderRequestHandlerInterface
     private readonly RateLimiter $rateLimiter;
     private readonly SendInviteRequestData $data;
 
-    public function __construct(SendInviteRequestData $data, RateLimiter $rateLimiter)
+    public function __construct(SendInviteRequestData $data, RateLimiter $rateLimiter = null)
     {
-        $this->rateLimiter = $rateLimiter;
+        $this->rateLimiter = $rateLimiter ??= app(RateLimiter::class);
         $this->data = $data;
+
+        $this->checkForTooManyAttempts();
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    private function checkForTooManyAttempts(): void
     {
         $maxInvitesThatCanBeSentPerMinute = 1;
-        $decaySeconds = 60;
 
         $key = "invites:{$this->data->authUser->id}:{$this->data->inviteeEmail}";
 
@@ -39,7 +37,12 @@ final class RateLimitConstraint implements FolderRequestHandlerInterface
                 headers: ['resend-invite-after' => $availableIn]
             );
         }
+    }
 
-        $this->rateLimiter->hit($key, $decaySeconds);
+    /**
+     * @inheritdoc
+     */
+    public function handle(Folder $folder): void
+    {
     }
 }

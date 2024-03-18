@@ -11,7 +11,7 @@ use App\DataTransferObjects\AddBookmarksToFolderRequestData as Data;
 
 final class CreateFolderBookmarks implements FolderRequestHandlerInterface
 {
-    public function __construct(private readonly CreateFolderBookmarksAction $action, private readonly Data $data)
+    public function __construct(private readonly Data $data)
     {
     }
 
@@ -20,7 +20,7 @@ final class CreateFolderBookmarks implements FolderRequestHandlerInterface
      */
     public function handle(Folder $folder): void
     {
-        $this->action->create(
+        (new CreateFolderBookmarksAction())->create(
             $folder->id,
             $this->data->bookmarkIds,
             $this->data->makeHidden

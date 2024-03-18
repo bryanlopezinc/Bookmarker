@@ -30,5 +30,7 @@ return [
     //The url should contain placeholders for the 'invite_hash', 'signature', and 'expires' parameters.
     'ACCEPT_INVITE_URL' => Env::getOrFail('ACCEPT_INVITE_URL'),
 
-    'MAX_FOLDER_COLLABORATORS_LIMIT' => 1000
+    'MAX_FOLDER_COLLABORATORS_LIMIT' => 1000,
+    'MAX_FOLDER_ROLE_NAME' => 64,
+    'MAX_ROLES_ATTACHED_TO_INVITES' => 10,
 ];

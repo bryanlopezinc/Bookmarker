@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Folder;
 
+use App\DataTransferObjects\UpdateFolderRequestData;
 use App\Http\Handlers\UpdateFolder\Handler;
 use App\Http\Requests\CreateOrUpdateFolderRequest as Request;
 use App\Http\Requests\UpdateCollaboratorActionRequest;
@@ -14,7 +15,7 @@ final class UpdateFolderController
 {
     public function __invoke(Request $request, Handler $requestHandler, string $folderId): JsonResponse
     {
-        $requestHandler->handle((int) $folderId);
+        $requestHandler->handle((int) $folderId, UpdateFolderRequestData::fromRequest($request));
 
         return new JsonResponse();
     }

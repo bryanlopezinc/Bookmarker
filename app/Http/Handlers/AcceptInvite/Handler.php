@@ -9,27 +9,11 @@ use App\Contracts\FolderRequestHandlerInterface as HandlerInterface;
 use App\Models\Folder;
 use App\Http\Handlers\Constraints;
 use App\Contracts\AcceptFolderInviteRequestHandlerInterface;
+use App\Enums\Feature;
 use App\Http\Handlers\RequestHandlersQueue;
 
 final class Handler implements AcceptFolderInviteRequestHandlerInterface
 {
-    /**
-     * @var array<class-string<HandlerInterface>>
-     */
-    private const HANDLERS = [
-        Constraints\FolderExistConstraint::class,
-        HasNotAlreadyAcceptedInviteValidator::class,
-        InviterAndInviteeExistsValidator::class,
-        Constraints\FolderVisibilityConstraint::class,
-        Constraints\CollaboratorsLimitConstraint::class,
-        Constraints\UserDefinedFolderCollaboratorsLimitConstraint::class,
-        InviterMustBeAnActiveCollaboratorConstraint::class,
-        InviterMustStillHaveRequiredPermissionConstraint::class,
-        Constraints\FeatureMustBeEnabledConstraint::class,
-        CreateNewCollaborator::class,
-        SendNewCollaboratorNotification::class,
-    ];
-
     /**
      * @var RequestHandlersQueue<HandlerInterface>
      */
@@ -41,16 +25,16 @@ final class Handler implements AcceptFolderInviteRequestHandlerInterface
     {
         $this->folderInviteDataRepository = $inviteTokensStore ?: app(FolderInviteDataRepository::class);
 
-        $this->requestHandlersQueue = new RequestHandlersQueue(self::HANDLERS);
+        $this->requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers());
     }
 
     public function handle(string $inviteId): void
     {
+        $invitationData = $this->folderInviteDataRepository->get($inviteId);
+
         //Make a least one select to prevent fetching all columns
         //as other handlers would use addSelect() ideally.
-        $query = Folder::query()->select(['id']);
-
-        $invitationData = $this->folderInviteDataRepository->get($inviteId);
+        $query = Folder::query()->select(['id'])->whereKey($invitationData->folderId);
 
         $this->requestHandlersQueue->scope($query, function ($handler) use ($invitationData) {
             if ($handler instanceof InvitationDataAwareInterface) {
@@ -58,10 +42,27 @@ final class Handler implements AcceptFolderInviteRequestHandlerInterface
             }
         });
 
-        $folder = $query->findOr($invitationData->folderId, callback: fn () => new Folder());
+        $folder = $query->firstOrNew();
 
         $this->requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
             $handler->handle($folder);
         });
+    }
+
+    private function getConfiguredHandlers(): array
+    {
+        return [
+            new Constraints\FolderExistConstraint(),
+            new HasNotAlreadyAcceptedInviteValidator(),
+            new InviterAndInviteeExistsValidator(),
+            new Constraints\FolderVisibilityConstraint(),
+            new Constraints\CollaboratorsLimitConstraint(),
+            new Constraints\UserDefinedFolderCollaboratorsLimitConstraint(),
+            new InviterMustBeAnActiveCollaboratorConstraint(),
+            new InviterMustStillHaveRequiredPermissionConstraint(),
+            new Constraints\FeatureMustBeEnabledConstraint(null, Feature::JOIN_FOLDER),
+            new CreateNewCollaborator(),
+            new SendNewCollaboratorNotification(),
+        ];
     }
 }

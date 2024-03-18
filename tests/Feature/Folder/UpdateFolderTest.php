@@ -18,16 +18,17 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Traits\CreatesCollaboration;
+use Tests\Traits\CreatesRole;
 
 class UpdateFolderTest extends TestCase
 {
     use WithFaker;
     use CreatesCollaboration;
     use Concerns\TestsFolderSettings;
+    use CreatesRole;
 
     protected function updateFolderResponse(array $parameters = []): TestResponse
     {
@@ -54,7 +55,7 @@ class UpdateFolderTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->updateFolderResponse(['folder_id' => 44])
             ->assertUnprocessable()
@@ -75,7 +76,7 @@ class UpdateFolderTest extends TestCase
 
     public function testUpdateName(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $folder = FolderFactory::new()->for($user)->create();
 
@@ -108,7 +109,7 @@ class UpdateFolderTest extends TestCase
 
     public function testUpdateDescription(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $folder = FolderFactory::new()->for($user)->create();
 
@@ -147,8 +148,7 @@ class UpdateFolderTest extends TestCase
             'visibility' => 'public',
             'folder_id'  => $privateFolder->id,
             'password'   => 'I forgot my password please let me in'
-        ])->assertUnauthorized()
-            ->assertJsonFragment(['message' => 'InvalidPasswordForFolderUpdate']);
+        ])->assertUnauthorized()->assertJsonFragment(['message' => 'InvalidPasswordForFolderUpdate']);
 
         $this->updateFolderResponse([
             'visibility' => 'public',
@@ -231,15 +231,15 @@ class UpdateFolderTest extends TestCase
 
         $passwordProtectedFolder = FolderFactory::new()->for($user)->passwordProtected()->create();
         $this->updateFolderResponse(['folder_id' => $passwordProtectedFolder->id, ...$query])->assertOk();
-        $updatedPasswordProtectedFolder = Folder::query()->find($passwordProtectedFolder->id);
-        $this->assertEquals($updatedPasswordProtectedFolder->visibility, FolderVisibility::PASSWORD_PROTECTED);
-        $this->assertTrue(Hash::check('password', $updatedPasswordProtectedFolder->password));
+        $passwordProtectedFolder->refresh();
+        $this->assertEquals($passwordProtectedFolder->visibility, FolderVisibility::PASSWORD_PROTECTED);
+        $this->assertTrue(Hash::check('password', $passwordProtectedFolder->password));
 
         $publicFolder = FolderFactory::new()->for($user)->create();
         $this->updateFolderResponse(['folder_id' => $publicFolder->id, ...$query])->assertOk();
-        $updatedPublicFolder = Folder::query()->find($publicFolder->id);
-        $this->assertEquals($updatedPublicFolder->visibility, FolderVisibility::PASSWORD_PROTECTED);
-        $this->assertTrue(Hash::check('password', $updatedPublicFolder->password));
+        $publicFolder->refresh();
+        $this->assertEquals($publicFolder->visibility, FolderVisibility::PASSWORD_PROTECTED);
+        $this->assertTrue(Hash::check('password', $publicFolder->password));
 
         $folderThatHasCollaborators = FolderFactory::new()->for($user)->create();
         $this->CreateCollaborationRecord(UserFactory::new()->create(), $folderThatHasCollaborators);
@@ -257,8 +257,7 @@ class UpdateFolderTest extends TestCase
         $this->updateFolderResponse($query = [
             'folder_password' => 'new_password',
             'folder_id'       => $folder->id,
-        ])->assertBadRequest()
-            ->assertJsonFragment($expectation = ['message' => 'FolderNotPasswordProtected']);
+        ])->assertBadRequest()->assertJsonFragment($expectation = ['message' => 'FolderNotPasswordProtected']);
 
         $folder = FolderFactory::new()->for($user)->create();
         $this->updateFolderResponse($query)->assertBadRequest()->assertJsonFragment($expectation);
@@ -273,28 +272,28 @@ class UpdateFolderTest extends TestCase
 
     public function testWillReturnNotFoundWhenFolderDoesNotBelongToUser(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $folder = FolderFactory::new()->create();
 
         $this->updateFolderResponse([
             'name'   => $this->faker->word,
             'folder_id' => $folder->id
-        ])->assertNotFound()
-            ->assertJsonFragment(['message' => 'FolderNotFound']);
+        ])->assertNotFound()->assertJsonFragment(['message' => 'FolderNotFound']);
+
+        $this->assertEquals($folder, $folder->refresh());
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotExists(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->updateFolderResponse([
             'name'   => $this->faker->word,
             'folder_id' => $folder->id + 1
-        ])->assertNotFound()
-            ->assertJsonFragment(['message' => "FolderNotFound"]);
+        ])->assertNotFound()->assertJsonFragment(['message' => "FolderNotFound"]);
     }
 
     public function testCollaboratorCanUpdateFolder(): void
@@ -304,7 +303,7 @@ class UpdateFolderTest extends TestCase
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER);
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->updateFolderResponse([
             'name'        => $this->faker->word,
             'description' => $this->faker->sentence,
@@ -312,7 +311,24 @@ class UpdateFolderTest extends TestCase
         ])->assertOk();
     }
 
-    public function testWillReturnForbiddenWenCollaboratorDoesNotHaveUpdateFolderPermission(): void
+    #[Test]
+    public function collaboratorWithRoleCanUpdateFolder(): void
+    {
+        [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
+        $this->attachRoleToUser($collaborator, $this->createRole(folder: $folder, permissions: [Permission::INVITE_USER, Permission::UPDATE_FOLDER]));
+
+        $this->loginUser($collaborator);
+        $this->updateFolderResponse([
+            'name'        => $this->faker->word,
+            'description' => $this->faker->sentence,
+            'folder_id'   => $folder->id
+        ])->assertOk();
+    }
+
+    public function testWillReturnForbiddenWenCollaboratorDoesNotHaveUpdateFolderPermissionOrRole(): void
     {
         [$collaborator, $folderOwner, $collaboratorWithoutAnyPermission] = UserFactory::times(3)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
@@ -325,35 +341,71 @@ class UpdateFolderTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, $permissions);
         $this->CreateCollaborationRecord($collaboratorWithoutAnyPermission, $folder);
 
+        $this->attachRoleToUser($collaborator, $this->createRole(folder: $folder, permissions: Permission::INVITE_USER));
+        $this->attachRoleToUser($collaborator, $this->createRole(folder: FolderFactory::new()->create(), permissions: Permission::UPDATE_FOLDER));
+        $this->attachRoleToUser($collaborator, $this->createRole(folder: FolderFactory::new()->for($folderOwner)->create(), permissions: Permission::UPDATE_FOLDER));
+
         $this->loginUser($collaborator);
         $this->updateFolderResponse([
             'name' => $this->faker->word,
             'folder_id' => $folder->id
-        ])->assertForbidden()
-            ->assertJsonFragment(['message' => 'PermissionDenied']);
+        ])->assertForbidden()->assertJsonFragment(['message' => 'PermissionDenied']);
 
         $this->loginUser($collaboratorWithoutAnyPermission);
         $this->updateFolderResponse([
             'name' => $this->faker->word,
             'folder_id' => $folder->id
-        ])->assertForbidden()
-            ->assertJsonFragment(['message' => 'PermissionDenied']);
+        ])->assertForbidden()->assertJsonFragment(['message' => 'PermissionDenied']);
+
+        $this->assertEquals($folder, $folder->refresh());
+    }
+
+    public function willReturnForbiddenWenCollaboratorRoleNoLongerExists(): void
+    {
+        [$collaborator, $folderOwner] = UserFactory::times(2)->create();
+        [$folder, $folderOwnerSecondFolder] = FolderFactory::times(2)->for($folderOwner)->create();
+
+        $this->CreateCollaborationRecord($collaborator, $folder);
+
+        $this->attachRoleToUser($collaborator, $role = $this->createRole(folder: $folder, permissions: Permission::INVITE_USER));
+        $this->attachRoleToUser($collaborator, $this->createRole(folder: $otherFolder = FolderFactory::new()->create(), permissions: Permission::UPDATE_FOLDER));
+        $this->attachRoleToUser($collaborator, $this->createRole(folder: $folderOwnerSecondFolder, permissions: Permission::UPDATE_FOLDER));
+
+        $role->delete();
+
+        $this->loginUser($collaborator);
+        $this->updateFolderResponse([
+            'name' => $this->faker->word,
+            'folder_id' => $folder->id
+        ])->assertForbidden()->assertJsonFragment(['message' => 'PermissionDenied']);
+
+        $this->updateFolderResponse([
+            'name' => $this->faker->word,
+            'folder_id' => $folderOwnerSecondFolder->id
+        ])->assertOk();
+
+        $this->updateFolderResponse([
+            'name' => $this->faker->word,
+            'folder_id' => $otherFolder->id
+        ])->assertOk();
+
+        $this->assertEquals($folder, $folder->refresh());
     }
 
     public function testWillReturnForbiddenWhenCollaboratorIsUpdatingRestrictedAttribute(): void
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
 
-        $privateFolder = FolderFactory::new()->for($folderOwner)->private()->create();
+        $folderVisibleToCollaboratorsOnly = FolderFactory::new()->for($folderOwner)->visibleToCollaboratorsOnly()->create();
         $publicFolder = FolderFactory::new()->for($folderOwner)->create();
 
-        $this->CreateCollaborationRecord($collaborator, $privateFolder, Permission::UPDATE_FOLDER);
+        $this->CreateCollaborationRecord($collaborator, $folderVisibleToCollaboratorsOnly, Permission::UPDATE_FOLDER);
         $this->CreateCollaborationRecord($collaborator, $publicFolder, Permission::UPDATE_FOLDER);
 
         $this->loginUser($collaborator);
 
         $this->updateFolderResponse($query = [
-            'folder_id'   => $privateFolder->id,
+            'folder_id'   => $folderVisibleToCollaboratorsOnly->id,
             'visibility'  => 'public',
             'password'    => 'password'
         ])->assertForbidden()->assertJsonFragment($error = ['message' => 'CannotUpdateFolderAttribute']);
@@ -370,9 +422,12 @@ class UpdateFolderTest extends TestCase
             ->assertForbidden()
             ->assertJsonFragment($error);
 
-        $this->updateFolderResponse(['folder_id' => $privateFolder->id, 'settings'  => ['max_collaborators_limit' => 450]])
+        $this->updateFolderResponse(['folder_id' => $folderVisibleToCollaboratorsOnly->id, 'settings'  => ['max_collaborators_limit' => 450]])
             ->assertForbidden()
             ->assertJsonFragment($error);
+
+        $this->assertEquals($folderVisibleToCollaboratorsOnly, $folderVisibleToCollaboratorsOnly->refresh());
+        $this->assertEquals($publicFolder, $publicFolder->refresh());
     }
 
     public function testWillReturnNotFoundWhenFolderOwnerHasDeletedAccount(): void
@@ -384,19 +439,20 @@ class UpdateFolderTest extends TestCase
 
         $folderOwner->delete();
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->updateFolderResponse([
             'name'        => $this->faker->word,
             'description' => $this->faker->sentence,
             'folder_id'  => $folder->id
-        ])->assertNotFound()
-            ->assertJsonFragment(['message' => "FolderNotFound"]);
+        ])->assertNotFound()->assertJsonFragment(['message' => "FolderNotFound"]);
+
+        $this->assertEquals($folder, $folder->refresh());
     }
 
     #[Test]
     public function willReturnUnprocessableWhenFolderSettingsIsInValid(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $folder = FolderFactory::new()->for($user)->create();
 
@@ -411,7 +467,7 @@ class UpdateFolderTest extends TestCase
     #[Test]
     public function updateSettings(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $folder = FolderFactory::new()
             ->for($user)
@@ -437,7 +493,7 @@ class UpdateFolderTest extends TestCase
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER);
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->updateFolderResponse([
             'name'        => $newName = $this->faker->word,
             'description' => $newDescription = $this->faker->sentence,
@@ -490,7 +546,7 @@ class UpdateFolderTest extends TestCase
 
         Notification::fake();
 
-        Passport::actingAs($user);
+        $this->loginUser($user);
         $this->updateFolderResponse([
             'name'        => $this->faker->word,
             'description' => $this->faker->sentence,
@@ -513,7 +569,7 @@ class UpdateFolderTest extends TestCase
 
         Notification::fake();
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->updateFolderResponse([
             'name' => $this->faker->word,
             'description' => $this->faker->sentence,
@@ -536,7 +592,7 @@ class UpdateFolderTest extends TestCase
 
         Notification::fake();
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->updateFolderResponse([
             'name' => $this->faker->word,
             'description' => $this->faker->sentence,

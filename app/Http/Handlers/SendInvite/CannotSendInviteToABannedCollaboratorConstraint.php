@@ -8,14 +8,17 @@ use App\Contracts\FolderRequestHandlerInterface;
 use App\Exceptions\HttpException;
 use App\Models\BannedCollaborator;
 use App\Models\Folder;
+use App\Models\User;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class CannotSendInviteToABannedCollaboratorConstraint implements FolderRequestHandlerInterface, Scope, InviteeAwareInterface
+final class CannotSendInviteToABannedCollaboratorConstraint implements FolderRequestHandlerInterface, Scope
 {
-    use Concerns\HasInviteeData;
+    public function __construct(private readonly User $invitee)
+    {
+    }
 
     public function apply(Builder|EloquentBuilder $builder, Model $model): void
     {
@@ -32,7 +35,7 @@ final class CannotSendInviteToABannedCollaboratorConstraint implements FolderReq
      */
     public function handle(Folder $folder): void
     {
-        if ( ! is_null($folder->inviteeIsBanned)) {
+        if (!is_null($folder->inviteeIsBanned)) {
             throw HttpException::forbidden([
                 'message' => 'UserBanned',
                 'info' => 'Request could not be completed because the user has been banned from the folder.'

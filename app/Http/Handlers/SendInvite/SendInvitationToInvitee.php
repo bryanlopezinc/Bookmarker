@@ -11,26 +11,28 @@ use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\FolderInviteData;
 use App\DataTransferObjects\SendInviteRequestData;
 use App\Mail\FolderCollaborationInviteMail as InvitationMail;
+use App\Models\User;
 use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Support\Facades\Mail;
 
-final class SendInvitationToInvitee implements FolderRequestHandlerInterface, InviteeAwareInterface, Scope
+final class SendInvitationToInvitee implements FolderRequestHandlerInterface, Scope
 {
-    use Concerns\HasInviteeData;
-
     private readonly FolderInviteDataRepository $repository;
     private readonly Mailer $mailer;
     private readonly SendInviteRequestData $data;
+    private readonly User $invitee;
 
     public function __construct(
         SendInviteRequestData $data,
+        User $invitee,
         FolderInviteDataRepository $repository = null,
         Mailer $mailer = null
     ) {
         $this->data = $data;
+        $this->invitee = $invitee;
         $this->repository = $repository ?: app(FolderInviteDataRepository::class);
         $this->mailer = $mailer ?: Mail::mailer();
     }

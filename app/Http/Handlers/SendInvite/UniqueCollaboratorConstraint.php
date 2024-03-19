@@ -8,14 +8,17 @@ use App\Contracts\FolderRequestHandlerInterface;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
 use App\Models\FolderCollaborator;
+use App\Models\User;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class UniqueCollaboratorConstraint implements FolderRequestHandlerInterface, Scope, InviteeAwareInterface
+final class UniqueCollaboratorConstraint implements FolderRequestHandlerInterface, Scope
 {
-    use Concerns\HasInviteeData;
+    public function __construct(private readonly User $invitee)
+    {
+    }
 
     public function apply(Builder|EloquentBuilder $builder, Model $model): void
     {

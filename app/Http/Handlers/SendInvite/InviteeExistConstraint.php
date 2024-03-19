@@ -7,10 +7,13 @@ namespace App\Http\Handlers\SendInvite;
 use App\Contracts\FolderRequestHandlerInterface;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
+use App\Models\User;
 
-final class InviteeExistConstraint implements FolderRequestHandlerInterface, InviteeAwareInterface
+final class InviteeExistConstraint implements FolderRequestHandlerInterface
 {
-    use Concerns\HasInviteeData;
+    public function __construct(private readonly User $invitee)
+    {
+    }
 
     /**
      * @inheritdoc

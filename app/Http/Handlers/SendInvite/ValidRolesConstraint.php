@@ -13,10 +13,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class ValidRolesConstraint implements FolderRequestHandlerInterface, Scope, InviteeAwareInterface
+final class ValidRolesConstraint implements FolderRequestHandlerInterface, Scope
 {
-    use Concerns\HasInviteeData;
-
     public function __construct(private readonly SendInviteRequestData $data)
     {
     }

@@ -9,17 +9,13 @@ use App\Models\FolderBookmark;
 use App\Models\Folder;
 use Illuminate\Database\Eloquent\Collection;
 
-final class DeleteFolderBookmarks implements FolderRequestHandlerInterface, FolderBookmarksAwareInterface
+final class DeleteFolderBookmarks implements FolderRequestHandlerInterface
 {
-    /** @var array<FolderBookmark> */
-    private array $folderBookmarks;
-
     /**
-     * @inheritdoc
+     * @param array<FolderBookmark> folderBookmarks
      */
-    public function setBookmarks(array $folderBookmarks): void
+    public function __construct(private readonly array $folderBookmarks)
     {
-        $this->folderBookmarks = $folderBookmarks;
     }
 
     /**

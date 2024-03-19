@@ -8,12 +8,11 @@ use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\SendInviteRequestData;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
+use App\Models\User;
 
-final class CannotSendInviteToSelfConstraint implements FolderRequestHandlerInterface, InviteeAwareInterface
+final class CannotSendInviteToSelfConstraint implements FolderRequestHandlerInterface
 {
-    use Concerns\HasInviteeData;
-
-    public function __construct(private readonly SendInviteRequestData $requestData)
+    public function __construct(private readonly SendInviteRequestData $requestData, private readonly User $invitee)
     {
     }
 

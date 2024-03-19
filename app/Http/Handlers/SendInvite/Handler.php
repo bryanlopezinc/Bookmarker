@@ -17,21 +17,17 @@ final class Handler
 {
     public function handle(int $folderId, SendInviteRequestData $data): void
     {
-        $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data));
-
         $query = Folder::query()->select(['id'])->whereKey($folderId);
 
         $invitee = User::select(['users.id'])
             ->leftJoin('users_emails', 'users.id', '=', 'users_emails.user_id')
             ->where('users.email', $data->inviteeEmail)
             ->orWhere('users_emails.email', $data->inviteeEmail)
-            ->firstOr(fn () => new User());
+            ->firstOrNew();
 
-        $requestHandlersQueue->scope($query, function ($handler) use ($invitee) {
-            if ($handler instanceof InviteeAwareInterface) {
-                $handler->setInvitee($invitee);
-            }
-        });
+        $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data, $invitee));
+
+        $requestHandlersQueue->scope($query);
 
         $folder = $query->firstOrNew();
 
@@ -40,7 +36,7 @@ final class Handler
         });
     }
 
-    private function getConfiguredHandlers(SendInviteRequestData $data): array
+    private function getConfiguredHandlers(SendInviteRequestData $data, User $invitee): array
     {
         return [
             new Constraints\FolderExistConstraint(),
@@ -50,15 +46,15 @@ final class Handler
             new Constraints\FolderVisibilityConstraint(),
             new CollaboratorCannotSendInviteWithPermissionsOrRolesConstraint($data),
             new Constraints\FeatureMustBeEnabledConstraint($data->authUser, Feature::SEND_INVITES),
-            new InviteeExistConstraint(),
+            new InviteeExistConstraint($invitee),
             new Constraints\CollaboratorsLimitConstraint(),
             new Constraints\UserDefinedFolderCollaboratorsLimitConstraint(),
-            new CannotSendInviteToSelfConstraint($data),
-            new UniqueCollaboratorConstraint(),
-            new CannotSendInviteToFolderOwnerConstraint(),
-            new CannotSendInviteToABannedCollaboratorConstraint(),
+            new CannotSendInviteToSelfConstraint($data, $invitee),
+            new UniqueCollaboratorConstraint($invitee),
+            new CannotSendInviteToFolderOwnerConstraint($invitee),
+            new CannotSendInviteToABannedCollaboratorConstraint($invitee),
             new ValidRolesConstraint($data),
-            new SendInvitationToInvitee($data),
+            new SendInvitationToInvitee($data, $invitee),
             new HitRateLimit($data)
         ];
     }

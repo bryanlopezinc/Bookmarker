@@ -18,8 +18,6 @@ final class Handler
 {
     public function handle(int $folderId, Data $data): void
     {
-        $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data));
-
         $query = Folder::query()->select(['id'])->whereKey($folderId);
 
         $folderBookmarks = FolderBookmark::query()
@@ -29,11 +27,9 @@ final class Handler
             ->get()
             ->all();
 
-        $requestHandlersQueue->scope($query, function ($handler) use ($folderBookmarks) {
-            if ($handler instanceof FolderBookmarksAwareInterface) {
-                $handler->setBookmarks($folderBookmarks);
-            }
-        });
+        $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data, $folderBookmarks));
+
+        $requestHandlersQueue->scope($query);
 
         $folder = $query->firstOrNew();
 
@@ -42,15 +38,15 @@ final class Handler
         });
     }
 
-    private function getConfiguredHandlers(Data $data): array
+    private function getConfiguredHandlers(Data $data, array $folderBookmarks): array
     {
         return [
             new Constraints\FolderExistConstraint(),
             new Constraints\MustBeACollaboratorConstraint(),
             new Constraints\PermissionConstraint($data->authUser, Permission::DELETE_BOOKMARKS),
             new Constraints\FeatureMustBeEnabledConstraint($data->authUser, Feature::DELETE_BOOKMARKS),
-            new FolderContainsBookmarksConstraint($data),
-            new DeleteFolderBookmarks(),
+            new FolderContainsBookmarksConstraint($data, $folderBookmarks),
+            new DeleteFolderBookmarks($folderBookmarks),
             new SendBookmarksRemovedFromFolderNotificationNotification($data),
         ];
     }

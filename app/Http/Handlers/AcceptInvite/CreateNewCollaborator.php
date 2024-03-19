@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Handlers\AcceptInvite;
 
 use App\Contracts\FolderRequestHandlerInterface;
+use App\DataTransferObjects\FolderInviteData;
 use App\Models\Folder;
 use App\Models\FolderCollaboratorRole;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
@@ -13,19 +14,20 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class CreateNewCollaborator implements FolderRequestHandlerInterface, InvitationDataAwareInterface, Scope
+final class CreateNewCollaborator implements FolderRequestHandlerInterface, Scope
 {
-    use Concerns\HasInvitationData;
-
     private readonly CollaboratorRepository $collaboratorRepository;
     private readonly CollaboratorPermissionsRepository $permissions;
+    private readonly FolderInviteData $invitationData;
 
     public function __construct(
+        FolderInviteData $invitationData,
         CollaboratorRepository $collaboratorRepository = null,
         CollaboratorPermissionsRepository $permissions = null,
     ) {
-        $this->collaboratorRepository = $collaboratorRepository ?: new CollaboratorRepository();
-        $this->permissions = $permissions ?: new CollaboratorPermissionsRepository();
+        $this->invitationData = $invitationData;
+        $this->collaboratorRepository = $collaboratorRepository ??= new CollaboratorRepository();
+        $this->permissions = $permissions ??= new CollaboratorPermissionsRepository();
     }
 
     public function apply(Builder $builder, Model $model): void

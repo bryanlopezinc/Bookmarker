@@ -15,15 +15,13 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class InviterMustBeAnActiveCollaboratorConstraint implements FolderRequestHandlerInterface, Scope, InvitationDataAwareInterface
+final class InviterMustBeAnActiveCollaboratorConstraint implements FolderRequestHandlerInterface, Scope
 {
     private MustBeACollaboratorConstraint $mustBeACollaboratorConstraint;
 
-    public function setInvitationData(FolderInviteData $payload): void
+    public function __construct(FolderInviteData $payload)
     {
-        $inviter = new User(['id' => $payload->inviterId]);
-
-        $this->mustBeACollaboratorConstraint = new MustBeACollaboratorConstraint($inviter);
+        $this->mustBeACollaboratorConstraint = new MustBeACollaboratorConstraint(new User(['id' => $payload->inviterId]));
     }
 
     public function apply(Builder $builder, Model $model): void

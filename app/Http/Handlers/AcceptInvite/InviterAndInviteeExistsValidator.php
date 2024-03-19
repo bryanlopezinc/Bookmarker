@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Handlers\AcceptInvite;
 
 use App\Contracts\FolderRequestHandlerInterface;
+use App\DataTransferObjects\FolderInviteData;
 use App\Exceptions\AcceptFolderInviteException;
 use App\Models\Folder;
 use App\Models\User;
@@ -13,9 +14,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Support\Facades\DB;
 
-final class InviterAndInviteeExistsValidator implements FolderRequestHandlerInterface, Scope, InvitationDataAwareInterface
+final class InviterAndInviteeExistsValidator implements FolderRequestHandlerInterface, Scope
 {
-    use Concerns\HasInvitationData;
+    public function __construct(private readonly FolderInviteData $invitationData)
+    {
+    }
 
     public function apply(Builder $builder, Model $model): void
     {

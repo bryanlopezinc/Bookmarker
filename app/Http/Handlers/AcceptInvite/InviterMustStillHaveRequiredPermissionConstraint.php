@@ -16,15 +16,13 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class InviterMustStillHaveRequiredPermissionConstraint implements FolderRequestHandlerInterface, Scope, InvitationDataAwareInterface
+final class InviterMustStillHaveRequiredPermissionConstraint implements FolderRequestHandlerInterface, Scope
 {
     private PermissionConstraint $permissionConstraint;
 
-    public function setInvitationData(FolderInviteData $payload): void
+    public function __construct(FolderInviteData $payload, PermissionConstraint $permissionConstraint = null)
     {
-        $inviter = new User(['id' => $payload->inviterId]);
-
-        $this->permissionConstraint = new PermissionConstraint($inviter, Permission::INVITE_USER);
+        $this->permissionConstraint = $permissionConstraint ??= new PermissionConstraint(new User(['id' => $payload->inviterId]), Permission::INVITE_USER);
     }
 
     public function apply(Builder $builder, Model $model): void

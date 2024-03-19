@@ -5,29 +5,18 @@ declare(strict_types=1);
 namespace App\Http\Handlers\AddBookmarksToFolder;
 
 use App\Contracts\FolderRequestHandlerInterface;
-use App\DataTransferObjects\AddBookmarksToFolderRequestData;
+use App\DataTransferObjects\AddBookmarksToFolderRequestData as Data;
 use App\Exceptions\BookmarkNotFoundException;
 use App\Models\Bookmark;
 use App\Models\Folder;
 
-final class BookmarksExistsConstraint implements FolderRequestHandlerInterface, BookmarksAwareInterface
+final class BookmarksExistsConstraint implements FolderRequestHandlerInterface
 {
-    /** @var array<Bookmark> */
-    private array $bookmarks;
-
-    private readonly AddBookmarksToFolderRequestData $data;
-
-    public function __construct(AddBookmarksToFolderRequestData $data)
-    {
-        $this->data = $data;
-    }
-
     /**
-     * @inheritdoc
+     * @param array<Bookmark> $bookmarks
      */
-    public function setBookmarks(array $bookmarks): void
+    public function __construct(private readonly Data $data, private readonly array $bookmarks)
     {
-        $this->bookmarks = $bookmarks;
     }
 
     /**

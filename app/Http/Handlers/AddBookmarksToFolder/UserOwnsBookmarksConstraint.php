@@ -10,21 +10,13 @@ use App\Models\Bookmark;
 use App\Models\Folder;
 use App\DataTransferObjects\AddBookmarksToFolderRequestData as Data;
 
-final class UserOwnsBookmarksConstraint implements FolderRequestHandlerInterface, BookmarksAwareInterface
+final class UserOwnsBookmarksConstraint implements FolderRequestHandlerInterface
 {
-    /** @var array<Bookmark> */
-    private array $bookmarks;
-
-    public function __construct(private readonly Data $data)
-    {
-    }
-
     /**
-     * @inheritdoc
+     * @param array<Bookmark> $bookmarks
      */
-    public function setBookmarks(array $bookmarks): void
+    public function __construct(private readonly Data $data, private readonly array $bookmarks)
     {
-        $this->bookmarks = $bookmarks;
     }
 
     /**

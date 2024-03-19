@@ -9,17 +9,13 @@ use App\Models\Folder;
 use App\Models\Bookmark;
 use App\Jobs\CheckBookmarksHealth as CheckBookmarksHealthJob;
 
-final class CheckBookmarksHealth implements FolderRequestHandlerInterface, BookmarksAwareInterface
+final class CheckBookmarksHealth implements FolderRequestHandlerInterface
 {
-    /** @var array<Bookmark> */
-    private array $bookmarks;
-
     /**
-     * @inheritdoc
+     * @param array<Bookmark> $bookmarks
      */
-    public function setBookmarks(array $bookmarks): void
+    public function __construct(private readonly array $bookmarks)
     {
-        $this->bookmarks = $bookmarks;
     }
 
     /**

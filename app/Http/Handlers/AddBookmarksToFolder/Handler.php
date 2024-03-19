@@ -17,26 +17,22 @@ final class Handler
 {
     public function handle(int $folderId, Data $data): void
     {
-        $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data));
-
-        $query = Folder::query()->select(['id']);
+        $query = Folder::query()->select(['id'])->whereKey($folderId);
 
         $bookmarks = Bookmark::query()->findMany($data->bookmarkIds, ['user_id', 'id', 'url'])->all();
 
-        $requestHandlersQueue->scope($query, function ($handler) use ($bookmarks) {
-            if ($handler instanceof BookmarksAwareInterface) {
-                $handler->setBookmarks($bookmarks);
-            }
-        });
+        $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data, $bookmarks));
 
-        $folder = $query->findOr($folderId, callback: fn () => new Folder());
+        $requestHandlersQueue->scope($query);
+
+        $folder = $query->firstOrNew();
 
         $requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
             $handler->handle($folder);
         });
     }
 
-    private function getConfiguredHandlers(Data $data): array
+    private function getConfiguredHandlers(Data $data, array $bookmarks): array
     {
         return [
             new Constraints\FolderExistConstraint(),
@@ -44,13 +40,13 @@ final class Handler
             new Constraints\PermissionConstraint($data->authUser, Permission::ADD_BOOKMARKS),
             new Constraints\FeatureMustBeEnabledConstraint($data->authUser, Feature::ADD_BOOKMARKS),
             new MaxFolderBookmarksConstraint($data),
-            new UserOwnsBookmarksConstraint($data),
-            new BookmarksExistsConstraint($data),
+            new UserOwnsBookmarksConstraint($data, $bookmarks),
+            new BookmarksExistsConstraint($data, $bookmarks),
             new CollaboratorCannotMarkBookmarksAsHiddenConstraint($data),
             new UniqueFolderBookmarkConstraint($data),
             new CreateFolderBookmarks($data),
             new SendBookmarksAddedToFolderNotification($data),
-            new CheckBookmarksHealth(),
+            new CheckBookmarksHealth($bookmarks),
         ];
     }
 }

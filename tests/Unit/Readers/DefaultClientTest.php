@@ -14,6 +14,10 @@ use GuzzleHttp\Psr7\Request;
 use Illuminate\Foundation\Testing\WithFaker;
 use Psr\Log\LoggerInterface;
 
+use const CURLE_COULDNT_RESOLVE_HOST;
+use const CURLE_OPERATION_TIMEOUTED;
+use const CURLE_UNSUPPORTED_PROTOCOL;
+
 class DefaultClientTest extends TestCase
 {
     use WithFaker;
@@ -28,7 +32,7 @@ class DefaultClientTest extends TestCase
         Http::fake(fn () => throw new ConnectException(
             '',
             new Request('GET', $url),
-            handlerContext: ['errno' => \CURLE_COULDNT_RESOLVE_HOST]
+            handlerContext: ['errno' => CURLE_COULDNT_RESOLVE_HOST]
         ));
 
         $response = $client->fetchBookmarkPageData($bookmark);
@@ -51,7 +55,7 @@ class DefaultClientTest extends TestCase
         Http::fake(fn () => throw new ConnectException(
             '',
             new Request('GET', $url),
-            handlerContext: ['errno' => \CURLE_OPERATION_TIMEOUTED]
+            handlerContext: ['errno' => CURLE_OPERATION_TIMEOUTED]
         ));
 
         $this->assertFalse(
@@ -70,7 +74,7 @@ class DefaultClientTest extends TestCase
             ->method('critical')
             ->willReturnCallback(function (string $message, array $context) {
                 $this->assertEquals($message, 'The URL you passed to libcurl used a protocol that this libcurl does not support.');
-                $this->assertEquals($context['errno'], \CURLE_UNSUPPORTED_PROTOCOL);
+                $this->assertEquals($context['errno'], CURLE_UNSUPPORTED_PROTOCOL);
             });
 
         $client = new DefaultClient($logger);
@@ -78,7 +82,7 @@ class DefaultClientTest extends TestCase
         Http::fake(fn () => throw new ConnectException(
             'The URL you passed to libcurl used a protocol that this libcurl does not support.',
             new Request('GET', $url),
-            handlerContext: ['errno' => \CURLE_UNSUPPORTED_PROTOCOL]
+            handlerContext: ['errno' => CURLE_UNSUPPORTED_PROTOCOL]
         ));
 
         $this->assertFalse(

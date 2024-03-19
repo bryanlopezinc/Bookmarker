@@ -36,7 +36,7 @@ class DOMReaderTest extends TestCase
         $html = $this->html(<<<HTML
                 <meta name="description" content="A foo bar site">
                 <meta name="twitter:description" content="Twitter Description">
-                <meta property="og:description" content="$description">
+                <meta property="og:description" content="{$description}">
         HTML);
 
         $this->reader->loadHTML($html, new Url(fake()->url()));
@@ -64,7 +64,7 @@ class DOMReaderTest extends TestCase
                 <meta charset="UTF-8">
                 <meta http-equiv="X-UA-Compatible" content="IE=edge">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                 $insert
+                 {$insert}
             </head>
             <body>
             </body>
@@ -79,7 +79,7 @@ class DOMReaderTest extends TestCase
         $description = fake()->sentence;
 
         $html = $this->html(<<<HTML
-                <meta name="description" content="$description">
+                <meta name="description" content="{$description}">
                 <meta name="twitter:description" content="Twitter Description">
         HTML);
 
@@ -104,7 +104,7 @@ class DOMReaderTest extends TestCase
         $description = fake()->sentence;
 
         $html = $this->html(<<<HTML
-                <meta name="twitter:description" content="$description">
+                <meta name="twitter:description" content="{$description}">
         HTML);
 
         $this->reader->loadHTML($html, new Url(fake()->url()));
@@ -152,12 +152,12 @@ class DOMReaderTest extends TestCase
             "ldap://ds.example.com:389",
         ] as $content) {
             $html = $this->html(<<<HTML
-                <meta property="og:image" content="$content">
+                <meta property="og:image" content="{$content}">
             HTML);
 
             $this->reader->loadHTML($html, new Url(fake()->url()));
 
-            $this->assertFalse($this->reader->getPreviewImageUrl(), "failed asserting that $content is invalid");
+            $this->assertFalse($this->reader->getPreviewImageUrl(), "failed asserting that {$content} is invalid");
         }
     }
 
@@ -168,12 +168,12 @@ class DOMReaderTest extends TestCase
             "ldap://ds.example.com:389",
         ] as $content) {
             $html = $this->html(<<<HTML
-                <meta name="twitter:image" content="$content">
+                <meta name="twitter:image" content="{$content}">
             HTML);
 
             $this->reader->loadHTML($html, new Url(fake()->url()));
 
-            $this->assertFalse($this->reader->getPreviewImageUrl(), "failed asserting that $content is invalid");
+            $this->assertFalse($this->reader->getPreviewImageUrl(), "failed asserting that {$content} is invalid");
         }
     }
 
@@ -182,7 +182,7 @@ class DOMReaderTest extends TestCase
         $title = implode(' ', fake()->sentences());
 
         $html = $this->html(<<<HTML
-                <meta property="og:title" content="$title">
+                <meta property="og:title" content="{$title}">
                 <meta name="twitter:title" content="BitCoin is down">
                 <title>Page Title</title>
         HTML);
@@ -209,7 +209,7 @@ class DOMReaderTest extends TestCase
         $title = fake()->title;
 
         $html = $this->html(<<<HTML
-                <title>$title</title>
+                <title>{$title}</title>
                 <meta name="twitter:title" content="Why are crypto gurus silent :-)">
         HTML);
 
@@ -234,7 +234,7 @@ class DOMReaderTest extends TestCase
         $title = fake()->title;
 
         $html = $this->html(<<<HTML
-                <meta name="twitter:title" content="$title">
+                <meta name="twitter:title" content="{$title}">
         HTML);
 
         $this->reader->loadHTML($html, new Url(fake()->url()));
@@ -327,7 +327,7 @@ class DOMReaderTest extends TestCase
         $url = 'https://www.foo.com/en/path/to/baz';
 
         $html = $this->html(<<<HTML
-                <link rel="canonical" href="$url">
+                <link rel="canonical" href="{$url}">
                 <meta property="og:url" content="https://www.rottentomatoes.com/m/thor_love_and_thunder">
         HTML);
 
@@ -346,12 +346,12 @@ class DOMReaderTest extends TestCase
             "ldap://ds.example.com:389",
         ] as $content) {
             $html = $this->html(<<<HTML
-                <link rel="canonical" href="$content">
+                <link rel="canonical" href="{$content}">
             HTML);
 
             $this->reader->loadHTML($html, new Url(fake()->url()));
 
-            $this->assertFalse($this->reader->getCanonicalUrl(), "failed asserting that $content is invalid");
+            $this->assertFalse($this->reader->getCanonicalUrl(), "failed asserting that {$content} is invalid");
         }
     }
 
@@ -360,7 +360,7 @@ class DOMReaderTest extends TestCase
         $url = 'https://www.foo.com/en/path/to/baz';
 
         $html = $this->html(<<<HTML
-                <meta property="og:url" content="$url">
+                <meta property="og:url" content="{$url}">
         HTML);
 
         $this->reader->loadHTML($html, new Url($url));
@@ -378,12 +378,12 @@ class DOMReaderTest extends TestCase
             "ldap://ds.example.com:389",
         ] as $content) {
             $html = $this->html(<<<HTML
-                <meta property="og:url" content="$content">
+                <meta property="og:url" content="{$content}">
             HTML);
 
             $this->reader->loadHTML($html, new Url(fake()->url()));
 
-            $this->assertFalse($this->reader->getCanonicalUrl(), "failed asserting that $content is invalid");
+            $this->assertFalse($this->reader->getCanonicalUrl(), "failed asserting that {$content} is invalid");
         }
     }
 }

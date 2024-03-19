@@ -17,10 +17,13 @@ final class DeleteBookmarkController
     {
         $maxBookmarks = 50;
 
-        $request->validate([
-            'ids'   => ['required', 'array', "max:{$maxBookmarks}"],
-            'ids.*' => [new ResourceIdRule(), 'distinct:strict']
-        ], ['max'   => "cannot delete more than $maxBookmarks bookmarks in one request"]);
+        $request->validate(
+            rules: [
+                'ids'   => ['required', 'array', "max:{$maxBookmarks}"],
+                'ids.*' => [new ResourceIdRule(), 'distinct:strict']
+            ],
+            messages: ['max' => "cannot delete more than {$maxBookmarks} bookmarks in one request"]
+        );
 
         $bookmarks = $bookmarksRepository->findManyById(
             $bookmarkIds = $request->input('ids'),

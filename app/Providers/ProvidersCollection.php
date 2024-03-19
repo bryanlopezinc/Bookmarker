@@ -26,7 +26,7 @@ final class ProvidersCollection
             // Get the directory path if the provider is in a sub directory.
             $directoryPath = str_replace('/', '\\', $file->getRelativePath());
 
-            if (!empty($directoryPath)) {
+            if ( ! empty($directoryPath)) {
                 $directoryPath .= '\\';
             }
 

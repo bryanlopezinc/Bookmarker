@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace App\Exceptions;
 
 use App\ValueObjects\Username;
+use DomainException;
 
-final class InvalidUsernameException extends \DomainException
+final class InvalidUsernameException extends DomainException
 {
     public static function lengthExceeded(): self
     {

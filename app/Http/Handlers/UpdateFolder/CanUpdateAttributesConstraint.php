@@ -26,7 +26,7 @@ final class CanUpdateAttributesConstraint implements FolderRequestHandlerInterfa
             return;
         }
 
-        if ($this->data->visibility !== null || !empty($this->data->settings)) {
+        if ($this->data->visibility !== null || ! empty($this->data->settings)) {
             throw HttpException::forbidden([
                 'message' => 'CannotUpdateFolderAttribute',
                 'info' => 'The request could not be completed due to inadequate permission.'

@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Http;
 use GuzzleHttp\Exception\ConnectException;
 use Psr\Log\LoggerInterface;
 
+use const CURLE_COULDNT_RESOLVE_HOST;
+use const CURLE_OPERATION_TIMEOUTED;
+
 final class DefaultClient implements HttpClientInterface
 {
     private DOMReader $dOMReader;
@@ -32,7 +35,7 @@ final class DefaultClient implements HttpClientInterface
             return $this->handleException($e, $bookmark);
         }
 
-        if (!$response->successful() || !str_contains($response->header('content-type'), 'text/html')) {
+        if ( ! $response->successful() || ! str_contains($response->header('content-type'), 'text/html')) {
             return $this->emptyResponse($bookmark);
         }
 
@@ -50,7 +53,7 @@ final class DefaultClient implements HttpClientInterface
 
     private function handleException(ConnectionException $exception, Bookmark $bookmark): BookmarkMetaData | false
     {
-        if (!$exception->getPrevious() instanceof ConnectException) {
+        if ( ! $exception->getPrevious() instanceof ConnectException) {
             return false;
         }
 
@@ -59,11 +62,11 @@ final class DefaultClient implements HttpClientInterface
 
         $errorCode = $exception->getHandlerContext()['errno'];
 
-        if ($errorCode === \CURLE_COULDNT_RESOLVE_HOST) {
+        if ($errorCode === CURLE_COULDNT_RESOLVE_HOST) {
             return  $this->emptyResponse($bookmark);
         }
 
-        if ($errorCode === \CURLE_OPERATION_TIMEOUTED) {
+        if ($errorCode === CURLE_OPERATION_TIMEOUTED) {
             return false;
         }
 

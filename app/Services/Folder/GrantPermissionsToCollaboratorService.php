@@ -52,7 +52,7 @@ final class GrantPermissionsToCollaboratorService
 
     private function ensureUserIsACollaborator(Folder $folder): void
     {
-        if (!$folder->userIsACollaborator) {
+        if ( ! $folder->userIsACollaborator) {
             throw HttpException::notFound(['message' => 'UserNotACollaborator']);
         }
     }

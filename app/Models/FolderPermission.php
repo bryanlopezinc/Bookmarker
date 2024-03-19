@@ -7,8 +7,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * @property int $id
- * @property string $name
+ * @property int            $id
+ * @property string         $name
  * @property \Carbon\Carbon $created_at
  */
 final class FolderPermission extends Model

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use Illuminate\Contracts\Validation\Factory;
+use Closure;
 
 /**
  * Convert request attributes that are comma separated to array.
@@ -22,15 +23,15 @@ final class ExplodeString
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \Illuminate\Http\Request $request
      * @return mixed
      */
-    public function handle($request, \Closure $next, string ...$keys)
+    public function handle($request, Closure $next, string ...$keys)
     {
         $converted = [];
 
         foreach ($keys as $key) {
-            if (!$request->has($key)) {
+            if ( ! $request->has($key)) {
                 continue;
             }
 

@@ -39,7 +39,7 @@ final class InviterMustStillHaveRequiredPermissionConstraint implements FolderRe
     {
         $folderConstraints = $folder->settings->acceptInviteConstraints;
 
-        if (!$folderConstraints->inviterMustHaveRequiredPermission()) {
+        if ( ! $folderConstraints->inviterMustHaveRequiredPermission()) {
             return;
         }
 

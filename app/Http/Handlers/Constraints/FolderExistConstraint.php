@@ -24,7 +24,7 @@ final class FolderExistConstraint implements Scope, FolderRequestHandlerInterfac
      */
     public function handle(Folder $folder): void
     {
-        if (!$folder->exists) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
     }

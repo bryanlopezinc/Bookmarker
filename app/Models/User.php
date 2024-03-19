@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Enums\TwoFaMode;
@@ -14,25 +16,26 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 
 /**
- * @property int $id
- * @property string $username
- * @property string $first_name
- * @property string $last_name
- * @property FullName $full_name
- * @property string $email
- * @property string $password
- * @property int $bookmarks_count
- * @property int $favorites_count
- * @property int $folders_count
- * @property \Carbon\Carbon|null $email_verified_at
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
- * @property TwoFaMode $two_fa_mode
- * @property string|null $profile_image_path
- * @property \Illuminate\Database\Eloquent\Collection<FolderRole> $roles
- * @method static Builder WithQueryOptions(array $columns = [])
+ * @property        int                            $id
+ * @property        string                         $username
+ * @property        string                         $first_name
+ * @property        string                         $last_name
+ * @property        FullName                       $full_name
+ * @property        string                         $email
+ * @property        string                         $password
+ * @property        int                            $bookmarks_count
+ * @property        int                            $favorites_count
+ * @property        int                            $folders_count
+ * @property        \Carbon\Carbon|null            $email_verified_at
+ * @property        \Carbon\Carbon                 $created_at
+ * @property        \Carbon\Carbon                 $updated_at
+ * @property        TwoFaMode                      $two_fa_mode
+ * @property        string|null                    $profile_image_path
+ * @property        EloquentCollection<FolderRole> $roles
+ * @method   static Builder                        WithQueryOptions(array $columns = [])
  */
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -114,7 +117,7 @@ class User extends Authenticatable implements MustVerifyEmail
             $builder->addSelect('users.*');
         }
 
-        if (!$columns->isEmpty()) {
+        if ( ! $columns->isEmpty()) {
             $builder->addSelect(
                 $this->qualifyColumns($columns->except(['bookmarks_count', 'folders_count', 'favorites_count'])->all())
             );
@@ -134,7 +137,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $wantsBookmarksCount = $options->has('bookmarks_count') ?: $options->isEmpty();
 
-        if (!$wantsBookmarksCount) {
+        if ( ! $wantsBookmarksCount) {
             return;
         }
 
@@ -152,7 +155,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $wantsFavoritesCount = $options->has('favorites_count') ?: $options->isEmpty();
 
-        if (!$wantsFavoritesCount) {
+        if ( ! $wantsFavoritesCount) {
             return;
         }
 
@@ -170,7 +173,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $wantsFoldersCount = $options->has('folders_count') ?: $options->isEmpty();
 
-        if (!$wantsFoldersCount) {
+        if ( ! $wantsFoldersCount) {
             return;
         }
 

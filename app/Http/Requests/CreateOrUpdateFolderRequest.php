@@ -38,8 +38,8 @@ final class CreateOrUpdateFolderRequest extends FormRequest
             'filled',
             Rule::requiredIf($this->isCreateFolderRequest()),
             Rule::when(
-                !$this->isCreateFolderRequest(),
-                [Rule::requiredIf(!$this->hasAny('description', 'visibility', 'folder_password', 'settings'))]
+                ! $this->isCreateFolderRequest(),
+                [Rule::requiredIf( ! $this->hasAny('description', 'visibility', 'folder_password', 'settings'))]
             )
         ];
     }

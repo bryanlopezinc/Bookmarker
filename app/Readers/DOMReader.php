@@ -7,6 +7,8 @@ namespace App\Readers;
 use App\Exceptions\MalformedURLException;
 use App\ValueObjects\Url;
 use DOMXPath;
+use DOMDocument;
+use DOMNodeList;
 
 class DOMReader
 {
@@ -17,7 +19,7 @@ class DOMReader
     {
         libxml_use_internal_errors(true);
 
-        $document = new \DOMDocument();
+        $document = new DOMDocument();
         $document->loadHTML($source);
 
         $this->dOMXPath = new DOMXPath($document);
@@ -46,7 +48,7 @@ class DOMReader
      * when any (or none) of the expression passes.
      * The return is false if the expression is malformed or the contextNode is invalid.
      */
-    private function evaluate(string ...$expressions): \DOMNodeList|false
+    private function evaluate(string ...$expressions): DOMNodeList|false
     {
         $DOMNodeList = false;
 

@@ -38,7 +38,7 @@ final class InviterMustBeAnActiveCollaboratorConstraint implements FolderRequest
     {
         $folderConstraints = $folder->settings->acceptInviteConstraints;
 
-        if (!$folderConstraints->inviterMustBeAnActiveCollaborator()) {
+        if ( ! $folderConstraints->inviterMustBeAnActiveCollaborator()) {
             return;
         }
 

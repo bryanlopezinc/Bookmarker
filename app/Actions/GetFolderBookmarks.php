@@ -12,6 +12,7 @@ use App\Models\Folder;
 use App\Models\MutedCollaborator;
 use App\PaginationData;
 use Illuminate\Pagination\Paginator;
+use Closure;
 
 final class GetFolderBookmarks
 {
@@ -22,7 +23,7 @@ final class GetFolderBookmarks
     {
         $isLoggedIn = $authUserId !== null;
         $folderBelongsToAuthUser = $folder->user_id !== $authUserId;
-        $fetchOnlyPublicBookmarks = !$isLoggedIn || $folderBelongsToAuthUser;
+        $fetchOnlyPublicBookmarks = ! $isLoggedIn || $folderBelongsToAuthUser;
 
         $shouldNotIncludeMutedCollaboratorsBookmarks = ($folder->visibility->isPublic() ||
             $folder->visibility->isVisibleToCollaboratorsOnly()) &&
@@ -32,7 +33,7 @@ final class GetFolderBookmarks
         $result = Bookmark::WithQueryOptions()
             ->join('folders_bookmarks', 'folders_bookmarks.bookmark_id', '=', 'bookmarks.id')
             ->when($fetchOnlyPublicBookmarks, fn ($query) => $query->where('visibility', FolderBookmarkVisibility::PUBLIC->value))
-            ->when(!$fetchOnlyPublicBookmarks, fn ($query) => $query->addSelect(['visibility']))
+            ->when( ! $fetchOnlyPublicBookmarks, fn ($query) => $query->addSelect(['visibility']))
             ->when($isLoggedIn, function ($query) use ($authUserId) {
                 $query->addSelect([
                     'isUserFavorite' => Favorite::query()
@@ -48,7 +49,7 @@ final class GetFolderBookmarks
                     ->where('folder_id', $folder->id)
                     ->whereColumn('user_id', 'bookmarks.user_id')
                     ->where('muted_by', $authUserId)
-                    ->whereRaw("(muted_until IS NULL OR muted_until > '$currentDateTime')");
+                    ->whereRaw("(muted_until IS NULL OR muted_until > '{$currentDateTime}')");
 
                 $query->whereNotExists($mutedCollaboratorQuery);
             })
@@ -63,7 +64,7 @@ final class GetFolderBookmarks
         return $result;
     }
 
-    private function buildFolderBookmarkObject(bool $onlyPublic, bool $isLoggedIn): \Closure
+    private function buildFolderBookmarkObject(bool $onlyPublic, bool $isLoggedIn): Closure
     {
         return function (Bookmark $model) use ($onlyPublic, $isLoggedIn) {
             if ($isLoggedIn) {

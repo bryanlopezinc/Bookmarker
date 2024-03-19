@@ -8,13 +8,14 @@ use App\Models\Bookmark;
 use App\Readers\BookmarkMetaData;
 use App\Readers\HttpClientInterface;
 use App\ValueObjects\Url;
+use RuntimeException;
 
 final class TestHttpClient implements HttpClientInterface
 {
     public function __construct()
     {
-        if (!app()->environment('testing')) {
-            throw new \RuntimeException(__CLASS__ . ' can only be used in test environments');
+        if ( ! app()->environment('testing')) {
+            throw new RuntimeException(__CLASS__ . ' can only be used in test environments');
         }
     }
 

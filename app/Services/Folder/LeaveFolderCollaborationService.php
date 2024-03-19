@@ -42,7 +42,7 @@ final class LeaveFolderCollaborationService
 
         $this->ensureCollaboratorDoesNotOwnFolder($collaborator->id, $folder);
 
-        FolderNotFoundException::throwIf(!$folder->userIsACollaborator);
+        FolderNotFoundException::throwIf( ! $folder->userIsACollaborator);
 
         $this->collaboratorRepository->delete($folder->id, $collaborator->id);
 

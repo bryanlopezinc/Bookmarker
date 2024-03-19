@@ -33,7 +33,7 @@ final class NotifyUserAboutNewLoginEventListener implements ShouldQueue
 
     private function getDeviceInfo(LoginEvent $event): Device
     {
-        if (!$event->userAgent) {
+        if ( ! $event->userAgent) {
             return new Device(DeviceType::UNKNOWN, null);
         }
 
@@ -42,7 +42,7 @@ final class NotifyUserAboutNewLoginEventListener implements ShouldQueue
 
     private function getLocation(LoginEvent $event): Location
     {
-        if (!$event->ipAddress) {
+        if ( ! $event->ipAddress) {
             return Location::unknown();
         }
 

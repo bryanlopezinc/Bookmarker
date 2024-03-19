@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Importing\Providers;
 
 use App\Importing\Repositories\ImportStatRepository;

@@ -8,9 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property int $id
- * @property string $email
- * @property int $user_id
+ * @property int            $id
+ * @property string         $email
+ * @property int            $user_id
  * @property \Carbon\Carbon $verified_at
  */
 final class SecondaryEmail extends Model

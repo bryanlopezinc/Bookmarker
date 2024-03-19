@@ -27,7 +27,7 @@ final class NewCollaboratorNotification extends Notification implements ShouldQu
     /**
      * Get the notification's delivery channels.
      *
-     * @param  mixed  $notifiable
+     * @param  mixed $notifiable
      * @return array
      */
     public function via($notifiable)
@@ -36,7 +36,7 @@ final class NewCollaboratorNotification extends Notification implements ShouldQu
     }
 
     /**
-     * @param  mixed  $notifiable
+     * @param mixed $notifiable
      */
     public function toDatabase($notifiable): array
     {

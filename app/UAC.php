@@ -13,6 +13,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use IteratorAggregate;
 use Traversable;
+use Exception;
 
 /**
  * Permission a user has to a folder resource.
@@ -101,8 +102,8 @@ final class UAC implements Countable, Arrayable, IteratorAggregate
     {
         $isUnique = $this->permissions->unique()->count() === $this->permissions->count();
 
-        if (!$isUnique) {
-            throw new \Exception('Permissions contains duplicate values', 1_601);
+        if ( ! $isUnique) {
+            throw new Exception('Permissions contains duplicate values', 1_601);
         }
     }
 

@@ -7,13 +7,14 @@ namespace App\Rules;
 use App\ValueObjects\Username;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Validator;
+use Closure;
 
 final class UsernameOrEmailRule implements ValidationRule
 {
     /**
      * {@inheritdoc}
      */
-    public function validate($attribute, mixed $value, \Closure $fail): void
+    public function validate($attribute, mixed $value, Closure $fail): void
     {
         $data = [$attribute => $value];
 
@@ -22,8 +23,8 @@ final class UsernameOrEmailRule implements ValidationRule
             Validator::make($data, [$attribute => ['email']])->passes(),
         ];
 
-        if (!$isValidEmail && !$isValidUsername) {
-            $fail("The $attribute must be a valid username or email");
+        if ( ! $isValidEmail && ! $isValidUsername) {
+            $fail("The {$attribute} must be a valid username or email");
         }
     }
 }

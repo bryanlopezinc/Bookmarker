@@ -34,7 +34,7 @@ final class Request2FACodeService
 
         $rateLimiterKey = "2FARequests:{$user->id}";
 
-        if (!$this->hasher->check($request->input('password'), $user->password)) {
+        if ( ! $this->hasher->check($request->input('password'), $user->password)) {
             throw $this->invalidCredentialsException();
         }
 
@@ -48,7 +48,7 @@ final class Request2FACodeService
             }
         );
 
-        if (!$twoFACodeSent) {
+        if ( ! $twoFACodeSent) {
             throw new ThrottleRequestsException(
                 message: 'TooMany2FACodeRequests',
                 headers: ['request-2FA-after' => RateLimiter::availableIn($rateLimiterKey)]

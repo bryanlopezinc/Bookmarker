@@ -26,7 +26,7 @@ final class ResolveCanonicalUrlValue
             return false;
         }
 
-        if (!$this->isValid($canonicalUrl)) {
+        if ( ! $this->isValid($canonicalUrl)) {
             return false;
         }
 

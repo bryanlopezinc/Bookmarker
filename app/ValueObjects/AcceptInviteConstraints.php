@@ -6,6 +6,8 @@ namespace App\ValueObjects;
 
 use App\Contracts\FolderSettingValueInterface;
 use Illuminate\Support\Collection;
+use DomainException;
+use Exception;
 
 final class AcceptInviteConstraints implements FolderSettingValueInterface
 {
@@ -24,11 +26,11 @@ final class AcceptInviteConstraints implements FolderSettingValueInterface
         $unknown = $this->constraints->diff(self::VALID);
 
         if ($unknown->isNotEmpty()) {
-            throw new \DomainException(sprintf('Unknown Constraints values [%s]', $unknown->implode(',')));
+            throw new DomainException(sprintf('Unknown Constraints values [%s]', $unknown->implode(',')));
         }
 
         if ($duplicates->isNotEmpty()) {
-            throw new \Exception(sprintf('Constraints contains duplicate values [%s]', $duplicates->implode(',')));
+            throw new Exception(sprintf('Constraints contains duplicate values [%s]', $duplicates->implode(',')));
         }
     }
 

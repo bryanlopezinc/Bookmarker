@@ -25,7 +25,7 @@ final class IpGeoLocationHttpClient implements IpGeoLocatorInterface
                 $this->logger->error($response->toException()?->getMessage() ?? '');
             });
 
-        if (!$response->successful() || $response->json('status') === 'fail') {
+        if ( ! $response->successful() || $response->json('status') === 'fail') {
             return Location::unknown();
         }
 

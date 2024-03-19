@@ -74,7 +74,7 @@ final class TagRepository
             ->select('name', DB::raw('COUNT(*) as bookmarksWithTag'))
             ->join('taggables', 'tag_id', '=', 'tags.id')
             ->when($search, function ($query) use ($search) {
-                $query->where('tags.name', 'LIKE', "$search%");
+                $query->where('tags.name', 'LIKE', "{$search}%");
             })
             ->whereExists(function (&$query) use ($userId) {
                 $query = Bookmark::query()

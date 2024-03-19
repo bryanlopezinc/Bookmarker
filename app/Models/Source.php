@@ -7,11 +7,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * @property int $id
- * @property string $host
- * @property string $name
+ * @property int                 $id
+ * @property string              $host
+ * @property string              $name
  * @property \Carbon\Carbon|null $name_updated_at
- * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon      $created_at
  */
 final class Source extends Model
 {

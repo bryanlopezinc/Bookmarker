@@ -12,7 +12,7 @@ final class CreateFolderBookmarks
 {
     /**
      * @param int|array<int> $bookmarkIds
-     * @param array<int> $hidden
+     * @param array<int>     $hidden
      */
     public function create(int $folderId, array|int $bookmarkIds, array $hidden = []): void
     {

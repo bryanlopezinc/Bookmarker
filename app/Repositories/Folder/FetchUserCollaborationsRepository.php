@@ -12,6 +12,7 @@ use Illuminate\Pagination\Paginator;
 use App\Models\FolderCollaboratorPermission;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\UAC;
+use Closure;
 
 final class FetchUserCollaborationsRepository
 {
@@ -48,7 +49,7 @@ final class FetchUserCollaborationsRepository
         );
     }
 
-    private function createCollaborationFn(): \Closure
+    private function createCollaborationFn(): Closure
     {
         return function (Folder $folder) {
             $folder->mergeCasts(['permissions' => 'json']);

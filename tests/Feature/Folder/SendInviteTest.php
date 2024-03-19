@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Folder;
 
 use App\Actions\ToggleFolderFeature;
@@ -556,7 +558,7 @@ class SendInviteTest extends TestCase
             'folder_id' => $folder->id,
         ];
 
-        if (!empty($permissions)) {
+        if ( ! empty($permissions)) {
             $parameters['permissions'] = implode(',', $permissions);
         }
 

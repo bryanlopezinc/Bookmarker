@@ -42,7 +42,7 @@ final class FolderSettings implements Arrayable
     {
         $default = $this->default();
 
-        if (!empty($settings) && !array_key_exists('version', $settings)) {
+        if ( ! empty($settings) && ! array_key_exists('version', $settings)) {
             $settings['version'] = $default['version'];
         }
 
@@ -114,18 +114,18 @@ final class FolderSettings implements Arrayable
             'bookmarksRemovedNotificationIsEnabled'  => $notifications['bookmarks_removed']['enabled'],
             'collaboratorExitNotificationIsEnabled'  => $notifications['collaborator_exit']['enabled'],
             'collaboratorExitNotificationMode'       => CollaboratorExitNotificationMode::from($notifications['collaborator_exit']['mode']),
-            'notificationsAreDisabled'               => !$this->resolve('notificationsAreEnabled'),
-            'newCollaboratorNotificationIsDisabled'  => !$this->resolve('newCollaboratorNotificationIsEnabled'),
-            'folderUpdatedNotificationIsDisabled'    => !$this->resolve('folderUpdatedNotificationIsEnabled'),
-            'newBookmarksNotificationIsDisabled'     => !$this->resolve('newBookmarksNotificationIsEnabled'),
-            'bookmarksRemovedNotificationIsDisabled' => !$this->resolve('bookmarksRemovedNotificationIsEnabled'),
-            'collaboratorExitNotificationIsDisabled' => !$this->resolve('collaboratorExitNotificationIsEnabled'),
+            'notificationsAreDisabled'               => ! $this->resolve('notificationsAreEnabled'),
+            'newCollaboratorNotificationIsDisabled'  => ! $this->resolve('newCollaboratorNotificationIsEnabled'),
+            'folderUpdatedNotificationIsDisabled'    => ! $this->resolve('folderUpdatedNotificationIsEnabled'),
+            'newBookmarksNotificationIsDisabled'     => ! $this->resolve('newBookmarksNotificationIsEnabled'),
+            'bookmarksRemovedNotificationIsDisabled' => ! $this->resolve('bookmarksRemovedNotificationIsEnabled'),
+            'collaboratorExitNotificationIsDisabled' => ! $this->resolve('collaboratorExitNotificationIsEnabled'),
             default => throw new Error(sprintf("Call to undefined property %s::$%s", __CLASS__, $classProperty)),
         };
     }
 
     /**
-     * @param string $name
+     * @param  string $name
      * @return mixed
      */
     public function __get($name)
@@ -135,7 +135,7 @@ final class FolderSettings implements Arrayable
 
     /**
      * @param string $name
-     * @param mixed $value
+     * @param mixed  $value
      *
      * @return void
      */

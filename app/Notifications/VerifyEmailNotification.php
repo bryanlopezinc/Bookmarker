@@ -8,6 +8,7 @@ use App\Utils\UrlPlaceholders;
 use App\ValueObjects\Url;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Stringable;
+use Exception;
 
 final class VerifyEmailNotification extends VerifyEmail
 {
@@ -37,7 +38,7 @@ final class VerifyEmailNotification extends VerifyEmail
         if ($missing = UrlPlaceholders::missing($url, [':id', ':hash', ':signature', ':expires'])) {
             $missing = implode(',', $missing);
 
-            throw new \Exception("The verification url  must contain the [$missing] placeholder/s");
+            throw new Exception("The verification url  must contain the [{$missing}] placeholder/s");
         }
         // @codeCoverageIgnoreEnd
 

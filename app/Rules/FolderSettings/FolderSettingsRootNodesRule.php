@@ -7,6 +7,7 @@ namespace App\Rules\FolderSettings;
 use App\Contracts\FolderSettingSchemaProviderInterface;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\DataAwareRule;
+use Closure;
 
 final class FolderSettingsRootNodesRule implements ValidationRule, DataAwareRule
 {
@@ -32,7 +33,7 @@ final class FolderSettingsRootNodesRule implements ValidationRule, DataAwareRule
     /**
      * {@inheritdoc}
      */
-    public function validate($attribute, mixed $value, \Closure $fail): void
+    public function validate($attribute, mixed $value, Closure $fail): void
     {
         $data = $this->data;
 
@@ -41,7 +42,7 @@ final class FolderSettingsRootNodesRule implements ValidationRule, DataAwareRule
         }
 
         foreach ($data as $key => $value) {
-            if (!$this->schema->exists((string) $key)) {
+            if ( ! $this->schema->exists((string) $key)) {
                 $fail("The given setting {$key} is invalid.");
             }
         }

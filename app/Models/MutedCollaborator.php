@@ -7,7 +7,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * @property \Carbon\Carbon $muted_at
+ * @property \Carbon\Carbon      $muted_at
  * @property \Carbon\Carbon|null $muted_until
  */
 final class MutedCollaborator extends Model

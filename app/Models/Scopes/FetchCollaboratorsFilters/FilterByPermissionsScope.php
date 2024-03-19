@@ -34,7 +34,7 @@ final class FilterByPermissionsScope
                 $builder->havingRaw("COUNT(*) = {$this->permissions->count()}");
             }
 
-            if (!$this->permissions->hasAllPermissions() && $this->permissions->isNotEmpty()) {
+            if ( ! $this->permissions->hasAllPermissions() && $this->permissions->isNotEmpty()) {
                 $permissionsQuery = $permissionsRepository->findManyByName($this->permissions->toArray())->pluck('id');
 
                 $builder->whereIn('permission_id', $permissionsQuery)->havingRaw("COUNT(*) >= {$this->permissions->count()}");

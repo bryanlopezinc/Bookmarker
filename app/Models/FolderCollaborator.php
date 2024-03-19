@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * @property int $id
- * @property int $folder_id
- * @property int $collaborator_id
- * @property int $invited_by
- * @property \Carbon\Carbon $joined_at
+ * @property int                                                              $id
+ * @property int                                                              $folder_id
+ * @property int                                                              $collaborator_id
+ * @property int                                                              $invited_by
+ * @property \Carbon\Carbon                                                   $joined_at
  * @property \Illuminate\Database\Eloquent\Collection<FolderCollaboratorRole> $roles
  */
 final class FolderCollaborator extends Model

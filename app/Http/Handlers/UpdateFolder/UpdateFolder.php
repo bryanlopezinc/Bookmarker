@@ -53,7 +53,7 @@ final class UpdateFolder implements FolderRequestHandlerInterface, Scope
         $newVisibility = FolderVisibility::fromRequest($this->data->visibility);
         $newSettings =  $this->normalizer->fromRequest($this->data->settings);
 
-        if (!is_null($newName = $this->data->name)) {
+        if ( ! is_null($newName = $this->data->name)) {
             $folder->name = new FolderName($newName);
         }
 
@@ -61,23 +61,23 @@ final class UpdateFolder implements FolderRequestHandlerInterface, Scope
             $folder->description = $this->data->description;
         }
 
-        if (!empty($this->data->settings)) {
+        if ( ! empty($this->data->settings)) {
             $folder->settings = new FolderSettings(array_replace_recursive($folder->settings->toArray(), $newSettings));
         }
 
-        if (!is_null($this->data->visibility)) {
-            if ($folder->visibility->isPasswordProtected() && !$newVisibility->isPasswordProtected()) {
+        if ( ! is_null($this->data->visibility)) {
+            if ($folder->visibility->isPasswordProtected() && ! $newVisibility->isPasswordProtected()) {
                 $folder->password = null;
             }
 
             $folder->visibility = $newVisibility;
         }
 
-        if (!is_null($newFolderPassword = $this->data->folderPassword) || $newVisibility->isPasswordProtected()) {
+        if ( ! is_null($newFolderPassword = $this->data->folderPassword) || $newVisibility->isPasswordProtected()) {
             $folder->password = $newFolderPassword;
         }
 
-        if (!$folder->isDirty()) {
+        if ( ! $folder->isDirty()) {
             throw new FolderNotModifiedAfterOperationException();
         }
 

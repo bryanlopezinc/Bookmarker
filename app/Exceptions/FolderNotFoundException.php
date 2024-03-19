@@ -8,13 +8,14 @@ use App\Models\Folder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
+use Throwable;
 
 final class FolderNotFoundException extends RuntimeException
 {
     public function __construct(
         string $message = 'FolderNotFound',
         int $code = 0,
-        ?\Throwable $previous = null
+        ?Throwable $previous = null
     ) {
         parent::__construct($message, $code, $previous);
     }

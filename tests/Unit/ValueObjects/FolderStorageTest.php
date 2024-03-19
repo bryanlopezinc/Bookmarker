@@ -6,19 +6,20 @@ namespace Tests\Unit\ValueObjects;
 
 use App\ValueObjects\FolderStorage;
 use PHPUnit\Framework\TestCase;
+use InvalidArgumentException;
 
 class FolderStorageTest extends TestCase
 {
     public function testWillThrowExceptionWhenTotal_is_HigherThan_200(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         (new FolderStorage(201));
     }
 
     public function testWillThrowExceptionWhenTotalIsUnsigned(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         (new FolderStorage(-50));
     }

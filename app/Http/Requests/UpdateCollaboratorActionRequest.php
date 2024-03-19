@@ -19,7 +19,7 @@ final class UpdateCollaboratorActionRequest extends FormRequest
 
         return [
             'folder_id'        => ['required', new ResourceIdRule()],
-            'addBookmarks'     => ['string', $onAndOfRule, Rule::requiredIf(!$this->hasAny('removeBookmarks', 'inviteUsers', 'updateFolder'))],
+            'addBookmarks'     => ['string', $onAndOfRule, Rule::requiredIf( ! $this->hasAny('removeBookmarks', 'inviteUsers', 'updateFolder'))],
             'removeBookmarks'  => ['sometimes', 'string', $onAndOfRule],
             'inviteUsers'      => ['sometimes', 'string', $onAndOfRule],
             'updateFolder'     => ['sometimes', 'string', $onAndOfRule],

@@ -48,7 +48,7 @@ final class MuteCollaboratorService
             throw HttpException::forbidden(['message' => 'CannotMuteSelf']);
         }
 
-        if (!$folder->userIsACollaborator) {
+        if ( ! $folder->userIsACollaborator) {
             throw new UserNotFoundException();
         }
 

@@ -38,7 +38,7 @@ final class DisabledFeatureScope implements Scope
                 ->select('id')
                 ->whereRaw("folder_id = {$folderModel->getQualifiedKeyName()}")
                 ->when($this->feature, fn ($query) => $query->where('feature_id', $this->repository->findByName($this->feature)->id)) //@phpstan-ignore-line
-                ->when(!$this->feature, fn ($query) => $query->limit(1))
+                ->when( ! $this->feature, fn ($query) => $query->limit(1))
         ]);
     }
 

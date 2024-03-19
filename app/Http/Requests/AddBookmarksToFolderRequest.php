@@ -23,7 +23,7 @@ final class AddBookmarksToFolderRequest extends FormRequest
     /**
      * Configure the validator instance.
      *
-     * @param  \Illuminate\Validation\Validator  $validator
+     * @param  \Illuminate\Validation\Validator $validator
      * @return void
      */
     public function withValidator($validator)
@@ -36,8 +36,8 @@ final class AddBookmarksToFolderRequest extends FormRequest
             $bookmarkIDs = $this->input('bookmarks');
 
             foreach ($this->input('make_hidden', []) as $key => $id) {
-                if (!in_array($id, $bookmarkIDs, true)) {
-                    $validator->errors()->add('make_hidden.' . $key, "BookmarkId $id does not exist in bookmarks.");
+                if ( ! in_array($id, $bookmarkIDs, true)) {
+                    $validator->errors()->add('make_hidden.' . $key, "BookmarkId {$id} does not exist in bookmarks.");
                 }
             }
         });

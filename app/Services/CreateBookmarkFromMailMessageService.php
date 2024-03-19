@@ -40,7 +40,7 @@ final class CreateBookmarkFromMailMessageService
             throw $e;
         }
 
-        if (!$user->email_verified_at) {
+        if ( ! $user->email_verified_at) {
             Mail::to($email)->queue(new EmailNotVerifiedMail());
             return;
         }

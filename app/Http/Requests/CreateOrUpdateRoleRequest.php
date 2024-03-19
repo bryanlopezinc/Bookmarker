@@ -11,11 +11,6 @@ use App\UAC;
 
 final class CreateOrUpdateRoleRequest extends FormRequest
 {
-    protected function isCreateRoleRequest(): bool
-    {
-        return $this->routeIs('createFolderRole');
-    }
-
     public function rules(): array
     {
         return [
@@ -26,7 +21,7 @@ final class CreateOrUpdateRoleRequest extends FormRequest
 
     private function permissionsRules(): array
     {
-        if (!$this->isCreateRoleRequest()) {
+        if ( ! $this->routeIs('createFolderRole')) {
             return [];
         }
 

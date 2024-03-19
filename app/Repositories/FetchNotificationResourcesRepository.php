@@ -69,7 +69,7 @@ final class FetchNotificationResourcesRepository
 
         $query->columns = [];
 
-        if (!empty($bookmarkIds = $this->extractIds('bookmarks'))) {
+        if ( ! empty($bookmarkIds = $this->extractIds('bookmarks'))) {
             $query->addSelect([
                 'bookmarks' => Bookmark::query()
                     ->select(DB::raw("JSON_ARRAYAGG(JSON_OBJECT('title', title, 'id', id))"))
@@ -77,7 +77,7 @@ final class FetchNotificationResourcesRepository
             ]);
         }
 
-        if (!empty($userIds = $this->extractIds('users'))) {
+        if ( ! empty($userIds = $this->extractIds('users'))) {
             $query->addSelect([
                 'users' => User::query()
                     ->select(DB::raw("JSON_ARRAYAGG(JSON_OBJECT('id', id, 'full_name', full_name, 'profile_image_path', profile_image_path))"))
@@ -85,7 +85,7 @@ final class FetchNotificationResourcesRepository
             ]);
         }
 
-        if (!empty($folderIds = $this->extractIds('folders'))) {
+        if ( ! empty($folderIds = $this->extractIds('folders'))) {
             $query->addSelect([
                 'folders' => Folder::query()
                     ->select(DB::raw("JSON_ARRAYAGG(JSON_OBJECT('name', name, 'id', id))"))

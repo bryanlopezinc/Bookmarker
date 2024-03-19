@@ -21,7 +21,7 @@ final class CheckForExpiredToken implements HandlerInterface
 
     public function handle(string $inviteId): void
     {
-        if (!$this->repository->has($inviteId)) {
+        if ( ! $this->repository->has($inviteId)) {
             throw AcceptFolderInviteException::expiredOrInvalidInvitationToken();
         }
 

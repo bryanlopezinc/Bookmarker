@@ -319,7 +319,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
         );
     }
 
-    private function mockUrlHasher(\Closure $mock): void
+    private function mockUrlHasher(Closure $mock): void
     {
         $hasher = $this->getMockBuilder(UrlHasher::class)->getMock();
 

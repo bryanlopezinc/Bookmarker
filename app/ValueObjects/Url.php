@@ -7,18 +7,19 @@ namespace App\ValueObjects;
 use Illuminate\Support\Str;
 use Spatie\Url\QueryParameterBag;
 use App\Exceptions\MalformedURLException;
+use Stringable;
 
 final class Url
 {
     private readonly array $parts;
     private readonly string $url;
 
-    public function __construct(string|\Stringable $url)
+    public function __construct(string|Stringable $url)
     {
         $url = (string) $url;
         $parts = parse_url($url);
 
-        if (!Str::isUrl($url, ['http', 'https'])) {
+        if ( ! Str::isUrl($url, ['http', 'https'])) {
             throw MalformedURLException::invalidFormat($url);
         }
 
@@ -32,7 +33,7 @@ final class Url
 
     public static function isValid(mixed $url): bool
     {
-        if (!is_string($url) && !$url instanceof \Stringable) {
+        if ( ! is_string($url) && ! $url instanceof Stringable) {
             return false;
         }
 

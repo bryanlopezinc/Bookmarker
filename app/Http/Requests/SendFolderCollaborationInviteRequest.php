@@ -30,7 +30,7 @@ final class SendFolderCollaborationInviteRequest extends FormRequest
     /**
      * Configure the validator instance.
      *
-     * @param  \Illuminate\Validation\Validator  $validator
+     * @param  \Illuminate\Validation\Validator $validator
      * @return void
      */
     public function withValidator($validator)
@@ -40,7 +40,7 @@ final class SendFolderCollaborationInviteRequest extends FormRequest
                 return;
             }
 
-            if (!in_array('*', $permissions = $this->input('permissions', []), true)) {
+            if ( ! in_array('*', $permissions = $this->input('permissions', []), true)) {
                 return;
             }
 

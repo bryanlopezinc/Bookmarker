@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\ValueObjects;
 
+use InvalidArgumentException;
+use ArrayIterator;
+
 final class FolderStorage
 {
     public const MAX_ITEMS = 200;
@@ -11,11 +14,11 @@ final class FolderStorage
     public function __construct(public readonly int $total)
     {
         if ($total  < 0) {
-            throw new \InvalidArgumentException("Invalid item count $total");
+            throw new InvalidArgumentException("Invalid item count {$total}");
         }
 
         if ($total > self::MAX_ITEMS) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 sprintf('Folder cannot contain more than %s items %s given', self::MAX_ITEMS, $total)
             );
         }
@@ -38,7 +41,7 @@ final class FolderStorage
         }
 
         if (is_array($items)) {
-            $items = new \ArrayIterator($items);
+            $items = new ArrayIterator($items);
         }
 
         return $this->total + iterator_count($items) <= self::MAX_ITEMS;

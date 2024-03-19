@@ -22,11 +22,11 @@ final class Location
 
     public function countryIsKnown(): bool
     {
-        return !is_null($this->country);
+        return ! is_null($this->country);
     }
 
     public function cityIsKnown(): bool
     {
-        return !is_null($this->city);
+        return ! is_null($this->city);
     }
 }

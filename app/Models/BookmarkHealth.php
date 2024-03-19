@@ -7,9 +7,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * @property int $id
- * @property int $bookmark_id
- * @property bool $status_code
+ * @property int            $id
+ * @property int            $bookmark_id
+ * @property bool           $status_code
  * @property \Carbon\Carbon $last_checked
  * @property \Carbon\Carbon $created_at
  */

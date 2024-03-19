@@ -13,6 +13,7 @@ use App\Models\Bookmark;
 use App\Models\Source;
 use App\Repositories\TagRepository;
 use App\Utils\UrlHasher;
+use Exception;
 
 class CreateBookmarkService
 {
@@ -61,7 +62,7 @@ class CreateBookmarkService
     public function fromImport(ImportedBookmark $importedBookmark): void
     {
         if (count($importedBookmark->tags) > setting('MAX_BOOKMARK_TAGS')) {
-            throw new \Exception('Bookmark contains Too many tags.');
+            throw new Exception('Bookmark contains Too many tags.');
         }
 
         $hasher = new UrlHasher();

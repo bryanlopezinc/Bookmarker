@@ -13,6 +13,7 @@ use Illuminate\Pagination\Paginator;
 use App\Http\Requests\FetchFolderCollaboratorsRequest as Request;
 use App\Models\Scopes\FetchCollaboratorsFilters as Filters;
 use App\Repositories\Folder\PermissionRepository;
+use Closure;
 
 final class FetchFolderCollaborators
 {
@@ -48,7 +49,7 @@ final class FetchFolderCollaborators
         return $result->setCollection($result->map($this->createCollaboratorFn()));
     }
 
-    private function createCollaboratorFn(): \Closure
+    private function createCollaboratorFn(): Closure
     {
         $permissionsRepository = new PermissionRepository();
 

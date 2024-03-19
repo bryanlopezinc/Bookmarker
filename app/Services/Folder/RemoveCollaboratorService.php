@@ -38,7 +38,7 @@ final class RemoveCollaboratorService
 
         $this->ensureIsNotRemovingSelf($collaboratorID, UserId::fromAuthUser()->value());
 
-        if (!$folder->userIsACollaborator) {
+        if ( ! $folder->userIsACollaborator) {
             throw HttpException::notFound(['message' => 'UserNotACollaborator']);
         }
 

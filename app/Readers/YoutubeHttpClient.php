@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Psr\Log\LoggerInterface;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Exception;
 
 final class YoutubeHttpClient implements HttpClientInterface
 {
@@ -34,7 +35,7 @@ final class YoutubeHttpClient implements HttpClientInterface
             }
         });
 
-        if (!$response->ok()) {
+        if ( ! $response->ok()) {
             return false;
         }
 
@@ -53,7 +54,7 @@ final class YoutubeHttpClient implements HttpClientInterface
         $apiKey = config($key = 'services.youtube.key');
 
         if (blank($apiKey)) {
-            throw new \Exception('The ' . $key . ' is missing or has not been set');
+            throw new Exception('The ' . $key . ' is missing or has not been set');
         }
 
         return $apiKey;

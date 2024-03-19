@@ -40,7 +40,7 @@ final class ValidRolesConstraint implements FolderRequestHandlerInterface, Scope
     {
         $invalidRoles = array_diff($this->data->roles, $folder->roleNames ?? []);
 
-        if (!empty($invalidRoles)) {
+        if ( ! empty($invalidRoles)) {
             throw HttpException::notFound([
                 'message' => 'RoleNotFound',
                 'info' => 'Roles not found'

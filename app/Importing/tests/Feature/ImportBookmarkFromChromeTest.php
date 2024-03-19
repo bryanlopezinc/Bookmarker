@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Importing\tests\Feature;
 
 use App\Enums\BookmarkCreationSource;
@@ -98,7 +100,7 @@ class ImportBookmarkFromChromeTest extends ImportBookmarkBaseTest
 
     private function getViewInstance()
     {
-        return View::file(__DIR__.'/../stubs/chromeExportFile.blade.php')
+        return View::file(__DIR__ . '/../stubs/chromeExportFile.blade.php')
             ->with(['includeBookmarksBar' => false])
             ->with('bookmarks', [
                 ['url' => 'https://www.askapache.com/htaccess/'],

@@ -28,7 +28,7 @@ final class FetchFolderRoles
             ->with('permissions')
             ->withCount(['assignees as assigneesCount'])
             ->where('folder_id', $folderId)
-            ->when($likeName, fn ($query) => $query->where('name', 'LIKE', "$likeName%"))
+            ->when($likeName, fn ($query) => $query->where('name', 'LIKE', "{$likeName}%"))
             ->when($permissions->isNotEmpty(), function ($query) use ($permissions, $permissionsRepository) {
                 $whereExists = FolderRolePermission::query()
                     ->select(['role_id', DB::raw('COUNT(*) as permissions_count')])

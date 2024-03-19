@@ -45,11 +45,11 @@ final class SendNewCollaboratorNotification implements FolderRequestHandlerInter
             return;
         }
 
-        if (!$wasInvitedByFolderOwner && $settings->newCollaboratorNotificationMode->notifyWhenCollaboratorWasInvitedByMe()) {
+        if ( ! $wasInvitedByFolderOwner && $settings->newCollaboratorNotificationMode->notifyWhenCollaboratorWasInvitedByMe()) {
             return;
         }
 
-        if ($wasInvitedByFolderOwner && !$settings->newCollaboratorNotificationMode->notifyWhenCollaboratorWasInvitedByMe()) {
+        if ($wasInvitedByFolderOwner && ! $settings->newCollaboratorNotificationMode->notifyWhenCollaboratorWasInvitedByMe()) {
             return;
         }
 

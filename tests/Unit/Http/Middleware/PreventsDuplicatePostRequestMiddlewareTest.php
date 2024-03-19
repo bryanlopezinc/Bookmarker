@@ -11,6 +11,7 @@ use Illuminate\Http\Response;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\HeaderBag;
 use Tests\TestCase;
+use Closure;
 
 class PreventsDuplicatePostRequestMiddlewareTest extends TestCase
 {
@@ -92,7 +93,7 @@ class PreventsDuplicatePostRequestMiddlewareTest extends TestCase
     /**
      * @return Repository
      */
-    private function getCacheMock(\Closure $expectation)
+    private function getCacheMock(Closure $expectation)
     {
         $expectation($cache = $this->getMockBuilder(Repository::class)->getMock());
 

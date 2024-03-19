@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Importing\tests\Feature;
 
 use App\Models\Bookmark;

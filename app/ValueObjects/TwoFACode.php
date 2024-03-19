@@ -16,8 +16,8 @@ final class TwoFACode
 
     public function __construct(private int $value)
     {
-        if (!self::isValid($value)) {
-            throw new LengthException("Invalid 2FA code $value");
+        if ( ! self::isValid($value)) {
+            throw new LengthException("Invalid 2FA code {$value}");
         }
     }
 

@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\View;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\Stub\ReturnCallback;
 use Tests\TestCase;
+use Closure;
 
 class ImporterTest extends TestCase
 {
@@ -60,7 +61,7 @@ class ImporterTest extends TestCase
         return new Importer($iterator, $filesystem, $eventDispatcher);
     }
 
-    private function filesystemMock(\Closure $mock)
+    private function filesystemMock(Closure $mock)
     {
         $filesystem = $this->getMockBuilder(FilesystemContract::class)->getMock();
 

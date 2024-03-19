@@ -23,14 +23,14 @@ final class VerifySecondaryEmailService
      */
     public function verify(int $authUserId, string $secondaryEmail, TwoFACode $twoFACode): void
     {
-        if (!$this->pendingVerifications->has($authUserId)) {
+        if ( ! $this->pendingVerifications->has($authUserId)) {
             $this->throwNoPendingVerificationException();
         }
 
         $verificationData = $this->pendingVerifications->get($authUserId);
 
         if (
-            !$verificationData->twoFACode->equals($twoFACode) ||
+            ! $verificationData->twoFACode->equals($twoFACode) ||
             $verificationData->email !== $secondaryEmail
         ) {
             $this->throwNoPendingVerificationException();
@@ -42,7 +42,7 @@ final class VerifySecondaryEmailService
                 'verified_at' => now()
             ]);
 
-        $wasRecentlyVerifiedByAuthUser = !$record->wasRecentlyCreated && $record->user_id === $authUserId;
+        $wasRecentlyVerifiedByAuthUser = ! $record->wasRecentlyCreated && $record->user_id === $authUserId;
 
         if ($wasRecentlyVerifiedByAuthUser) {
             throw new SecondaryEmailAlreadyVerifiedException();

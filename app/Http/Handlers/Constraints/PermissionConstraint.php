@@ -77,7 +77,7 @@ final class PermissionConstraint implements Scope, FolderRequestHandlerInterface
 
         $userPermissions = $this->repository->all($this->user->id, $folder->id);
 
-        if (!$userPermissions->hasAny(new UAC($this->permission))) {
+        if ( ! $userPermissions->hasAny(new UAC($this->permission))) {
             throw new PermissionDeniedException();
         }
     }

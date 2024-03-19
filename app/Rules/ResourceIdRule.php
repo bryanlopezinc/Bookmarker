@@ -6,6 +6,7 @@ namespace App\Rules;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Concerns\ValidatesAttributes;
+use Closure;
 
 final class ResourceIdRule implements ValidationRule
 {
@@ -14,9 +15,9 @@ final class ResourceIdRule implements ValidationRule
     /**
      * {@inheritdoc}
      */
-    public function validate($attribute, mixed $value, \Closure $fail): void
+    public function validate($attribute, mixed $value, Closure $fail): void
     {
-        if (!$this->validateInteger($attribute, $value)) {
+        if ( ! $this->validateInteger($attribute, $value)) {
             $fail(sprintf('The %s attribute is invalid', $attribute));
 
             return;

@@ -42,7 +42,7 @@ final class FetchMutedCollaboratorsService
                 $query->where('full_name', 'like', "{$name}%");
             })
             ->where('folder_id', $folderID)
-            ->whereRaw("(muted_until IS NULL OR muted_until > '$currentDateTime')")
+            ->whereRaw("(muted_until IS NULL OR muted_until > '{$currentDateTime}')")
             ->latest('folders_muted_collaborators.id')
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
     }

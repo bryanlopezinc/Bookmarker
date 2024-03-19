@@ -32,7 +32,7 @@ final class ProfileImageFileSystem
 
     public function delete(?string $fileName): bool
     {
-        if (!$fileName) {
+        if ( ! $fileName) {
             return false;
         }
 

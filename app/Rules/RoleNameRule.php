@@ -6,13 +6,14 @@ namespace App\Rules;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Validator;
+use Closure;
 
 final class RoleNameRule implements ValidationRule
 {
     /**
      * {@inheritdoc}
      */
-    public function validate($attribute, mixed $value, \Closure $fail): void
+    public function validate($attribute, mixed $value, Closure $fail): void
     {
         //if used in a attribute.* rule
         $parent = explode('.', $attribute)[0];

@@ -17,7 +17,7 @@ final class InviteeExistConstraint implements FolderRequestHandlerInterface, Inv
      */
     public function handle(Folder $folder): void
     {
-        if (!$this->invitee->exists) {
+        if ( ! $this->invitee->exists) {
             throw HttpException::notFound([
                 'message' => 'InviteeNotFound',
                 'info' => 'A user with the given email could not be found.'

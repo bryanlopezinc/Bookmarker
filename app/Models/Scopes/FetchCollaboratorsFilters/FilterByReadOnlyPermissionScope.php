@@ -15,7 +15,7 @@ final class FilterByReadOnlyPermissionScope
 
     public function __invoke(Builder $builder): void
     {
-        if (!$this->shouldFilterByCollaboratorsWithReadOnlyPermission) {
+        if ( ! $this->shouldFilterByCollaboratorsWithReadOnlyPermission) {
             return;
         }
 

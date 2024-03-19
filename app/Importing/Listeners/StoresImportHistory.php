@@ -37,7 +37,7 @@ final class StoresImportHistory implements
     {
         $this->persist();
 
-        if (!empty($this->current)) {
+        if ( ! empty($this->current)) {
             $this->pending[] = $this->current;
         }
 
@@ -82,7 +82,7 @@ final class StoresImportHistory implements
         $userDefinedTags = collect($option->tags());
         $bookmarkTags = $bookmark->tags->valid()->take(setting('MAX_BOOKMARK_TAGS'));
 
-        if (!$option->includeImportFileTags()) {
+        if ( ! $option->includeImportFileTags()) {
             return $userDefinedTags->all();
         }
 
@@ -102,7 +102,7 @@ final class StoresImportHistory implements
      */
     public function importsEnded(ImportBookmarksOutcome $result): void
     {
-        if (!empty($this->current)) {
+        if ( ! empty($this->current)) {
             $this->pending[] = $this->current;
             $this->current = [];
         }

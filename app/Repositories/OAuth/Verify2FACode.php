@@ -38,7 +38,7 @@ final class Verify2FACode implements UserRepositoryInterface
             $clientEntity
         );
 
-        if (!$request->routeIs('loginUser') || !$userEntity) {
+        if ( ! $request->routeIs('loginUser') || ! $userEntity) {
             return $userEntity;
         };
 
@@ -55,11 +55,11 @@ final class Verify2FACode implements UserRepositoryInterface
             throw new OAuthServerException('A verification code is required.', 6, '2FARequired');
         }
 
-        if (!$this->user2FACodeRepository->has($userID)) {
+        if ( ! $this->user2FACodeRepository->has($userID)) {
             $this->throwException();
         };
 
-        if (!$this->twoFACodeMatches(TwoFACode::fromString($request->input('two_fa_code')), $userID)) {
+        if ( ! $this->twoFACodeMatches(TwoFACode::fromString($request->input('two_fa_code')), $userID)) {
             $this->throwException();
         };
 

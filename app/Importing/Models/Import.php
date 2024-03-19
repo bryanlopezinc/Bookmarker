@@ -10,12 +10,12 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * @property int $id
- * @property string $import_id
- * @property int $user_id
+ * @property int                   $id
+ * @property string                $import_id
+ * @property int                   $user_id
  * @property ImportBookmarksStatus $status
- * @property ImportStats $statistics
- * @property \Carbon\Carbon $created_at
+ * @property ImportStats           $statistics
+ * @property \Carbon\Carbon        $created_at
  */
 final class Import extends Model
 {

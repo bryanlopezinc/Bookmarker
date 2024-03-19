@@ -11,7 +11,7 @@ use Illuminate\Support\Arr;
 
 final class FolderSettingsBuilder
 {
-    protected array $attributes = [];
+    private array $attributes = [];
 
     public function __construct(array $attributes = [])
     {

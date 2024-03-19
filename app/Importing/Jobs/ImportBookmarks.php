@@ -28,7 +28,7 @@ final class ImportBookmarks implements ShouldQueue
     {
         $user = User::query()->whereKey($this->importData->userId())->first();
 
-        if (!$user) {
+        if ( ! $user) {
             return;
         }
 

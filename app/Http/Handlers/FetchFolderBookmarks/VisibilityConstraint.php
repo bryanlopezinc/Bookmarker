@@ -43,7 +43,7 @@ final class VisibilityConstraint implements FolderRequestHandlerInterface, Scope
             return;
         }
 
-        if ($folder->visibility->isPrivate() || !$isLoggedIn) {
+        if ($folder->visibility->isPrivate() || ! $isLoggedIn) {
             throw new FolderNotFoundException();
         }
     }

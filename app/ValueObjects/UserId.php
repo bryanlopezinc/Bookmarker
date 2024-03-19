@@ -13,7 +13,7 @@ final class UserId
         $this->validate();
     }
 
-    protected function validate(): void
+    private function validate(): void
     {
         throw_if(
             $this->id < 1,

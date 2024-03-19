@@ -10,6 +10,7 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Str;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Exception;
 
 final class ResetPasswordNotification extends ResetPassword implements ShouldQueue
 {
@@ -34,7 +35,7 @@ final class ResetPasswordNotification extends ResetPassword implements ShouldQue
         if ($missing = UrlPlaceholders::missing($url, [':email', ':token'])) {
             $missing = implode(',', $missing);
 
-            throw new \Exception("The verification url  must contain the [$missing] placeholder/s");
+            throw new Exception("The verification url  must contain the [{$missing}] placeholder/s");
         }
         // @codeCoverageIgnoreEnd
 

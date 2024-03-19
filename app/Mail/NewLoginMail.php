@@ -19,7 +19,7 @@ final class NewLoginMail extends Mailable
             'deviceType'  => $this->getDeviceType(),
             'deviceName' => $this->loginInfo->device->name,
             'deviceNameIsKnown' => $this->loginInfo->device->nameIsKnown(),
-            'locationIsUnKnown' => !$this->loginInfo->location->isUnknown(),
+            'locationIsUnKnown' => ! $this->loginInfo->location->isUnknown(),
             'country' => $this->loginInfo->location->country,
             'city' => $this->loginInfo->location->city,
             'countryisKnown' => $this->loginInfo->location->countryIsKnown(),

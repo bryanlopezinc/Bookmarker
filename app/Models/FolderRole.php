@@ -10,11 +10,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 /**
- * @property int $id
- * @property string $name
- * @property int $folder_id
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon|null $updated_at
+ * @property int                                                            $id
+ * @property string                                                         $name
+ * @property int                                                            $folder_id
+ * @property \Carbon\Carbon                                                 $created_at
+ * @property \Carbon\Carbon|null                                            $updated_at
  * @property \Illuminate\Database\Eloquent\Collection<FolderRolePermission> $permissions
  */
 final class FolderRole extends Model

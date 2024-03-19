@@ -27,7 +27,7 @@ final class CollaboratorCannotSendInviteWithPermissionsOrRolesConstraint impleme
             return;
         }
 
-        if ($this->data->permissionsToBeAssigned->isNotEmpty() || !empty($this->data->roles)) {
+        if ($this->data->permissionsToBeAssigned->isNotEmpty() || ! empty($this->data->roles)) {
             throw new HttpException([
                 'message' => 'CollaboratorCannotSendInviteWithPermissionsOrRoles',
                 'info'    => 'Folder collaborator cannot send invites with permissions or roles.'

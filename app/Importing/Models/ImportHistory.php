@@ -10,12 +10,12 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * @property int $id
- * @property string $import_id
- * @property string $url
- * @property ImportHistoryTags $tags
+ * @property int                  $id
+ * @property string               $import_id
+ * @property string               $url
+ * @property ImportHistoryTags    $tags
  * @property BookmarkImportStatus $status
- * @property int $document_line_number
+ * @property int                  $document_line_number
  */
 final class ImportHistory extends Model
 {

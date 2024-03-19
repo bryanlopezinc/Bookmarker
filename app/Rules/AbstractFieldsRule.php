@@ -9,6 +9,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\MessageBag;
 use Illuminate\Validation\Rule;
+use Closure;
 
 abstract class AbstractFieldsRule implements ValidationRule
 {
@@ -63,11 +64,11 @@ abstract class AbstractFieldsRule implements ValidationRule
     /**
      * {@inheritdoc}
      */
-    public function validate($attribute, mixed $value, \Closure $fail): void
+    public function validate($attribute, mixed $value, Closure $fail): void
     {
         $validator = Validator::make([$attribute => $value], [
             $attribute      => ['array', 'bail'],
-            "$attribute.*"  => ['bail', 'distinct:strict', Rule::in($this->allowedFields)]
+            "{$attribute}.*"  => ['bail', 'distinct:strict', Rule::in($this->allowedFields)]
         ]);
 
         $this->errors->merge($validator->errors());

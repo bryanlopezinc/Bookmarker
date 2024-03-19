@@ -6,15 +6,14 @@ namespace App\Rules;
 
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Closure;
 
 final class TagRule implements ValidationRule
 {
-    protected string|array $message;
-
     /**
      * {@inheritdoc}
      */
-    public function validate($childAttribute, mixed $value, \Closure $fail): void
+    public function validate($childAttribute, mixed $value, Closure $fail): void
     {
         // We assume this rule is used to validate a numeric-key array
         // so we get the array key name for validation and to
@@ -35,7 +34,7 @@ final class TagRule implements ValidationRule
     }
 
     /**
-     * @param  string  $attribute
+     * @param  string $attribute
      * @param  mixed  $value
      * @return bool
      */

@@ -25,7 +25,7 @@ final class TagsCollection
     {
         $rule = new TagRule();
 
-        return $this->tags->filter(fn (string $tag) => !$rule->passes('', $tag))->all();
+        return $this->tags->filter(fn (string $tag) => ! $rule->passes('', $tag))->all();
     }
 
     public function valid(): Collection

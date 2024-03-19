@@ -49,7 +49,7 @@ final class EventDispatcher
     public function importsStarted(ImportBookmarkRequestData $data): void
     {
         foreach ($this->listeners as $listener) {
-            if (!$listener instanceof Contracts\ImportsStartedListenerInterface) {
+            if ( ! $listener instanceof Contracts\ImportsStartedListenerInterface) {
                 continue;
             }
 
@@ -60,7 +60,7 @@ final class EventDispatcher
     public function importStarted(Bookmark $bookmark): void
     {
         foreach ($this->listeners as $listener) {
-            if (!$listener instanceof Contracts\ImportStartedListenerInterface) {
+            if ( ! $listener instanceof Contracts\ImportStartedListenerInterface) {
                 continue;
             }
 
@@ -71,7 +71,7 @@ final class EventDispatcher
     public function bookmarkSkipped(ReasonForSkippingBookmark $reason): void
     {
         foreach ($this->listeners as $listener) {
-            if (!$listener instanceof Contracts\BookmarkSkippedListenerInterface) {
+            if ( ! $listener instanceof Contracts\BookmarkSkippedListenerInterface) {
                 continue;
             }
 
@@ -82,7 +82,7 @@ final class EventDispatcher
     public function importsEnded(ImportBookmarksOutcome $result): void
     {
         foreach ($this->listeners as $listener) {
-            if (!$listener instanceof Contracts\ImportsEndedListenerInterface) {
+            if ( ! $listener instanceof Contracts\ImportsEndedListenerInterface) {
                 continue;
             }
 
@@ -93,7 +93,7 @@ final class EventDispatcher
     public function bookmarkNotProcessed(Bookmark $bookmark): void
     {
         foreach ($this->listeners as $listener) {
-            if (!$listener instanceof Contracts\BookmarkNotProcessedListenerInterface) {
+            if ( ! $listener instanceof Contracts\BookmarkNotProcessedListenerInterface) {
                 continue;
             }
 
@@ -104,7 +104,7 @@ final class EventDispatcher
     public function importFailed(Bookmark $bookmark, ImportBookmarksStatus $reason): void
     {
         foreach ($this->listeners as $listener) {
-            if (!$listener instanceof Contracts\ImportFailedListenerInterface) {
+            if ( ! $listener instanceof Contracts\ImportFailedListenerInterface) {
                 continue;
             }
 
@@ -115,7 +115,7 @@ final class EventDispatcher
     public function bookmarkImported(Bookmark $bookmark): void
     {
         foreach ($this->listeners as $listener) {
-            if (!$listener instanceof Contracts\BookmarkImportedListenerInterface) {
+            if ( ! $listener instanceof Contracts\BookmarkImportedListenerInterface) {
                 continue;
             }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests;
 
 use App\Contracts\BookmarksHealthRepositoryInterface;
+use RuntimeException;
 
 final class TestBookmarksHealthRepository implements BookmarksHealthRepositoryInterface
 {
@@ -13,8 +14,8 @@ final class TestBookmarksHealthRepository implements BookmarksHealthRepositoryIn
 
     public function __construct(private BookmarksHealthRepositoryInterface $baseRepository)
     {
-        if (!app()->environment('testing')) {
-            throw new \RuntimeException(__CLASS__ . ' can only be used in test environments');
+        if ( ! app()->environment('testing')) {
+            throw new RuntimeException(__CLASS__ . ' can only be used in test environments');
         }
     }
 

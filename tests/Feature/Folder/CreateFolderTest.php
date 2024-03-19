@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Folder;
 
 use App\DataTransferObjects\Builders\FolderSettingsBuilder as Builder;
@@ -13,6 +15,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Closure;
 
 class CreateFolderTest extends TestCase
 {
@@ -227,7 +230,7 @@ class CreateFolderTest extends TestCase
         });
 
         $this->assertCreateWithSettings(['notifications.new_collaborator.mode' => '*'], function (FS $s) {
-            return !$s->newCollaboratorNotificationMode->notifyWhenCollaboratorWasInvitedByMe();
+            return ! $s->newCollaboratorNotificationMode->notifyWhenCollaboratorWasInvitedByMe();
         });
 
         $this->assertCreateWithSettings(['notifications.new_collaborator.mode' => 'invitedByMe'], function (FS $s) {
@@ -235,7 +238,7 @@ class CreateFolderTest extends TestCase
         });
 
         $this->assertCreateWithSettings(['notifications.collaborator_exit.mode' => '*'], function (FS $s) {
-            return !$s->collaboratorExitNotificationMode->notifyWhenCollaboratorHasWritePermission();
+            return ! $s->collaboratorExitNotificationMode->notifyWhenCollaboratorHasWritePermission();
         });
 
         $this->assertCreateWithSettings(['notifications.collaborator_exit.mode' => 'hasWritePermission'], function (FS $s) {
@@ -258,7 +261,7 @@ class CreateFolderTest extends TestCase
         $this->assertEquals(self::$folderSettingsThatHasNotBeenInteractedWith, []);
     }
 
-    private function assertCreateWithSettings(array $settings, \Closure $assertion): void
+    private function assertCreateWithSettings(array $settings, Closure $assertion): void
     {
         $this->loginUser($user = UserFactory::new()->create());
 
@@ -266,7 +269,7 @@ class CreateFolderTest extends TestCase
 
         $folderSettings = Folder::query()->where('user_id', $user->id)->sole()->settings;
 
-        if (!is_null($condition = $assertion($folderSettings))) {
+        if ( ! is_null($condition = $assertion($folderSettings))) {
             $this->assertTrue($condition);
         }
 

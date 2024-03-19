@@ -11,6 +11,7 @@ use App\ValueObjects\FolderName;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Bus\Queueable;
+use InvalidArgumentException;
 
 final class FolderUpdatedNotification extends Notification //implements ShouldQueue
 {
@@ -19,8 +20,8 @@ final class FolderUpdatedNotification extends Notification //implements ShouldQu
 
     public function __construct(private Folder $folder, private User $updatedBy, private string $modifiedAttributeName)
     {
-        if (!in_array($modifiedAttributeName, ['name', 'description'])) {
-            throw new \InvalidArgumentException("Invalid modified attribute {$modifiedAttributeName}"); // @codeCoverageIgnore
+        if ( ! in_array($modifiedAttributeName, ['name', 'description'])) {
+            throw new InvalidArgumentException("Invalid modified attribute {$modifiedAttributeName}"); // @codeCoverageIgnore
         }
 
         $this->afterCommit();
@@ -29,7 +30,7 @@ final class FolderUpdatedNotification extends Notification //implements ShouldQu
     /**
      * Get the notification's delivery channels.
      *
-     * @param  mixed  $notifiable
+     * @param  mixed $notifiable
      * @return array
      */
     public function via($notifiable)
@@ -38,7 +39,7 @@ final class FolderUpdatedNotification extends Notification //implements ShouldQu
     }
 
     /**
-     * @param  mixed  $notifiable
+     * @param mixed $notifiable
      */
     public function toDatabase($notifiable): array
     {
@@ -51,7 +52,7 @@ final class FolderUpdatedNotification extends Notification //implements ShouldQu
             'modified'                => $this->modifiedAttributeName,
         ];
 
-        if (!empty($changes = $this->getChanges())) {
+        if ( ! empty($changes = $this->getChanges())) {
             $data['changes'] = $changes;
         }
 

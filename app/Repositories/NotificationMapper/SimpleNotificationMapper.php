@@ -8,6 +8,7 @@ use App\Importing\DataTransferObjects\ImportFailedNotificationData;
 use App\Enums\NotificationType;
 use App\Repositories\FetchNotificationResourcesRepository;
 use Illuminate\Notifications\DatabaseNotification;
+use RuntimeException;
 
 final class SimpleNotificationMapper implements NotificationMapper
 {
@@ -15,7 +16,7 @@ final class SimpleNotificationMapper implements NotificationMapper
     {
         return match ($type = NotificationType::from($notification->type)) {
             NotificationType::IMPORT_FAILED => new ImportFailedNotificationData($notification),
-            default => throw new \RuntimeException("Cannot map notification type {$type->value}")
+            default => throw new RuntimeException("Cannot map notification type {$type->value}")
         };
     }
 }

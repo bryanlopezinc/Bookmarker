@@ -33,7 +33,7 @@ final class ImportHistoryResource extends JsonResource
                     'invalid'  => $tags->invalid(),
                     'found'    => $tags->found()
                 ]),
-                'status_reason' => $this->when(!$status->isSuccessful(), $status->toWord())
+                'status_reason' => $this->when( ! $status->isSuccessful(), $status->toWord())
             ]
         ];
     }

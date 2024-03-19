@@ -9,6 +9,7 @@ use App\Models\Folder;
 use Tests\TestCase;
 use Database\Factories\FolderFactory;
 use Illuminate\Testing\AssertableJsonString;
+use Closure;
 
 class FilterFolderResourceTest extends TestCase
 {
@@ -131,7 +132,7 @@ class FilterFolderResourceTest extends TestCase
             'available',
             'percentage_used'
         ] as $field) {
-            $this->assertWillReturnPartialResource("storage.$field", function (AssertableJsonString $json) use ($field) {
+            $this->assertWillReturnPartialResource("storage.{$field}", function (AssertableJsonString $json) use ($field) {
                 $json->assertCount(1, 'data.attributes')
                     ->assertCount(1, 'data.attributes.storage')
                     ->assertStructure([
@@ -146,7 +147,7 @@ class FilterFolderResourceTest extends TestCase
         }
     }
 
-    private function assertWillReturnPartialResource(string $fields, \Closure $assertion): void
+    private function assertWillReturnPartialResource(string $fields, Closure $assertion): void
     {
         $request = request();
 

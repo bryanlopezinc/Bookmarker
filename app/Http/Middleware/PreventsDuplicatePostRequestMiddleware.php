@@ -9,6 +9,7 @@ use Illuminate\Contracts\Validation\Factory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
+use Closure;
 
 final class PreventsDuplicatePostRequestMiddleware
 {
@@ -26,11 +27,11 @@ final class PreventsDuplicatePostRequestMiddleware
      *
      * @return mixed
      */
-    public function handle(Request $request, \Closure $next)
+    public function handle(Request $request, Closure $next)
     {
         $key = 'idempotency_key';
 
-        if (!$request->isMethod('POST') || !$request->hasHeader($key)) {
+        if ( ! $request->isMethod('POST') || ! $request->hasHeader($key)) {
             return $next($request);
         }
 
@@ -54,7 +55,7 @@ final class PreventsDuplicatePostRequestMiddleware
         return $response;
     }
 
-    protected function shouldCacheResponse(Response $response): bool
+    private function shouldCacheResponse(Response $response): bool
     {
         return $response->getStatusCode() !== Response::HTTP_UNPROCESSABLE_ENTITY;
     }

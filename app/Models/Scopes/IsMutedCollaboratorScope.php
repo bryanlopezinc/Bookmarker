@@ -32,8 +32,8 @@ final class IsMutedCollaboratorScope implements Scope
                 ->select('id')
                 ->whereRaw("folder_id = {$folderModel->getQualifiedKeyName()}")
                 ->where('user_id', $this->userId)
-                ->whereRaw("(muted_until IS NULL OR muted_until > '$currentDateTime')")
-                ->when(!$this->mutedBy, fn ($query) => $query->whereRaw("muted_by = {$folderModel->qualifyColumn('user_id')}"))
+                ->whereRaw("(muted_until IS NULL OR muted_until > '{$currentDateTime}')")
+                ->when( ! $this->mutedBy, fn ($query) => $query->whereRaw("muted_by = {$folderModel->qualifyColumn('user_id')}"))
                 ->when($this->mutedBy, fn ($query) => $query->where('muted_by', $this->mutedBy))
         ]);
     }

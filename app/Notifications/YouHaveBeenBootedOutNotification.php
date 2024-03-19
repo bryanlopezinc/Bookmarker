@@ -23,7 +23,7 @@ final class YouHaveBeenBootedOutNotification extends Notification implements Sho
     /**
      * Get the notification's delivery channels.
      *
-     * @param  mixed  $notifiable
+     * @param  mixed $notifiable
      * @return array
      */
     public function via($notifiable)
@@ -32,7 +32,7 @@ final class YouHaveBeenBootedOutNotification extends Notification implements Sho
     }
 
     /**
-     * @param  mixed  $notifiable
+     * @param mixed $notifiable
      */
     public function toDatabase($notifiable): array
     {

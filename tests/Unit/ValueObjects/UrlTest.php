@@ -89,7 +89,7 @@ class UrlTest extends TestCase
     private function assertIsValidUrl(string $url): void
     {
         $passed = true;
-        $message = "Failed asserting that [$url] is invalid";
+        $message = "Failed asserting that [{$url}] is invalid";
 
         try {
             new Url($url);

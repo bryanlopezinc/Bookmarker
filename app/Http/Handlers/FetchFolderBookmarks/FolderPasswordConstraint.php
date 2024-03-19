@@ -44,7 +44,7 @@ final class FolderPasswordConstraint implements FolderRequestHandlerInterface, S
     {
         $folderBelongsToAuthUser = $folder->user_id === $this->data->authUser?->id;
 
-        if (!$folder->visibility->isPasswordProtected() || $folderBelongsToAuthUser) {
+        if ( ! $folder->visibility->isPasswordProtected() || $folderBelongsToAuthUser) {
             return;
         }
 
@@ -55,7 +55,7 @@ final class FolderPasswordConstraint implements FolderRequestHandlerInterface, S
             );
         }
 
-        if ($folder->password && !$this->hasher->check($this->data->password, $folder->password)) {
+        if ($folder->password && ! $this->hasher->check($this->data->password, $folder->password)) {
             throw new HttpException(
                 ['message' => 'InvalidFolderPassword', 'info' => 'The given folder password is invalid'],
                 Response::HTTP_UNAUTHORIZED

@@ -23,7 +23,7 @@ final class DeleteUserAccountController
 
         $passwordMatches = $hasher->check($request->input('password'), $authUser->getAuthPassword());
 
-        if (!$passwordMatches) {
+        if ( ! $passwordMatches) {
             throw ValidationException::withMessages(['password' => 'InvalidPassword']);
         }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Importing\tests\Feature;
 
 use App\Models\Bookmark;
@@ -197,7 +199,7 @@ class TagsTest extends TestCase
 
         $view = $this->getViewInstance()
             ->with('bookmarks', [
-                ['url' => 'https://www.rottentomatoes.com/m/vhs99', 'tags' => "vhs99,horror,$invalidTag"],
+                ['url' => 'https://www.rottentomatoes.com/m/vhs99', 'tags' => "vhs99,horror,{$invalidTag}"],
                 ['url' => 'https://www.rottentomatoes.com/m/no-one-will-save-you', 'tags' => "vhs99,horror"]
             ])
             ->render();
@@ -221,7 +223,7 @@ class TagsTest extends TestCase
 
         $view = $this->getViewInstance()
             ->with('bookmarks', [
-                ['url' => 'https://www.rottentomatoes.com/m/vhs99', 'tags' => "vhs99,horror,$invalidTag"],
+                ['url' => 'https://www.rottentomatoes.com/m/vhs99', 'tags' => "vhs99,horror,{$invalidTag}"],
                 ['url' => 'https://www.rottentomatoes.com/m/no-one-will-save-you', 'tags' => "vhs99,horror"]
             ])
             ->render();

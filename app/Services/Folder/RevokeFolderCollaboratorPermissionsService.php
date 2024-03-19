@@ -51,7 +51,7 @@ final class RevokeFolderCollaboratorPermissionsService
         try {
             FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
         } catch (FolderNotFoundException $e) {
-            if (!$folder->authUserIsACollaborator) {
+            if ( ! $folder->authUserIsACollaborator) {
                 throw $e;
             }
 
@@ -70,7 +70,7 @@ final class RevokeFolderCollaboratorPermissionsService
 
     private function ensureUserIsACollaborator(Folder $folder): void
     {
-        if (!$folder->userIsACollaborator) {
+        if ( ! $folder->userIsACollaborator) {
             throw HttpException::notFound(['message' => 'UserNotACollaborator']);
         }
     }
@@ -82,7 +82,7 @@ final class RevokeFolderCollaboratorPermissionsService
         UAC $collaboratorPermissions,
         UAC $permissionsToRevoke
     ): void {
-        if (!$collaboratorPermissions->hasAll($permissionsToRevoke)) {
+        if ( ! $collaboratorPermissions->hasAll($permissionsToRevoke)) {
             throw HttpException::notFound(['message' => 'UserHasNoSuchPermissions']);
         }
     }

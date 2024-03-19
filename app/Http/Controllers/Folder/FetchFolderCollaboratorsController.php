@@ -17,7 +17,7 @@ final class FetchFolderCollaboratorsController
     {
         $folder = Folder::query()->select(['id', 'user_id'])->firstOrNew(['id' => $folderId]);
 
-        if (!$folder->exists) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
 

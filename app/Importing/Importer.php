@@ -54,7 +54,7 @@ final class Importer
 
         $this->event->importsStarted($importData);
 
-        if (!$this->filesystem->exists($userId, $importData->importId())) {
+        if ( ! $this->filesystem->exists($userId, $importData->importId())) {
             throw new FileNotFoundException();
         }
 
@@ -114,7 +114,7 @@ final class Importer
 
     private function shouldFailImport(Bookmark $bookmark, Option $option): ImportBookmarksStatus|false
     {
-        if (!Url::isValid($bookmark->url)) {
+        if ( ! Url::isValid($bookmark->url)) {
             return ImportBookmarksStatus::FAILED_DUE_TO_INVALID_BOOKMARK_URL;
         }
 

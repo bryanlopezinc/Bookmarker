@@ -10,6 +10,7 @@ use App\Utils\UrlPlaceholders;
 use App\ValueObjects\Url;
 use Illuminate\Support\Str;
 use Illuminate\Mail\Mailable;
+use Exception;
 
 final class FolderCollaborationInviteMail extends Mailable
 {
@@ -34,7 +35,7 @@ final class FolderCollaborationInviteMail extends Mailable
         new Url($url);
 
         if (UrlPlaceholders::missing($url, [':invite_hash'])) {
-            throw new \Exception("The verification url  must contain the [:invite_hash] placeholder/s"); // @codeCoverageIgnore
+            throw new Exception("The verification url  must contain the [:invite_hash] placeholder/s"); // @codeCoverageIgnore
         }
 
         return Str::of($url)

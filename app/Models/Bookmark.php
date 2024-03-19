@@ -16,28 +16,28 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Collection;
 
 /**
- * @property int $id
- * @property string|null $description
- * @property string $title
- * @property bool $has_custom_title
- * @property bool $description_set_by_user
- * @property string $url
- * @property string|null $preview_image_url
- * @property int $user_id
- * @property int $source_id
- * @property string $url_canonical
- * @property string $url_canonical_hash
- * @property string $resolved_url
- * @property Source $source
- * @property EloquentCollection<Tag> $tags
- * @property bool $isHealthy
- * @property bool $isUserFavorite
- * @property bool $hasDuplicates
- * @property BookmarkCreationSource $created_from
- * @property \Carbon\Carbon|null $resolved_at
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
- * @method static Builder|QueryBuilder WithQueryOptions(array $attributes = [])
+ * @property        int                     $id
+ * @property        string|null             $description
+ * @property        string                  $title
+ * @property        bool                    $has_custom_title
+ * @property        bool                    $description_set_by_user
+ * @property        string                  $url
+ * @property        string|null             $preview_image_url
+ * @property        int                     $user_id
+ * @property        int                     $source_id
+ * @property        string                  $url_canonical
+ * @property        string                  $url_canonical_hash
+ * @property        string                  $resolved_url
+ * @property        Source                  $source
+ * @property        EloquentCollection<Tag> $tags
+ * @property        bool                    $isHealthy
+ * @property        bool                    $isUserFavorite
+ * @property        bool                    $hasDuplicates
+ * @property        BookmarkCreationSource  $created_from
+ * @property        \Carbon\Carbon|null     $resolved_at
+ * @property        \Carbon\Carbon          $created_at
+ * @property        \Carbon\Carbon          $updated_at
+ * @method   static Builder|QueryBuilder    WithQueryOptions(array $attributes = [])
  */
 final class Bookmark extends Model
 {
@@ -125,7 +125,7 @@ final class Bookmark extends Model
             $builder->addSelect('bookmarks.*');
         }
 
-        if (!$columns->isEmpty()) {
+        if ( ! $columns->isEmpty()) {
             $builder->addSelect(
                 $this->qualifyColumns($columns->except(['tags', 'source'])->all())
             );
@@ -148,7 +148,7 @@ final class Bookmark extends Model
     {
         $wantsTags = $options->has('tags') ?: $options->isEmpty();
 
-        if (!$wantsTags) {
+        if ( ! $wantsTags) {
             return $builder;
         }
 
@@ -164,7 +164,7 @@ final class Bookmark extends Model
     {
         $wantsSiteRelation = $options->has('source') ?: $options->isEmpty();
 
-        if (!$wantsSiteRelation) {
+        if ( ! $wantsSiteRelation) {
             return $builder;
         }
 
@@ -184,7 +184,7 @@ final class Bookmark extends Model
     {
         $condition = $options->has('is_dead_link') ?: $options->isEmpty();
 
-        if (!$condition) {
+        if ( ! $condition) {
             return $builder;
         }
 
@@ -204,7 +204,7 @@ final class Bookmark extends Model
     {
         $condition = $options->has('has_duplicates') ?: $options->isEmpty();
 
-        if (!$condition) {
+        if ( ! $condition) {
             return $builder;
         }
 

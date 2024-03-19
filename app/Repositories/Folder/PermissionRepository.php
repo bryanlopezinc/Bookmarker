@@ -42,7 +42,7 @@ final class PermissionRepository
     public function findManyByName(iterable $names): Collection
     {
         $names = collect($names)->map(function (string|Permission $name) {
-            if (!is_string($name)) {
+            if ( ! is_string($name)) {
                 $name = $name->value;
             }
 

@@ -42,7 +42,7 @@ final class Username
             throw InvalidUsernameException::nameTooShort();
         }
 
-        if (!preg_match(self::REGEX, $this->value)) {
+        if ( ! preg_match(self::REGEX, $this->value)) {
             throw InvalidUsernameException::invalidCharacters();
         }
     }

@@ -71,7 +71,7 @@ final class RequestHandlersQueue implements IteratorAggregate
     /**
      * Apply the given scope to each handler and execute the given callback on each handler.
      *
-     * @param callable(THandler): void  $callback
+     * @param callable(THandler): void $callback
      */
     public function scope(Builder $builder, callable $callback = null): void
     {

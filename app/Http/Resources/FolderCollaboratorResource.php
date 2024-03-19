@@ -34,7 +34,7 @@ final class FolderCollaboratorResource extends JsonResource
                 'added_by'    => [
                     'exists'       => $inviterExists,
                     'is_auth_user' => $wasInvitedByAuthUser,
-                    'user'         => $this->when($inviterExists && !$wasInvitedByAuthUser, [
+                    'user'         => $this->when($inviterExists && ! $wasInvitedByAuthUser, [
                         'id'   =>  $this->collaborator->wasInvitedBy?->id,
                         'name' => $this->collaborator->wasInvitedBy?->full_name?->present(),
                         'profile_image_url' => $filesystem->publicUrl($this->collaborator->wasInvitedBy?->profile_image_path),

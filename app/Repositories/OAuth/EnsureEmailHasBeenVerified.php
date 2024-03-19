@@ -31,7 +31,7 @@ final class EnsureEmailHasBeenVerified implements UserRepositoryInterface
             $clientEntity
         );
 
-        if (!$userEntity) {
+        if ( ! $userEntity) {
             return $userEntity;
         };
 

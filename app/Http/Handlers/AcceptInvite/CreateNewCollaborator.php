@@ -30,7 +30,7 @@ final class CreateNewCollaborator implements FolderRequestHandlerInterface, Invi
 
     public function apply(Builder $builder, Model $model): void
     {
-        if (!empty($this->invitationData->roles)) {
+        if ( ! empty($this->invitationData->roles)) {
             $builder->with(['roles' => function ($query) {
                 $query->whereIn('name', $this->invitationData->roles);
             }]);
@@ -54,7 +54,7 @@ final class CreateNewCollaborator implements FolderRequestHandlerInterface, Invi
             $this->permissions->create($this->invitationData->inviteeId, $folder->id, $permissions);
         }
 
-        if (!empty($this->invitationData->roles)) {
+        if ( ! empty($this->invitationData->roles)) {
             $records = $folder->roles->pluck(['id'])->map(fn (int $roleId) => [
                 'collaborator_id' => $this->invitationData->inviteeId,
                 'role_id'         => $roleId

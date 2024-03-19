@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\ExternalServices\IpApi;
 
 use App\Contracts\IpGeoLocatorInterface;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers\Handlers;
 
 use App\Http\Handlers\AcceptInvite\Handler;

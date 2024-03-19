@@ -46,7 +46,7 @@ final class PasswordCheckConstraint implements FolderRequestHandlerInterface, Sc
             $this->data->visibility !== null                      &&
             ($folder->visibility->isPrivate() || $folder->visibility->isPasswordProtected());
 
-        if (!$isMakingPrivateFolderPublic) {
+        if ( ! $isMakingPrivateFolderPublic) {
             return;
         }
 
@@ -54,7 +54,7 @@ final class PasswordCheckConstraint implements FolderRequestHandlerInterface, Sc
             throw ValidationException::withMessages(['password' => 'The Password field is required for this action.']);
         }
 
-        if (!$this->hasher->check($this->data->userPassword, $this->data->authUser->password)) {
+        if ( ! $this->hasher->check($this->data->userPassword, $this->data->authUser->password)) {
             throw new HttpException(
                 ['message' => 'InvalidPasswordForFolderUpdate'],
                 Response::HTTP_UNAUTHORIZED

@@ -18,7 +18,7 @@ final class CreateOrUpdateBookmarkRequest extends FormRequest
 
         return [
             'url'         => [Rule::requiredIf($isCreateBookmarkRequest), new UrlRule()],
-            'id'          => [Rule::requiredIf(!$isCreateBookmarkRequest), new ResourceIdRule()],
+            'id'          => [Rule::requiredIf( ! $isCreateBookmarkRequest), new ResourceIdRule()],
             'description' => ['nullable', 'max:200', 'filled'],
             'tags'        => ['filled', 'max:15', 'array', Rule::when($isCreateBookmarkRequest, 'nullable')],
             'tags.*'      => ['distinct:strict', new TagRule()],

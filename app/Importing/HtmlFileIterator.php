@@ -9,6 +9,8 @@ use App\Importing\Collections\TagsCollection;
 use DOMXPath;
 use Iterator;
 use App\Importing\DataTransferObjects\Bookmark;
+use DOMDocument;
+use DOMElement;
 
 final class HtmlFileIterator
 {
@@ -24,7 +26,7 @@ final class HtmlFileIterator
                 return yield from [];
             }
 
-            /** @var \DOMElement $dOMElement*/
+            /** @var DOMElement $dOMElement*/
             foreach ($DOMNodeList as $dOMElement) {
                 yield new Bookmark(
                     $dOMElement->getAttribute('href'),
@@ -52,7 +54,7 @@ final class HtmlFileIterator
     {
         libxml_use_internal_errors(true);
 
-        $document = new \DOMDocument();
+        $document = new DOMDocument();
         $document->loadHTML($html);
 
         return new DOMXPath($document);

@@ -25,7 +25,7 @@ final class LoginUserRequest extends FormRequest
     /**
      * Configure the validator instance.
      *
-     * @param  \Illuminate\Validation\Validator  $validator
+     * @param  \Illuminate\Validation\Validator $validator
      * @return void
      */
     public function withValidator($validator)
@@ -35,7 +35,7 @@ final class LoginUserRequest extends FormRequest
                 return;
             }
 
-            if (!TwoFACode::isValid($this->input('two_fa_code'))) {
+            if ( ! TwoFACode::isValid($this->input('two_fa_code'))) {
                 $validator->errors()->add('two_fa_code', 'Invalid verification code format');
             }
         });

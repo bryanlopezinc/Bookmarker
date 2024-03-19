@@ -36,7 +36,7 @@ final class RoleExistsConstraint implements FolderRequestHandlerInterface, Scope
      */
     public function handle(Folder $folder): void
     {
-        if (!$folder->roleExists) {
+        if ( ! $folder->roleExists) {
             throw HttpException::notFound(['message' => 'RoleNotFound']);
         }
     }

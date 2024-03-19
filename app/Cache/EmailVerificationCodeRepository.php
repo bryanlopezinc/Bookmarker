@@ -29,7 +29,7 @@ final class EmailVerificationCodeRepository
 
     public function has(int $userID): bool
     {
-        return !empty($this->getRecord($userID));
+        return ! empty($this->getRecord($userID));
     }
 
     public function get(int $userID): SecondaryEmailVerificationData

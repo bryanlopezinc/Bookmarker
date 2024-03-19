@@ -45,7 +45,7 @@ final class MustBeACollaboratorConstraint implements Scope, FolderRequestHandler
             return;
         }
 
-        if (!$this->userIsACollaborator($folder)) {
+        if ( ! $this->userIsACollaborator($folder)) {
             throw new FolderNotFoundException();
         }
     }

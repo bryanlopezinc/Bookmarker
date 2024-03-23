@@ -42,7 +42,6 @@ final class ImportHistory extends Model
         'status' => BookmarkImportStatus::class,
     ];
 
-
     protected function tags(): Attribute
     {
         return new Attribute(

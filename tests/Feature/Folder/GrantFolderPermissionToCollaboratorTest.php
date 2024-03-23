@@ -41,13 +41,11 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
         $this->grantPermissionsResponse(['collaborator_id' => 4, 'folder_id' => 4])->assertUnauthorized();
     }
 
-
     public function testWillReturnNotFoundWhenRouteParametersAreInvalid(): void
     {
         $this->grantPermissionsResponse(['folder_id' => 44, 'collaborator_id' => 'foo'])->assertNotFound();
         $this->grantPermissionsResponse(['folder_id' => 'foo', 'collaborator_id' => 44])->assertNotFound();
     }
-
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {

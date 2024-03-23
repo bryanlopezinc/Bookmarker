@@ -4,6 +4,11 @@
         "align_multiline_comment": true,
         "array_syntax": true,
         "class_reference_name_casing": true,
+        "class_attributes_separation": {
+            "elements": {
+                "method": "one"
+            }
+        },
         "combine_consecutive_issets": true,
         "combine_consecutive_unsets": true,
         "concat_space": {

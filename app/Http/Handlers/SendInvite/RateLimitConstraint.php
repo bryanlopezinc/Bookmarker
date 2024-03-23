@@ -30,11 +30,9 @@ final class RateLimitConstraint implements FolderRequestHandlerInterface
         $key = "invites:{$this->data->authUser->id}:{$this->data->inviteeEmail}";
 
         if ($this->rateLimiter->tooManyAttempts($key, $maxInvitesThatCanBeSentPerMinute)) {
-            $availableIn = $this->rateLimiter->availableIn($key);
-
             throw new ThrottleRequestsException(
                 message: 'TooManySentInvites',
-                headers: ['resend-invite-after' => $availableIn]
+                headers: ['resend-invite-after' => $this->rateLimiter->availableIn($key)]
             );
         }
     }

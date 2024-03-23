@@ -7,6 +7,7 @@ namespace Tests\Feature\Folder;
 use App\Actions\CreateFolderBookmarks;
 use App\Actions\ToggleFolderFeature;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Services\Folder\MuteCollaboratorService;
@@ -19,6 +20,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Feature\Folder\Concerns\AssertFolderCollaboratorMetrics;
 use Tests\TestCase;
 use Tests\Traits\CreatesCollaboration;
 use Tests\Traits\CreatesRole;
@@ -28,6 +30,7 @@ class RemoveFolderBookmarksTest extends TestCase
     use WithFaker;
     use CreatesCollaboration;
     use CreatesRole;
+    use AssertFolderCollaboratorMetrics;
 
     protected function removeFolderBookmarksResponse(array $parameters = []): TestResponse
     {
@@ -97,12 +100,13 @@ class RemoveFolderBookmarksTest extends TestCase
         $this->removeFolderBookmarksResponse([
             'bookmarks' => [$bookmarkIDs[0]],
             'folder'    => $folder->id
-        ])->assertSuccessful();
+        ])->assertOk();
 
         $folder->load('bookmarks');
 
         $this->assertCount(1, $folder->bookmarks);
         $this->assertEquals($folder->bookmarks->first()->id, $bookmarkIDs[1]);
+        $this->assertNoMetricsRecorded($user->id, $folder->id, CollaboratorMetricType::BOOKMARKS_DELETED);
 
         //Assert the folder updated_at column was updated
         $this->assertTrue($folder->refresh()->updated_at->isToday());
@@ -110,21 +114,23 @@ class RemoveFolderBookmarksTest extends TestCase
 
     public function testUserWithPermissionCanRemoveBookmarksFromFolder(): void
     {
-        [$folderOwner, $user] = UserFactory::new()->count(2)->create();
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
 
-        $bookmarkIDs = BookmarkFactory::times(3)->for($folderOwner)->create()->pluck('id');
+        $bookmarkIDs = BookmarkFactory::times(4)->for($folderOwner)->create()->pluck('id');
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
         $this->addBookmarksToFolder($bookmarkIDs->all(), $folder->id);
-        $this->CreateCollaborationRecord($user, $folder, Permission::DELETE_BOOKMARKS);
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::DELETE_BOOKMARKS);
 
-        $this->loginUser($user);
-        $this->removeFolderBookmarksResponse([
-            'bookmarks' => $bookmarkIDs->all(),
-            'folder' => $folder->id
-        ])->assertOk();
+        $this->loginUser($collaborator);
 
-        $this->assertCount(0, $folder->bookmarks);
+        $this->removeFolderBookmarksResponse(['bookmarks' => $bookmarkIDs->take(2)->all(), 'folder' => $folder->id])->assertOk();
+        $this->assertCount(2, $folder->bookmarks);
+        $this->assertFolderCollaboratorMetric($collaborator->id, $folder->id, $type = CollaboratorMetricType::BOOKMARKS_DELETED, 2);
+        $this->assertFolderCollaboratorMetricsSummary($collaborator->id, $folder->id, $type, 2);
+
+        $this->removeFolderBookmarksResponse(['bookmarks' => $bookmarkIDs->slice(-2)->implode(','), 'folder' => $folder->id])->assertOk();
+        $this->assertFolderCollaboratorMetricsSummary($collaborator->id, $folder->id, $type, 4);
     }
 
     public function testUserWithRoleCanRemoveBookmarksFromFolder(): void

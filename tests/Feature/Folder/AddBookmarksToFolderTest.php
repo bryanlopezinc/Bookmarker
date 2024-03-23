@@ -6,6 +6,7 @@ namespace Tests\Feature\Folder;
 
 use App\Actions\ToggleFolderFeature;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Models\Folder;
@@ -21,6 +22,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Feature\Folder\Concerns\AssertFolderCollaboratorMetrics;
 use Tests\TestCase;
 use Tests\Traits\CreatesCollaboration;
 use Tests\Traits\CreatesRole;
@@ -32,6 +34,7 @@ class AddBookmarksToFolderTest extends TestCase
     use WillCheckBookmarksHealth;
     use CreatesCollaboration;
     use CreatesRole;
+    use AssertFolderCollaboratorMetrics;
 
     protected function addBookmarksToFolderResponse(array $parameters = []): TestResponse
     {
@@ -102,7 +105,7 @@ class AddBookmarksToFolderTest extends TestCase
             ->assertJsonValidationErrors(['bookmarks' => 'The bookmarks must not have more than 50 items.']);
     }
 
-    public function testAddBookmarks(): void
+    public function testWhenFolderOwnerAddsBookmarks(): void
     {
         $this->loginUser($user = UserFactory::new()->create());
 
@@ -122,6 +125,7 @@ class AddBookmarksToFolderTest extends TestCase
 
         //Assert the folder updated_at column was updated
         $this->assertTrue($folder->refresh()->updated_at->isToday());
+        $this->assertNoMetricsRecorded($user->id, $folder->id, CollaboratorMetricType::BOOKMARKS_ADDED);
     }
 
     #[Test]
@@ -139,10 +143,26 @@ class AddBookmarksToFolderTest extends TestCase
         $this->attachRoleToUser($collaborator, $this->createRole(permissions: Permission::ADD_BOOKMARKS));
 
         $this->loginUser($collaborator);
-        $this->addBookmarksToFolderResponse([
-            'bookmarks' => (string) $bookmark->id,
-            'folder'    => $folder->id,
-        ])->assertCreated();
+        $this->addBookmarksToFolderResponse(['bookmarks' => (string) $bookmark->id, 'folder' => $folder->id])->assertCreated();
+    }
+
+    #[Test]
+    public function collaboratorWithPermissionCanAddBookmarks(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+        $bookmarks = BookmarkFactory::times(4)->for($collaborator)->create()->pluck('id');
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
+
+        $this->loginUser($collaborator);
+
+        $this->addBookmarksToFolderResponse(['bookmarks' => $bookmarks->take(2)->implode(','), 'folder' => $folder->id])->assertCreated();
+        $this->assertFolderCollaboratorMetric($collaborator->id, $folder->id, $type = CollaboratorMetricType::BOOKMARKS_ADDED, 2);
+        $this->assertFolderCollaboratorMetricsSummary($collaborator->id, $folder->id, $type, 2);
+
+        $this->addBookmarksToFolderResponse(['bookmarks' => $bookmarks->slice(-2)->implode(','), 'folder' => $folder->id])->assertCreated();
+        $this->assertFolderCollaboratorMetricsSummary($collaborator->id, $folder->id, $type, 4);
     }
 
     public function testWillReturnForbiddenWhenCollaboratorDoesNotHaveAddBookmarksPermissionOrRole(): void

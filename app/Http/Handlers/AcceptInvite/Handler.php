@@ -10,7 +10,9 @@ use App\Models\Folder;
 use App\Http\Handlers\Constraints;
 use App\Contracts\AcceptFolderInviteRequestHandlerInterface;
 use App\DataTransferObjects\FolderInviteData;
+use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
+use App\Http\Handlers\CollaboratorMetricsRecorder;
 use App\Http\Handlers\RequestHandlersQueue;
 
 final class Handler implements AcceptFolderInviteRequestHandlerInterface
@@ -55,6 +57,7 @@ final class Handler implements AcceptFolderInviteRequestHandlerInterface
             new Constraints\FeatureMustBeEnabledConstraint(null, Feature::JOIN_FOLDER),
             new CreateNewCollaborator($payload),
             new SendNewCollaboratorNotification($payload),
+            new CollaboratorMetricsRecorder(CollaboratorMetricType::COLLABORATORS_ADDED, $payload->inviterId)
         ];
     }
 }

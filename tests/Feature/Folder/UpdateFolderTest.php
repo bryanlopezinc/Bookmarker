@@ -6,6 +6,7 @@ namespace Tests\Feature\Folder;
 
 use App\Actions\ToggleFolderFeature;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\FolderVisibility;
 use App\Enums\Permission;
@@ -22,6 +23,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Feature\Folder\Concerns\AssertFolderCollaboratorMetrics;
 use Tests\Traits\CreatesCollaboration;
 use Tests\Traits\CreatesRole;
 
@@ -31,6 +33,7 @@ class UpdateFolderTest extends TestCase
     use CreatesCollaboration;
     use Concerns\TestsFolderSettings;
     use CreatesRole;
+    use AssertFolderCollaboratorMetrics;
 
     protected function updateFolderResponse(array $parameters = []): TestResponse
     {
@@ -83,9 +86,12 @@ class UpdateFolderTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $name = $this->faker->word;
+
         $this->updateFolderResponse($query = ['name' => $name, 'folder_id' => $folder->id])->assertOk();
         $this->assertUpdated($folder, ['name' => new FolderName($name)]);
         $this->updateFolderResponse($query)->assertNoContent();
+
+        $this->assertNoMetricsRecorded($user->id, $folder->id, CollaboratorMetricType::UPDATES);
     }
 
     private function assertUpdated(Folder $original, array $attributes): void
@@ -306,11 +312,18 @@ class UpdateFolderTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER);
 
         $this->loginUser($collaborator);
+
         $this->updateFolderResponse([
             'name'        => $this->faker->word,
             'description' => $this->faker->sentence,
             'folder_id'   => $folder->id
         ])->assertOk();
+
+        $this->assertFolderCollaboratorMetric($collaborator->id, $folder->id, $type = CollaboratorMetricType::UPDATES);
+        $this->assertFolderCollaboratorMetricsSummary($collaborator->id, $folder->id, $type);
+
+        $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->id])->assertOk();
+        $this->assertFolderCollaboratorMetricsSummary($collaborator->id, $folder->id, $type, 2);
     }
 
     #[Test]

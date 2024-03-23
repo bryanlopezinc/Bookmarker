@@ -12,8 +12,8 @@ final class FolderInviteData
         public readonly int $inviterId,
         public readonly int $inviteeId,
         public readonly int $folderId,
-        public readonly UAC $permissions,
-        public readonly array $roles
+        public readonly UAC $permissions = new UAC([]),
+        public readonly array $roles = []
     ) {
     }
 }

@@ -5,24 +5,13 @@ declare(strict_types=1);
 namespace Tests;
 
 use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Database\Events\MigrationsEnded;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Laravel\Passport\Passport;
 
 abstract class TestCase extends BaseTestCase
 {
     use CreatesApplication;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        // Event::listen(MigrationsEnded::class, function () {
-        //     $this->seed();
-        // });
-    }
 
     final protected function loginUser(Authenticatable $user): void
     {

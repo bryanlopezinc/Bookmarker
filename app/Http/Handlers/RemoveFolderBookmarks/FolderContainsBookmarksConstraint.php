@@ -13,11 +13,10 @@ use App\Models\Folder;
 final class FolderContainsBookmarksConstraint implements FolderRequestHandlerInterface
 {
     /**
-     * @param array<FolderBookmark> folderBookmarks
+     * @param array<FolderBookmark> $folderBookmarks
      */
     public function __construct(private readonly Data $data, private readonly array $folderBookmarks)
     {
-        $this->data = $data;
     }
 
     /**

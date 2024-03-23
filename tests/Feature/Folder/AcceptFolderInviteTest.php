@@ -8,6 +8,7 @@ use App\Actions\ToggleFolderFeature;
 use App\Cache\FolderInviteDataRepository;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\DataTransferObjects\FolderInviteData;
+use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Models\FolderCollaboratorPermission;
 use App\Enums\Permission;
@@ -27,6 +28,7 @@ use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\Services\Folder\MuteCollaboratorService;
 use App\UAC;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Feature\Folder\Concerns\AssertFolderCollaboratorMetrics;
 use Tests\Traits\CreatesCollaboration;
 use Tests\Traits\CreatesRole;
 
@@ -35,6 +37,7 @@ class AcceptFolderInviteTest extends TestCase
     use WithFaker;
     use CreatesCollaboration;
     use CreatesRole;
+    use AssertFolderCollaboratorMetrics;
 
     protected FolderInviteDataRepository $tokenStore;
 
@@ -102,7 +105,7 @@ class AcceptFolderInviteTest extends TestCase
     }
 
     #[Test]
-    public function whenFolderVisibilityIsPublic(): void
+    public function acceptInviteFromFolderOwner(): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
@@ -127,6 +130,36 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->assertEquals($invitee->id, $savedRecord->collaborator_id);
         $this->assertEquals($folderOwner->id, $savedRecord->invited_by);
+        $this->assertNoMetricsRecorded($folderOwner->id, $folder->id, CollaboratorMetricType::COLLABORATORS_ADDED);
+    }
+
+    #[Test]
+    public function acceptInviteFromCollaborator(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$collaborator, $invitee, $otherInvitee] = UserFactory::times(3)->create();
+
+        $folder = FolderFactory::new()->create();
+
+        $this->CreateCollaborationRecord($collaborator, $folder);
+
+        $this->tokenStore->store(
+            $inviteeToken = $this->faker->uuid,
+            new FolderInviteData($collaborator->id, $invitee->id, $folder->id)
+        );
+
+        $this->tokenStore->store(
+            $otherInviteeToken = $this->faker->uuid,
+            new FolderInviteData($collaborator->id, $otherInvitee->id, $folder->id)
+        );
+
+        $this->acceptInviteResponse(['invite_hash' => $inviteeToken])->assertCreated();
+        $this->assertFolderCollaboratorMetric($collaborator->id, $folder->id, $type = CollaboratorMetricType::COLLABORATORS_ADDED);
+        $this->assertFolderCollaboratorMetricsSummary($collaborator->id, $folder->id, $type);
+
+        $this->acceptInviteResponse(['invite_hash' => $otherInviteeToken])->assertCreated();
+        $this->assertFolderCollaboratorMetricsSummary($collaborator->id, $folder->id, $type, 2);
     }
 
     #[Test]
@@ -212,8 +245,7 @@ class AcceptFolderInviteTest extends TestCase
 
     public function testAcceptInviteWithPermissions(): void
     {
-        //Will give only view-bookmarks permission if no permissions were specified
-        $this->assertAcceptInvite([]);
+        $this->assertAcceptInvite([]); //Will give only view-bookmarks permission if no permissions were specified
         $this->assertAcceptInvite([Permission::ADD_BOOKMARKS]);
         $this->assertAcceptInvite([Permission::DELETE_BOOKMARKS]);
         $this->assertAcceptInvite([Permission::INVITE_USER]);

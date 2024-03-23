@@ -8,9 +8,11 @@ use App\Models\Folder;
 use App\Models\Bookmark;
 use App\Contracts\FolderRequestHandlerInterface as HandlerInterface;
 use App\DataTransferObjects\AddBookmarksToFolderRequestData as Data;
+use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Http\Handlers\Constraints;
+use App\Http\Handlers\CollaboratorMetricsRecorder;
 use App\Http\Handlers\RequestHandlersQueue;
 
 final class Handler
@@ -47,6 +49,7 @@ final class Handler
             new CreateFolderBookmarks($data),
             new SendBookmarksAddedToFolderNotification($data),
             new CheckBookmarksHealth($bookmarks),
+            new CollaboratorMetricsRecorder(CollaboratorMetricType::BOOKMARKS_ADDED, $data->authUser->id, count($bookmarks))
         ];
     }
 }

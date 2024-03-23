@@ -11,8 +11,10 @@ use App\Models\FolderBookmark;
 use App\Http\Handlers\Constraints;
 use App\Http\Handlers\RequestHandlersQueue;
 use App\DataTransferObjects\RemoveFolderBookmarksRequestData as Data;
+use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
+use App\Http\Handlers\CollaboratorMetricsRecorder;
 
 final class Handler
 {
@@ -48,6 +50,7 @@ final class Handler
             new FolderContainsBookmarksConstraint($data, $folderBookmarks),
             new DeleteFolderBookmarks($folderBookmarks),
             new SendBookmarksRemovedFromFolderNotificationNotification($data),
+            new CollaboratorMetricsRecorder(CollaboratorMetricType::BOOKMARKS_DELETED, $data->authUser->id, count($folderBookmarks))
         ];
     }
 }

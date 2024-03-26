@@ -12,7 +12,6 @@ use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 use Tests\Traits\WillCheckBookmarksHealth;
 
@@ -47,14 +46,14 @@ class DeleteFolderTest extends TestCase
 
     public function testWillReturnNotFoundWhenFolderIdIsInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->deleteFolderResponse('foo')->assertNotFound();
     }
 
     public function testDeleteFolder(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $folder = FolderFactory::new()->for($user)->create();
 
@@ -68,7 +67,7 @@ class DeleteFolderTest extends TestCase
 
     public function testDeleteFolderAndItsBookmarks(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $folder = FolderFactory::new()->for($user)->create();
 
@@ -83,7 +82,7 @@ class DeleteFolderTest extends TestCase
 
     public function testWillReturnNotFoundWhenFolderDoesNotBelongToUser(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $folderID = FolderFactory::new()->create()->id;
 
@@ -92,7 +91,7 @@ class DeleteFolderTest extends TestCase
 
     public function testWillReturnNotFoundWhenFolderDoesNotExists(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $folderID = FolderFactory::new()->create()->id;
 
@@ -109,7 +108,7 @@ class DeleteFolderTest extends TestCase
 
         $this->createBookmarkAction->create($folderID, $collaboratorBookmark->id);
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->deleteFolderResponse($folderID, ['delete_bookmarks' => true])->assertOk();
 
         $this->assertDatabaseHas(Bookmark::class, ['id' => $collaboratorBookmark->id]);

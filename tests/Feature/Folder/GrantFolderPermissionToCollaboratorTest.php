@@ -6,13 +6,15 @@ namespace Tests\Feature\Folder;
 
 use App\Enums\Permission;
 use App\Repositories\Folder\CollaboratorPermissionsRepository as Repository;
+use App\UAC;
+use Closure;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
+use Tests\Feature\Folder\Concerns\InteractsWithValues;
 use Tests\TestCase;
 use Tests\Traits\CreatesCollaboration;
 
@@ -20,6 +22,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 {
     use WithFaker;
     use CreatesCollaboration;
+    use InteractsWithValues;
 
     protected function grantPermissionsResponse(array $parameters = []): TestResponse
     {
@@ -29,6 +32,11 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
             route('grantPermission', $routeParameters),
             Arr::only($parameters, ['permissions'])
         );
+    }
+
+    protected function shouldBeInteractedWith(): mixed
+    {
+        return UAC::validExternalIdentifiers();
     }
 
     public function testIsAccessibleViaPath(): void
@@ -49,7 +57,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->grantPermissionsResponse(['folder_id' => 44, 'collaborator_id' => 4])
             ->assertUnprocessable()
@@ -61,7 +69,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['permissions' => ['The selected permissions is invalid.']]);
 
-        $this->grantPermissionsResponse(['permissions' => 'addBookmarks,addBookmarks,inviteUsers','folder_id' => 44, 'collaborator_id' => 4])
+        $this->grantPermissionsResponse(['permissions' => 'addBookmarks,addBookmarks,inviteUsers', 'folder_id' => 44, 'collaborator_id' => 4])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 "permissions.0" => [
@@ -75,46 +83,38 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
     public function testGrantPermissions(): void
     {
-        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
-
-        $folder = FolderFactory::new()->for($folderOwner)->create();
-
-        $this->CreateCollaborationRecord($collaborator, $folder);
-
-        Passport::actingAs($folderOwner);
-        $this->grantPermissionsResponse([
-            'collaborator_id' => $collaborator->id,
-            'folder_id'   => $folder->id,
-            'permissions' => 'inviteUsers'
-        ])->assertOk();
-
-        $collaboratorPermissions = (new Repository())->all($collaborator->id, $folder->id);
-
-        $this->assertTrue($collaboratorPermissions->canInviteUser());
-
-        $this->assertEquals($collaboratorPermissions->count(), 1);
+        $this->assertWillGrantPermissions('inviteUsers');
+        $this->assertWillGrantPermissions('removeBookmarks');
+        $this->assertWillGrantPermissions('updateFolder');
+        $this->assertWillGrantPermissions('removeUser');
+        $this->assertWillGrantPermissions('removeUser,inviteUsers');
+        $this->assertWillGrantPermissions('addBookmarks');
     }
 
-    public function testGrantMultiplePermissions(): void
+    private function assertWillGrantPermissions(string $permissions, Closure $expectation = null): void
     {
+        $expectation = $expectation ??= fn () => null;
+
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder);
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->grantPermissionsResponse([
             'collaborator_id' => $collaborator->id,
-            'folder_id'   => $folder->id,
-            'permissions' => 'inviteUsers,addBookmarks'
+            'folder_id'       => $folder->id,
+            'permissions'     => $permissions
         ])->assertOk();
 
-        $collaboratorPermissions = (new Repository())->all($collaborator->id, $folder->id);
+        $collaboratorNewPermissions = (new Repository())->all($collaborator->id, $folder->id);
 
-        $this->assertTrue($collaboratorPermissions->canInviteUser());
-        $this->assertTrue($collaboratorPermissions->canAddBookmarks());
-        $this->assertEquals($collaboratorPermissions->count(), 2);
+        $this->assertEqualsCanonicalizing(explode(',', $permissions), $collaboratorNewPermissions->toExternalIdentifiers());
+
+        if ($result = $expectation($collaboratorNewPermissions)) {
+            $this->assertTrue($result);
+        }
     }
 
     public function testWillReturnForbiddenWhenGrantingPermissionToSelf(): void
@@ -122,7 +122,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
         $user = UserFactory::new()->create();
         $folder = FolderFactory::new()->for($user)->create();
 
-        Passport::actingAs($user);
+        $this->loginUser($user);
         $this->grantPermissionsResponse([
             'collaborator_id' => $user->id,
             'folder_id' => $folder->id,
@@ -133,7 +133,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
     public function testWillReturnNotFoundWhenFolderDoesNotBelongToUser(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->grantPermissionsResponse([
             'collaborator_id' => UserFactory::new()->create()->id,
@@ -149,7 +149,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->grantPermissionsResponse([
             'collaborator_id' => $collaborator->id,
             'folder_id'   => $folder->id,
@@ -163,7 +163,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->grantPermissionsResponse([
             'collaborator_id' => $collaborator->id,
             'folder_id'   => $folder->id,
@@ -177,7 +177,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
         $folderOwner = UserFactory::new()->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->grantPermissionsResponse([
             'collaborator_id' => UserFactory::new()->create()->id + 1,
             'folder_id'   => $folder->id,
@@ -190,7 +190,7 @@ class GrantFolderPermissionToCollaboratorTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->grantPermissionsResponse([
             'collaborator_id' => $collaborator->id,
             'folder_id'   => FolderFactory::new()->create()->id + 1,

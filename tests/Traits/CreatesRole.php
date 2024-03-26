@@ -7,12 +7,14 @@ namespace Tests\Traits;
 use App\Enums\Permission;
 use App\Models\Folder;
 use App\Models\FolderCollaboratorRole;
+use App\Models\FolderPermission;
 use App\Models\FolderRole;
+use App\Models\FolderRolePermission;
 use App\Models\User;
-use App\Repositories\Folder\PermissionRepository;
 use App\UAC;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
+use Illuminate\Support\Facades\DB;
 
 trait CreatesRole
 {
@@ -25,12 +27,12 @@ trait CreatesRole
         /** @var FolderRole */
         $newRole = $folder->roles()->save(new FolderRole(['name' => $name]));
 
-        $repository = new PermissionRepository();
-
         if ($permissions->isNotEmpty()) {
-            $permissionIds = $repository->findManyByName($permissions)->pluck('id');
+            $query = FolderPermission::query()
+                ->select(DB::raw($newRole->id), 'id')
+                ->whereIn('name', $permissions->toArray());
 
-            $newRole->permissions()->createMany($permissionIds->map(fn (int $id) => ['permission_id' => $id]));
+            FolderRolePermission::query()->insertUsing(['role_id', 'permission_id'], $query);
         }
 
         return $newRole->load('permissions');

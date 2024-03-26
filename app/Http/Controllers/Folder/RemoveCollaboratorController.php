@@ -4,24 +4,27 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Folder;
 
-use App\Services\Folder\RemoveCollaboratorService as Service;
+use App\DataTransferObjects\RemoveCollaboratorData;
+use App\Http\Handlers\RemoveCollaborator\Handler;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 final class RemoveCollaboratorController
 {
-    public function __invoke(Request $request, Service $service, string $folderId, string $collaboratorId): JsonResponse
+    public function __invoke(Request $request, Handler $service, string $folderId, string $collaboratorId): JsonResponse
     {
-        $request->validate([
-            'ban' => ['sometimes', 'boolean']
-        ]);
+        $request->validate(['ban' => ['sometimes', 'boolean']]);
 
-        $service->revokeUserAccess(
-            (int)$folderId,
-            (int)$collaboratorId,
-            $request->boolean('ban')
+        $service->handle(
+            new RemoveCollaboratorData(
+                (int)$collaboratorId,
+                (int)$folderId,
+                $request->boolean('ban'),
+                User::fromRequest($request)
+            )
         );
 
-        return response()->json();
+        return new JsonResponse();
     }
 }

@@ -14,7 +14,6 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 
 class CreateBookmarkTest extends TestCase
@@ -38,7 +37,7 @@ class CreateBookmarkTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->createBookmarkResponse()
             ->assertUnprocessable()
@@ -84,7 +83,7 @@ class CreateBookmarkTest extends TestCase
 
     public function testWillReturnUnprocessableWenUrlIsNotHttp(): void
     {
-        Passport::actingAs(UserFactory::new()->make());
+        $this->loginUser(UserFactory::new()->make());
 
         $this->createBookmarkResponse(['url' => 'chrome://flags'])
             ->assertUnprocessable()
@@ -98,7 +97,7 @@ class CreateBookmarkTest extends TestCase
     public function testWillCreateBookmark(): void
     {
         Bus::fake(UpdateBookmarkWithHttpResponse::class);
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $this->createBookmarkResponse($query = ['url' => $url =  $this->faker->url])->assertCreated();
 
@@ -120,7 +119,7 @@ class CreateBookmarkTest extends TestCase
 
     public function testCreateBookmarkWithTitle(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $this->createBookmarkResponse([
                 'url'   => $this->faker->url,
@@ -137,7 +136,7 @@ class CreateBookmarkTest extends TestCase
 
     public function testCreateBookmarkWithDescription(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $this->createBookmarkResponse([
                 'url'   => $this->faker->url,
@@ -154,7 +153,7 @@ class CreateBookmarkTest extends TestCase
 
     public function testCreateBookmarkWithTags(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $this->createBookmarkResponse([
             'url'   => $this->faker->url,
@@ -184,7 +183,7 @@ class CreateBookmarkTest extends TestCase
 
         Http::fake(fn () => Http::response($html));
 
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->createBookmarkResponse(['url' => $this->faker->url])->assertCreated();
     }
@@ -213,7 +212,7 @@ class CreateBookmarkTest extends TestCase
 
         Http::fake(fn () => Http::response($html));
 
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->createBookmarkResponse(['url' => $this->faker->url])->assertCreated();
     }

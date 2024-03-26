@@ -9,7 +9,6 @@ use App\ValueObjects\TwoFACode;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 use App\Cache\EmailVerificationCodeRepository as PendingVerifications;
 
@@ -34,7 +33,7 @@ class VerifySecondaryEmailTest extends TestCase
 
     public function testWillReturnUnprocessableWhenAttributesAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->verifySecondaryEmail()
             ->assertUnprocessable()
@@ -60,7 +59,7 @@ class VerifySecondaryEmailTest extends TestCase
     {
         $email = $this->faker->unique()->email;
 
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $verificationCode = $this->get2FACode($user->id, $email);
 
@@ -91,7 +90,7 @@ class VerifySecondaryEmailTest extends TestCase
     {
         $email = $this->faker->unique()->email;
 
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $verificationCode = $this->get2FACode($user->id, $email);
 
@@ -115,7 +114,7 @@ class VerifySecondaryEmailTest extends TestCase
 
         $verificationCode = $this->get2FACode($users[0]->id, $email);
 
-        Passport::actingAs($users[0]);
+        $this->loginUser($users[0]);
         $this->verifySecondaryEmail([
             'email'             => $email,
             'verification_code' => TwoFACode::generate()->toString()
@@ -128,7 +127,7 @@ class VerifySecondaryEmailTest extends TestCase
         ])->assertNotFound()
             ->assertExactJson($error);
 
-        Passport::actingAs($users[1]);
+        $this->loginUser($users[1]);
         $this->verifySecondaryEmail([
             'email'             => $this->faker->unique()->email,
             'verification_code' => (string) $verificationCode
@@ -144,7 +143,7 @@ class VerifySecondaryEmailTest extends TestCase
 
         $verificationCode = $this->get2FACode($user->id, $email);
 
-        Passport::actingAs($user);
+        $this->loginUser($user);
         $this->verifySecondaryEmail($parameters = [
             'email'             => $email,
             'verification_code' => (string) $verificationCode
@@ -162,13 +161,13 @@ class VerifySecondaryEmailTest extends TestCase
 
         $verificationCodes = [$this->get2FACode($firstUser->id, $email), $this->get2FACode($secondUser->id, $email)];
 
-        Passport::actingAs($firstUser);
+        $this->loginUser($firstUser);
         $this->verifySecondaryEmail([
             'email'             => $email,
             'verification_code' => (string) $verificationCodes[0]
         ])->assertOk();
 
-        Passport::actingAs($secondUser);
+        $this->loginUser($secondUser);
         $this->verifySecondaryEmail([
             'email'             => $email,
             'verification_code' => (string) $verificationCodes[1]

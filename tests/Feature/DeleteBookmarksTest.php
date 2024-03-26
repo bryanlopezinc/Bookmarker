@@ -8,7 +8,6 @@ use App\Models\Bookmark;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 use Tests\Traits\WillCheckBookmarksHealth;
 
@@ -33,7 +32,7 @@ class DeleteBookmarksTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->deleteBookmarksResponse()
             ->assertUnprocessable()
@@ -57,7 +56,7 @@ class DeleteBookmarksTest extends TestCase
 
     public function testDeleteBookmark(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmark = BookmarkFactory::new()->for($user)->create();
 
@@ -68,7 +67,7 @@ class DeleteBookmarksTest extends TestCase
 
     public function testWilNotCheckBookmarksHealth(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmark = BookmarkFactory::new()->for($user)->create();
 
@@ -79,7 +78,7 @@ class DeleteBookmarksTest extends TestCase
 
     public function testWillReturnNotFoundResponseWhenBookmarkDoesNotExists(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmarks = BookmarkFactory::times(3)->for($user)->create()->pluck('id');
 
@@ -95,7 +94,7 @@ class DeleteBookmarksTest extends TestCase
 
     public function testWillReturnNotFoundWhenUserDoesNotOwnBookmark(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $model = BookmarkFactory::new()->create();
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Folder;
 
 use App\DataTransferObjects\Builders\FolderSettingsBuilder as Builder;
+use App\Http\Requests\CreateOrUpdateFolderRequest;
 use App\ValueObjects\FolderSettings as FS;
 use App\Models\Folder;
 use App\ValueObjects\FolderSettings;
@@ -16,22 +17,22 @@ use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Closure;
+use Tests\Feature\Folder\Concerns\InteractsWithValues;
 
 class CreateFolderTest extends TestCase
 {
     use WithFaker;
     use Concerns\TestsFolderSettings;
+    use InteractsWithValues;
 
-    private static array $folderSettingsThatHasNotBeenInteractedWith;
-
-    protected function setUp(): void
+    protected function shouldBeInteractedWith(): array
     {
-        parent::setUp();
-
-        self::$folderSettingsThatHasNotBeenInteractedWith = Arr::except(
-            Arr::dot(FolderSettings::default()),
-            ['version']
-        );
+        return collect((new CreateOrUpdateFolderRequest())->rules())
+            ->reject(fn ($value, string $key) => str_starts_with($key, 'settings.'))
+            ->merge(Arr::dot(FolderSettings::default()))
+            ->keys()
+            ->reject('version')
+            ->all();
     }
 
     protected function createFolderResponse(array $data = []): TestResponse
@@ -257,8 +258,6 @@ class CreateFolderTest extends TestCase
                     $s->collaboratorExitNotificationIsDisabled;
             }
         );
-
-        $this->assertEquals(self::$folderSettingsThatHasNotBeenInteractedWith, []);
     }
 
     private function assertCreateWithSettings(array $settings, Closure $assertion): void
@@ -273,9 +272,7 @@ class CreateFolderTest extends TestCase
             $this->assertTrue($condition);
         }
 
-        foreach (array_keys($settings) as $key) {
-            Arr::forget(self::$folderSettingsThatHasNotBeenInteractedWith, $key);
-        }
+        $this->setInteracted($settings);
     }
 
     public function testWillReturnUnprocessableWhenFolderSettingsIsInValid(): void

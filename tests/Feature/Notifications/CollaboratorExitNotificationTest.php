@@ -7,7 +7,6 @@ namespace Tests\Feature\Notifications;
 use App\Notifications\CollaboratorExitNotification;
 use Tests\TestCase;
 use Illuminate\Support\Str;
-use Laravel\Passport\Passport;
 use Database\Factories\UserFactory;
 use Database\Factories\FolderFactory;
 use Illuminate\Notifications\DatabaseNotification;
@@ -30,7 +29,7 @@ class CollaboratorExitNotificationTest extends TestCase
         $folder->update(['name' => 'gotham problems']);
         $expectedDateTime = DatabaseNotification::where('notifiable_id', $folderOwner->id)->sole(['created_at'])->created_at;
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->fetchNotificationsResponse()
             ->assertOk()
             ->assertJsonCount(1, 'data')
@@ -72,7 +71,7 @@ class CollaboratorExitNotificationTest extends TestCase
 
         $collaborator->delete();
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->fetchNotificationsResponse()
             ->assertOk()
             ->assertJsonPath('data.0.attributes.collaborator_exists', false)
@@ -93,7 +92,7 @@ class CollaboratorExitNotificationTest extends TestCase
 
         $folder->delete();
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->fetchNotificationsResponse()
             ->assertOk()
             ->assertJsonPath('data.0.attributes.folder_exists', false)

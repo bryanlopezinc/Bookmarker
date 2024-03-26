@@ -6,17 +6,11 @@ namespace App\Actions;
 
 use App\Enums\Feature;
 use App\Models\FolderDisabledFeature as Model;
-use App\Repositories\Folder\FeaturesRepository;
+use App\Models\FolderFeature;
+use Illuminate\Database\Query\Expression;
 
 final class ToggleFolderFeature
 {
-    private readonly FeaturesRepository $featuresRepository;
-
-    public function __construct(FeaturesRepository $featuresRepository = null)
-    {
-        $this->featuresRepository = $featuresRepository ?? new FeaturesRepository();
-    }
-
     public function disable(int $folderId, Feature $feature): void
     {
         $this->update($folderId, $feature, false);
@@ -27,9 +21,12 @@ final class ToggleFolderFeature
         if ($enable) {
             Model::where('folder_id', $folderId)->delete();
         } else {
-            $featureId = $this->featuresRepository->findByName($feature)->id;
+            /** @var \Illuminate\Database\Eloquent\Builder */
+            $query = FolderFeature::query()
+                ->select(new Expression($folderId), 'id')
+                ->where('name', $feature->value);
 
-            Model::query()->create(['folder_id' => $folderId, 'feature_id' => $featureId]);
+            Model::query()->insertUsing(['folder_id', 'feature_id'], $query);
         }
     }
 }

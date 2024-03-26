@@ -12,7 +12,6 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 use App\Cache\EmailVerificationCodeRepository as PendingVerifications;
 
@@ -37,7 +36,7 @@ class AddEmailTest extends TestCase
 
     public function testWillReturnUnprocessableWhenAttributesAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->addEmailToAccount()->assertUnprocessable()->assertJsonValidationErrorFor('email');
         $this->addEmailToAccount(['email' => 'foo bar'])->assertJsonValidationErrorFor('email');
@@ -47,7 +46,7 @@ class AddEmailTest extends TestCase
     {
         Mail::fake();
 
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->addEmailToAccount(['email' => $this->faker->unique()->email])->assertOk();
 
@@ -56,7 +55,7 @@ class AddEmailTest extends TestCase
 
     public function testCanAddAnotherEmailAfter_5_minutes_WithoutVerifyingFirstEmail(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->addEmailToAccount(['email' => $this->faker->unique()->email])->assertOk();
 
@@ -70,7 +69,7 @@ class AddEmailTest extends TestCase
 
     public function testWillReturnForbiddenWhenSecondaryEmailsIsMoreThan_3(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         EmailFactory::times(3)->for($user)->create();
 
@@ -81,7 +80,7 @@ class AddEmailTest extends TestCase
 
     public function testWillReturnBadRequestWhenUserHasEmailAwaitingVerification(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->addEmailToAccount(['email' => $this->faker->unique()->email]);
 
@@ -106,7 +105,7 @@ class AddEmailTest extends TestCase
             'verified_at' => now()
         ]);
 
-        Passport::actingAs($user);
+        $this->loginUser($user);
         $this->addEmailToAccount(['email' => $userSecondaryEmail])
             ->assertUnprocessable()
             ->assertJsonValidationErrors($errorMessage = ['email' => 'The email has already been taken.']);

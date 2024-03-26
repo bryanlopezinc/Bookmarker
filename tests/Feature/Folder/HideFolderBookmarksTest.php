@@ -13,7 +13,6 @@ use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 
 class HideFolderBookmarksTest extends TestCase
@@ -54,7 +53,7 @@ class HideFolderBookmarksTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->hideFolderResponse(['folder_id' => 44])
             ->assertUnprocessable()
@@ -76,7 +75,7 @@ class HideFolderBookmarksTest extends TestCase
 
     public function testHideFolderBookmarks(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmarkIds = BookmarkFactory::new()->count(2)->for($user)->create()->pluck('id')->all();
 
@@ -104,7 +103,7 @@ class HideFolderBookmarksTest extends TestCase
 
     public function testWillReturnNotFoundWhenFolderDoesNotBelongToUser(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $folder = FolderFactory::new()->create();
 
@@ -116,7 +115,7 @@ class HideFolderBookmarksTest extends TestCase
 
     public function testWillReturnNotFoundWhenFolderDoesNotExists(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $folder = FolderFactory::new()->for($user)->create();
 
@@ -129,7 +128,7 @@ class HideFolderBookmarksTest extends TestCase
 
     public function testWillReturnNotFoundWhenBookmarksDoesNotExistsInFolder(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmarkIDs = BookmarkFactory::new()->count(5)->for($user)->create()->pluck('id');
         $folder = FolderFactory::new()->for($user)->create();
@@ -143,7 +142,7 @@ class HideFolderBookmarksTest extends TestCase
 
     public function testWillReturnNotFoundWhenBookmarkHasBeenDeleted(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmarks = BookmarkFactory::times(2)->for($user)->create();
 
@@ -162,7 +161,7 @@ class HideFolderBookmarksTest extends TestCase
 
     public function testWillReturnForbiddenWhenBookmarksWhereNotAddedByFolderOwner(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmarkIds = BookmarkFactory::new()->count(5)->create()->pluck('id');
         $folder = FolderFactory::new()->for($user)->create();

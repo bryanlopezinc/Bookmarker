@@ -90,7 +90,7 @@ class FetchFolderCollaboratorsTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(5, 'data.0.attributes')
-            ->assertJsonCount(4, 'data.0.attributes.permissions')
+            ->assertJsonCount(5, 'data.0.attributes.permissions')
             ->assertJsonCount(2, 'data.0.attributes.added_by')
             ->assertJsonPath('data.0.attributes.profile_image_url', (new ProfileImageFileSystem())->publicUrl($collaborator->profile_image_path))
             ->assertJsonPath('data.0.attributes.added_by.exists', true)
@@ -276,7 +276,7 @@ class FetchFolderCollaboratorsTest extends TestCase
             ->assertOk()
             ->assertJsonCount(2, 'data')
             ->assertJsonCount(2, 'data.0.attributes.permissions')
-            ->assertJsonCount(4, 'data.1.attributes.permissions')
+            ->assertJsonCount(5, 'data.1.attributes.permissions')
             ->assertJsonPath('data.0.attributes.id', $hasInviteAndAddBookmarksPermission->id)
             ->assertJsonPath('data.1.attributes.id', $hasAllPermissions->id);
 
@@ -285,7 +285,7 @@ class FetchFolderCollaboratorsTest extends TestCase
             ->assertJsonCount(3, 'data')
             ->assertJsonCount(2, 'data.0.attributes.permissions')
             ->assertJsonCount(1, 'data.1.attributes.permissions')
-            ->assertJsonCount(4, 'data.2.attributes.permissions')
+            ->assertJsonCount(5, 'data.2.attributes.permissions')
             ->assertJsonPath('data.0.attributes.id', $hasInviteAndAddBookmarksPermission->id)
             ->assertJsonPath('data.1.attributes.id', $hasOnlyAddBookmarksPermission->id)
             ->assertJsonPath('data.2.attributes.id', $hasAllPermissions->id);
@@ -295,7 +295,7 @@ class FetchFolderCollaboratorsTest extends TestCase
             ->assertJsonCount(3, 'data')
             ->assertJsonCount(2, 'data.0.attributes.permissions')
             ->assertJsonCount(1, 'data.1.attributes.permissions')
-            ->assertJsonCount(4, 'data.2.attributes.permissions')
+            ->assertJsonCount(5, 'data.2.attributes.permissions')
             ->assertJsonPath('data.0.attributes.id', $hasInviteAndAddBookmarksPermission->id)
             ->assertJsonPath('data.1.attributes.id', $hasOnlyInviteUserPermission->id)
             ->assertJsonPath('data.2.attributes.id', $hasAllPermissions->id);
@@ -304,7 +304,7 @@ class FetchFolderCollaboratorsTest extends TestCase
             ->assertOk()
             ->assertJsonCount(2, 'data')
             ->assertJsonCount(1, 'data.0.attributes.permissions')
-            ->assertJsonCount(4, 'data.1.attributes.permissions')
+            ->assertJsonCount(5, 'data.1.attributes.permissions')
             ->assertJsonPath('data.0.attributes.id', $hasOnlyUpdatePermission->id)
             ->assertJsonPath('data.1.attributes.id', $hasAllPermissions->id);
 
@@ -312,7 +312,7 @@ class FetchFolderCollaboratorsTest extends TestCase
             ->assertOk()
             ->assertJsonCount(2, 'data')
             ->assertJsonCount(1, 'data.0.attributes.permissions')
-            ->assertJsonCount(4, 'data.1.attributes.permissions')
+            ->assertJsonCount(5, 'data.1.attributes.permissions')
             ->assertJsonPath('data.0.attributes.id', $hasOnlyDeletePermission->id)
             ->assertJsonPath('data.1.attributes.id', $hasAllPermissions->id);
 

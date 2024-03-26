@@ -24,6 +24,7 @@ use App\UAC;
 use Database\Factories\EmailFactory;
 use Illuminate\Support\Arr;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Feature\Folder\Concerns\InteractsWithValues;
 use Tests\Traits\CreatesCollaboration;
 use Tests\Traits\CreatesRole;
 
@@ -32,9 +33,15 @@ class SendInviteTest extends TestCase
     use WithFaker;
     use CreatesCollaboration;
     use CreatesRole;
+    use InteractsWithValues;
 
     protected ToggleFolderFeature $toggleFolderCollaborationRestriction;
     protected FolderInviteDataRepository $invitesRepository;
+
+    protected function shouldBeInteractedWith(): mixed
+    {
+        return UAC::validExternalIdentifiers();
+    }
 
     protected function setUp(): void
     {
@@ -59,14 +66,15 @@ class SendInviteTest extends TestCase
         );
     }
 
-    public function testIsAccessibleViaPath(): void
+    #[Test]
+    public function path(): void
     {
         $this->assertRouteIsAccessibleViaPath('v1/folders/{folder_id}/invite', 'sendFolderCollaborationInvite');
     }
 
     public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
-        $this->sendInviteResponse(['folder_id' => 4])->assertUnauthorized();
+        $this->sendInviteResponse(['folder_id' => 4, 'permissions' => 'inviteUsers,addBookmarks'])->assertUnauthorized();
     }
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
@@ -541,6 +549,7 @@ class SendInviteTest extends TestCase
         $this->assertCanSendInviteWithPermissions(['removeBookmarks']);
         $this->assertCanSendInviteWithPermissions(['inviteUsers']);
         $this->assertCanSendInviteWithPermissions(['updateFolder']);
+        $this->assertCanSendInviteWithPermissions(['removeUser']);
         $this->assertCanSendInviteWithPermissions(['addBookmarks', 'removeBookmarks']);
         $this->assertCanSendInviteWithPermissions(['addBookmarks', 'removeBookmarks', 'inviteUsers']);
     }
@@ -553,10 +562,7 @@ class SendInviteTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $parameters = [
-            'email' => $invitee->email,
-            'folder_id' => $folder->id,
-        ];
+        $parameters = ['email' => $invitee->email, 'folder_id' => $folder->id];
 
         if ( ! empty($permissions)) {
             $parameters['permissions'] = implode(',', $permissions);

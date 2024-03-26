@@ -14,23 +14,25 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
- * @property        int                                                  $id
- * @property        string|null                                          $description
- * @property        FolderName                                           $name
- * @property        string|null                                          $password
- * @property        FolderSettings                                       $settings
- * @property        FolderVisibility                                     $visibility
- * @property        int                                                  $user_id
- * @property        \Carbon\Carbon                                       $created_at
- * @property        \Carbon\Carbon                                       $updated_at
- * @property        int                                                  $bookmarks_count
- * @property        int                                                  $collaborators_count
- * @property        \Illuminate\Database\Eloquent\Collection<FolderRole> $roles
- * @property        \Illuminate\Database\Eloquent\Collection<User>       $collaborators
- * @property        \Illuminate\Database\Eloquent\Collection<Bookmark>   $bookmarks
- * @method   static Builder|QueryBuilder                                 onlyAttributes(array $attributes = [])
+ * @property        int                    $id
+ * @property        string|null            $description
+ * @property        int                    $bookmarks_count
+ * @property        int                    $collaborators_count
+ * @property        string|null            $password
+ * @property        int                    $user_id
+ * @property        FolderName             $name
+ * @property        FolderSettings         $settings
+ * @property        FolderVisibility       $visibility
+ * @property        \Carbon\Carbon         $created_at
+ * @property        \Carbon\Carbon         $updated_at
+ * @property        Collection<FolderRole> $roles
+ * @property        Collection<User>       $collaborators
+ * @property        Collection<User>       $bannedUsers
+ * @property        Collection<Bookmark>   $bookmarks
+ * @method   static Builder|QueryBuilder   onlyAttributes(array $attributes = [])
  */
 final class Folder extends Model
 {
@@ -83,6 +85,18 @@ final class Folder extends Model
             'id',
             'collaborator_id'
         );
+    }
+
+    public function bannedUsers(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            User::class,
+            BannedCollaborator::class,
+            'folder_id',
+            'id',
+            'id',
+            'user_id'
+        )->select(['users.id', 'full_name']);
     }
 
     public function roles(): HasMany

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Models\Scopes\FetchCollaboratorsFilters;
 
 use App\Models\FolderCollaboratorPermission;
-use App\Repositories\Folder\PermissionRepository;
+use App\Models\FolderPermission;
 use App\UAC;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -21,23 +21,21 @@ final class FilterByPermissionsScope
             return;
         }
 
-        $permissionsRepository = new PermissionRepository();
-
-        $builder->whereExists(function (&$query) use ($permissionsRepository) {
+        $builder->whereExists(function (&$query) {
             $builder = FolderCollaboratorPermission::query()
-                ->whereColumn('user_id', 'users.id')
                 ->whereColumn('folder_id', 'folders_collaborators.folder_id')
+                ->whereColumn('user_id', 'users.id')
                 ->select('user_id', 'folder_id')
                 ->groupBy('user_id', 'folder_id');
 
-            if ($this->permissions->hasAllPermissions()) {
+            if ($this->permissions->hasAll()) {
                 $builder->havingRaw("COUNT(*) = {$this->permissions->count()}");
             }
 
-            if ( ! $this->permissions->hasAllPermissions() && $this->permissions->isNotEmpty()) {
-                $permissionsQuery = $permissionsRepository->findManyByName($this->permissions->toArray())->pluck('id');
-
-                $builder->whereIn('permission_id', $permissionsQuery)->havingRaw("COUNT(*) >= {$this->permissions->count()}");
+            if ( ! $this->permissions->hasAll() && $this->permissions->isNotEmpty()) {
+                $builder
+                    ->whereIn('permission_id', FolderPermission::select('id')->whereIn('name', $this->permissions->toArray()))
+                    ->havingRaw("COUNT(*) >= {$this->permissions->count()}");
             }
 
             $query = $builder->getQuery();

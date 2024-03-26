@@ -12,7 +12,6 @@ use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 
 class DeleteBookmarkTagsTest extends TestCase
@@ -36,7 +35,7 @@ class DeleteBookmarkTagsTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->deleteBookmarkTagsResponse()
             ->assertUnprocessable()
@@ -46,7 +45,7 @@ class DeleteBookmarkTagsTest extends TestCase
 
     public function testDeleteBookmarkTags(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmark = BookmarkFactory::new()->for($user)->create();
         $tags = TagFactory::new()->count(2)->make([]);
@@ -67,7 +66,7 @@ class DeleteBookmarkTagsTest extends TestCase
 
     public function testWillReturnNotFoundResponseIfBookmarkDoesNotExists(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $model = BookmarkFactory::new()->for($user)->create();
 
@@ -78,7 +77,7 @@ class DeleteBookmarkTagsTest extends TestCase
 
     public function testWillReturnNotFoundWhenBookmarkDoesNotHaveTags(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $model = BookmarkFactory::new()->for($user)->create();
 
@@ -91,7 +90,7 @@ class DeleteBookmarkTagsTest extends TestCase
 
     public function testWillReturnNotFoundWhenUserDoesNotOwnBookmark(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $model = BookmarkFactory::new()->create();
 

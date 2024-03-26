@@ -31,6 +31,7 @@ final class NotificationResource extends JsonResource
             Notifications\FolderUpdatedNotificationData::class => (new FolderUpdatedNotificationResource($notification))->toArray($request),
             Notifications\NewCollaboratorNotificationData::class => (new NewCollaboratorNotificationResource($notification))->toArray($request),
             Notifications\YouHaveBeenKickedOutNotificationData::class => (new YouHaveBeenBootedOutNotificationResource($notification))->toArray($request),
+            Notifications\CollaboratorRemovedNotificationData::class => (new CollaboratorRemovedNotificationResource($notification))->toArray($request),
             ImportFailedNotification::class => new ImportFailedNotificationResource($notification),
             default => throw new RuntimeException("Invalid notification type {$type}")
         };

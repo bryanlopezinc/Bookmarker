@@ -12,11 +12,7 @@ use Illuminate\Database\Eloquent\Collection;
 final class DeleteFolderBookmarks implements FolderRequestHandlerInterface
 {
     /**
-<<<<<<< HEAD
-     * @param array<FolderBookmark> folderBookmarks
-=======
      * @param array<FolderBookmark> $folderBookmarks
->>>>>>> metrics
      */
     public function __construct(private readonly array $folderBookmarks)
     {

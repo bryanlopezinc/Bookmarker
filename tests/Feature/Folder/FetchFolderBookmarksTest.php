@@ -47,14 +47,14 @@ class FetchFolderBookmarksTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->assertValidPaginationData($this, 'folderBookmarks', ['folder_id' => 30]);
     }
 
     public function testWillReturnNotFoundWhenFolderIdIsInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->folderBookmarksResponse(['folder_id' => 'f00'])->assertNotFound();
     }
@@ -74,12 +74,12 @@ class FetchFolderBookmarksTest extends TestCase
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
 
-        Passport::actingAs($user);
+        $this->loginUser($user);
         $this->folderBookmarksResponse($query)
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->folderBookmarksResponse($query)->assertOk()->assertJsonCount(1, 'data');
     }
 
@@ -100,15 +100,15 @@ class FetchFolderBookmarksTest extends TestCase
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
 
-        Passport::actingAs($user);
+        $this->loginUser($user);
         $this->folderBookmarksResponse($query)
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->folderBookmarksResponse($query)->assertOk()->assertJsonCount(1, 'data');
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->folderBookmarksResponse($query)->assertOk()->assertJsonCount(1, 'data');
     }
 
@@ -129,13 +129,13 @@ class FetchFolderBookmarksTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data');
 
-        Passport::actingAs($user);
+        $this->loginUser($user);
         $this->folderBookmarksResponse($query)->assertOk()->assertJsonCount(1, 'data');
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->folderBookmarksResponse($query)->assertOk()->assertJsonCount(1, 'data');
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->folderBookmarksResponse($query)->assertOk()->assertJsonCount(1, 'data');
     }
 
@@ -172,7 +172,7 @@ class FetchFolderBookmarksTest extends TestCase
 
     public function testFolderOwnerCanViewHiddenBookmarks(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmarkIds = BookmarkFactory::new()->for($user)->count(2)->create()->pluck('id')->all();
 
@@ -239,7 +239,7 @@ class FetchFolderBookmarksTest extends TestCase
             ->assertJsonPath('data.0.attributes.belongs_to_auth_user', false)
             ->assertJsonPath('data.1.attributes.belongs_to_auth_user', false);
 
-        Passport::actingAs($user);
+        $this->loginUser($user);
         $this->folderBookmarksResponse(['folder_id' => $folder->id])
             ->assertOk()
             ->assertJsonCount(2, 'data')
@@ -249,7 +249,7 @@ class FetchFolderBookmarksTest extends TestCase
 
     public function testWillSortByLatestByDefault(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmarks = BookmarkFactory::new()->count(2)->for($user)->create();
 
@@ -267,7 +267,7 @@ class FetchFolderBookmarksTest extends TestCase
 
     public function testWillCheckBookmarksHealth(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmarkIDs = BookmarkFactory::new()->count(5)->for($user)->create()->pluck('id');
         $folder = FolderFactory::new()->for($user)->create();
@@ -281,7 +281,7 @@ class FetchFolderBookmarksTest extends TestCase
 
     public function testWillReturnNotFoundWhenFolderDoesNotExists(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $folder = FolderFactory::new()->for($user)->create();
 
@@ -294,7 +294,7 @@ class FetchFolderBookmarksTest extends TestCase
 
     public function testWillReturnEmptyResponseWhenFolderHasNoBookmarks(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $folder = FolderFactory::new()->for($user)->create();
 
@@ -313,7 +313,7 @@ class FetchFolderBookmarksTest extends TestCase
 
         $folderOwner->delete();
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->folderBookmarksResponse(['folder_id' => $folder->id])
             ->assertNotFound()
             ->assertJsonFragment(['message' => "FolderNotFound"]);
@@ -336,14 +336,14 @@ class FetchFolderBookmarksTest extends TestCase
         $this->addBookmarksToFolder->create($folder->id, $collaboratorBookmark->id);
         Favorite::create(['user_id' => $collaborator->id, 'bookmark_id' => $collaboratorBookmark->id]);
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->folderBookmarksResponse(['folder_id' => $folder->id])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.attributes.is_user_favorite', true)
             ->assertJsonPath('data.0.attributes.can_favorite', false);
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->folderBookmarksResponse(['folder_id' => $folder->id])
             ->assertOk()
             ->assertJsonCount(1, 'data')
@@ -353,7 +353,7 @@ class FetchFolderBookmarksTest extends TestCase
 
     public function testCanAddBookmarkToFavorites_willBeTrue_whenUserOwnsBookmarks_andBookmarkDoesNotExistInFavorites(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmark = BookmarkFactory::new()->for($user)->create();
         $folder = FolderFactory::new()->for($user)->create();
@@ -376,7 +376,7 @@ class FetchFolderBookmarksTest extends TestCase
 
         $this->CreateCollaborationRecord($users[1], $folder);
 
-        Passport::actingAs($users[1]);
+        $this->loginUser($users[1]);
         $this->folderBookmarksResponse(['folder_id' => $folder->id])
             ->assertOk()
             ->assertJsonCount(1, 'data')

@@ -12,7 +12,6 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 
 class ResendEmailVerificationLinkTest extends TestCase
@@ -39,7 +38,7 @@ class ResendEmailVerificationLinkTest extends TestCase
 
     public function testWillReturnConflictWhenEmailIsAlreadyVerified(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $this->resendVerificationLinkResponse([
             'email' => $user->email
@@ -49,7 +48,7 @@ class ResendEmailVerificationLinkTest extends TestCase
 
     public function testResendLink(): void
     {
-        Passport::actingAs($user = UserFactory::new()->unverified()->create());
+        $this->loginUser($user = UserFactory::new()->unverified()->create());
 
         self::$createdUser = $user;
 
@@ -71,7 +70,7 @@ class ResendEmailVerificationLinkTest extends TestCase
      */
     public function testCanVerifyEmailWithParameters(): void
     {
-        Passport::actingAs(self::$createdUser);
+        $this->loginUser(self::$createdUser);
 
         $components = (new Url(static::$verificationUrl))->parseQuery();
 
@@ -89,7 +88,7 @@ class ResendEmailVerificationLinkTest extends TestCase
 
     public function testWillThrottleRequestWhenUserMakesMoreThan_6_RequestsPerMinute(): void
     {
-        Passport::actingAs(UserFactory::new()->unverified()->create());
+        $this->loginUser(UserFactory::new()->unverified()->create());
 
         UserFactory::new()->unverified()->create();
 

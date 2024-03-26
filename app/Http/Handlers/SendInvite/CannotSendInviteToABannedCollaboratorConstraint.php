@@ -35,7 +35,7 @@ final class CannotSendInviteToABannedCollaboratorConstraint implements FolderReq
      */
     public function handle(Folder $folder): void
     {
-        if (!is_null($folder->inviteeIsBanned)) {
+        if ( ! is_null($folder->inviteeIsBanned)) {
             throw HttpException::forbidden([
                 'message' => 'UserBanned',
                 'info' => 'Request could not be completed because the user has been banned from the folder.'

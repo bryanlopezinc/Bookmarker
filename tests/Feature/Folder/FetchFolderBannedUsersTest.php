@@ -9,7 +9,6 @@ use App\Models\BannedCollaborator;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\Feature\AssertValidPaginationData;
 use Tests\TestCase;
 
@@ -34,14 +33,14 @@ class FetchFolderBannedUsersTest extends TestCase
 
     public function testWillReturnNotFoundWhenFolderIdIsInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->fetchBannedCollaboratorsResponse(['folder_id' => 'f00'])->assertNotFound();
     }
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->fetchBannedCollaboratorsResponse(['name' => str_repeat('A', 11), 'folder_id' => 4])
             ->assertUnprocessable()
@@ -58,7 +57,7 @@ class FetchFolderBannedUsersTest extends TestCase
 
         $this->ban($collaborator->id, $folder->id);
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->fetchBannedCollaboratorsResponse(['folder_id' => $folder->id])
             ->assertOk()
             ->assertJsonCount(1, 'data')
@@ -82,7 +81,7 @@ class FetchFolderBannedUsersTest extends TestCase
 
     public function testWillReturnOnlyUsersWithSpecifiedName(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $collaborators = UserFactory::times(3)
             ->sequence(
@@ -120,7 +119,7 @@ class FetchFolderBannedUsersTest extends TestCase
 
         $this->ban($collaborator->id, $folder->id);
 
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
         $this->fetchBannedCollaboratorsResponse(['folder_id' => $folder->id])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
@@ -134,12 +133,12 @@ class FetchFolderBannedUsersTest extends TestCase
 
         $this->ban($collaborator->id, $folder->id);
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->fetchBannedCollaboratorsResponse(['folder_id' => $folder->id + 1])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
 
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
         $this->fetchBannedCollaboratorsResponse(['folder_id' => $folder->id + 1])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
@@ -154,7 +153,7 @@ class FetchFolderBannedUsersTest extends TestCase
         $this->ban($collaborator->id, $folders[0]->id);
         $this->ban($otherCollaborator->id, $folders[1]->id);
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->fetchBannedCollaboratorsResponse(['folder_id' => $folders[0]->id])
             ->assertOk()
             ->assertJsonCount(1, 'data')
@@ -167,7 +166,7 @@ class FetchFolderBannedUsersTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        Passport::actingAs($user);
+        $this->loginUser($user);
         $this->fetchBannedCollaboratorsResponse(['folder_id' => $folder->id])
             ->assertOk()
             ->assertJsonCount(0, 'data');
@@ -183,7 +182,7 @@ class FetchFolderBannedUsersTest extends TestCase
 
         $collaborator->delete();
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->fetchBannedCollaboratorsResponse(['folder_id' => $folder->id])
             ->assertOk()
             ->assertJsonCount(0, 'data');

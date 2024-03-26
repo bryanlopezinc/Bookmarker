@@ -10,17 +10,9 @@ use App\Http\Requests\UpdateCollaboratorActionRequest as Request;
 use App\Models\Folder;
 use App\Models\FolderDisabledFeature as Model;
 use App\Models\FolderFeature;
-use App\Repositories\Folder\FeaturesRepository;
 
 final class ToggleFolderFeature
 {
-    private readonly FeaturesRepository $featuresRepository;
-
-    public function __construct(FeaturesRepository $featuresRepository = null)
-    {
-        $this->featuresRepository = $featuresRepository ?? new FeaturesRepository();
-    }
-
     public function fromRequest(Request $request): void
     {
         $folderId = $request->integer('folder_id');
@@ -58,13 +50,14 @@ final class ToggleFolderFeature
             Feature::ADD_BOOKMARKS->value    => $request->validated('addBookmarks', null),
             Feature::DELETE_BOOKMARKS->value => $request->validated('removeBookmarks', null),
             Feature::SEND_INVITES->value     => $request->validated('inviteUsers', null),
-            Feature::UPDATE_FOLDER->value    => $request->validated('updateFolder', null)
+            Feature::UPDATE_FOLDER->value    => $request->validated('updateFolder', null),
+            Feature::REMOVE_USER->value      => $request->validated('removeUser', null)
         ];
 
         $feature = collect($featureActionMap)->filter();
 
         return [
-            $this->featuresRepository->findByName(Feature::from($feature->keys()->sole())),
+            FolderFeature::query()->where('name', Feature::from($feature->keys()->sole())->value)->sole(),
             $feature->sole()
         ];
     }

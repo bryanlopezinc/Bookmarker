@@ -9,13 +9,12 @@ use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\View;
-use Laravel\Passport\Passport;
 
 class WillNotImportTwiceTest extends ImportBookmarkBaseTest
 {
     public function testWillImportOnce(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $view = View::file(__DIR__ . '/../stubs/chromeExportFile.blade.php')
             ->with(['includeBookmarksBar' => false])

@@ -9,7 +9,6 @@ use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 
 class SearchUserTagsTest extends TestCase
@@ -33,7 +32,7 @@ class SearchUserTagsTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->searchUserTagsResponse(['search' => str_repeat('f', 23)])
             ->assertUnprocessable()
@@ -42,7 +41,7 @@ class SearchUserTagsTest extends TestCase
 
     public function testSearchTags(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         (new TagRepository())->attach(
             [$tag = $this->faker->word],

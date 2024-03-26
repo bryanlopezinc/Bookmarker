@@ -12,7 +12,6 @@ use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\CreatesCollaboration;
@@ -42,14 +41,14 @@ class FetchFolderTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->fetchFolderResponse()->assertJsonValidationErrors(['id']);
     }
 
     public function testFetchFolder(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         /** @var Model */
         $folder = FolderFactory::new()->for($user)->create();
@@ -99,7 +98,7 @@ class FetchFolderTest extends TestCase
 
     public function testWillReturnCorrectBookmarksCount(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $repository = new CreateFolderBookmarks();
 
@@ -124,7 +123,7 @@ class FetchFolderTest extends TestCase
     {
         $users = UserFactory::times(2)->create();
 
-        Passport::actingAs($folderOwner = UserFactory::new()->create());
+        $this->loginUser($folderOwner = UserFactory::new()->create());
 
         /** @var Model */
         $folder = FolderFactory::new()->for($folderOwner)->create();
@@ -145,7 +144,7 @@ class FetchFolderTest extends TestCase
 
     public function testWhenFolderIsPrivate(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         /** @var Model */
         $folder = FolderFactory::new()->for($user)->private()->create();
@@ -170,7 +169,7 @@ class FetchFolderTest extends TestCase
 
     public function testWillReturnNotFoundWhenFolderDoesNotExists(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         /** @var Model */
         $folder = FolderFactory::new()->for($user)->create();
@@ -182,7 +181,7 @@ class FetchFolderTest extends TestCase
 
     public function testWillReturnNotFoundWhenFolderDoesNotBelongToUser(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->fetchFolderResponse(['id' => FolderFactory::new()->create()->id])
             ->assertNotFound()
@@ -191,7 +190,7 @@ class FetchFolderTest extends TestCase
 
     public function testRequestPartialResource(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         /** @var Model */
         $folder = FolderFactory::new()->for($user)->create();
@@ -222,7 +221,7 @@ class FetchFolderTest extends TestCase
 
     public function testWillReturnUnprocessableWhenFieldsParameterIsInValid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->fetchFolderResponse([
             'id' => 33,

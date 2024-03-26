@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use App\Enums\Permission;
+use App\Models\FolderPermission;
 use App\UAC;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\Test;
@@ -21,15 +22,28 @@ class UACTest extends TestCase
 
     public function testHasAllMethod(): void
     {
-        $uac = new UAC([Permission::UPDATE_FOLDER]);
-        $this->assertFalse($uac->hasAll(new UAC([Permission::INVITE_USER, Permission::ADD_BOOKMARKS])));
+        $uac = new UAC([Permission::UPDATE_FOLDER, Permission::REMOVE_USER]);
+
+        $this->assertFalse($uac->hasAll(new UAC([Permission::INVITE_USER, Permission::UPDATE_FOLDER])));
         $this->assertTrue($uac->hasAll(new UAC([Permission::UPDATE_FOLDER])));
         $this->assertFalse($uac->hasAll(new UAC([])));
-
-        $uac = new UAC([Permission::UPDATE_FOLDER, Permission::INVITE_USER]);
-        $this->assertTrue($uac->hasAll(new UAC([Permission::UPDATE_FOLDER])));
+        $this->assertFalse($uac->hasAll());
 
         $this->assertFalse((new UAC([]))->hasAll(new UAC([Permission::UPDATE_FOLDER])));
+        $this->assertTrue(UAC::all()->hasAll());
+    }
+
+    public function testHasMethod(): void
+    {
+        $uac = new UAC([Permission::UPDATE_FOLDER, Permission::DELETE_BOOKMARKS]);
+
+        $this->assertFalse($uac->has(Permission::ADD_BOOKMARKS));
+        $this->assertFalse($uac->has(Permission::ADD_BOOKMARKS->value));
+        $this->assertFalse($uac->has(new FolderPermission(['name' => Permission::ADD_BOOKMARKS->value])));
+
+        $this->assertTrue($uac->has(Permission::UPDATE_FOLDER));
+        $this->assertTrue($uac->has(Permission::UPDATE_FOLDER->value));
+        $this->assertTrue($uac->has(new FolderPermission(['name' => Permission::UPDATE_FOLDER->value])));
     }
 
     public function testHasAnyMethod(): void
@@ -42,33 +56,6 @@ class UACTest extends TestCase
 
         $this->assertFalse((new UAC([]))->hasAny(new UAC([Permission::UPDATE_FOLDER])));
         $this->assertFalse((new UAC([Permission::UPDATE_FOLDER]))->hasAny(new UAC([])));
-    }
-
-    public function testCanAddBookmarksMethod(): void
-    {
-        $uac = new UAC([Permission::UPDATE_FOLDER]);
-        $this->assertFalse($uac->canAddBookmarks());
-
-        $this->assertFalse((new UAC([]))->canAddBookmarks());
-        $this->assertTrue((new UAC([Permission::UPDATE_FOLDER, Permission::ADD_BOOKMARKS]))->canAddBookmarks());
-    }
-
-    public function testCanRemoveBookmarksMethod(): void
-    {
-        $uac = new UAC([Permission::UPDATE_FOLDER]);
-        $this->assertFalse($uac->canRemoveBookmarks());
-
-        $this->assertFalse((new UAC([]))->canRemoveBookmarks());
-        $this->assertTrue((new UAC([Permission::DELETE_BOOKMARKS, Permission::ADD_BOOKMARKS]))->canRemoveBookmarks());
-    }
-
-    public function testCanInviteUserMethod(): void
-    {
-        $uac = new UAC([Permission::UPDATE_FOLDER]);
-        $this->assertFalse($uac->canInviteUser());
-
-        $this->assertFalse((new UAC([]))->canInviteUser());
-        $this->assertTrue((new UAC([Permission::DELETE_BOOKMARKS, Permission::INVITE_USER]))->canInviteUser());
     }
 
     public function testIsEmptyMethod(): void
@@ -104,6 +91,12 @@ class UACTest extends TestCase
     {
         $uac = new UAC([]);
         $this->assertEquals([], $uac->toExternalIdentifiers());
+    }
+
+    #[Test]
+    public function validExternalIdentifiersMethod(): void
+    {
+        $this->assertEquals(count(Permission::cases()), count(UAC::validExternalIdentifiers()));
     }
 
     #[Test]

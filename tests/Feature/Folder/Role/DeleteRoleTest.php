@@ -7,7 +7,6 @@ namespace Tests\Feature\Folder\Role;
 use App\Enums\Permission;
 use App\Models\FolderRole;
 use App\Models\FolderRolePermission;
-use App\Repositories\Folder\PermissionRepository;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -23,15 +22,6 @@ class DeleteRoleTest extends TestCase
     use WithFaker;
     use CreatesCollaboration;
     use CreatesRole;
-
-    private PermissionRepository $permissions;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->permissions = new PermissionRepository();
-    }
 
     protected function deleteRoleResponse(array $parameters = []): TestResponse
     {

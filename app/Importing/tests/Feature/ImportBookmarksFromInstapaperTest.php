@@ -9,13 +9,12 @@ use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\View;
-use Laravel\Passport\Passport;
 
-class ImportBookmarksFromInstapaperTest extends ImportBookmarkBaseTest
+class ImportBookmarksFromInstaPaperTest extends ImportBookmarkBaseTest
 {
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->importBookmarkResponse()
             ->assertUnprocessable()
@@ -55,7 +54,7 @@ class ImportBookmarksFromInstapaperTest extends ImportBookmarkBaseTest
 
     public function testImportBookmarks(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->importBookmarkResponse([
             'source' => 'instapaperFile',

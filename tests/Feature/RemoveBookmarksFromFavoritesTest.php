@@ -9,7 +9,6 @@ use App\Repositories\FavoriteRepository;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 
 class RemoveBookmarksFromFavoritesTest extends TestCase
@@ -31,7 +30,7 @@ class RemoveBookmarksFromFavoritesTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->deleteFavoriteResponse()
             ->assertUnprocessable()
@@ -55,7 +54,7 @@ class RemoveBookmarksFromFavoritesTest extends TestCase
 
     public function testDeleteFavorites(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmark = BookmarkFactory::new()->for($user)->create();
 
@@ -71,7 +70,7 @@ class RemoveBookmarksFromFavoritesTest extends TestCase
 
     public function testDeleteMultipleFavorites(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $ids = BookmarkFactory::new()
             ->count(3)
@@ -92,11 +91,11 @@ class RemoveBookmarksFromFavoritesTest extends TestCase
 
     public function testWillReturnNotFoundWhenBookmarksDoesNotExistsInFavorites(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmark = BookmarkFactory::new()->for($user)->create();
 
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->deleteFavoriteResponse(['bookmarks' => (string) $bookmark->id])
             ->assertNotFound()

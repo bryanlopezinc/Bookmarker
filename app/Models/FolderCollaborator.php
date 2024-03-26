@@ -6,14 +6,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
- * @property int                                                              $id
- * @property int                                                              $folder_id
- * @property int                                                              $collaborator_id
- * @property int                                                              $invited_by
- * @property \Carbon\Carbon                                                   $joined_at
- * @property \Illuminate\Database\Eloquent\Collection<FolderCollaboratorRole> $roles
+ * @property int                                $id
+ * @property int                                $folder_id
+ * @property int                                $collaborator_id
+ * @property int                                $invited_by
+ * @property \Carbon\Carbon                     $joined_at
+ * @property Collection<FolderCollaboratorRole> $roles
  */
 final class FolderCollaborator extends Model
 {

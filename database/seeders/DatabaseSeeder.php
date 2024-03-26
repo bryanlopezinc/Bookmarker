@@ -15,5 +15,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
+        $this->call([
+            PermissionsSeeder::class,
+            FolderFeatureTypesSeeder::class
+        ]);
     }
 }

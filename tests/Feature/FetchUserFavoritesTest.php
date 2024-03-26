@@ -9,7 +9,6 @@ use App\Repositories\FavoriteRepository;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 use Tests\Traits\AssertsBookmarkJson;
 use Tests\Traits\WillCheckBookmarksHealth;
@@ -37,14 +36,14 @@ class FetchUserFavoritesTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->assertValidPaginationData($this, 'fetchUserFavorites');
     }
 
     public function testFetchUserFavorites(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $this->fetchUserFavoritesResponse()->assertOk()->assertJsonCount(0, 'data');
 
@@ -75,7 +74,7 @@ class FetchUserFavoritesTest extends TestCase
 
     public function testWillSortByLatest(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         /** @var Bookmark[] */
         $bookmarks = BookmarkFactory::new()->count(3)->for($user)->create();
@@ -94,7 +93,7 @@ class FetchUserFavoritesTest extends TestCase
 
     public function testWillCheckBookmarksHealth(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmarks = BookmarkFactory::new()->count(5)->for($user)->create();
 
@@ -107,7 +106,7 @@ class FetchUserFavoritesTest extends TestCase
 
     public function testWillReturnEmptyResponseWhenUserHasNoFavorites(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->fetchUserFavoritesResponse()
             ->assertOk()

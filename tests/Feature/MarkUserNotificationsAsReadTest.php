@@ -11,7 +11,6 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Collection;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 
 class MarkUserNotificationsAsReadTest extends TestCase
@@ -39,7 +38,7 @@ class MarkUserNotificationsAsReadTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->make());
+        $this->loginUser(UserFactory::new()->make());
 
         $this->readNotificationsResponse()
             ->assertUnprocessable()
@@ -74,7 +73,7 @@ class MarkUserNotificationsAsReadTest extends TestCase
 
         $notificationID = DatabaseNotification::query()->where('notifiable_id', $user->id)->sole(['id'])->id;
 
-        Passport::actingAs($user);
+        $this->loginUser($user);
         $this->readNotificationsResponse(['ids' => [$notificationID]])->assertOk();
 
         $notification = DatabaseNotification::query()->find($notificationID, ['read_at', 'id']);
@@ -96,7 +95,7 @@ class MarkUserNotificationsAsReadTest extends TestCase
 
         $notificationID = DatabaseNotification::query()->where('notifiable_id', $user->id)->sole(['id'])->id;
 
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
         $this->readNotificationsResponse(['ids' => [$notificationID]])
             ->assertNotFound()
             ->assertExactJson(['message' => 'NotificationNotFound']);
@@ -116,7 +115,7 @@ class MarkUserNotificationsAsReadTest extends TestCase
 
         $notificationID = DatabaseNotification::select('id')->where('notifiable_id', $user->id)->sole()->id;
 
-        Passport::actingAs($user);
+        $this->loginUser($user);
         $this->readNotificationsResponse($data = ['ids' => [$notificationID]])->assertOk();
         $this->readNotificationsResponse($data)->assertOk();
         $this->readNotificationsResponse($data)->assertOk();
@@ -124,7 +123,7 @@ class MarkUserNotificationsAsReadTest extends TestCase
 
     public function testWillReturnNotFoundWhenNotificationsDoesNotExist(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
         $this->readNotificationsResponse(['ids' => [$this->faker->uuid]])
             ->assertNotFound()
             ->assertExactJson(['message' => 'NotificationNotFound']);

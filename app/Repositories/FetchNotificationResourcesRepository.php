@@ -7,6 +7,7 @@ namespace App\Repositories;
 use Illuminate\Support\Collection;
 use App\Models\{Folder, Bookmark, User};
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -23,6 +24,8 @@ final class FetchNotificationResourcesRepository
     private const USER_ID_KEYS = [
         'collaborator_id',
         'new_collaborator_id',
+        'collaborator.id',
+        'removed_by.id'
     ];
 
     /**
@@ -30,7 +33,7 @@ final class FetchNotificationResourcesRepository
      *
      * @var array<string>
      */
-    private const FOLDER_ID_KEYS = ['folder_id'];
+    private const FOLDER_ID_KEYS = ['folder_id', 'folder.id'];
 
     /**
      * The key names in the notification data array used to store bookmark ids.
@@ -124,7 +127,17 @@ final class FetchNotificationResourcesRepository
         return $this->notifications
             ->pluck('data')
             ->map(function (array $notificationData) use ($keys) {
-                return collect($notificationData)->only($keys)->flatten()->unique()->all();
+                $ids = [];
+
+                foreach ($keys as $key) {
+                    if ( ! Arr::has($notificationData, $key)) {
+                        continue;
+                    }
+
+                    $ids[] = Arr::get($notificationData, $key);
+                }
+
+                return $ids;
             })
             ->flatten()
             ->all();

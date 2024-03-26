@@ -10,4 +10,5 @@ enum Permission: string
     case DELETE_BOOKMARKS = 'DELETE_BOOKMARKS';
     case INVITE_USER      = 'INVITE_USER';
     case UPDATE_FOLDER    = 'UPDATE_FOLDER';
+    case REMOVE_USER      = 'REMOVE_USER';
 }

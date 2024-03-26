@@ -10,7 +10,6 @@ use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 
 class FetchAuthUserProfileTest extends TestCase
@@ -32,7 +31,7 @@ class FetchAuthUserProfileTest extends TestCase
 
     public function testFetchUserProfile(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $this->getUserProfileResponse()
             ->assertOk()
@@ -67,7 +66,7 @@ class FetchAuthUserProfileTest extends TestCase
 
     public function testWillReturnCorrectFavoritesCountValueWhenBookmarksDoesNotExists(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmarks = BookmarkFactory::times(2)->for($user)->create();
 

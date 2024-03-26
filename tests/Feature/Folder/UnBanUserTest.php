@@ -8,7 +8,6 @@ use App\Models\BannedCollaborator;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 
 class UnBanUserTest extends TestCase
@@ -43,7 +42,7 @@ class UnBanUserTest extends TestCase
         $this->ban($collaborator->id, $folder->id);
         $this->ban($otherCollaborator->id, $folder->id);
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->unBanUserResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
             ->assertOk();
 
@@ -68,7 +67,7 @@ class UnBanUserTest extends TestCase
 
         $this->ban($collaborator->id, $folder->id);
 
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
         $this->unBanUserResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
@@ -82,12 +81,12 @@ class UnBanUserTest extends TestCase
 
         $this->ban($collaborator->id, $folder->id);
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->unBanUserResponse(['folder_id' => $folder->id + 1, 'collaborator_id' => $collaborator->id])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
 
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
         $this->unBanUserResponse(['folder_id' => $folder->id + 1, 'collaborator_id' => $collaborator->id])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
@@ -99,7 +98,7 @@ class UnBanUserTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        Passport::actingAs($folderOwner);
+        $this->loginUser($folderOwner);
         $this->unBanUserResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
             ->assertNotFound()
             ->assertExactJson(['message' => 'UserNotFound']);

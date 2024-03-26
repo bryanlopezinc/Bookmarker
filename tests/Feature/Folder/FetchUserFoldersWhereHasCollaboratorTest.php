@@ -8,7 +8,6 @@ use App\Enums\Permission;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\AssertValidPaginationData;
 use Tests\TestCase;
@@ -36,7 +35,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
 
     public function testWillReturnNotFoundWhenCollaboratorIdIsInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->assertValidPaginationData($this, 'fetchUserFoldersWhereHasCollaborator', ['collaborator_id' => 4]);
 
@@ -52,7 +51,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
 
         $this->CreateCollaborationRecord($users[0], $folders[0], [Permission::INVITE_USER, Permission::ADD_BOOKMARKS]);
 
-        Passport::actingAs($users[1]);
+        $this->loginUser($users[1]);
         $this->whereHasCollaboratorsResponse(['collaborator_id' => $users[0]->id])
             ->assertOk()
             ->assertJsonCount(1, 'data')
@@ -123,7 +122,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folders[0], Permission::ADD_BOOKMARKS);
         $this->CreateCollaborationRecord($collaborator, $folders[1], Permission::ADD_BOOKMARKS);
 
-        Passport::actingAs($users[1]);
+        $this->loginUser($users[1]);
         $this->whereHasCollaboratorsResponse(['collaborator_id' => $collaborator->id])
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.attributes.id', $folders[0]->id);
@@ -133,7 +132,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
 
-        Passport::actingAs($user);
+        $this->loginUser($user);
         $this->whereHasCollaboratorsResponse(['collaborator_id' => $collaborator->id + 1])->assertJsonCount(0, 'data');
     }
 
@@ -141,7 +140,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
 
-        Passport::actingAs($user);
+        $this->loginUser($user);
         $this->whereHasCollaboratorsResponse(['collaborator_id' => $collaborator->id])->assertJsonCount(0, 'data');
     }
 
@@ -152,7 +151,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
 
         $this->CreateCollaborationRecord($collaborator, $userFolder, Permission::ADD_BOOKMARKS);
 
-        Passport::actingAs($user);
+        $this->loginUser($user);
         $this->whereHasCollaboratorsResponse($query = ['collaborator_id' => $collaborator->id])
             ->assertOk()
             ->assertJsonCount(1, 'data');
@@ -169,7 +168,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
 
         $this->CreateCollaborationRecord($collaborator, $userFolder);
 
-        Passport::actingAs($user);
+        $this->loginUser($user);
         $this->whereHasCollaboratorsResponse([
             'collaborator_id' => $collaborator->id,
             'fields' => 'id,name,permissions'
@@ -191,7 +190,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
 
     public function testFieldsMustBeValid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->whereHasCollaboratorsResponse(['fields' => 'id,name,foo,1', 'collaborator_id' => 4])
             ->assertUnprocessable()

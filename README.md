@@ -19,7 +19,7 @@
    - Invite users as collaborators to foster teamwork and collective knowledge management.
 
 5. **Granular Permissions:**
-   - Exercise precise control over collaborators with the ability to add/remove bookmarks, invite users, update folders, and engage in discussions based on customizable permissions.
+   - Exercise precise control over collaborators with the ability to add/remove bookmarks, invite users, update folders, and engage in discussions based on customizable permissions or roles.
 
 6. **Access Control:**
    - Determine who can view folder bookmarks, ensuring sensitive information remains secure.

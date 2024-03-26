@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Folder\Role;
 
 use App\Enums\Permission;
-use App\Repositories\Folder\PermissionRepository;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -21,15 +20,7 @@ class RemoveRolePermissionTest extends TestCase
     use WithFaker;
     use CreatesCollaboration;
     use CreatesRole;
-
-    private PermissionRepository $permissions;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->permissions = new PermissionRepository();
-    }
+    //use InteractsWithValues;
 
     protected function deleteRolePermissionResponse(array $parameters = []): TestResponse
     {
@@ -81,20 +72,20 @@ class RemoveRolePermissionTest extends TestCase
 
         $role = $this->createRole(folder: $folder, permissions: [Permission::ADD_BOOKMARKS, Permission::DELETE_BOOKMARKS]);
 
-        $this->deleteRolePermissionResponse([
+        $this->deleteRolePermissionResponse($query = [
             'permission' => 'removeBookmarks',
             'folder_id'  => $folder->id,
             'role_id'    => $role->id
         ])->assertOk();
 
         $this->assertEquals(
-            $role->refresh()->permissions->pluck('permission_id')->sole(),
-            $this->permissions->findByName(Permission::ADD_BOOKMARKS)->id
+            $role->refresh()->permissions->pluck('name')->sole(),
+            Permission::ADD_BOOKMARKS->value
         );
 
         $this->assertEqualsCanonicalizing(
-            $userSecondFolderRole->refresh()->permissions->pluck('permission_id')->all(),
-            $this->permissions->findManyByName([Permission::ADD_BOOKMARKS, Permission::DELETE_BOOKMARKS])->pluck('id')->all()
+            $userSecondFolderRole->refresh()->permissions->pluck('name')->all(),
+            [Permission::ADD_BOOKMARKS->value, Permission::DELETE_BOOKMARKS->value]
         );
     }
 
@@ -114,8 +105,8 @@ class RemoveRolePermissionTest extends TestCase
         ])->assertBadRequest()->assertJsonFragment(['message' => 'CannotRemoveAllRolePermissions']);
 
         $this->assertEqualsCanonicalizing(
-            $role->refresh()->permissions->pluck('permission_id')->sole(),
-            $this->permissions->findByName(Permission::DELETE_BOOKMARKS)->id
+            $role->refresh()->permissions->pluck('name')->sole(),
+            Permission::DELETE_BOOKMARKS->value
         );
     }
 
@@ -158,13 +149,13 @@ class RemoveRolePermissionTest extends TestCase
         ])->assertNotFound()->assertJsonFragment(['message' => 'RoleNotFound']);
 
         $this->assertEquals(
-            $userFolderRole->permissions->sole()->permission_id,
-            $this->permissions->findByName(Permission::INVITE_USER)->id
+            $userFolderRole->permissions->sole()->name,
+            Permission::INVITE_USER->value
         );
 
         $this->assertEquals(
-            $anotherUserFolderRole->permissions->sole()->permission_id,
-            $this->permissions->findByName(Permission::INVITE_USER)->id
+            $anotherUserFolderRole->permissions->sole()->name,
+            Permission::INVITE_USER->value
         );
     }
 
@@ -183,8 +174,8 @@ class RemoveRolePermissionTest extends TestCase
         ])->assertNotFound()->assertJsonFragment(['message' => 'FolderNotFound']);
 
         $this->assertEquals(
-            $role->permissions->sole()->permission_id,
-            $this->permissions->findByName(Permission::INVITE_USER)->id
+            $role->permissions->sole()->name,
+            Permission::INVITE_USER->value
         );
     }
 
@@ -205,8 +196,8 @@ class RemoveRolePermissionTest extends TestCase
         ])->assertForbidden()->assertJsonFragment(['message' => 'PermissionDenied']);
 
         $this->assertEquals(
-            $role->permissions->sole()->permission_id,
-            $this->permissions->findByName(Permission::INVITE_USER)->id
+            $role->permissions->sole()->name,
+            Permission::INVITE_USER->value
         );
     }
 

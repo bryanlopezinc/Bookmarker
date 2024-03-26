@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder\Role;
 
-use App\Enums\Permission;
-use App\Repositories\Folder\PermissionRepository;
+use App\UAC;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Feature\Folder\Concerns\InteractsWithValues;
 use Tests\TestCase;
 use Tests\Traits\CreatesCollaboration;
 
@@ -19,6 +19,12 @@ class CreateRoleTest extends TestCase
 {
     use WithFaker;
     use CreatesCollaboration;
+    use InteractsWithValues;
+
+    protected function shouldBeInteractedWith(): mixed
+    {
+        return UAC::validExternalIdentifiers();
+    }
 
     protected function createRoleResponse(array $parameters = []): TestResponse
     {
@@ -85,25 +91,19 @@ class CreateRoleTest extends TestCase
     {
         $this->loginUser($folderOwner = UserFactory::new()->create());
 
-        $permissionsRepository = new PermissionRepository();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
         $this->createRoleResponse([
-            'permissions' => ['addBookmarks', 'inviteUsers'],
+            'permissions' => $permissions = ['addBookmarks', 'inviteUsers', 'removeUser'],
             'name'        => $name = $this->faker->word,
             'folder_id'   => $folder->id
         ])->assertCreated();
 
-        $folder->load(['roles.permissions']);
-
-        $rolePermissionNames = $permissionsRepository->findManyById(
-            $folder->roles->sole()->permissions->pluck('permission_id')
-        )->pluck('name');
-
-        $this->assertEquals($name, $folder->roles->sole()->name);
-        $this->assertCount(2, $rolePermissionNames);
-        $this->assertContains(Permission::ADD_BOOKMARKS->value, $rolePermissionNames);
-        $this->assertContains(Permission::INVITE_USER->value, $rolePermissionNames);
+        $this->assertEquals($name, $folder->refresh()->roles->sole()->name);
+        $this->assertEqualsCanonicalizing(
+            $folder->roles->sole()->permissions->pluck('name')->all(),
+            UAC::fromRequest($permissions)->toArray()
+        );
     }
 
     #[Test]

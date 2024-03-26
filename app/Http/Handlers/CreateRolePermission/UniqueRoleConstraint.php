@@ -7,22 +7,20 @@ namespace App\Http\Handlers\CreateRolePermission;
 use App\Contracts\FolderRequestHandlerInterface;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
+use App\Models\FolderPermission;
 use App\Models\FolderRole;
 use App\Models\FolderRolePermission;
-use App\Repositories\Folder\PermissionRepository;
 use Illuminate\Support\Facades\DB;
 
 final class UniqueRoleConstraint implements FolderRequestHandlerInterface
 {
     private readonly string $permission;
-    private readonly PermissionRepository $permissionsRepository;
     private readonly int $roleId;
 
-    public function __construct(int $roleId, string $permission, PermissionRepository $permissionsRepository = null)
+    public function __construct(int $roleId, string $permission)
     {
         $this->permission = $permission;
         $this->roleId = $roleId;
-        $this->permissionsRepository = $permissionsRepository ??= new PermissionRepository();
     }
 
     /**
@@ -30,11 +28,14 @@ final class UniqueRoleConstraint implements FolderRequestHandlerInterface
      */
     public function handle(Folder $folder): void
     {
+        /** @var \Illuminate\Database\Eloquent\Builder */
+        $union = FolderPermission::select('id')->where('name', $this->permission);
+
         $roleExpectedPermissions = FolderRolePermission::query()
             ->where('role_id', $this->roleId)
+            ->unionAll($union)
             ->get(['permission_id'])
-            ->pluck('permission_id')
-            ->push($this->permissionsRepository->findByName($this->permission)->id);
+            ->pluck('permission_id');
 
         $roleWithExactSamePermissions = FolderRole::query()
             ->select('name')

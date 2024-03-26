@@ -11,4 +11,16 @@ enum Feature: string
     case SEND_INVITES     = 'SEND_INVITES';
     case UPDATE_FOLDER    = 'UPDATE_FOLDER';
     case JOIN_FOLDER      = 'JOIN_FOLDER';
+    case REMOVE_USER      = 'REMOVE_USER';
+
+    public static function publicIdentifiers(): array
+    {
+        return [
+            'addBookmarks',
+            'removeBookmarks',
+            'inviteUsers',
+            'updateFolder',
+            'removeUser'
+        ];
+    }
 }

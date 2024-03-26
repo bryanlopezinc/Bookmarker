@@ -18,7 +18,7 @@ final class FolderFeature extends Model
     /**
      * {@inheritdoc}
      */
-    protected $table = 'folders_features';
+    protected $table = 'folders_features_types';
 
     /**
      * {@inheritdoc}

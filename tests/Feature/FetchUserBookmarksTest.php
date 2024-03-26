@@ -14,7 +14,6 @@ use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 use Tests\Traits\{AssertsBookmarkJson, WillCheckBookmarksHealth};
 
@@ -42,7 +41,7 @@ class FetchUserBookmarksTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->assertValidPaginationData($this, 'fetchUserBookmarks');
 
@@ -65,7 +64,7 @@ class FetchUserBookmarksTest extends TestCase
 
     public function testWillFetchUserBookmarks(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         /** @var Bookmark */
         $bookmark = BookmarkFactory::new()->for($user)->create();
@@ -100,7 +99,7 @@ class FetchUserBookmarksTest extends TestCase
 
     public function testWillSortBookmarksByLatestByDefault(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         /** @var Bookmark[] */
         $bookmarks = BookmarkFactory::new()->count(2)->for($user)->create();
@@ -114,7 +113,7 @@ class FetchUserBookmarksTest extends TestCase
 
     public function testWillCheckBookmarksHealth(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmarks = BookmarkFactory::new()->for($user)->count(10)->create();
 
@@ -125,7 +124,7 @@ class FetchUserBookmarksTest extends TestCase
 
     public function testWillFilterUserBookmarksFromASpecifiedSource(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $factory = BookmarkFactory::new()->for($user);
         $source = SourceFactory::new()->create();
@@ -143,7 +142,7 @@ class FetchUserBookmarksTest extends TestCase
 
     public function testWillFetchOnlyBookmarksWithAParticularTag(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $factory = BookmarkFactory::new()->for($user);
         $tag = TagFactory::new()->create();
@@ -163,7 +162,7 @@ class FetchUserBookmarksTest extends TestCase
 
     public function testWillFetchOnlyBookmarksWithoutTags(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $factory = BookmarkFactory::new()->for($user);
         $tag = TagFactory::new()->create();
@@ -184,7 +183,7 @@ class FetchUserBookmarksTest extends TestCase
 
     public function testWillSortBookmarksByOldest(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         /** @var Bookmark[] */
         $bookmarks = BookmarkFactory::new()->count(2)->for($user)->create();
@@ -198,7 +197,7 @@ class FetchUserBookmarksTest extends TestCase
 
     public function testWillSortBookmarksByLatest(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         /** @var Bookmark[] */
         $bookmarks = BookmarkFactory::new()->count(2)->for($user)->create();
@@ -212,7 +211,7 @@ class FetchUserBookmarksTest extends TestCase
 
     public function test_is_user_favorite_attribute_will_be_true(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         /** @var Bookmark[] */
         $bookmarks = BookmarkFactory::new()->count(2)->for($user)->create();
@@ -232,7 +231,7 @@ class FetchUserBookmarksTest extends TestCase
 
     public function testWillFetchOnlyBookmarksWithDeadLinks(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         /** @var Bookmark[] */
         $bookmarks = BookmarkFactory::new()->count(2)->for($user)->create();
@@ -249,7 +248,7 @@ class FetchUserBookmarksTest extends TestCase
 
     public function testWhenBookmarkHasTags(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $tags = TagFactory::new()->count(2)->create();
 

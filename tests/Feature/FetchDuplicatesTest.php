@@ -10,7 +10,6 @@ use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 use Tests\Traits\AssertsBookmarkJson;
 
@@ -41,21 +40,21 @@ class FetchDuplicatesTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->assertValidPaginationData($this, 'fetchPossibleDuplicates', ['bookmark_id' => 3]);
     }
 
     public function testWillReturnNotFoundWhenBookmarkIdIsInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->fetchDuplicatesResponse(['bookmark_id' => 'foo'])->assertNotFound();
     }
 
     public function testWillReturnNotFoundWhenBookmarkDoesNotBelongToUser(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->fetchDuplicatesResponse(['bookmark_id' => BookmarkFactory::new()->create()->id])
             ->assertNotFound()
@@ -64,7 +63,7 @@ class FetchDuplicatesTest extends TestCase
 
     public function testDuplicates(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $hash = (new UrlHasher())->hashUrl(new Url($this->faker->url));
 
@@ -78,7 +77,7 @@ class FetchDuplicatesTest extends TestCase
 
     public function testWillReturnOnlyUserBookmarks(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $hash = (new UrlHasher())->hashUrl(new Url($this->faker->url));
 
@@ -94,7 +93,7 @@ class FetchDuplicatesTest extends TestCase
 
     public function testWillReturnNotFoundWhenBookmarkDoesNotExist(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->fetchDuplicatesResponse(['bookmark_id' => BookmarkFactory::new()->create()->id + 1])
             ->assertNotFound()

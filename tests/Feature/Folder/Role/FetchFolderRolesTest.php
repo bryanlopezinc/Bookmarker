@@ -14,7 +14,6 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\Traits\CreatesCollaboration;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\Feature\AssertValidPaginationData;
-use App\Repositories\Folder\PermissionRepository;
 
 class FetchFolderRolesTest extends TestCase
 {
@@ -22,15 +21,6 @@ class FetchFolderRolesTest extends TestCase
     use CreatesCollaboration;
     use CreatesRole;
     use AssertValidPaginationData;
-
-    private PermissionRepository $permissions;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->permissions = new PermissionRepository();
-    }
 
     protected function fetchFolderRolesResponse(array $parameters = []): TestResponse
     {

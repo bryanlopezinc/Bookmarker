@@ -10,7 +10,6 @@ use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\Feature\AssertValidPaginationData;
 use Tests\TestCase;
 
@@ -45,7 +44,7 @@ class FetchUserFoldersTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->assertValidPaginationData($this, 'userFolders');
 
@@ -56,7 +55,7 @@ class FetchUserFoldersTest extends TestCase
 
     public function testFetchUserFolders(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         FolderFactory::new()->create(); //folders does not belong to current user.
 
@@ -110,7 +109,7 @@ class FetchUserFoldersTest extends TestCase
 
     public function testWillReturnRecentFoldersByDefault(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $folders = FolderFactory::new()->for($user)->count(2)->create();
 
@@ -123,7 +122,7 @@ class FetchUserFoldersTest extends TestCase
 
     public function testSortByLatest(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $folders = FolderFactory::new()->for($user)->count(2)->create();
 
@@ -136,7 +135,7 @@ class FetchUserFoldersTest extends TestCase
 
     public function testSortByOldest(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $folders = FolderFactory::new()->for($user)->count(2)->create();
 
@@ -149,7 +148,7 @@ class FetchUserFoldersTest extends TestCase
 
     public function testSortByMostItems(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $folders = FolderFactory::new()->count(3)->for($user)->create();
 
@@ -163,7 +162,7 @@ class FetchUserFoldersTest extends TestCase
 
     public function testSortByLeastItems(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $folders = FolderFactory::new()->count(3)->for($user)->create();
 
@@ -180,7 +179,7 @@ class FetchUserFoldersTest extends TestCase
 
     public function testSortByRecentlyUpdated(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $folders = FolderFactory::new()->count(3)->for($user)->create();
 
@@ -194,7 +193,7 @@ class FetchUserFoldersTest extends TestCase
 
     public function testVisibility(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         FolderFactory::new()->for($user)->create();
         FolderFactory::new()->for($user)->private()->create();
@@ -210,7 +209,7 @@ class FetchUserFoldersTest extends TestCase
 
     public function testCanRequestPartialResource(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         FolderFactory::new()->count(3)->for($user)->create();
 
@@ -235,7 +234,7 @@ class FetchUserFoldersTest extends TestCase
 
     public function testWillReturnUnprocessableWhenFieldsParameterIsInValid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->userFoldersResponse(['fields' => 'id,name,foo,1'])
             ->assertUnprocessable()

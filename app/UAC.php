@@ -29,7 +29,9 @@ final class UAC implements Countable, Arrayable, IteratorAggregate
     {
         $this->permissions = $this->resolvePermissions(Arr::wrap($permissions));
 
-        $this->validate();
+        $this->permissions->duplicates()->whenNotEmpty(function () {
+            throw new Exception('Permissions contains duplicate values', 1_601);
+        });
     }
 
     private function resolvePermissions(array $permissions): Collection
@@ -86,7 +88,8 @@ final class UAC implements Countable, Arrayable, IteratorAggregate
             'addBookmarks'    => Permission::ADD_BOOKMARKS->value,
             'removeBookmarks' => Permission::DELETE_BOOKMARKS->value,
             'inviteUsers'     => Permission::INVITE_USER->value,
-            'updateFolder'    => Permission::UPDATE_FOLDER->value
+            'updateFolder'    => Permission::UPDATE_FOLDER->value,
+            'removeUser'      => Permission::REMOVE_USER->value,
         ];
     }
 
@@ -96,15 +99,6 @@ final class UAC implements Countable, Arrayable, IteratorAggregate
     public static function validExternalIdentifiers(): array
     {
         return array_keys(self::externalToInternalIdentifiersMap());
-    }
-
-    private function validate(): void
-    {
-        $isUnique = $this->permissions->unique()->count() === $this->permissions->count();
-
-        if ( ! $isUnique) {
-            throw new Exception('Permissions contains duplicate values', 1_601);
-        }
     }
 
     /**
@@ -145,11 +139,6 @@ final class UAC implements Countable, Arrayable, IteratorAggregate
         return $this->permissions->count();
     }
 
-    public function hasAllPermissions(): bool
-    {
-        return $this->count() === count(self::all());
-    }
-
     public function isEmpty(): bool
     {
         return $this->permissions->isEmpty();
@@ -160,19 +149,15 @@ final class UAC implements Countable, Arrayable, IteratorAggregate
         return $this->permissions->isNotEmpty();
     }
 
-    public function hasAll(UAC $uac): bool
+    public function hasAll(UAC $uac = null): bool
     {
+        $uac ??= self::all();
+
         if ($uac->isEmpty()) {
             return false;
         }
 
-        foreach ($uac->permissions as $permission) {
-            if ($this->permissions->doesntContain($permission)) {
-                return false;
-            }
-        }
-
-        return true;
+        return $this->permissions->intersect($uac)->count() === $uac->count();
     }
 
     public function hasAny(UAC $uac): bool
@@ -186,23 +171,8 @@ final class UAC implements Countable, Arrayable, IteratorAggregate
         return false;
     }
 
-    public function canAddBookmarks(): bool
+    public function has(Permission|string|FolderPermission $permission): bool
     {
-        return $this->permissions->contains(Permission::ADD_BOOKMARKS->value);
-    }
-
-    public function canRemoveBookmarks(): bool
-    {
-        return $this->permissions->contains(Permission::DELETE_BOOKMARKS->value);
-    }
-
-    public function canInviteUser(): bool
-    {
-        return $this->permissions->contains(Permission::INVITE_USER->value);
-    }
-
-    public function canUpdateFolder(): bool
-    {
-        return $this->permissions->contains(Permission::UPDATE_FOLDER->value);
+        return $this->permissions->containsStrict((new self($permission))->permissions->sole());
     }
 }

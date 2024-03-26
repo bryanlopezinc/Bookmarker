@@ -11,8 +11,8 @@ use App\PaginationData;
 use App\UAC;
 use Illuminate\Pagination\Paginator;
 use App\Http\Requests\FetchFolderCollaboratorsRequest as Request;
+use App\Models\FolderPermission;
 use App\Models\Scopes\FetchCollaboratorsFilters as Filters;
-use App\Repositories\Folder\PermissionRepository;
 use Closure;
 
 final class FetchFolderCollaborators
@@ -31,10 +31,14 @@ final class FetchFolderCollaborators
                 'users.id',
                 'full_name',
                 'profile_image_path',
-                'permissions' => CollaboratorPermission::query()
-                    ->selectRaw('JSON_ARRAYAGG(permission_id)')
-                    ->whereColumn('user_id', 'users.id')
-                    ->whereColumn('folder_id', 'folders_collaborators.folder_id'),
+                'permissions' => FolderPermission::query()
+                    ->selectRaw('JSON_ARRAYAGG(name)')
+                    ->whereIn(
+                        'id',
+                        CollaboratorPermission::select('permission_id')
+                            ->whereColumn('folder_id', 'folders_collaborators.folder_id')
+                            ->whereColumn('user_id', 'users.id')
+                    ),
             ])
             ->join('folders_collaborators', 'folders_collaborators.collaborator_id', '=', 'users.id')
             ->tap(new Filters\FilterByNameScope($request->input('name')))
@@ -51,14 +55,12 @@ final class FetchFolderCollaborators
 
     private function createCollaboratorFn(): Closure
     {
-        $permissionsRepository = new PermissionRepository();
-
-        return function (User $model) use ($permissionsRepository) {
+        return function (User $model) {
             $wasInvitedBy = $model->wasInvitedBy;
 
             return new FolderCollaborator(
                 $model,
-                new UAC($permissionsRepository->findManyById($model->permissions ?? [])->all()),
+                new UAC($model->permissions ?? []),
                 $wasInvitedBy ? new User($wasInvitedBy) : null
             );
         };

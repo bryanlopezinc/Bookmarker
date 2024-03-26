@@ -10,28 +10,30 @@ use App\Models\FolderCollaborator;
 use App\PaginationData;
 use Illuminate\Pagination\Paginator;
 use App\Models\FolderCollaboratorPermission;
+use App\Models\FolderPermission;
 use App\Models\Scopes\WhereFolderOwnerExists;
 use App\UAC;
 use Closure;
 
 final class FetchUserCollaborationsRepository
 {
-    public function __construct(private PermissionRepository $permissions)
-    {
-    }
-
     /**
      * @return Paginator<UserCollaboration>
      */
     public function get(int $userID, PaginationData $pagination): Paginator
     {
         $query = Folder::onlyAttributes()
+            ->withCasts(['permissions' => 'json'])
             ->tap(new WhereFolderOwnerExists())
             ->addSelect([
-                'permissions' => FolderCollaboratorPermission::query()
-                    ->selectRaw('JSON_ARRAYAGG(permission_id)')
-                    ->whereColumn('folder_id', 'folders.id')
-                    ->where('user_id', $userID),
+                'permissions' => FolderPermission::query()
+                    ->selectRaw('JSON_ARRAYAGG(name)')
+                    ->whereIn(
+                        'id',
+                        FolderCollaboratorPermission::select('permission_id')
+                            ->whereColumn('folder_id', 'folders.id')
+                            ->where('user_id', $userID)
+                    ),
             ])
             ->whereExists(
                 FolderCollaborator::query()
@@ -52,11 +54,9 @@ final class FetchUserCollaborationsRepository
     private function createCollaborationFn(): Closure
     {
         return function (Folder $folder) {
-            $folder->mergeCasts(['permissions' => 'json']);
-
             return new UserCollaboration(
                 $folder,
-                new UAC($this->permissions->findManyById($folder->permissions ?? [])->all())
+                new UAC($folder->permissions ?? [])
             );
         };
     }

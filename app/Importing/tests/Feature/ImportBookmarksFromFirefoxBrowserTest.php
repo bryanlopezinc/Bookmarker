@@ -10,13 +10,12 @@ use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\View;
-use Laravel\Passport\Passport;
 
 class ImportBookmarksFromFirefoxBrowserTest extends ImportBookmarkBaseTest
 {
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->importBookmarkResponse()
             ->assertUnprocessable()
@@ -41,7 +40,7 @@ class ImportBookmarksFromFirefoxBrowserTest extends ImportBookmarkBaseTest
 
     public function testImportBookmarks(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $this->importBookmarkResponse([
             'source' => 'firefoxFile',

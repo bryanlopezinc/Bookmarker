@@ -12,7 +12,6 @@ use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\AssertableJsonString;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 use Tests\Traits\CreatesCollaboration;
 
@@ -38,7 +37,7 @@ class FetchUserCollaborationsTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->assertValidPaginationData($this, 'fetchUserCollaborations');
 
@@ -72,7 +71,7 @@ class FetchUserCollaborationsTest extends TestCase
 
         $this->createCollaboration($user, $folder, UAC::all()->toArray());
 
-        Passport::actingAs($user);
+        $this->loginUser($user);
         $this->userCollaborationsResponse()
             ->assertOk()
             ->assertJsonCount(1, 'data')
@@ -82,7 +81,7 @@ class FetchUserCollaborationsTest extends TestCase
             ->collect('data')
             ->each(function (array $data) {
                 (new AssertableJsonString($data))
-                    ->assertCount(4, 'attributes.permissions')
+                    ->assertCount(5, 'attributes.permissions')
                     ->assertStructure([
                         "type",
                         "attributes" => [
@@ -118,7 +117,7 @@ class FetchUserCollaborationsTest extends TestCase
 
     public function testWillReturnEmptyResponseWhenUserIsNotACollaboratorInAnyFolder(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->userCollaborationsResponse()
             ->assertOk()
@@ -134,7 +133,7 @@ class FetchUserCollaborationsTest extends TestCase
 
         $folder->delete();
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->userCollaborationsResponse()
             ->assertOk()
             ->assertJsonCount(0, 'data');
@@ -148,7 +147,7 @@ class FetchUserCollaborationsTest extends TestCase
         $this->createCollaboration($collaborator, $folders->first(), Permission::ADD_BOOKMARKS);
         $this->createCollaboration($collaborator, $folders->last(), Permission::INVITE_USER);
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->userCollaborationsResponse()
             ->assertOk()
             ->assertJsonPath('data.0.attributes.permissions', ['addBookmarks'])
@@ -163,7 +162,7 @@ class FetchUserCollaborationsTest extends TestCase
         $this->createCollaboration($collaborator, $folder, Permission::ADD_BOOKMARKS);
         $this->createCollaboration($otherCollaborator, $folder);
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->userCollaborationsResponse()
             ->assertOk()
             ->assertJsonCount(1, 'data')
@@ -177,7 +176,7 @@ class FetchUserCollaborationsTest extends TestCase
 
         $this->createCollaboration($collaborator, $folder, [Permission::INVITE_USER, Permission::ADD_BOOKMARKS]);
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->userCollaborationsResponse()
             ->assertOk()
             ->assertJsonCount(1, 'data')
@@ -193,7 +192,7 @@ class FetchUserCollaborationsTest extends TestCase
 
         $folderOwner->delete();
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->userCollaborationsResponse()
             ->assertOk()
             ->assertJsonCount(0, 'data');
@@ -206,7 +205,7 @@ class FetchUserCollaborationsTest extends TestCase
 
         $this->createCollaboration($collaborator, $folder, Permission::INVITE_USER);
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->userCollaborationsResponse(['fields' => 'id,name,storage.items_count,permissions'])
             ->assertOk()
             ->assertJsonCount(1, 'data')

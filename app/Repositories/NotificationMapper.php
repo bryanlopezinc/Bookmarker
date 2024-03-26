@@ -24,6 +24,7 @@ final class NotificationMapper
         'FolderUpdated'              => Mappers\MapsFolderUpdatedNotification::class,
         'ImportFailed'               => Mappers\SimpleNotificationMapper::class,
         'YouHaveBeenKickedOut'       => Mappers\MapsYouHaveBeenKickedOutNotification::class,
+        'CollaboratorRemoved'        => Mappers\CollaboratorRemovedNotificationMapper::class
     ];
 
     /**

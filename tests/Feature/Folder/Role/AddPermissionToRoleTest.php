@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace Tests\Feature\Folder\Role;
 
 use App\Enums\Permission;
-use App\Repositories\Folder\PermissionRepository;
+use App\UAC;
+use Closure;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Feature\Folder\Concerns\InteractsWithValues;
 use Tests\TestCase;
 use Tests\Traits\CreatesCollaboration;
 use Tests\Traits\CreatesRole;
@@ -21,14 +23,11 @@ class AddPermissionToRoleTest extends TestCase
     use WithFaker;
     use CreatesCollaboration;
     use CreatesRole;
+    use InteractsWithValues;
 
-    private PermissionRepository $permissions;
-
-    protected function setUp(): void
+    protected function shouldBeInteractedWith(): mixed
     {
-        parent::setUp();
-
-        $this->permissions = new PermissionRepository();
+        return UAC::validExternalIdentifiers();
     }
 
     protected function addPermissionResponse(array $parameters = []): TestResponse
@@ -71,7 +70,7 @@ class AddPermissionToRoleTest extends TestCase
     }
 
     #[Test]
-    public function addPermission(): void
+    public function rolesCanHaveSamePermission(): void
     {
         $this->loginUser($folderOwner = UserFactory::new()->create());
 
@@ -81,18 +80,47 @@ class AddPermissionToRoleTest extends TestCase
 
         $role = $this->createRole(folder: $folder, permissions: Permission::ADD_BOOKMARKS);
 
-        //assert different folders can have exact role permissions
         $this->addPermissionResponse([
             'permission' => 'removeBookmarks',
             'folder_id'  => $folder->id,
             'role_id'    => $role->id
         ])->assertCreated();
 
-        $this->assertCount(2, $role->refresh()->permissions);
+        $permissions = $role->refresh()->accessControls();
+
+        $this->assertCount(2, $permissions);
+        $this->assertTrue($permissions->has(Permission::ADD_BOOKMARKS));
+        $this->assertTrue($permissions->has(Permission::DELETE_BOOKMARKS));
+    }
+
+    public function testAddPermissions(): void
+    {
+        $this->assertWillAddPermission('inviteUsers');
+        $this->assertWillAddPermission('removeBookmarks');
+        $this->assertWillAddPermission('updateFolder');
+        $this->assertWillAddPermission('removeUser');
+        $this->assertWillAddPermission('addBookmarks');
+    }
+
+    public function assertWillAddPermission(string $permissions, Closure $expectation = null): void
+    {
+        $expectation = $expectation ??= fn () => null;
+
+        $this->loginUser($folderOwner = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $role = $this->createRole(folder: $folder);
+
+        $this->addPermissionResponse([
+            'permission' => $permissions,
+            'folder_id'  => $folder->id,
+            'role_id'    => $role->id
+        ])->assertCreated();
 
         $this->assertEqualsCanonicalizing(
-            $role->permissions->pluck('permission_id')->all(),
-            $this->permissions->findManyByName([Permission::ADD_BOOKMARKS, Permission::DELETE_BOOKMARKS])->pluck('id')->all()
+            $role->refresh()->permissions->pluck('name')->all(),
+            UAC::fromRequest(explode(',', $permissions))->toArray()
         );
     }
 
@@ -113,8 +141,8 @@ class AddPermissionToRoleTest extends TestCase
         $this->assertCount(1, $role->permissions);
 
         $this->assertEquals(
-            $role->permissions->pluck('permission_id')->sole(),
-            $this->permissions->findByName(Permission::ADD_BOOKMARKS)->id
+            $role->permissions->pluck('name')->sole(),
+            Permission::ADD_BOOKMARKS->value
         );
     }
 
@@ -138,8 +166,8 @@ class AddPermissionToRoleTest extends TestCase
         $this->assertCount(1, $role->permissions);
 
         $this->assertEquals(
-            $role->permissions->pluck('permission_id')->sole(),
-            $this->permissions->findByName(Permission::ADD_BOOKMARKS)->id
+            $role->permissions->pluck('name')->sole(),
+            Permission::ADD_BOOKMARKS->value
         );
     }
 
@@ -182,13 +210,13 @@ class AddPermissionToRoleTest extends TestCase
         ])->assertNotFound()->assertJsonFragment(['message' => 'RoleNotFound']);
 
         $this->assertEquals(
-            $userFolderRole->permissions->sole()->permission_id,
-            $this->permissions->findByName(Permission::INVITE_USER)->id
+            $userFolderRole->permissions->sole()->name,
+            Permission::INVITE_USER->value
         );
 
         $this->assertEquals(
-            $anotherUserFolderRole->permissions->sole()->permission_id,
-            $this->permissions->findByName(Permission::INVITE_USER)->id
+            $anotherUserFolderRole->permissions->sole()->name,
+            Permission::INVITE_USER->value
         );
     }
 
@@ -207,8 +235,8 @@ class AddPermissionToRoleTest extends TestCase
         ])->assertNotFound()->assertJsonFragment(['message' => 'FolderNotFound']);
 
         $this->assertEquals(
-            $role->permissions->sole()->permission_id,
-            $this->permissions->findByName(Permission::INVITE_USER)->id
+            $role->permissions->sole()->name,
+            Permission::INVITE_USER->name
         );
     }
 
@@ -229,8 +257,8 @@ class AddPermissionToRoleTest extends TestCase
         ])->assertForbidden()->assertJsonFragment(['message' => 'PermissionDenied']);
 
         $this->assertEquals(
-            $role->permissions->sole()->permission_id,
-            $this->permissions->findByName(Permission::INVITE_USER)->id
+            $role->permissions->sole()->name,
+            Permission::INVITE_USER->value
         );
     }
 

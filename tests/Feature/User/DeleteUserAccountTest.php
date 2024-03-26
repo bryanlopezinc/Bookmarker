@@ -6,7 +6,6 @@ namespace Tests\Feature\User;
 
 use Tests\TestCase;
 use App\Models\User;
-use Laravel\Passport\Passport;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -32,7 +31,7 @@ class DeleteUserAccountTest extends TestCase
 
     public function testWillReturnUnprocessableWhenPasswordParameterIsNotPresent(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->deleteAccountResponse()
             ->assertUnprocessable()
@@ -43,7 +42,7 @@ class DeleteUserAccountTest extends TestCase
     {
         $user = UserFactory::new()->create();
 
-        Passport::actingAs($user);
+        $this->loginUser($user);
 
         $this->deleteAccountResponse(['password' => 'password'])->assertOk();
 
@@ -52,7 +51,7 @@ class DeleteUserAccountTest extends TestCase
 
     public function testWillReturnBadRequestWhenPasswordIsIncorrect(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->deleteAccountResponse(['password' => 'or 1=1'])
             ->assertUnprocessable()

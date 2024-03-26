@@ -8,13 +8,12 @@ use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\View;
-use Laravel\Passport\Passport;
 
 class ImportBookmarksFromPocketExportFileTest extends ImportBookmarkBaseTest
 {
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->importBookmarkResponse()
             ->assertUnprocessable()
@@ -33,7 +32,7 @@ class ImportBookmarksFromPocketExportFileTest extends ImportBookmarkBaseTest
 
     public function testImportBookmarks(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->importBookmarkResponse([
             'source' => 'pocketExportFile',

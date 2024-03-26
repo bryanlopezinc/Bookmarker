@@ -11,7 +11,6 @@ use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 use App\Enums\Permission;
 use App\Models\FolderCollaborator;
@@ -43,7 +42,7 @@ class LeaveFolderCollaborationTest extends TestCase
 
     public function testWillReturnNotFoundWhenFolderIdIsInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->leaveFolderCollaborationResponse(['folder_id' => '2bar'])->assertNotFound();
     }
@@ -72,7 +71,7 @@ class LeaveFolderCollaborationTest extends TestCase
 
     public function testWillReturnNotFoundWhenUserIsNotACollaborator(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
         $this->leaveFolderCollaborationResponse(['folder_id' =>  FolderFactory::new()->create()->id])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
@@ -80,7 +79,7 @@ class LeaveFolderCollaborationTest extends TestCase
 
     public function testWillReturnNotFoundWhenFolderDoesNotExist(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
         $this->leaveFolderCollaborationResponse([
             'folder_id' =>  FolderFactory::new()->create()->id + 1
         ])->assertNotFound()
@@ -89,7 +88,7 @@ class LeaveFolderCollaborationTest extends TestCase
 
     public function testWillReturnForbiddenWenFolderBelongsToUser(): void
     {
-        Passport::actingAs($folderOwner = UserFactory::new()->create());
+        $this->loginUser($folderOwner = UserFactory::new()->create());
 
         $this->leaveFolderCollaborationResponse(['folder_id' =>  FolderFactory::new()->for($folderOwner)->create()->id])
             ->assertForbidden()
@@ -103,7 +102,7 @@ class LeaveFolderCollaborationTest extends TestCase
 
         $this->CreateCollaborationRecord($collaborator, $folder);
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->leaveFolderCollaborationResponse([
             'folder_id' => $folder->id
         ])->assertOk();
@@ -134,7 +133,7 @@ class LeaveFolderCollaborationTest extends TestCase
 
         Notification::fake();
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
 
         Notification::assertNothingSent();
@@ -153,7 +152,7 @@ class LeaveFolderCollaborationTest extends TestCase
 
         Notification::fake();
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
 
         Notification::assertNothingSent();
@@ -173,7 +172,7 @@ class LeaveFolderCollaborationTest extends TestCase
 
         Notification::fake();
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
 
         Notification::assertNothingSent();
@@ -192,7 +191,7 @@ class LeaveFolderCollaborationTest extends TestCase
 
         Notification::fake();
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
 
         Notification::assertNothingSent();
@@ -211,7 +210,7 @@ class LeaveFolderCollaborationTest extends TestCase
 
         Notification::fake();
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
 
         Notification::assertNothingSent();
@@ -230,7 +229,7 @@ class LeaveFolderCollaborationTest extends TestCase
 
         Notification::fake();
 
-        Passport::actingAs($collaborator);
+        $this->loginUser($collaborator);
         $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
 
         Notification::assertSentTimes(\App\Notifications\CollaboratorExitNotification::class, 1);

@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder;
 
+use App\Enums\Feature;
 use App\Models\FolderDisabledFeature;
-use App\Repositories\Folder\FeaturesRepository;
+use App\Models\FolderFeature;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Support\Collection;
@@ -13,9 +14,17 @@ use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Feature\Folder\Concerns\InteractsWithValues;
 
 class ToggleFolderFeatureTest extends TestCase
 {
+    use InteractsWithValues;
+
+    protected function shouldBeInteractedWith(): mixed
+    {
+        return Feature::publicIdentifiers();
+    }
+
     public function updateFolderResponse(array $parameters = []): TestResponse
     {
         return $this->patchJson(
@@ -70,7 +79,7 @@ class ToggleFolderFeatureTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->toggleRestriction(
+        $this->toggleFeature(
             folderId: $folder->id,
             id: null,
             assertions: [
@@ -100,12 +109,11 @@ class ToggleFolderFeatureTest extends TestCase
         );
     }
 
-    protected function toggleRestriction(array $assertions, int $folderId, string $id = null)
+    protected function toggleFeature(array $assertions, int $folderId, string $id = null)
     {
-        $featuresRepository = new FeaturesRepository();
-
         if ($id) {
             $assertions = Arr::only($assertions, $id);
+            $this->assertNotEmpty($assertions);
         }
 
         foreach ($assertions as $test) {
@@ -114,7 +122,7 @@ class ToggleFolderFeatureTest extends TestCase
 
             $disabledFeaturesIds = FolderDisabledFeature::where('folder_id', $folderId)->get(['feature_id'])->pluck('feature_id');
 
-            $disabledFeatures = $featuresRepository->findManyById($disabledFeaturesIds);
+            $disabledFeatures = FolderFeature::query()->whereKey($disabledFeaturesIds)->get(['name']);
 
             foreach (Arr::wrap($test['expectation']) as $expectation) {
                 $expectation($disabledFeatures, $response);
@@ -122,7 +130,7 @@ class ToggleFolderFeatureTest extends TestCase
         }
 
         if ($id) {
-            $this->markTestIncomplete('Some toggle bookmarks assertions were not made');
+            $this->markTestIncomplete('Some toggle features assertions were not made');
         }
     }
 
@@ -133,7 +141,7 @@ class ToggleFolderFeatureTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->toggleRestriction(
+        $this->toggleFeature(
             folderId: $folder->id,
             id: null,
             assertions: [
@@ -170,7 +178,7 @@ class ToggleFolderFeatureTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->toggleRestriction(
+        $this->toggleFeature(
             folderId: $folder->id,
             id: null,
             assertions: [
@@ -207,7 +215,7 @@ class ToggleFolderFeatureTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->toggleRestriction(
+        $this->toggleFeature(
             folderId: $folder->id,
             id: null,
             assertions: [
@@ -229,6 +237,43 @@ class ToggleFolderFeatureTest extends TestCase
 
                 'Will re-enable feature' => [
                     'data' => ['updateFolder' => 'enable'],
+                    'expectation' => function (Collection $disabledFeatures) {
+                        $this->assertCount(0, $disabledFeatures);
+                    }
+                ],
+            ]
+        );
+    }
+
+    #[Test]
+    public function toggleRemoveUser(): void
+    {
+        $this->loginUser($user = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->for($user)->create();
+
+        $this->toggleFeature(
+            folderId: $folder->id,
+            id: null,
+            assertions: [
+                'disable feature' => [
+                    'data' => ['removeUser' => 'disable'],
+                    'expectation' => function (Collection $disabledFeatures) {
+                        $this->assertCount(1, $disabledFeatures);
+                        $this->assertEquals($disabledFeatures->first()->name, 'REMOVE_USER');
+                    }
+                ],
+
+                'Will return ok when feature is already disabled' => [
+                    'data' => ['removeUser' => 'disable'],
+                    'expectation' => function (Collection $disabledFeatures) {
+                        $this->assertCount(1, $disabledFeatures);
+                        $this->assertEquals($disabledFeatures->first()->name, 'REMOVE_USER');
+                    }
+                ],
+
+                'Will re-enable feature' => [
+                    'data' => ['removeUser' => 'enable'],
                     'expectation' => function (Collection $disabledFeatures) {
                         $this->assertCount(0, $disabledFeatures);
                     }

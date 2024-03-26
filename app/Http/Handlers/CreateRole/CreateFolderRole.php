@@ -9,19 +9,16 @@ use App\DataTransferObjects\CreateFolderRoleData;
 use App\Models\Folder;
 use App\Models\FolderPermission;
 use App\Models\FolderRolePermission;
-use App\Repositories\Folder\PermissionRepository;
 use App\UAC;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 final class CreateFolderRole implements FolderRequestHandlerInterface
 {
     private readonly CreateFolderRoleData $data;
-    private readonly PermissionRepository $permissionsRepository;
 
-    public function __construct(CreateFolderRoleData $data, PermissionRepository $permissionsRepository = null)
+    public function __construct(CreateFolderRoleData $data)
     {
         $this->data = $data;
-        $this->permissionsRepository = $permissionsRepository ??= new PermissionRepository();
     }
 
     /**
@@ -33,12 +30,11 @@ final class CreateFolderRole implements FolderRequestHandlerInterface
 
         $role = $folder->roles()->create(['name' => $this->data->name]);
 
-        $this->permissionsRepository
-            ->findManyByName($permissions->toArray())
-            ->map(fn (FolderPermission $model) => [
-                'role_id'       => $role->id,
-                'permission_id' => $model->id
-            ])
-            ->tap(fn (Collection $collection) => FolderRolePermission::insert($collection->all()));
+        /** @var \Illuminate\Database\Eloquent\Builder */
+        $query = FolderPermission::query()
+            ->select(DB::raw($role->id), 'id')
+            ->whereIn('name', $permissions->toArray());
+
+        FolderRolePermission::insertUsing(['role_id', 'permission_id'], $query);
     }
 }

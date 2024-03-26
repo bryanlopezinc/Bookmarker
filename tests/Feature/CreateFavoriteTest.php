@@ -8,7 +8,6 @@ use App\Models\Favorite;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 use Tests\Traits\WillCheckBookmarksHealth;
 
@@ -33,7 +32,7 @@ class CreateFavoriteTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->createFavoriteResponse()
             ->assertUnprocessable()
@@ -61,7 +60,7 @@ class CreateFavoriteTest extends TestCase
 
     public function testAddFavorites(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmarks = BookmarkFactory::times(2)->for($user)->create();
 
@@ -78,7 +77,7 @@ class CreateFavoriteTest extends TestCase
 
     public function testWillCheckBookmarksHealth(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmarks = BookmarkFactory::new()->count(5)->for($user)->create();
 
@@ -89,7 +88,7 @@ class CreateFavoriteTest extends TestCase
 
     public function testWillReturnConflictWhenBookmarkExistsInFavorites(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $userBookmarksIds = BookmarkFactory::times(3)
             ->for($user)
@@ -109,7 +108,7 @@ class CreateFavoriteTest extends TestCase
 
     public function testWhenBookmarkDoesNotBelongToUser(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $bookmark = BookmarkFactory::new()->create();
 
@@ -120,7 +119,7 @@ class CreateFavoriteTest extends TestCase
 
     public function testWillReturnNotFoundWhenBookmarksDoesNotExist(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $bookmark = BookmarkFactory::new()->for($user)->create();
 

@@ -7,44 +7,40 @@ namespace App\Repositories\Folder;
 use App\Models\FolderCollaboratorPermission as Model;
 use App\UAC;
 use App\Models\FolderPermission;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Collection;
 
 final class CollaboratorPermissionsRepository
 {
-    private PermissionRepository $permissions;
-
-    public function __construct(PermissionRepository $permissionRepository = null)
-    {
-        $this->permissions = $permissionRepository ?: new PermissionRepository();
-    }
-
     public function all(int $collaboratorId, int $folderID): UAC
     {
-        $userPermissionsIds = Model::query()
-            ->where('user_id', $collaboratorId)
-            ->where('folder_id', $folderID)
-            ->get(['permission_id'])
-            ->pluck('permission_id');
-
-        return new UAC(
-            $this->permissions->findManyById($userPermissionsIds)->all()
-        );
+        return FolderPermission::query()
+            ->select('name')
+            ->whereIn(
+                'id',
+                Model::select('permission_id')
+                    ->where('folder_id', $folderID)
+                    ->where('user_id', $collaboratorId)
+            )
+            ->get()
+            ->pipe(fn (Collection $permissionNames) => new UAC($permissionNames->all()));
     }
 
     public function create(int $userID, int $folderID, UAC $folderPermissions): void
     {
-        $createdAt = now();
+        $now = now();
 
-        $this->permissions->findManyByName($folderPermissions->toArray())
-            ->map(fn (FolderPermission $p) => [
-                'folder_id'     => $folderID,
-                'user_id'       => $userID,
-                'permission_id' => $p->id,
-                'created_at'    => $createdAt
+        /** @var \Illuminate\Database\Eloquent\Builder */
+        $query = FolderPermission::query()
+            ->select([
+                new Expression($folderID),
+                new Expression($userID),
+                new Expression("'{$now}'"),
+                'id'
             ])
-            ->tap(function (Collection $records) {
-                Model::insert($records->all());
-            });
+            ->whereIn('name', $folderPermissions->toArray());
+
+        Model::insertUsing(query: $query, columns: ['folder_id', 'user_id', 'created_at', 'permission_id']);
     }
 
     public function delete(int $collaboratorID, int $folderID, UAC $permissions = null): void
@@ -54,7 +50,7 @@ final class CollaboratorPermissionsRepository
             ->where('user_id', $collaboratorID);
 
         if ($permissions) {
-            $query->whereIn('permission_id', $this->permissions->findManyByName($permissions->toArray())->pluck('id'));
+            $query->whereIn('permission_id', FolderPermission::select('id')->whereIn('name', $permissions->toArray()));
         }
 
         $query->delete();

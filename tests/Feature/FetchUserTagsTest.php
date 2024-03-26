@@ -10,7 +10,6 @@ use Database\Factories\BookmarkFactory;
 use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 
 class FetchUserTagsTest extends TestCase
@@ -32,7 +31,7 @@ class FetchUserTagsTest extends TestCase
 
     public function testFetchUserTags(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         /** @var Bookmark[] */
         $userBookmarks = BookmarkFactory::times(2)->for($user)->create();

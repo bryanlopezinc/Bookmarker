@@ -8,7 +8,6 @@ use Database\Factories\BookmarkFactory;
 use Database\Factories\SourceFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 
 class FetchUserBookmarksSourcesTest extends TestCase
@@ -30,7 +29,7 @@ class FetchUserBookmarksSourcesTest extends TestCase
 
     public function testSuccess(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $source = SourceFactory::new()->create();
 

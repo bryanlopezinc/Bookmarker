@@ -13,7 +13,6 @@ use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 use Tests\Traits\WillCheckBookmarksHealth;
 
@@ -39,7 +38,7 @@ class UpdateBookmarkTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->updateBookmarkResponse()
             ->assertUnprocessable()
@@ -64,7 +63,7 @@ class UpdateBookmarkTest extends TestCase
 
     public function testUpdateBookmark(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         /** @var Bookmark */
         $model = BookmarkFactory::new()->for($user)->create();
@@ -96,7 +95,7 @@ class UpdateBookmarkTest extends TestCase
 
     public function testUpdateOnlyTags(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         /** @var Bookmark */
         $model = BookmarkFactory::new()->for($user)->create();
@@ -121,7 +120,7 @@ class UpdateBookmarkTest extends TestCase
 
     public function testUpdateOnlyTitle(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         /** @var Bookmark */
         $model = BookmarkFactory::new()->for($user)->create();
@@ -146,7 +145,7 @@ class UpdateBookmarkTest extends TestCase
 
     public function testUpdateOnlyDescription(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         /** @var Bookmark */
         $model = BookmarkFactory::new()->for($user)->create();
@@ -171,7 +170,7 @@ class UpdateBookmarkTest extends TestCase
 
     public function testWillReturnBadRequestWhenBookmarkTagsLengthIsExceeded(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         /** @var Bookmark */
         $model = BookmarkFactory::new()->for($user)->create();
@@ -190,7 +189,7 @@ class UpdateBookmarkTest extends TestCase
 
     public function testWillReturnNotFoundResponseWhenBookmarkDoesNotExists(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->updateBookmarkResponse([
             'id'    => BookmarkFactory::new()->create()->id + 1,
@@ -204,7 +203,7 @@ class UpdateBookmarkTest extends TestCase
         [$user, $userWithBadIntention] = UserFactory::new()->count(2)->create();
         $userBookmark = BookmarkFactory::new()->for($user)->create();
 
-        Passport::actingAs($userWithBadIntention);
+        $this->loginUser($userWithBadIntention);
         $this->updateBookmarkResponse([
             'id'    => $userBookmark->id,
             'title' => 'title'
@@ -214,7 +213,7 @@ class UpdateBookmarkTest extends TestCase
 
     public function testWillReturnConflictWhenBookmarkAlreadyHasTags(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         /** @var Bookmark */
         $model = BookmarkFactory::new()->for($user)->create();
@@ -233,7 +232,7 @@ class UpdateBookmarkTest extends TestCase
 
     public function testWillCheckBookmarksHealth(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $model = BookmarkFactory::new()->for($user)->create();
 

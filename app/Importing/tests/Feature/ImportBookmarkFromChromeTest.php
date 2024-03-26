@@ -11,14 +11,13 @@ use Database\Factories\UserFactory;
 use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\View;
-use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Test;
 
 class ImportBookmarkFromChromeTest extends ImportBookmarkBaseTest
 {
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->importBookmarkResponse()
             ->assertUnprocessable()
@@ -65,7 +64,7 @@ class ImportBookmarkFromChromeTest extends ImportBookmarkBaseTest
     #[Test]
     public function importBookmarks(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $this->importBookmarkResponse([
             'source' => 'chromeExportFile',

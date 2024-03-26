@@ -6,12 +6,21 @@ namespace Tests\Unit\ValueObjects;
 
 use App\ValueObjects\FolderSettings;
 use App\Exceptions\InvalidFolderSettingException;
+use Illuminate\Support\Arr;
 use Illuminate\Testing\AssertableJsonString;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Feature\Folder\Concerns\InteractsWithValues;
 use Tests\TestCase;
 
 class FolderSettingsTest extends TestCase
 {
+    use InteractsWithValues;
+
+    protected function shouldBeInteractedWith(): array
+    {
+        return array_keys(Arr::dot(FolderSettings::default()));
+    }
+
     #[Test]
     public function default(): void
     {
@@ -138,6 +147,8 @@ class FolderSettingsTest extends TestCase
     private function isValid(array $data, string $message = null): bool
     {
         try {
+            $this->setInteracted(array_keys(Arr::dot($data)));
+
             $this->make($data);
             return true;
         } catch (InvalidFolderSettingException $e) {

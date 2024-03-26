@@ -10,7 +10,6 @@ use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
 use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
 use Tests\TestCase;
 
 class RemoveSecondaryEmailTest extends TestCase
@@ -34,7 +33,7 @@ class RemoveSecondaryEmailTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->removeEmailResponse()
             ->assertUnprocessable()
@@ -47,7 +46,7 @@ class RemoveSecondaryEmailTest extends TestCase
 
     public function testRemoveEmail(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $emails = EmailFactory::times(2)->for($user)->create()->pluck('email');
 
@@ -66,7 +65,7 @@ class RemoveSecondaryEmailTest extends TestCase
 
     public function testWillReturnNotFoundWhenEmailIsNotAttachedToUserAccount(): void
     {
-        Passport::actingAs(UserFactory::new()->create());
+        $this->loginUser(UserFactory::new()->create());
 
         $this->removeEmailResponse(['email' => $this->faker->unique()->email])
             ->assertStatus(Response::HTTP_NOT_FOUND)
@@ -81,7 +80,7 @@ class RemoveSecondaryEmailTest extends TestCase
 
     public function testWillReturnBadRequestWhenUserIsRemovingPrimaryEmail(): void
     {
-        Passport::actingAs($user = UserFactory::new()->create());
+        $this->loginUser($user = UserFactory::new()->create());
 
         $this->removeEmailResponse(['email' => $user->email])
             ->assertStatus(Response::HTTP_BAD_REQUEST)

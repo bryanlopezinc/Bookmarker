@@ -27,6 +27,10 @@ final class CannotMakeFolderWithCollaboratorPrivateConstraint implements FolderR
      */
     public function apply(Builder|EloquentBuilder $builder, Model $model): void
     {
+        if (is_null($this->data->visibility)) {
+            return;
+        }
+
         //we could query for collaborators count but no need to count
         //rows when we could do a simple select.
         $builder->addSelect([

@@ -46,15 +46,9 @@ final class ToggleFolderFeature
      */
     private function mapFeatures(Request $request): array
     {
-        $featureActionMap = [
-            Feature::ADD_BOOKMARKS->value    => $request->validated('addBookmarks', null),
-            Feature::DELETE_BOOKMARKS->value => $request->validated('removeBookmarks', null),
-            Feature::SEND_INVITES->value     => $request->validated('inviteUsers', null),
-            Feature::UPDATE_FOLDER->value    => $request->validated('updateFolder', null),
-            Feature::REMOVE_USER->value      => $request->validated('removeUser', null)
-        ];
-
-        $feature = collect($featureActionMap)->filter();
+        $feature = collect(Feature::publicIdentifiers())
+            ->mapWithKeys(fn (string $value, string $key) => [$key => $request->validated($value, null)])
+            ->filter();
 
         return [
             FolderFeature::query()->where('name', Feature::from($feature->keys()->sole())->value)->sole(),

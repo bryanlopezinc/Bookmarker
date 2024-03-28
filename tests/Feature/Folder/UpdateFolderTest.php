@@ -628,7 +628,7 @@ class UpdateFolderTest extends TestCase
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER);
 
-        //Assert collaborator can update when disabled action is not remove bookmark action
+        //Assert collaborator can update when disabled action is not update folder action
         $updateCollaboratorActionService->disable($folder->id, Feature::SEND_INVITES);
         $this->loginUser($collaborator);
         $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->id])->assertOk();
@@ -637,7 +637,11 @@ class UpdateFolderTest extends TestCase
 
         $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->id])
             ->assertForbidden()
-            ->assertJsonFragment(['message' => 'FolderFeatureDisAbled']);
+            ->assertJsonFragment($errorMessage = ['message' => 'FolderFeatureDisAbled']);
+
+        $this->updateFolderResponse(['description' => $this->faker->word, 'folder_id' => $folder->id])
+            ->assertForbidden()
+            ->assertJsonFragment($errorMessage);
 
         //when user is not a collaborator
         $this->loginUser(UserFactory::new()->create());
@@ -645,5 +649,58 @@ class UpdateFolderTest extends TestCase
 
         $this->loginUser($folderOwner);
         $this->updateFolderResponse(['name' => 'Docker Problems', 'folder_id' => $folder->id])->assertOk();
+        $this->updateFolderResponse(['description' => $this->faker->word, 'folder_id' => $folder->id])->assertOk();
+    }
+
+    #[Test]
+    public function whenUpdateFolderNameFeatureIsDisabled(): void
+    {
+        /** @var ToggleFolderFeature */
+        $updateCollaboratorActionService = app(ToggleFolderFeature::class);
+
+        [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER);
+
+        $updateCollaboratorActionService->disable($folder->id, Feature::UPDATE_FOLDER_NAME);
+
+        $this->loginUser($collaborator);
+        $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->id])
+            ->assertForbidden()
+            ->assertJsonFragment(['message' => 'FolderFeatureDisAbled']);
+
+        $this->updateFolderResponse(['description' => $this->faker->word, 'folder_id' => $folder->id])->assertOk();
+
+        $this->loginUser($folderOwner);
+        $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->id])->assertOk();
+        $this->updateFolderResponse(['description' => $this->faker->word, 'folder_id' => $folder->id])->assertOk();
+    }
+
+    #[Test]
+    public function whenUpdateFolderDescriptionFeatureIsDisabled(): void
+    {
+        /** @var ToggleFolderFeature */
+        $updateCollaboratorActionService = app(ToggleFolderFeature::class);
+
+        [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER);
+
+        $updateCollaboratorActionService->disable($folder->id, Feature::UPDATE_FOLDER_DESCRIPTION);
+
+        $this->loginUser($collaborator);
+        $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->id])->assertOk();
+
+        $this->updateFolderResponse(['description' => $this->faker->word, 'folder_id' => $folder->id])
+            ->assertForbidden()
+            ->assertJsonFragment($errorMessage = ['message' => 'FolderFeatureDisAbled']);
+
+        $this->updateFolderResponse(['description' => null, 'folder_id' => $folder->id])->assertForbidden()->assertJsonFragment($errorMessage);
+
+        $this->loginUser($folderOwner);
+        $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->id])->assertOk();
+        $this->updateFolderResponse(['description' => $this->faker->word, 'folder_id' => $folder->id])->assertOk();
     }
 }

@@ -8,11 +8,11 @@ use App\Contracts\FolderRequestHandlerInterface;
 use App\Enums\Feature;
 use App\Exceptions\FolderFeatureDisabledException;
 use App\Models\Folder;
-use App\Models\Scopes\DisabledFeatureScope;
+use App\Models\FolderDisabledFeature;
+use App\Models\FolderFeature;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Scope;
-use Illuminate\Database\Query\Builder;
-use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 final class FeatureMustBeEnabledConstraint implements Scope, FolderRequestHandlerInterface
@@ -24,9 +24,14 @@ final class FeatureMustBeEnabledConstraint implements Scope, FolderRequestHandle
     /**
      * @inheritdoc
      */
-    public function apply(Builder|EloquentBuilder $builder, Model $model): void
+    public function apply(Builder $builder, Model $model): void
     {
-        $builder->tap(new DisabledFeatureScope($this->feature));
+        $builder->addSelect([
+            'featureIsDisabled' => FolderDisabledFeature::query()
+                ->selectRaw('1')
+                ->whereColumn('folder_id', 'folders.id')
+                ->whereIn('feature_id', FolderFeature::select('id')->where('name', $this->feature->value))
+        ]);
     }
 
     /**

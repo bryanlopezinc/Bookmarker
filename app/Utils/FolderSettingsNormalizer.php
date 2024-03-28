@@ -36,6 +36,7 @@ final class FolderSettingsNormalizer
     {
         $dotted = [];
 
+        //Remove the numeric value for keys that accepts array
         foreach (array_keys(Arr::dot($folderSettings)) as $key) {
             $parts = explode('.', $key);
 

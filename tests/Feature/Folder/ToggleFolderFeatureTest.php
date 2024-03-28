@@ -283,6 +283,80 @@ class ToggleFolderFeatureTest extends TestCase
     }
 
     #[Test]
+    public function toggleUpdateFolderName(): void
+    {
+        $this->loginUser($user = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->for($user)->create();
+
+        $this->toggleFeature(
+            folderId: $folder->id,
+            id: null,
+            assertions: [
+                'disable feature' => [
+                    'data' => ['updateFolderName' => 'disable'],
+                    'expectation' => function (Collection $disabledFeatures) {
+                        $this->assertCount(1, $disabledFeatures);
+                        $this->assertEquals($disabledFeatures->first()->name, 'UPDATE_FOLDER_NAME');
+                    }
+                ],
+
+                'Will return ok when feature is already disabled' => [
+                    'data' => ['updateFolderName' => 'disable'],
+                    'expectation' => function (Collection $disabledFeatures) {
+                        $this->assertCount(1, $disabledFeatures);
+                        $this->assertEquals($disabledFeatures->first()->name, 'UPDATE_FOLDER_NAME');
+                    }
+                ],
+
+                'Will re-enable feature' => [
+                    'data' => ['updateFolderName' => 'enable'],
+                    'expectation' => function (Collection $disabledFeatures) {
+                        $this->assertCount(0, $disabledFeatures);
+                    }
+                ],
+            ]
+        );
+    }
+
+    #[Test]
+    public function toggleUpdateFolderDescription(): void
+    {
+        $this->loginUser($user = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->for($user)->create();
+
+        $this->toggleFeature(
+            folderId: $folder->id,
+            id: null,
+            assertions: [
+                'disable feature' => [
+                    'data' => ['updateFolderDescription' => 'disable'],
+                    'expectation' => function (Collection $disabledFeatures) {
+                        $this->assertCount(1, $disabledFeatures);
+                        $this->assertEquals($disabledFeatures->first()->name, 'UPDATE_FOLDER_DESCRIPTION');
+                    }
+                ],
+
+                'Will return ok when feature is already disabled' => [
+                    'data' => ['updateFolderDescription' => 'disable'],
+                    'expectation' => function (Collection $disabledFeatures) {
+                        $this->assertCount(1, $disabledFeatures);
+                        $this->assertEquals($disabledFeatures->first()->name, 'UPDATE_FOLDER_DESCRIPTION');
+                    }
+                ],
+
+                'Will re-enable feature' => [
+                    'data' => ['updateFolderDescription' => 'enable'],
+                    'expectation' => function (Collection $disabledFeatures) {
+                        $this->assertCount(0, $disabledFeatures);
+                    }
+                ],
+            ]
+        );
+    }
+
+    #[Test]
     public function willReturnNotFoundWhenFolderDoesNotBelongToUser(): void
     {
         $this->loginUser(UserFactory::new()->create());

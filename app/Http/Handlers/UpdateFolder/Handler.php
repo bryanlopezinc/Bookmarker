@@ -9,7 +9,6 @@ use App\Http\Handlers\Constraints;
 use App\Contracts\FolderRequestHandlerInterface as HandlerInterface;
 use App\DataTransferObjects\UpdateFolderRequestData;
 use App\Enums\CollaboratorMetricType;
-use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Http\Handlers\CollaboratorMetricsRecorder;
 use App\Http\Handlers\RequestHandlersQueue;
@@ -39,7 +38,7 @@ final class Handler
             new Constraints\PermissionConstraint($data->authUser, Permission::UPDATE_FOLDER),
             new CanUpdateAttributesConstraint($data),
             new CannotMakeFolderWithCollaboratorPrivateConstraint($data),
-            new Constraints\FeatureMustBeEnabledConstraint($data->authUser, Feature::UPDATE_FOLDER),
+            new FeatureMustBeEnabledConstraint($data),
             new PasswordCheckConstraint($data),
             new CanUpdateOnlyProtectedFolderPasswordConstraint($data),
             new UpdateFolder($data, new SendFolderUpdatedNotification($data)),

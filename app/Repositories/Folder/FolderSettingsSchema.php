@@ -93,7 +93,7 @@ final class FolderSettingsSchema implements FolderSettingSchemaProviderInterface
                 'id'            => 'max_collaborators_limit',
                 'default'       => -1,
                 'type'          => 'integer',
-                'normalizer'    => new Normalizers\IntegerValueNormalizer(),
+                'normalizer'    => new Normalizers\IntegerTypeNormalizer(),
                 'rules'         => $maxCollaboratorsLimitKeyRules = [
                     'sometimes',
                     'int',
@@ -107,7 +107,7 @@ final class FolderSettingsSchema implements FolderSettingSchemaProviderInterface
                 'id'            => 'max_bookmarks_limit',
                 'default'       => -1,
                 'type'          => 'integer',
-                'normalizer'    => new Normalizers\IntegerValueNormalizer(),
+                'normalizer'    => new Normalizers\IntegerTypeNormalizer(),
                 'rules'         => $maxBookmarksLimitKeyRules = [
                     'sometimes',
                     'int',

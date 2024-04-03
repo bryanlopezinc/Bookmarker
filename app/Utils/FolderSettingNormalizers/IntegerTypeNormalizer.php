@@ -6,8 +6,11 @@ namespace App\Utils\FolderSettingNormalizers;
 
 use App\Contracts\SettingAttributeNormalizerInterface;
 
-final class IntegerValueNormalizer implements SettingAttributeNormalizerInterface
+final class IntegerTypeNormalizer implements SettingAttributeNormalizerInterface
 {
+    /**
+     * {@inheritdoc}
+     */
     public function normalize(mixed $value): mixed
     {
         return (int) $value;

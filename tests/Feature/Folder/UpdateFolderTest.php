@@ -515,6 +515,7 @@ class UpdateFolderTest extends TestCase
             'folder_id'   => $folder->id,
         ])->assertOk();
 
+        $folder->refresh();
         $notificationData = $folderOwner->notifications()->get(['data', 'type']);
 
         $this->assertEqualsCanonicalizing(['FolderUpdated', 'FolderUpdated'], $notificationData->pluck('type')->all());

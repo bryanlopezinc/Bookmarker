@@ -35,7 +35,6 @@ final class SendFolderUpdatedNotification implements FolderRequestHandlerInterfa
     {
         $wasUpdatedByFolderOwner = $folder->user_id === $this->data->authUser->id;
         $settings = $folder->settings;
-        $notifications = [];
 
         if (
             $wasUpdatedByFolderOwner ||
@@ -46,14 +45,13 @@ final class SendFolderUpdatedNotification implements FolderRequestHandlerInterfa
         }
 
         foreach (array_keys($folder->getDirty()) as $modified) {
-            $notifications[] = new FolderUpdatedNotification($folder, $this->data->authUser, $modified);
-        }
+            $notification = new FolderUpdatedNotification($folder, $this->data->authUser, $modified);
 
-        foreach ($notifications as $notification) {
-            Notification::send(
-                new User(['id' => $folder->user_id]),
-                $notification
-            );
+            $pendingDispatch = dispatch(static function () use ($folder, $notification) {
+                Notification::send(new User(['id' => $folder->user_id]), $notification);
+            });
+
+            $pendingDispatch->afterResponse();
         }
     }
 }

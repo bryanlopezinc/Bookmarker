@@ -23,7 +23,7 @@ final class Handler
 
         $bookmarks = Bookmark::query()->findMany($data->bookmarkIds, ['user_id', 'id', 'url'])->all();
 
-        $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data, $bookmarks));
+        $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data, $bookmarks, $folderId));
 
         $requestHandlersQueue->scope($query);
 
@@ -34,7 +34,7 @@ final class Handler
         });
     }
 
-    private function getConfiguredHandlers(Data $data, array $bookmarks): array
+    private function getConfiguredHandlers(Data $data, array $bookmarks, int $folderId): array
     {
         return [
             new Constraints\FolderExistConstraint(),
@@ -45,7 +45,7 @@ final class Handler
             new UserOwnsBookmarksConstraint($data, $bookmarks),
             new BookmarksExistsConstraint($data, $bookmarks),
             new CollaboratorCannotMarkBookmarksAsHiddenConstraint($data),
-            new UniqueFolderBookmarkConstraint($data),
+            new UniqueFolderBookmarkConstraint($data, $folderId),
             new CreateFolderBookmarks($data),
             new SendBookmarksAddedToFolderNotification($data),
             new CheckBookmarksHealth($bookmarks),

@@ -34,6 +34,7 @@ final class SendBookmarksAddedToFolderNotification implements FolderRequestHandl
     {
         $settings = $folder->settings;
         $folderBelongsToAuthUser = $this->data->authUser->id === $folder->user_id;
+        [$authUser, $bookmarkIds] = [$this->data->authUser, $this->data->bookmarkIds];
 
         if (
             $folderBelongsToAuthUser ||
@@ -44,9 +45,13 @@ final class SendBookmarksAddedToFolderNotification implements FolderRequestHandl
             return;
         }
 
-        NotificationSender::send(
-            new User(['id' => $folder->user_id]),
-            new Notification($this->data->bookmarkIds, $folder, $this->data->authUser)
-        );
+        $pendingDispatch = dispatch(static function () use ($folder, $authUser, $bookmarkIds) {
+            NotificationSender::send(
+                new User(['id' => $folder->user_id]),
+                new Notification($bookmarkIds, $folder, $authUser)
+            );
+        });
+
+        $pendingDispatch->afterResponse();
     }
 }

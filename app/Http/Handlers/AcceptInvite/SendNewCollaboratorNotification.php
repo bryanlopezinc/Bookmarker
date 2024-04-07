@@ -34,9 +34,9 @@ final class SendNewCollaboratorNotification implements FolderRequestHandlerInter
      */
     public function handle(Folder $folder): void
     {
-        $inviter = new User($folder->inviter);
+        [$inviter, $invitee] = [$folder->inviter, $folder->invitee];
 
-        $wasInvitedByFolderOwner = $folder->user_id === $inviter->id;
+        $wasInvitedByFolderOwner = $folder->user_id === $inviter['id'];
 
         $settings = $folder->settings;
 
@@ -56,9 +56,13 @@ final class SendNewCollaboratorNotification implements FolderRequestHandlerInter
             return;
         }
 
-        NotificationSender::send(
-            new User(['id' => $folder->user_id]),
-            new Notification(new User($folder->invitee), $folder, $inviter)
-        );
+        $pendingDispatch = dispatch(static function () use ($folder, $inviter, $invitee) {
+            NotificationSender::send(
+                new User(['id' => $folder->user_id]),
+                new Notification(new User($invitee), $folder, new User($inviter))
+            );
+        });
+
+        $pendingDispatch->afterResponse();
     }
 }

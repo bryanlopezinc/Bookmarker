@@ -23,7 +23,7 @@ final class EmailFactory extends Factory
     {
         return [
             'email'       => $this->faker->unique()->email,
-            'verified_at' => now(),
+            'verified_at'  => now(),
             'user_id'     => UserFactory::new(),
         ];
     }

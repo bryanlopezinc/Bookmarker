@@ -35,6 +35,7 @@ final class SendBookmarksRemovedFromFolderNotificationNotification implements Fo
     {
         $folderSettings = $folder->settings;
         $folderBelongsToAuthUser = $this->data->authUser->id === $folder->user_id;
+        [$authUser, $bookmarkIds] = [$this->data->authUser, $this->data->bookmarkIds];
 
         if (
             $folderBelongsToAuthUser                                ||
@@ -45,9 +46,13 @@ final class SendBookmarksRemovedFromFolderNotificationNotification implements Fo
             return;
         }
 
-        Notification::send(
-            new User(['id' => $folder->user_id]),
-            new BookmarksRemovedFromFolderNotification($this->data->bookmarkIds, $folder, $this->data->authUser)
-        );
+        $pendingDispatch = dispatch(static function () use ($folder, $authUser, $bookmarkIds) {
+            Notification::send(
+                new User(['id' => $folder->user_id]),
+                new BookmarksRemovedFromFolderNotification($bookmarkIds, $folder, $authUser)
+            );
+        });
+
+        $pendingDispatch->afterResponse();
     }
 }

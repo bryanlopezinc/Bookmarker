@@ -33,7 +33,7 @@ final class BookmarkFactory extends Factory
             'description'             => $this->faker->sentence,
             'description_set_by_user' => false,
             'preview_image_url'       => $this->faker->url,
-            'source_id'               => SourceFactory::new()->create()->id,
+            'source_id'               => SourceFactory::new(),
             'user_id'                 => UserFactory::new(),
             'url_canonical'           => $url,
             'url_canonical_hash'      => $hasher->hashUrl(new Url($url)),

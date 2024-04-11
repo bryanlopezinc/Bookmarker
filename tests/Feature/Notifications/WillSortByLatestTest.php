@@ -12,8 +12,8 @@ use App\Importing\ImportBookmarksOutcome;
 use App\Notifications\BookmarksAddedToFolderNotification;
 use App\Notifications\BookmarksRemovedFromFolderNotification;
 use App\Notifications\CollaboratorExitNotification;
-use App\Notifications\FolderUpdatedNotification;
 use App\Importing\Notifications\ImportFailedNotification;
+use App\Notifications\FolderNameUpdatedNotification;
 use App\Notifications\NewCollaboratorNotification;
 use App\Notifications\YouHaveBeenBootedOutNotification;
 use Database\Factories\BookmarkFactory;
@@ -37,7 +37,7 @@ class WillSortByLatestTest extends TestCase
             new BookmarksRemovedFromFolderNotification($bookmarks->all(), $userFolders[1], $secondCollaborator),
             new NewCollaboratorNotification($newCollaborator, $userFolders[2], $secondCollaborator),
             new CollaboratorExitNotification($userFolders[2], $newCollaborator),
-            new FolderUpdatedNotification($userFolders[1], $firstCollaborator, 'name'),
+            new FolderNameUpdatedNotification($userFolders[1], $firstCollaborator),
             new ImportFailedNotification(fake()->uuid, ImportBookmarksOutcome::failed(ImportBookmarksStatus::FAILED_DUE_TO_SYSTEM_ERROR, new ImportStats())),
             new YouHaveBeenBootedOutNotification(FolderFactory::new()->create())
         ];

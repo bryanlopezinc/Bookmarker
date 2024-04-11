@@ -44,7 +44,7 @@ final class Handler
     {
         return [
             new Constraints\FolderExistConstraint(),
-            new Constraints\MustBeACollaboratorConstraint(),
+            new Constraints\MustBeACollaboratorConstraint($data->authUser),
             new Constraints\PermissionConstraint($data->authUser, Permission::DELETE_BOOKMARKS),
             new Constraints\FeatureMustBeEnabledConstraint($data->authUser, Feature::DELETE_BOOKMARKS),
             new FolderContainsBookmarksConstraint($data, $folderBookmarks),

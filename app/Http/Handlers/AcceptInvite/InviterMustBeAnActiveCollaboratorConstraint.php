@@ -21,7 +21,11 @@ final class InviterMustBeAnActiveCollaboratorConstraint implements FolderRequest
 
     public function __construct(FolderInviteData $payload)
     {
-        $this->mustBeACollaboratorConstraint = new MustBeACollaboratorConstraint(new User(['id' => $payload->inviterId]));
+        $inviter = new User(['id' => $payload->inviterId]);
+
+        $inviter->exists = true;
+
+        $this->mustBeACollaboratorConstraint = new MustBeACollaboratorConstraint($inviter);
     }
 
     public function apply(Builder $builder, Model $model): void

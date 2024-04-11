@@ -17,9 +17,9 @@ final class FetchMutedCollaboratorsService
      */
     public function __invoke(int $folderId, PaginationData $pagination, ?string $collaboratorName = null): Paginator
     {
-        $folder = Folder::query()->find($folderId, ['id', 'user_id']);
+        $folder = Folder::query()->select(['id', 'user_id'])->whereKey($folderId)->firstOrNew();
 
-        if (is_null($folder)) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
 

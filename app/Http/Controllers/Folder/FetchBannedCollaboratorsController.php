@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 
 final class FetchBannedCollaboratorsController
 {
-    public function __invoke(Request $request): ResourceCollection
+    public function __invoke(Request $request, string $folderId): ResourceCollection
     {
         $request->validate([
             'name' => ['sometimes', 'filled', 'string', 'max:10']
@@ -23,12 +23,11 @@ final class FetchBannedCollaboratorsController
 
         $request->validate(PaginationData::new()->asValidationRules());
 
-        /** @var Folder|null */
-        $folder = Folder::query()->find($request->route('folder_id'), ['user_id']);
+        $folder = Folder::query()->select('user_id')->whereKey((int) $folderId)->firstOrNew();
 
         $pagination = PaginationData::fromRequest($request);
 
-        if (is_null($folder)) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
 

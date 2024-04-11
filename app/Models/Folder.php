@@ -32,6 +32,7 @@ use Illuminate\Database\Eloquent\Collection;
  * @property        Collection<User>       $collaborators
  * @property        Collection<User>       $bannedUsers
  * @property        Collection<Bookmark>   $bookmarks
+ * @property        string|null            $icon_path
  * @method   static Builder|QueryBuilder   onlyAttributes(array $attributes = [])
  */
 final class Folder extends Model

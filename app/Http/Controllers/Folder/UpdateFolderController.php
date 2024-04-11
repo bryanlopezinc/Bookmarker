@@ -7,7 +7,7 @@ namespace App\Http\Controllers\Folder;
 use App\DataTransferObjects\UpdateFolderRequestData;
 use App\Http\Handlers\UpdateFolder\Handler;
 use App\Http\Requests\CreateOrUpdateFolderRequest as Request;
-use App\Http\Requests\UpdateCollaboratorActionRequest;
+use App\Http\Requests\ToggleFolderFeatureRequest;
 use App\Services\Folder\ToggleFolderFeature;
 use Illuminate\Http\JsonResponse;
 
@@ -21,10 +21,11 @@ final class UpdateFolderController
     }
 
     public function updateAction(
-        UpdateCollaboratorActionRequest $request,
-        ToggleFolderFeature $service
+        ToggleFolderFeatureRequest $request,
+        ToggleFolderFeature $service,
+        string $folderId
     ): JsonResponse {
-        $service->fromRequest($request);
+        $service->fromRequest($request, (int) $folderId);
 
         return new JsonResponse();
     }

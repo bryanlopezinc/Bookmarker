@@ -18,7 +18,7 @@ use Illuminate\Validation\ValidationException;
 
 final class PasswordCheckConstraint implements FolderRequestHandlerInterface, Scope
 {
-    private Hasher $hasher;
+    private readonly Hasher $hasher;
     private readonly UpdateFolderRequestData $data;
 
     public function __construct(UpdateFolderRequestData $data, Hasher $hasher = null)
@@ -40,17 +40,19 @@ final class PasswordCheckConstraint implements FolderRequestHandlerInterface, Sc
      */
     public function handle(Folder $folder): void
     {
-        $newVisibility = FolderVisibility::fromRequest($this->data->visibility);
-
-        $isMakingPrivateFolderPublic = $newVisibility->isPublic() &&
-            $this->data->visibility !== null                      &&
-            ($folder->visibility->isPrivate() || $folder->visibility->isPasswordProtected());
-
-        if ( ! $isMakingPrivateFolderPublic) {
+        if( ! $this->data->isUpdatingVisibility) {
             return;
         }
 
-        if (is_null($this->data->userPassword)) {
+        $newVisibility = FolderVisibility::fromRequest($this->data->visibility);
+
+        $isChangingPrivateFolderVisibilityToPublic = $newVisibility->isPublic() && ! $folder->visibility->isPublic();
+
+        if ( ! $isChangingPrivateFolderVisibilityToPublic) {
+            return;
+        }
+
+        if ( ! $this->data->userPasswordIsSet) {
             throw ValidationException::withMessages(['password' => 'The Password field is required for this action.']);
         }
 

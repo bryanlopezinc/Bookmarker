@@ -6,21 +6,20 @@ namespace App\Services\Folder;
 
 use App\Enums\Feature;
 use App\Exceptions\FolderNotFoundException;
-use App\Http\Requests\UpdateCollaboratorActionRequest as Request;
+use App\Http\Requests\ToggleFolderFeatureRequest as Request;
 use App\Models\Folder;
 use App\Models\FolderDisabledFeature as Model;
 use App\Models\FolderFeature;
 
 final class ToggleFolderFeature
 {
-    public function fromRequest(Request $request): void
+    public function fromRequest(Request $request, int $folderId): void
     {
-        $folderId = $request->integer('folder_id');
-        $folder = Folder::query()->find($folderId, ['user_id']);
+        $folder = Folder::query()->select(['user_id'])->whereKey($folderId)->firstOrNew();
 
         [$feature, $action] = $this->mapFeatures($request);
 
-        if (is_null($folder)) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
 

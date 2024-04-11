@@ -6,6 +6,7 @@ namespace App\DataTransferObjects;
 
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\UploadedFile;
 
 final class CreateFolderData
 {
@@ -13,9 +14,10 @@ final class CreateFolderData
         public readonly ?string $description,
         public readonly string $name,
         public readonly User $owner,
-        public ?string $visibility,
+        public string $visibility,
         public readonly array $settings,
-        public readonly ?string $password
+        public readonly ?string $password,
+        public readonly ?UploadedFile $thumbnail
     ) {
     }
 
@@ -25,9 +27,10 @@ final class CreateFolderData
             'description' => $request->validated('description'),
             'name'        => $request->validated('name'),
             'owner'       => $request->user(),
-            'visibility'  => $request->validated('visibility'),
+            'visibility'  => $request->validated('visibility', 'public'),
             'settings'    => $request->validated('settings', []),
-            'password'    => $request->validated('folder_password')
+            'password'    => $request->validated('folder_password'),
+            'thumbnail'   => $request->file('thumbnail')
         ]);
     }
 
@@ -39,7 +42,8 @@ final class CreateFolderData
             'owner'       => $data['owner'],
             'visibility'  => $data['visibility'],
             'settings'    => $data['settings'],
-            'password'    => $data['password']
+            'password'    => $data['password'],
+            'thumbnail'   => $data['thumbnail']
         ]);
     }
 

@@ -27,11 +27,9 @@ final class FeatureMustBeEnabledConstraint implements Scope, FolderRequestHandle
      */
     public function apply(Builder $builder, Model $model): void
     {
-        $isUpdatingAttributeThatCanBeDisabledForUpdate = $this->data->hasDescription || $this->data->name !== null;
-
         $builder->withCasts(['updateAbleAttributesThatAreDisabled' => 'collection']);
 
-        if ( ! $isUpdatingAttributeThatCanBeDisabledForUpdate) {
+        if ( ! $this->isUpdatingAttributeThatCanBeDisabledForUpdate()) {
             $builder->addSelect(DB::raw("(SELECT '[]') as updateAbleAttributesThatAreDisabled"));
 
             return;
@@ -48,6 +46,13 @@ final class FeatureMustBeEnabledConstraint implements Scope, FolderRequestHandle
         ]);
     }
 
+    private function isUpdatingAttributeThatCanBeDisabledForUpdate(): bool
+    {
+        return $this->data->isUpdatingDescription ||
+            $this->data->isUpdatingName           ||
+            $this->data->isUpdatingThumbnail;
+    }
+
     /**
      * @inheritdoc
      */
@@ -60,19 +65,27 @@ final class FeatureMustBeEnabledConstraint implements Scope, FolderRequestHandle
 
         $exception = new FolderFeatureDisabledException();
 
+        $isDisabled = function (Feature $feature) use ($disabledFeatures): bool {
+            return $disabledFeatures->contains($feature->value);
+        };
+
         if ($folderBelongsToAuthUser || $disabledFeatures->isEmpty()) {
             return;
         }
 
-        if ($disabledFeatures->contains(Feature::UPDATE_FOLDER->value)) {
+        if ($isDisabled(Feature::UPDATE_FOLDER)) {
             throw $exception;
         }
 
-        if ($disabledFeatures->contains(Feature::UPDATE_FOLDER_NAME->value) && $this->data->name !== null) {
+        if ($isDisabled(Feature::UPDATE_FOLDER_NAME) && $this->data->isUpdatingName) {
             throw $exception;
         }
 
-        if ($disabledFeatures->contains(Feature::UPDATE_FOLDER_DESCRIPTION->value) && $this->data->hasDescription) {
+        if ($isDisabled(Feature::UPDATE_FOLDER_DESCRIPTION) && $this->data->isUpdatingDescription) {
+            throw $exception;
+        }
+
+        if ($isDisabled(Feature::UPDATE_FOLDER_ICON) && $this->data->isUpdatingThumbnail) {
             throw $exception;
         }
     }

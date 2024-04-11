@@ -21,10 +21,12 @@ final class FetchFolderController extends Controller
             'fields' => ['sometimes', new FolderFieldsRule()]
         ]);
 
-        /** @var Folder|null */
-        $folder = Folder::query()->withCount(['collaborators', 'bookmarks'])->find($request->integer('id'));
+        $folder = Folder::query()
+            ->withCount(['collaborators', 'bookmarks'])
+            ->whereKey($request->integer('id'))
+            ->firstOrNew();
 
-        if (is_null($folder)) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
 

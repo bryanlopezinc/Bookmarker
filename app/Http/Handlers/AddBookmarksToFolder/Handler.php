@@ -38,7 +38,7 @@ final class Handler
     {
         return [
             new Constraints\FolderExistConstraint(),
-            new Constraints\MustBeACollaboratorConstraint(),
+            new Constraints\MustBeACollaboratorConstraint($data->authUser),
             new Constraints\PermissionConstraint($data->authUser, Permission::ADD_BOOKMARKS),
             new Constraints\FeatureMustBeEnabledConstraint($data->authUser, Feature::ADD_BOOKMARKS),
             new MaxFolderBookmarksConstraint($data),

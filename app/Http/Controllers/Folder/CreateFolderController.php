@@ -8,7 +8,6 @@ use App\DataTransferObjects\CreateFolderData;
 use App\Http\Handlers\CreateFolder\HandlerInterface;
 use App\Http\Requests\CreateOrUpdateFolderRequest as Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
 
 final class CreateFolderController
 {
@@ -16,6 +15,6 @@ final class CreateFolderController
     {
         $service->create(CreateFolderData::fromRequest($request));
 
-        return new JsonResponse(status: Response::HTTP_CREATED);
+        return new JsonResponse(status: JsonResponse::HTTP_CREATED);
     }
 }

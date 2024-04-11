@@ -21,10 +21,12 @@ final class GrantPermissionsToCollaboratorService
     public function grant(int $collaboratorId, int $folderId, UAC $permissions): void
     {
         $folder = Folder::query()
+            ->select(['id', 'user_id'])
             ->tap(new UserIsACollaboratorScope($collaboratorId))
-            ->find($folderId, ['id', 'user_id']);
+            ->whereKey($folderId)
+            ->firstOrNew();
 
-        if (is_null($folder)) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
 

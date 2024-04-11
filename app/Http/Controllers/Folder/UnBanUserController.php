@@ -13,20 +13,19 @@ use Illuminate\Http\Request;
 
 final class UnBanUserController
 {
-    public function __invoke(Request $request): JsonResponse
+    public function __invoke(Request $request, string $folderId, string $collaboratorId): JsonResponse
     {
-        /** @var Folder|null */
-        $folder = Folder::query()->find($request->route('folder_id'), ['user_id']);
+        $folder = Folder::query()->select('user_id')->whereKey($folderId)->firstOrNew();
 
-        if (is_null($folder)) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 
         $affectedRows = BannedCollaborator::query()
-            ->where('user_id', $request->route('collaborator_id'))
-            ->where('folder_id', $request->route('folder_id'))
+            ->where('user_id', $collaboratorId)
+            ->where('folder_id', $folderId)
             ->delete();
 
         if ($affectedRows === 0) {

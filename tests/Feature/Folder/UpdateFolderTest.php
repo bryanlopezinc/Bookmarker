@@ -4,28 +4,31 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder;
 
-use App\Actions\ToggleFolderFeature;
-use App\DataTransferObjects\Builders\FolderSettingsBuilder;
-use App\Enums\CollaboratorMetricType;
-use App\Enums\Feature;
-use App\Enums\FolderVisibility;
-use App\Enums\Permission;
-use App\Models\Folder;
 use App\UAC;
-use App\ValueObjects\FolderName;
-use App\ValueObjects\FolderSettings;
-use Database\Factories\FolderFactory;
-use Database\Factories\UserFactory;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Notification;
-use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
-use PHPUnit\Framework\Attributes\Test;
-use Tests\Feature\Folder\Concerns\AssertFolderCollaboratorMetrics;
-use Tests\Traits\CreatesCollaboration;
+use App\Enums\Feature;
+use App\Models\Folder;
+use App\Enums\Permission;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Tests\Traits\CreatesRole;
+use App\Enums\FolderVisibility;
+use App\ValueObjects\FolderName;
+use Illuminate\Http\UploadedFile;
+use Database\Factories\UserFactory;
+use App\Actions\ToggleFolderFeature;
+use App\ValueObjects\FolderSettings;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Testing\TestResponse;
+use App\Enums\CollaboratorMetricType;
+use Database\Factories\FolderFactory;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\Traits\CreatesCollaboration;
+use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Facades\Notification;
+use App\Filesystem\FolderThumbnailFileSystem;
+use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use Tests\Feature\Folder\Concerns\AssertFolderCollaboratorMetrics;
 
 class UpdateFolderTest extends TestCase
 {
@@ -41,6 +44,13 @@ class UpdateFolderTest extends TestCase
             route('updateFolder', Arr::only($parameters, ['folder_id'])),
             $parameters
         );
+    }
+
+    protected function tearDown(): void
+    {
+        Str::createRandomStringsNormally();
+
+        parent::tearDown();
     }
 
     public function testIsAccessibleViaPath(): void
@@ -77,6 +87,14 @@ class UpdateFolderTest extends TestCase
         $this->updateFolderResponse(['description' => str_repeat('f', 151), 'folder_id' => 4])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['description' => 'The description must not be greater than 150 characters.']);
+
+        $this->updateFolderResponse(['thumbnail' => UploadedFile::fake()->create('photo.jpg', 2001), 'folder_id' => 4])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['thumbnail' => 'The thumbnail must not be greater than 2000 kilobytes.']);
+
+        $this->updateFolderResponse(['thumbnail' => UploadedFile::fake()->create('photo.html', 1000), 'folder_id' => 432])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['thumbnail' => 'The thumbnail must be an image.']);
     }
 
     public function testUpdateName(): void
@@ -128,6 +146,76 @@ class UpdateFolderTest extends TestCase
 
         $this->updateFolderResponse(['description' => null, 'folder_id' => $folder->id])->assertOk();
         $this->assertUpdated($folder, ['description' => null]);
+    }
+
+    #[Test]
+    public function updateFolderIconWithNewIcon(): void
+    {
+        $filesystem = new FolderThumbnailFileSystem();
+        $newIconPath = Str::random(40);
+        $initialIcon = Str::random(40) . 'jpg';
+
+        Str::createRandomStringsUsing(fn () => $newIconPath);
+
+        $this->loginUser($user = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->hasCustomIcon($initialIcon)->for($user)->create();
+
+        $this->updateFolderResponse([
+            'thumbnail' => UploadedFile::fake()->image('folderIcon.jpg')->size(2000),
+            'folder_id' => $folder->id
+        ])->assertOk();
+
+        $this->assertUpdated($folder, ['icon_path' => "{$newIconPath}.jpg"]);
+        $this->assertFalse($filesystem->exists($initialIcon));
+        $this->assertTrue($filesystem->exists("{$newIconPath}.jpg"));
+    }
+
+    #[Test]
+    public function setFolderIcon(): void
+    {
+        $filesystem = new FolderThumbnailFileSystem();
+        $newIconPath = Str::random(40);
+
+        Str::createRandomStringsUsing(fn () => $newIconPath);
+
+        $this->loginUser($user = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->for($user)->create();
+
+        $this->updateFolderResponse([
+            'thumbnail' => UploadedFile::fake()->image('folderIcon.jpg')->size(2000),
+            'folder_id' => $folder->id
+        ])->assertOk();
+
+        $this->assertUpdated($folder, ['icon_path' => "{$newIconPath}.jpg"]);
+        $this->assertTrue($filesystem->exists($folder->refresh()->icon_path));
+    }
+
+    #[Test]
+    public function removeFolderIcon(): void
+    {
+        $user = UserFactory::new()->create();
+        $filesystem = new FolderThumbnailFileSystem();
+        $newIconPath = Str::random(40);
+
+        Str::createRandomStringsUsing(fn () => $newIconPath);
+
+        $iconPath = $filesystem->store(UploadedFile::fake()->image('photo.jpg'));
+        $this->assertTrue($filesystem->exists($iconPath));
+
+        $folder = FolderFactory::new()->hasCustomIcon($iconPath)->for($user)->create();
+
+        $this->loginUser($user);
+        $this->updateFolderResponse([
+            'thumbnail' => null,
+            'folder_id' => $folder->id
+        ])->assertOk();
+
+        $this->assertUpdated($folder, ['icon_path' => null]);
+        $this->assertNull($folder->refresh()->icon_path);
+        $this->assertFalse($filesystem->exists($iconPath));
+        $this->assertNull($folder->icon_path);
     }
 
     #[Test]
@@ -235,6 +323,12 @@ class UpdateFolderTest extends TestCase
     {
         $this->loginUser($user = UserFactory::new()->create());
 
+        $this->updateFolderResponse([
+            'folder_id' => FolderFactory::new()->for($user)->create()->id,
+            'visibility' => 'password_protected',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['folder_password' => 'The folder password field is required.']);
+
         $query = ['visibility' => 'password_protected', 'folder_password' => 'password'];
 
         $passwordProtectedFolder = FolderFactory::new()->for($user)->passwordProtected()->create();
@@ -261,21 +355,23 @@ class UpdateFolderTest extends TestCase
     {
         $this->loginUser($user = UserFactory::new()->create());
 
-        $folder = FolderFactory::new()->for($user)->private()->create();
+        $privateFolder = FolderFactory::new()->for($user)->private()->create();
         $this->updateFolderResponse($query = [
             'folder_password' => 'new_password',
-            'folder_id'       => $folder->id,
+            'folder_id'       => $privateFolder->id,
         ])->assertBadRequest()->assertJsonFragment($expectation = ['message' => 'FolderNotPasswordProtected']);
 
-        $folder = FolderFactory::new()->for($user)->create();
-        $this->updateFolderResponse($query)->assertBadRequest()->assertJsonFragment($expectation);
+        $publicFolder = FolderFactory::new()->for($user)->create();
+        $this->updateFolderResponse(array_replace($query, ['folder_id' => $publicFolder->id]))->assertBadRequest()->assertJsonFragment($expectation);
 
-        $folder = FolderFactory::new()->for($user)->visibleToCollaboratorsOnly()->create();
-        $this->updateFolderResponse($query)->assertBadRequest()->assertJsonFragment($expectation);
+        $folderVisibleToCollaboratorsOnly = FolderFactory::new()->for($user)->visibleToCollaboratorsOnly()->create();
+        $this->updateFolderResponse(array_replace($query, ['folder_id' => $folderVisibleToCollaboratorsOnly->id]))
+            ->assertBadRequest()
+            ->assertJsonFragment($expectation);
 
-        $folder = FolderFactory::new()->for($user)->passwordProtected()->create();
-        $this->updateFolderResponse(array_replace($query, ['folder_id' => $folder->id]))->assertOk();
-        $this->assertTrue(Hash::check('new_password', Folder::find($folder->id)->password));
+        $passwordProtectedFolder = FolderFactory::new()->for($user)->passwordProtected()->create();
+        $this->updateFolderResponse(array_replace($query, ['folder_id' => $passwordProtectedFolder->id]))->assertOk();
+        $this->assertTrue(Hash::check('new_password', $passwordProtectedFolder->refresh()->password));
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotBelongToUser(): void
@@ -316,6 +412,7 @@ class UpdateFolderTest extends TestCase
         $this->updateFolderResponse([
             'name'        => $this->faker->word,
             'description' => $this->faker->sentence,
+            'thumbnail'   => UploadedFile::fake()->image('folderIcon.jpg')->size(2000),
             'folder_id'   => $folder->id
         ])->assertOk();
 
@@ -339,7 +436,8 @@ class UpdateFolderTest extends TestCase
         $this->updateFolderResponse([
             'name'        => $this->faker->word,
             'description' => $this->faker->sentence,
-            'folder_id'   => $folder->id
+            'folder_id'   => $folder->id,
+            'thumbnail'   => UploadedFile::fake()->image('folderIcon.jpg')->size(2000),
         ])->assertOk();
     }
 
@@ -503,6 +601,10 @@ class UpdateFolderTest extends TestCase
 
     public function testWillNotifyFolderOwnerWhenCollaboratorUpdatesFolder(): void
     {
+        $newIconPath = Str::random(40);
+
+        Str::createRandomStringsUsing(fn () => $newIconPath);
+
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
@@ -513,12 +615,13 @@ class UpdateFolderTest extends TestCase
             'name'        => $newName = $this->faker->word,
             'description' => $newDescription = $this->faker->sentence,
             'folder_id'   => $folder->id,
+            'thumbnail'   => UploadedFile::fake()->image('folderIcon.jpg')->size(2000),
         ])->assertOk();
 
         $folder->refresh();
         $notificationData = $folderOwner->notifications()->get(['data', 'type']);
 
-        $this->assertEqualsCanonicalizing(['FolderUpdated', 'FolderUpdated'], $notificationData->pluck('type')->all());
+        $this->assertEquals(['FolderUpdated'], $notificationData->pluck('type')->unique()->all());
         $expected = [
             'N-type'          => 'FolderUpdated',
             'version'         => '1.0.0',
@@ -528,7 +631,7 @@ class UpdateFolderTest extends TestCase
             'folder_name' => $folder->name->value,
         ];
 
-        $this->assertCount(2, $notificationData);
+        $this->assertCount(3, $notificationData);
 
         $this->assertEquals(
             $notificationData->pluck('data')->where('modified', 'description')->sole(),
@@ -550,6 +653,17 @@ class UpdateFolderTest extends TestCase
                 'changes' => [
                     'from' => $folder->name->value,
                     'to' => $newName,
+                ],
+            ]
+        );
+
+        $this->assertEquals(
+            $notificationData->pluck('data')->where('modified', 'icon_path')->sole(),
+            [
+                ...$expected,
+                'modified' => 'icon_path',
+                'changes' => [
+                    'to' => "{$newIconPath}.jpg",
                 ],
             ]
         );
@@ -703,5 +817,34 @@ class UpdateFolderTest extends TestCase
         $this->loginUser($folderOwner);
         $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->id])->assertOk();
         $this->updateFolderResponse(['description' => $this->faker->word, 'folder_id' => $folder->id])->assertOk();
+    }
+
+    #[Test]
+    public function whenUpdateIconFeatureIsDisabled(): void
+    {
+        /** @var ToggleFolderFeature */
+        $updateCollaboratorActionService = app(ToggleFolderFeature::class);
+
+        [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER);
+
+        $updateCollaboratorActionService->disable($folder->id, Feature::UPDATE_FOLDER_ICON);
+
+        $this->loginUser($collaborator);
+        $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->id])->assertOk();
+        $this->updateFolderResponse(['description' => $this->faker->word, 'folder_id' => $folder->id])->assertOk();
+
+        $this->updateFolderResponse(['thumbnail' => UploadedFile::fake()->image('folderIcon.jpg')->size(2000), 'folder_id' => $folder->id])
+            ->assertForbidden()
+            ->assertJsonFragment($errorMessage = ['message' => 'FolderFeatureDisAbled']);
+
+        $this->updateFolderResponse(['thumbnail' => null, 'folder_id' => $folder->id])->assertForbidden()->assertJsonFragment($errorMessage);
+
+        $this->loginUser($folderOwner);
+        $this->updateFolderResponse(['thumbnail' => UploadedFile::fake()->image('folderIcon.jpg')->size(2000), 'folder_id' => $folder->id])->assertOk();
+        $this->updateFolderResponse(['description' => $this->faker->word, 'folder_id' => $folder->id])->assertOk();
+        $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->id])->assertOk();
     }
 }

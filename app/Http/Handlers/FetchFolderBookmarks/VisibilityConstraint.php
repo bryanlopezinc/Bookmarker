@@ -33,9 +33,9 @@ final class VisibilityConstraint implements FolderRequestHandlerInterface, Scope
 
     public function handle(Folder $folder): void
     {
-        $isLoggedIn = $this->data->authUser !== null;
+        $isLoggedIn = $this->data->authUser->exists;
 
-        $folderBelongsToAuthUser = $folder->user_id === $this->data->authUser?->id;
+        $folderBelongsToAuthUser = $isLoggedIn && $folder->user_id === $this->data->authUser->id;
 
         if ($folder->visibility->isPublic() || $folderBelongsToAuthUser) {
             $this->stopRequestHandling = true;

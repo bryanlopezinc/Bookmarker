@@ -7,22 +7,29 @@ namespace App\Notifications;
 use App\Enums\NotificationType;
 use App\Models\Folder;
 use App\Models\User;
-use App\ValueObjects\FolderName;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Bus\Queueable;
 use InvalidArgumentException;
 
-final class FolderUpdatedNotification extends Notification //implements ShouldQueue
+abstract class AbstractFolderUpdatedNotification extends Notification //implements ShouldQueue
 {
     use Queueable;
     use FormatDatabaseNotification;
 
-    public function __construct(private Folder $folder, private User $updatedBy, private string $modifiedAttributeName)
+    protected Folder $folder;
+    protected User $updatedBy;
+    protected string $modifiedAttribute;
+
+    public function __construct(Folder $folder, User $updatedBy, string $modifiedAttribute)
     {
-        if ( ! in_array($modifiedAttributeName, ['name', 'description'])) {
-            throw new InvalidArgumentException("Invalid modified attribute {$modifiedAttributeName}"); // @codeCoverageIgnore
+        if ( ! in_array($modifiedAttribute, ['name', 'description', 'icon_path'])) {
+            throw new InvalidArgumentException("Invalid modified attribute {$modifiedAttribute}"); // @codeCoverageIgnore
         }
+
+        $this->folder = $folder;
+        $this->updatedBy = $updatedBy;
+        $this->modifiedAttribute = $modifiedAttribute;
 
         $this->afterCommit();
     }
@@ -49,7 +56,7 @@ final class FolderUpdatedNotification extends Notification //implements ShouldQu
             'collaborator_full_name' => $this->updatedBy->full_name->value,
             'folder_id'              => $this->folder->id,
             'folder_name'            => $this->folder->getOriginal('name')->value,
-            'modified'                => $this->modifiedAttributeName,
+            'modified'                => $this->modifiedAttribute,
         ];
 
         if ( ! empty($changes = $this->getChanges())) {
@@ -59,26 +66,15 @@ final class FolderUpdatedNotification extends Notification //implements ShouldQu
         return $this->formatNotificationData($data);
     }
 
-    private function getChanges(): array
+    protected function getChanges(): array
     {
-        $from = $this->folder->getOriginal($this->modifiedAttributeName);
-        $to = $this->folder->getDirty()[$this->modifiedAttributeName] ?? $this->folder->{$this->modifiedAttributeName};
-
-        if ($from instanceof FolderName) {
-            $from = $from->value;
-        }
-
-        if ($to instanceof FolderName) {
-            $to = $to->value;
-        }
-
-        return [
-            'from' => $from,
-            'to'   => $to
+        return[
+            'from' => $this->folder->getOriginal($this->modifiedAttribute),
+            'to'   => $this->folder->getDirty()[$this->modifiedAttribute] ?? $this->folder->{$this->modifiedAttribute}
         ];
     }
 
-    public function databaseType(): string
+    final public function databaseType(): string
     {
         return NotificationType::FOLDER_UPDATED->value;
     }

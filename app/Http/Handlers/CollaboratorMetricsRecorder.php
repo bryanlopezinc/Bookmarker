@@ -48,16 +48,16 @@ final class CollaboratorMetricsRecorder implements FolderRequestHandlerInterface
 
         $folderBelongsToCollaborator = $this->collaboratorId === $folder->user_id;
 
+        if ($folderBelongsToCollaborator) {
+            return;
+        }
+
         $values = [
             'collaborator_id' => $this->collaboratorId,
             'folder_id'       => $folder->id,
             'metrics_type'    => $this->type->value,
             'count'           => $incrementByAmount
         ];
-
-        if ($folderBelongsToCollaborator) {
-            return;
-        }
 
         $pendingDispatch = dispatch(static function () use ($values, $incrementByAmount) {
             FolderCollaboratorMetric::query()->create($values);

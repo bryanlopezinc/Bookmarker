@@ -18,8 +18,7 @@ final class UpdateProfileService
 
     public function __invoke(UpdateProfileRequest $request): void
     {
-        /** @var User */
-        $user = auth()->user();
+        $user = User::fromRequest($request);
 
         $validated = $request->safe();
 

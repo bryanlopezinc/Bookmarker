@@ -18,13 +18,10 @@ final class FetchUserNotificationsController
     {
         $request->validate(['filter' => ['sometimes', 'in:unread'], ...PaginationData::new()->asValidationRules()]);
 
-        /** @var User */
-        $user = auth()->user();
-
         $pagination = PaginationData::fromRequest($request);
 
         /** @var Paginator */
-        $notifications = $user->notifications()
+        $notifications = User::fromRequest($request)->notifications()
             ->select(['data', 'type', 'id', 'notifiable_id', 'created_at'])
             ->when($request->input('filter') === 'unread', fn ($query) => $query->unread())
             ->simplePaginate($pagination->perPage(), page: $pagination->page());

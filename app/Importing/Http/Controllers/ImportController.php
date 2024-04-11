@@ -31,10 +31,9 @@ final class ImportController
         $request->validate(['filter' => ['sometimes', 'string', 'in:skipped,failed']]);
         $request->validate(PaginationData::new()->asValidationRules());
 
-        /** @var Import|null */
-        $import = Import::query()->where('import_id', $importId)->first();
+        $import = Import::query()->where('import_id', $importId)->firstOrNew();
 
-        if (is_null($import) || ($import->user_id !== auth()->id())) {
+        if ( ! $import->exists || ($import->user_id !== auth()->id())) {
             throw HttpException::notFound(['message' => 'RecordNotFound']);
         }
 

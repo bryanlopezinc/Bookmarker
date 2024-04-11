@@ -8,6 +8,7 @@ use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\UpdateFolderRequestData;
 use App\Enums\FolderVisibility;
 use App\Exceptions\FolderNotModifiedAfterOperationException;
+use App\Filesystem\FolderThumbnailFileSystem;
 use App\Models\Folder;
 use App\Utils\FolderSettingsNormalizer;
 use App\ValueObjects\FolderName;
@@ -21,15 +22,18 @@ final class UpdateFolder implements FolderRequestHandlerInterface, Scope
     private readonly UpdateFolderRequestData $data;
     private readonly FolderRequestHandlerInterface $notificationSender;
     private readonly FolderSettingsNormalizer $normalizer;
+    private readonly FolderThumbnailFileSystem $filesystem;
 
     public function __construct(
         UpdateFolderRequestData $data,
         FolderRequestHandlerInterface $notificationSender,
-        FolderSettingsNormalizer $normalizer = null
+        FolderSettingsNormalizer $normalizer = null,
+        FolderThumbnailFileSystem $filesystem = null
     ) {
         $this->data = $data;
         $this->notificationSender = $notificationSender;
         $this->normalizer = $normalizer ??= new FolderSettingsNormalizer();
+        $this->filesystem = $filesystem ??= new FolderThumbnailFileSystem();
     }
 
     /**
@@ -37,7 +41,7 @@ final class UpdateFolder implements FolderRequestHandlerInterface, Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
-        $builder->addSelect(['name', 'description', 'settings']);
+        $builder->addSelect(['name', 'description', 'settings', 'icon_path']);
 
         if ($this->notificationSender instanceof Scope) {
             $this->notificationSender->apply($builder, $model);
@@ -50,31 +54,39 @@ final class UpdateFolder implements FolderRequestHandlerInterface, Scope
     public function handle(Folder $updatable): void
     {
         $folder = clone $updatable;
-        $newVisibility = FolderVisibility::fromRequest($this->data->visibility);
-        $newSettings =  $this->normalizer->fromRequest($this->data->settings);
 
-        if ( ! is_null($newName = $this->data->name)) {
-            $folder->name = new FolderName($newName);
+        $newVisibility = fn () => FolderVisibility::fromRequest($this->data->visibility);
+
+        if ($this->data->isUpdatingName) {
+            $folder->name = new FolderName($this->data->name);
         }
 
-        if ($this->data->hasDescription) {
+        if ($this->data->isUpdatingDescription) {
             $folder->description = $this->data->description;
         }
 
-        if ( ! empty($this->data->settings)) {
-            $folder->settings = new FolderSettings(array_replace_recursive($folder->settings->toArray(), $newSettings));
+        if ($this->data->isUpdatingSettings) {
+            $folder->settings = new FolderSettings(array_replace_recursive(
+                $folder->settings->toArray(),
+                $this->normalizer->fromRequest($this->data->settings)
+            ));
         }
 
-        if ( ! is_null($this->data->visibility)) {
-            if ($folder->visibility->isPasswordProtected() && ! $newVisibility->isPasswordProtected()) {
+        if ($this->data->isUpdatingVisibility) {
+            if ($folder->visibility->isPasswordProtected() && ! $newVisibility()->isPasswordProtected()) {
                 $folder->password = null;
             }
 
-            $folder->visibility = $newVisibility;
+            $folder->visibility = $newVisibility();
         }
 
-        if ( ! is_null($newFolderPassword = $this->data->folderPassword) || $newVisibility->isPasswordProtected()) {
-            $folder->password = $newFolderPassword;
+        if ($this->data->folderPasswordIsSet) {
+            $folder->password = $this->data->folderPassword;
+        }
+
+        if ($this->isUpdatingThumbnail($updatable)) {
+            $folder->icon_path = $this->data->thumbnail ? $this->filesystem->store($this->data->thumbnail) : null;
+            $this->filesystem->delete($updatable->icon_path);
         }
 
         if ( ! $folder->isDirty()) {
@@ -86,5 +98,14 @@ final class UpdateFolder implements FolderRequestHandlerInterface, Scope
         $folder->save();
 
         $this->notificationSender->handle($updatedFolder);
+    }
+
+    private function isUpdatingThumbnail(Folder $folder): bool
+    {
+        if ($this->data->thumbnail !== null) {
+            return true;
+        }
+
+        return $folder->icon_path !== null && $this->data->isUpdatingThumbnail;
     }
 }

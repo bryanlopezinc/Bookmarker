@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\DataTransferObjects\Builders\FolderSettingsBuilder;
-use App\Enums\FolderVisibility;
 use App\Models\Folder;
+use Illuminate\Support\Str;
+use App\Enums\FolderVisibility;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 
 /**
  * @extends Factory<Folder>
@@ -29,8 +30,14 @@ final class FolderFactory extends Factory
             'user_id'     => UserFactory::new(),
             'visibility'  => FolderVisibility::PUBLIC,
             'settings'    => [],
-            'password'    => null
+            'password'    => null,
+            'icon_path'   => null
         ];
+    }
+
+    public function hasCustomIcon(string $iconPath = null): self
+    {
+        return $this->state(['icon_path' => $iconPath ?? Str::random(40) . 'jpg']);
     }
 
     public function private(): self

@@ -78,11 +78,7 @@ final class FolderSettings implements Arrayable
             $settings = $settings->toArray();
         }
 
-        if (is_null($settings)) {
-            $settings = [];
-        }
-
-        return new self($settings);
+        return new self($settings ?? []);
     }
 
     public static function default(): array

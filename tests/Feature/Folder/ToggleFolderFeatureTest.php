@@ -28,7 +28,7 @@ class ToggleFolderFeatureTest extends TestCase
     public function updateFolderResponse(array $parameters = []): TestResponse
     {
         return $this->patchJson(
-            route('updateFolderCollaboratorActions'),
+            route('updateFolderCollaboratorActions', ['folder_id' => $parameters['folder_id']]),
             $parameters
         );
     }
@@ -36,13 +36,13 @@ class ToggleFolderFeatureTest extends TestCase
     #[Test]
     public function url(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/folders/collaborators/actions', 'updateFolderCollaboratorActions');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/{folder_id}/features', 'updateFolderCollaboratorActions');
     }
 
     #[Test]
     public function willReturnAuthorizedWhenUserIsNotSignedIn(): void
     {
-        $this->updateFolderResponse()->assertUnauthorized();
+        $this->updateFolderResponse(['folder_id' => 43])->assertUnauthorized();
     }
 
     #[Test]
@@ -50,24 +50,22 @@ class ToggleFolderFeatureTest extends TestCase
     {
         $this->loginUser(UserFactory::new()->create());
 
-        $this->updateFolderResponse()
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['folder_id']);
+        $this->updateFolderResponse(['folder_id' => 'foo'])->assertNotFound();
 
         //assert at least one parameter must be present
         $this->updateFolderResponse(['folder_id' => 2])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['addBookmarks']);
 
-        $this->updateFolderResponse(['addBookmarks' => 'foo'])
+        $this->updateFolderResponse(['addBookmarks' => 'foo', 'folder_id' => 42])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['addBookmarks']);
 
-        $this->updateFolderResponse(['inviteUsers' => 'foo'])
+        $this->updateFolderResponse(['inviteUsers' => 'foo', 'folder_id' => 1902])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['inviteUsers']);
 
-        $this->updateFolderResponse(['updateFolder' => 'foo'])
+        $this->updateFolderResponse(['updateFolder' => 'foo', 'folder_id' => 21])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['updateFolder']);
     }
@@ -348,6 +346,80 @@ class ToggleFolderFeatureTest extends TestCase
 
                 'Will re-enable feature' => [
                     'data' => ['updateFolderDescription' => 'enable'],
+                    'expectation' => function (Collection $disabledFeatures) {
+                        $this->assertCount(0, $disabledFeatures);
+                    }
+                ],
+            ]
+        );
+    }
+
+    #[Test]
+    public function toggleJoinFolder(): void
+    {
+        $this->loginUser($user = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->for($user)->create();
+
+        $this->toggleFeature(
+            folderId: $folder->id,
+            id: null,
+            assertions: [
+                'disable feature' => [
+                    'data' => ['joinFolder' => 'disable'],
+                    'expectation' => function (Collection $disabledFeatures) {
+                        $this->assertCount(1, $disabledFeatures);
+                        $this->assertEquals($disabledFeatures->first()->name, 'JOIN_FOLDER');
+                    }
+                ],
+
+                'Will return ok when feature is already disabled' => [
+                    'data' => ['joinFolder' => 'disable'],
+                    'expectation' => function (Collection $disabledFeatures) {
+                        $this->assertCount(1, $disabledFeatures);
+                        $this->assertEquals($disabledFeatures->first()->name, 'JOIN_FOLDER');
+                    }
+                ],
+
+                'Will re-enable feature' => [
+                    'data' => ['joinFolder' => 'enable'],
+                    'expectation' => function (Collection $disabledFeatures) {
+                        $this->assertCount(0, $disabledFeatures);
+                    }
+                ],
+            ]
+        );
+    }
+
+    #[Test]
+    public function toggleUpdateFolderIcon(): void
+    {
+        $this->loginUser($user = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->for($user)->create();
+
+        $this->toggleFeature(
+            folderId: $folder->id,
+            id: null,
+            assertions: [
+                'disable feature' => [
+                    'data' => ['updateFolderIcon' => 'disable'],
+                    'expectation' => function (Collection $disabledFeatures) {
+                        $this->assertCount(1, $disabledFeatures);
+                        $this->assertEquals($disabledFeatures->first()->name, 'UPDATE_FOLDER_ICON');
+                    }
+                ],
+
+                'Will return ok when feature is already disabled' => [
+                    'data' => ['updateFolderIcon' => 'disable'],
+                    'expectation' => function (Collection $disabledFeatures) {
+                        $this->assertCount(1, $disabledFeatures);
+                        $this->assertEquals($disabledFeatures->first()->name, 'UPDATE_FOLDER_ICON');
+                    }
+                ],
+
+                'Will re-enable feature' => [
+                    'data' => ['updateFolderIcon' => 'enable'],
                     'expectation' => function (Collection $disabledFeatures) {
                         $this->assertCount(0, $disabledFeatures);
                     }

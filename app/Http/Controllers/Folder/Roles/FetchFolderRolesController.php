@@ -13,6 +13,7 @@ use App\Http\Resources\FolderRoleResource;
 use App\PaginationData;
 use Illuminate\Http\Request;
 use App\Http\Resources\PaginatedResourceCollection as ResourceCollection;
+use App\Models\User;
 use App\Rules\RoleNameRule;
 use App\UAC;
 use Illuminate\Validation\Rule;
@@ -31,8 +32,8 @@ final class FetchFolderRolesController
         $query = Folder::query()->select(['id'])->whereKey($folderId);
 
         $requestHandlersQueue = new RequestHandlersQueue([
-            Constraints\FolderExistConstraint::class,
-            Constraints\CanCreateOrModifyRoleConstraint::class,
+            new Constraints\FolderExistConstraint(),
+            new Constraints\CanCreateOrModifyRoleConstraint(User::fromRequest($request)),
         ]);
 
         $requestHandlersQueue->scope($query);

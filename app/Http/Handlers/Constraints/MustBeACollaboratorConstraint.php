@@ -15,14 +15,8 @@ use Illuminate\Database\Eloquent\Model;
 
 final class MustBeACollaboratorConstraint implements Scope, FolderRequestHandlerInterface
 {
-    private readonly ?User $user;
-
-    /**
-     * @param User|null $user
-     */
-    public function __construct($user = null)
+    public function __construct(private readonly User $user = new User())
     {
-        $this->user = $user ?: auth()->user();
     }
 
     /**
@@ -30,7 +24,7 @@ final class MustBeACollaboratorConstraint implements Scope, FolderRequestHandler
      */
     public function apply(Builder $builder, Model $model): void
     {
-        if (is_null($this->user)) {
+        if ( ! $this->user->exists) {
             return;
         }
 
@@ -39,9 +33,11 @@ final class MustBeACollaboratorConstraint implements Scope, FolderRequestHandler
 
     public function handle(Folder $folder): void
     {
-        $folderBelongsToAuthUser = $folder->user_id === $this->user?->id;
+        if ( ! $this->user->exists) {
+            return;
+        }
 
-        if (is_null($this->user) || $folderBelongsToAuthUser) {
+        if ($folder->user_id === $this->user->id) {
             return;
         }
 

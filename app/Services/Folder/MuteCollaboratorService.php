@@ -36,9 +36,9 @@ final class MuteCollaboratorService
                     ->where('user_id', $collaboratorId)
             ])
             ->whereKey($folderId)
-            ->first();
+            ->firstOrNew();
 
-        if (is_null($folder)) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
 

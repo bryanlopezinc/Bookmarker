@@ -72,6 +72,17 @@ return [
             ],
             default => throw new \Exception("A storage configuration has not be set for profile images")
         },
+
+        'folderThumbnails' => match (env('APP_ENV', 'production')) {
+            'local', 'testing' => [
+                'driver'     => 'local',
+                'root'       => storage_path('app/folderThumbnails'),
+                'visibility' => 'public',
+                'throw'      => true,
+                'url'        => env('APP_URL') . '/storage/folderThumbnails',
+            ],
+            default => throw new \Exception("A storage configuration has not be set for folder Thumbnails")
+        },
     ],
 
     /*

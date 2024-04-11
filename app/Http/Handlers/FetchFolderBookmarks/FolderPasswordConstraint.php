@@ -42,7 +42,7 @@ final class FolderPasswordConstraint implements FolderRequestHandlerInterface, S
      */
     public function handle(Folder $folder): void
     {
-        $folderBelongsToAuthUser = $folder->user_id === $this->data->authUser?->id;
+        $folderBelongsToAuthUser = $this->data->authUser->exists && $folder->user_id === $this->data->authUser->id;
 
         if ( ! $folder->visibility->isPasswordProtected() || $folderBelongsToAuthUser) {
             return;

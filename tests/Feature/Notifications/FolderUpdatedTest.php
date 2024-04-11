@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature\Notifications;
 
 use App\Models\Folder;
-use App\Notifications\FolderUpdatedNotification;
+use App\Notifications\FolderDescriptionUpdatedNotification;
+use App\Notifications\FolderIconUpdatedNotification;
+use App\Notifications\FolderNameUpdatedNotification;
 use Tests\TestCase;
 use Illuminate\Support\Str;
 use Database\Factories\UserFactory;
@@ -24,16 +26,11 @@ class FolderUpdatedTest extends TestCase
         $folderOwner = UserFactory::new()->create();
         $collaborator = UserFactory::new()->hasProfileImage()->create();
 
-        /** @var Folder */
         $folder = FolderFactory::new()->for($folderOwner)->create(['name' => 'foo']);
         $folder->name = 'baz';
 
         $folderOwner->notify(
-            new FolderUpdatedNotification(
-                $folder,
-                $collaborator,
-                'name',
-            )
+            new FolderNameUpdatedNotification($folder, $collaborator)
         );
 
         $collaborator->update(['first_name' => 'john', 'last_name' => 'doe']);
@@ -78,22 +75,36 @@ class FolderUpdatedTest extends TestCase
         $folderOwner = UserFactory::new()->create();
         $collaborator = UserFactory::new()->create(['first_name' => 'john', 'last_name' => 'doe']);
 
-        /** @var Folder */
         $folder = FolderFactory::new()->for($folderOwner)->create(['description' => 'foo']);
-        $folder->description = 'baz';
+        $folder->description = $newDescription = Str::limit($this->faker->words(150, true), 150, '');
 
         $folderOwner->notify(
-            new FolderUpdatedNotification(
-                $folder,
-                $collaborator,
-                'description',
-            )
+            new FolderDescriptionUpdatedNotification($folder, $collaborator)
         );
 
         $this->loginUser($folderOwner);
         $this->fetchNotificationsResponse()
             ->assertOk()
-            ->assertJsonPath('data.0.attributes.message', "John Doe changed {$folder->name->present()} description from Foo to Baz.");
+            ->assertJsonPath('data.0.attributes.message', "John Doe changed {$folder->name->present()} description from Foo to {$newDescription}.");
+    }
+
+    #[Test]
+    public function thumbnailUpdatedNotification(): void
+    {
+        $folderOwner = UserFactory::new()->create();
+        $collaborator = UserFactory::new()->create(['first_name' => 'john', 'last_name' => 'doe']);
+
+        $folder = FolderFactory::new()->for($folderOwner)->create(['description' => 'foo']);
+        $folder->icon_path = Str::random(40) . 'jpg';
+
+        $folderOwner->notify(
+            new FolderIconUpdatedNotification($folder, $collaborator)
+        );
+
+        $this->loginUser($folderOwner);
+        $this->fetchNotificationsResponse()
+            ->assertOk()
+            ->assertJsonPath('data.0.attributes.message', "John Doe changed {$folder->name->present()} icon.");
     }
 
     public function testWillReturnCorrectPayloadWhenFolderDoesNoLongerExists(): void
@@ -105,11 +116,7 @@ class FolderUpdatedTest extends TestCase
         $folder->name = 'baz';
 
         $folderOwner->notify(
-            new FolderUpdatedNotification(
-                $folder,
-                $collaborator,
-                'name'
-            )
+            new FolderNameUpdatedNotification($folder, $collaborator)
         );
 
         $folder->delete();
@@ -130,11 +137,7 @@ class FolderUpdatedTest extends TestCase
         $folder->name = 'baz';
 
         $folderOwner->notify(
-            new FolderUpdatedNotification(
-                $folder,
-                $collaborator,
-                'name'
-            )
+            new FolderNameUpdatedNotification($folder, $collaborator)
         );
 
         $collaborator->delete();

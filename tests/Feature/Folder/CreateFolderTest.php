@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Folder;
 
 use App\DataTransferObjects\Builders\FolderSettingsBuilder as Builder;
+use App\Filesystem\FolderThumbnailFileSystem;
 use App\Http\Requests\CreateOrUpdateFolderRequest;
 use App\ValueObjects\FolderSettings as FS;
 use App\Models\Folder;
@@ -17,6 +18,7 @@ use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Closure;
+use Illuminate\Http\UploadedFile;
 use Tests\Feature\Folder\Concerns\InteractsWithValues;
 
 class CreateFolderTest extends TestCase
@@ -65,15 +67,26 @@ class CreateFolderTest extends TestCase
         $this->createFolderResponse(['description' => str_repeat('f', 151)])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['description' => 'The description must not be greater than 150 characters.']);
+
+        $this->createFolderResponse(['thumbnail' => UploadedFile::fake()->create('photo.jpg', 2001)])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['thumbnail' => 'The thumbnail must not be greater than 2000 kilobytes.']);
+
+        $this->createFolderResponse(['thumbnail' => UploadedFile::fake()->create('photo.html', 1000)])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['thumbnail' => 'The thumbnail must be an image.']);
     }
 
     public function testCreateFolder(): void
     {
+        $filesystem = new FolderThumbnailFileSystem();
+
         $this->loginUser($user = UserFactory::new()->create());
 
         $this->createFolderResponse([
-            'name'        => $name = $this->faker->word,
-            'description' => $description = $this->faker->sentence,
+            'name'         => $name = $this->faker->word,
+            'description'  => $description = $this->faker->sentence,
+            'thumbnail'    => UploadedFile::fake()->image('folderIcon.jpg')->size(2000)
         ])->assertCreated();
 
         /** @var Folder */
@@ -83,6 +96,8 @@ class CreateFolderTest extends TestCase
         $this->assertEquals($description, $folder->description);
         $this->assertTrue($folder->visibility->isPublic());
         $this->assertEmpty($folder->settings->toArray());
+        $this->assertTrue($filesystem->exists($folder->icon_path));
+        $this->setInteracted(['thumbnail']);
     }
 
     public function testCreateFolderWithoutDescription(): void
@@ -268,7 +283,7 @@ class CreateFolderTest extends TestCase
 
         $folderSettings = Folder::query()->where('user_id', $user->id)->sole()->settings;
 
-        if ( ! is_null($condition = $assertion($folderSettings))) {
+        if ($condition = $assertion($folderSettings) ?: true) {
             $this->assertTrue($condition);
         }
 

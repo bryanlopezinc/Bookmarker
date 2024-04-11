@@ -27,7 +27,7 @@ final class CannotMakeFolderWithCollaboratorPrivateConstraint implements FolderR
      */
     public function apply(Builder|EloquentBuilder $builder, Model $model): void
     {
-        if (is_null($this->data->visibility)) {
+        if ( ! $this->data->isUpdatingVisibility) {
             return;
         }
 
@@ -47,7 +47,7 @@ final class CannotMakeFolderWithCollaboratorPrivateConstraint implements FolderR
      */
     public function handle(Folder $folder): void
     {
-        if (is_null($this->data->visibility)) {
+        if ( ! $this->data->isUpdatingVisibility) {
             return;
         }
 

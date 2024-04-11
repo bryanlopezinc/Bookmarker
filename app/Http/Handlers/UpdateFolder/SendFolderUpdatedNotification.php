@@ -8,7 +8,9 @@ use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\UpdateFolderRequestData;
 use App\Models\Folder;
 use App\Models\User;
-use App\Notifications\FolderUpdatedNotification;
+use App\Notifications\FolderDescriptionUpdatedNotification;
+use App\Notifications\FolderIconUpdatedNotification;
+use App\Notifications\FolderNameUpdatedNotification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
@@ -45,7 +47,11 @@ final class SendFolderUpdatedNotification implements FolderRequestHandlerInterfa
         }
 
         foreach (array_keys($folder->getDirty()) as $modified) {
-            $notification = new FolderUpdatedNotification($folder, $this->data->authUser, $modified);
+            $notification = match ($modified) {
+                'name'        => new FolderNameUpdatedNotification($folder, $this->data->authUser),
+                'description' => new FolderDescriptionUpdatedNotification($folder, $this->data->authUser),
+                default       => new FolderIconUpdatedNotification($folder, $this->data->authUser),
+            };
 
             $pendingDispatch = dispatch(static function () use ($folder, $notification) {
                 Notification::send(new User(['id' => $folder->user_id]), $notification);

@@ -13,12 +13,8 @@ enum FolderVisibility: int
     case COLLABORATORS      = 4;
     case PASSWORD_PROTECTED = 5;
 
-    public static function fromRequest(Request|string|null $request, string $key = 'visibility'): self
+    public static function fromRequest(Request|string $request = 'public', string $key = 'visibility'): self
     {
-        if (is_null($request)) {
-            return self::PUBLIC;
-        }
-
         if ($request instanceof Request) {
             $request = $request->input($key);
         }

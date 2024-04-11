@@ -106,7 +106,7 @@ final class FetchNotificationResourcesRepository
                 $model = match ($key) {
                     'bookmarks' => Bookmark::class,
                     'users'     => User::class,
-                    'folders'   => Folder::class
+                    default     => Folder::class
                 };
 
                 return [$key => collect($data)->mapInto($model)->all()];
@@ -119,9 +119,9 @@ final class FetchNotificationResourcesRepository
     private function extractIds(string $type): array
     {
         $keys = match ($type) {
-            'users'     => self::USER_ID_KEYS,
-            'folders'   => self::FOLDER_ID_KEYS,
-            'bookmarks' => self::BOOKMARK_ID_KEYS,
+            'users'   => self::USER_ID_KEYS,
+            'folders' => self::FOLDER_ID_KEYS,
+            default   => self::BOOKMARK_ID_KEYS,
         };
 
         return $this->notifications

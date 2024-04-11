@@ -31,9 +31,11 @@ final class CanUpdateOnlyProtectedFolderPasswordConstraint implements FolderRequ
      */
     public function handle(Folder $folder): void
     {
-        $isUpdatingFolderPassword = ! is_null($this->data->folderPassword) && ! $this->data->visibility;
+        if ($this->data->isUpdatingVisibility) {
+            return;
+        }
 
-        if ($isUpdatingFolderPassword && ! $folder->visibility->isPasswordProtected()) {
+        if ($this->data->folderPasswordIsSet && ! $folder->visibility->isPasswordProtected()) {
             throw new HttpException(
                 ['message' => 'FolderNotPasswordProtected', 'info' => 'folder is not password protected'],
                 400

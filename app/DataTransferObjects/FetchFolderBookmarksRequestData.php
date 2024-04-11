@@ -12,7 +12,7 @@ final class FetchFolderBookmarksRequestData
 {
     public function __construct(
         public readonly ?string $password,
-        public readonly ?User $authUser,
+        public readonly User $authUser,
         public readonly PaginationData $pagination
     ) {
     }
@@ -21,7 +21,7 @@ final class FetchFolderBookmarksRequestData
     {
         return new self(
             $request->input('folder_password'),
-            $request->user(),
+            $request->user() ?? new User(),
             PaginationData::fromRequest($request)
         );
     }

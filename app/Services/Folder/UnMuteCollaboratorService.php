@@ -23,9 +23,9 @@ final class UnMuteCollaboratorService
             ])
             ->tap(new WhereFolderOwnerExists())
             ->whereKey($folderId)
-            ->first();
+            ->firstOrNew();
 
-        if (is_null($folder)) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
 

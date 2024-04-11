@@ -21,9 +21,9 @@ final class HideFolderBookmarksService
 
     public function hide(array $bookmarkIDs, int $folderID): void
     {
-        $folder = Folder::query()->find($folderID, ['id', 'user_id']);
+        $folder = Folder::query()->select(['id', 'user_id'])->whereKey($folderID)->firstOrNew();
 
-        if (is_null($folder)) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
 

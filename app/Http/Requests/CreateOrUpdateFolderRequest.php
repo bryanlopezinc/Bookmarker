@@ -19,12 +19,15 @@ final class CreateOrUpdateFolderRequest extends FormRequest
 
     public function rules(): array
     {
+        $maxThumbnailSize = setting('MAX_FOLDER_THUMBNAIL_SIZE');
+
         return [
             'name'            => $this->folderNameRules(),
             'description'     => ['nullable', 'string', 'max:150'],
             'visibility'      => ['nullable', 'string', 'in:public,private,collaborators,password_protected'],
             'settings'        => ['bail', 'sometimes', 'array', 'filled', new FolderSettingsRootNodesRule(new Schema())],
             'password'        => ['sometimes', 'filled', 'string'],
+            'thumbnail'       => ['nullable', 'image', "max:{$maxThumbnailSize}"],
             'folder_password' => [Rule::requiredIf(FolderVisibility::fromRequest($this)->isPasswordProtected()), 'string', 'filled'],
             ...$this->folderSettingsRules()
         ];
@@ -39,7 +42,7 @@ final class CreateOrUpdateFolderRequest extends FormRequest
             Rule::requiredIf($this->isCreateFolderRequest()),
             Rule::when(
                 ! $this->isCreateFolderRequest(),
-                [Rule::requiredIf( ! $this->hasAny('description', 'visibility', 'folder_password', 'settings'))]
+                [Rule::requiredIf( ! $this->hasAny('description', 'visibility', 'folder_password', 'settings', 'thumbnail'))]
             )
         ];
     }

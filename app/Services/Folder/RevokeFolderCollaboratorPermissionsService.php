@@ -27,9 +27,10 @@ final class RevokeFolderCollaboratorPermissionsService
             ->select(['id', 'user_id'])
             ->tap(new UserIsACollaboratorScope($collaboratorID, 'userIsACollaborator'))
             ->tap(new UserIsACollaboratorScope($authUserId, 'authUserIsACollaborator'))
-            ->find($folderID);
+            ->whereKey($folderID)
+            ->firstOrNew();
 
-        if (is_null($folder)) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
 

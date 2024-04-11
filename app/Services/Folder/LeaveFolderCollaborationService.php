@@ -26,17 +26,17 @@ final class LeaveFolderCollaborationService
 
     public function leave(int $folderID): void
     {
-        /** @var User */
-        $collaborator = auth()->user();
+        $collaborator = User::fromRequest(request());
 
         $folder = Folder::onlyAttributes(['id', 'user_id', 'settings'])
             ->tap(new WhereFolderOwnerExists())
             ->tap(new UserIsACollaboratorScope($collaborator->id))
-            ->find($folderID);
+            ->whereKey($folderID)
+            ->firstOrNew();
 
         $collaboratorPermissions = $this->permissionsRepository->all($collaborator->id, $folderID);
 
-        if (is_null($folder)) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
 

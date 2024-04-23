@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Exceptions\BookmarkNotFoundException;
-use App\Exceptions\UserNotFoundException;
 use App\Models\Source;
 use App\Models\Bookmark;
 use App\Utils\UrlHasher;
@@ -13,7 +11,6 @@ use Illuminate\Support\Str;
 use Illuminate\Bus\Queueable;
 use App\Readers\BookmarkMetaData;
 use App\Readers\HttpClientInterface;
-use App\Repositories\UserRepository;
 use App\Repositories\BookmarkRepository;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -35,11 +32,12 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
         BookmarkRepository $bookmarkRepository = new BookmarkRepository(),
     ): void {
 
-        try {
-            $bookmark = $bookmarkRepository->findById($this->bookmark->id);
+        $bookmark = Bookmark::query()
+            ->with(['user'])
+            ->whereKey($this->bookmark->id)
+            ->firstOrNew();
 
-            $this->userRepository()->findByID($bookmark->user_id);
-        } catch (UserNotFoundException | BookmarkNotFoundException) {
+        if ( ! $bookmark->exists || $bookmark->user === null) {
             return;
         }
 
@@ -67,11 +65,6 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
         $this->updateSiteName($data, $bookmark);
 
         $bookmark->save();
-    }
-
-    private function userRepository(): UserRepository
-    {
-        return app(UserRepository::class);
     }
 
     private function setDescriptionAttribute(BookmarkMetaData $data, Bookmark &$bookmark): void
@@ -103,9 +96,9 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
         }
 
         /** @var Source */
-        $source = Source::query()->where('id', $bookmark->source_id)->first(['name', 'id', 'host']);
+        $source = Source::query()->where('id', $bookmark->source_id)->first(['name', 'id', 'host', 'name_updated_at']);
 
-        if ($bookmark->source->name_updated_at === null) {
+        if ($source->name_updated_at === null) {
             $source->update([
                 'name'            => $siteName,
                 'name_updated_at' => now()

@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Folder;
 
 use App\Http\Handlers\RemoveFolderBookmarks\Handler;
-use App\Rules\ResourceIdRule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\DataTransferObjects\RemoveFolderBookmarksRequestData as Data;
+use App\Rules\PublicId\BookmarkPublicIdRule;
+use App\ValueObjects\PublicId\FolderPublicId;
 
 final class RemoveBookmarksFromFolderController
 {
@@ -16,10 +17,10 @@ final class RemoveBookmarksFromFolderController
     {
         $request->validate([
             'bookmarks'   => ['required', 'array', 'max:50'],
-            'bookmarks.*' => [new ResourceIdRule(), 'distinct:strict'],
+            'bookmarks.*' => [new BookmarkPublicIdRule(), 'distinct:strict'],
         ]);
 
-        $requestHandler->handle((int) $folderId, Data::fromRequest($request));
+        $requestHandler->handle(FolderPublicId::fromRequest($folderId), Data::fromRequest($request));
 
         return new JsonResponse();
     }

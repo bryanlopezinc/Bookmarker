@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Folder;
 
 use App\Enums\Feature;
+use App\Models\Folder;
 use App\Models\FolderDisabledFeature;
 use App\Models\FolderFeature;
 use Database\Factories\FolderFactory;
@@ -12,13 +13,16 @@ use Database\Factories\UserFactory;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\Folder\Concerns\InteractsWithValues;
+use Tests\Traits\GeneratesId;
 
 class ToggleFolderFeatureTest extends TestCase
 {
     use InteractsWithValues;
+    use GeneratesId;
 
     protected function shouldBeInteractedWith(): mixed
     {
@@ -46,28 +50,47 @@ class ToggleFolderFeatureTest extends TestCase
     }
 
     #[Test]
-    public function willReturnUnprocessableWhenParametersAreInvalid(): void
+    public function willReturnNotFoundWhenFolderIdIsInvalid(): void
     {
         $this->loginUser(UserFactory::new()->create());
 
-        $this->updateFolderResponse(['folder_id' => 'foo'])->assertNotFound();
+        $this->updateFolderResponse(['folder_id' => 'foo', 'addBookmarks' => 'disable'])
+            ->assertNotFound()
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
+    }
 
-        //assert at least one parameter must be present
-        $this->updateFolderResponse(['folder_id' => 2])
+    #[Test]
+    public function willReturnUnprocessableWhenNoFeatureIsIndicated(): void
+    {
+        $this->loginUser(UserFactory::new()->create());
+
+        $this->updateFolderResponse(['folder_id' => $this->generateFolderId()->present()])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['addBookmarks']);
+    }
 
-        $this->updateFolderResponse(['addBookmarks' => 'foo', 'folder_id' => 42])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['addBookmarks']);
+    #[Test]
+    #[DataProvider('willReturnUnprocessableWhenParametersAreInvalidData')]
+    public function willReturnUnprocessableWhenParametersAreInvalid(string $feature): void
+    {
+        $this->loginUser(UserFactory::new()->create());
 
-        $this->updateFolderResponse(['inviteUsers' => 'foo', 'folder_id' => 1902])
+        $this->updateFolderResponse([$feature => 'foo', 'folder_id' => $this->generateFolderId()->present()])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['inviteUsers']);
+            ->assertJsonValidationErrors([$feature]);
+    }
 
-        $this->updateFolderResponse(['updateFolder' => 'foo', 'folder_id' => 21])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['updateFolder']);
+    public static function willReturnUnprocessableWhenParametersAreInvalidData(): array
+    {
+        $data = [];
+
+        foreach (Feature::publicIdentifiers() as $key => $value) {
+            $key = str($key)->lower()->replace('_', ' ')->toString();
+
+            $data[$key] = [$value];
+        }
+
+        return  $data;
     }
 
     #[Test]
@@ -78,7 +101,7 @@ class ToggleFolderFeatureTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->toggleFeature(
-            folderId: $folder->id,
+            folder: $folder,
             id: null,
             assertions: [
                 'Will disable feature' => [
@@ -107,7 +130,7 @@ class ToggleFolderFeatureTest extends TestCase
         );
     }
 
-    protected function toggleFeature(array $assertions, int $folderId, string $id = null)
+    protected function toggleFeature(array $assertions, Folder $folder, string $id = null)
     {
         if ($id) {
             $assertions = Arr::only($assertions, $id);
@@ -115,10 +138,10 @@ class ToggleFolderFeatureTest extends TestCase
         }
 
         foreach ($assertions as $test) {
-            $response = $this->updateFolderResponse(array_merge(['folder_id' => $folderId], $test['data']));
+            $response = $this->updateFolderResponse(array_merge(['folder_id' => $folder->public_id->present()], $test['data']));
             $response->assertOk();
 
-            $disabledFeaturesIds = FolderDisabledFeature::where('folder_id', $folderId)->get(['feature_id'])->pluck('feature_id');
+            $disabledFeaturesIds = FolderDisabledFeature::where('folder_id', $folder->id)->get(['feature_id'])->pluck('feature_id');
 
             $disabledFeatures = FolderFeature::query()->whereKey($disabledFeaturesIds)->get(['name']);
 
@@ -140,7 +163,7 @@ class ToggleFolderFeatureTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->toggleFeature(
-            folderId: $folder->id,
+            folder: $folder,
             id: null,
             assertions: [
                 'Will disable feature' => [
@@ -177,7 +200,7 @@ class ToggleFolderFeatureTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->toggleFeature(
-            folderId: $folder->id,
+            folder: $folder,
             id: null,
             assertions: [
                 'Will disable feature' => [
@@ -214,27 +237,27 @@ class ToggleFolderFeatureTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->toggleFeature(
-            folderId: $folder->id,
+            folder: $folder,
             id: null,
             assertions: [
                 'disable feature' => [
-                    'data' => ['updateFolder' => 'disable'],
+                    'data' => ['updateFolderName' => 'disable'],
                     'expectation' => function (Collection $disabledFeatures) {
                         $this->assertCount(1, $disabledFeatures);
-                        $this->assertEquals($disabledFeatures->first()->name, 'UPDATE_FOLDER');
+                        $this->assertEquals($disabledFeatures->first()->name, 'UPDATE_FOLDER_NAME');
                     }
                 ],
 
                 'Will return ok when feature is already disabled' => [
-                    'data' => ['updateFolder' => 'disable'],
+                    'data' => ['updateFolderName' => 'disable'],
                     'expectation' => function (Collection $disabledFeatures) {
                         $this->assertCount(1, $disabledFeatures);
-                        $this->assertEquals($disabledFeatures->first()->name, 'UPDATE_FOLDER');
+                        $this->assertEquals($disabledFeatures->first()->name, 'UPDATE_FOLDER_NAME');
                     }
                 ],
 
                 'Will re-enable feature' => [
-                    'data' => ['updateFolder' => 'enable'],
+                    'data' => ['updateFolderName' => 'enable'],
                     'expectation' => function (Collection $disabledFeatures) {
                         $this->assertCount(0, $disabledFeatures);
                     }
@@ -251,7 +274,7 @@ class ToggleFolderFeatureTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->toggleFeature(
-            folderId: $folder->id,
+            folder: $folder,
             id: null,
             assertions: [
                 'disable feature' => [
@@ -288,7 +311,7 @@ class ToggleFolderFeatureTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->toggleFeature(
-            folderId: $folder->id,
+            folder: $folder,
             id: null,
             assertions: [
                 'disable feature' => [
@@ -325,7 +348,7 @@ class ToggleFolderFeatureTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->toggleFeature(
-            folderId: $folder->id,
+            folder: $folder,
             id: null,
             assertions: [
                 'disable feature' => [
@@ -362,7 +385,7 @@ class ToggleFolderFeatureTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->toggleFeature(
-            folderId: $folder->id,
+            folder: $folder,
             id: null,
             assertions: [
                 'disable feature' => [
@@ -399,7 +422,7 @@ class ToggleFolderFeatureTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->toggleFeature(
-            folderId: $folder->id,
+            folder: $folder,
             id: null,
             assertions: [
                 'disable feature' => [
@@ -433,11 +456,11 @@ class ToggleFolderFeatureTest extends TestCase
     {
         $this->loginUser(UserFactory::new()->create());
 
-        $folderId = FolderFactory::new()->create()->id;
+        $folder = FolderFactory::new()->create();
 
-        $this->updateFolderResponse(['folder_id' => $folderId, 'addBookmarks' => 'disable'])->assertNotFound();
+        $this->updateFolderResponse(['folder_id' => $folder->public_id->present(), 'addBookmarks' => 'disable'])->assertNotFound();
 
-        $this->assertDatabaseMissing(FolderDisabledFeature::class, ['folder_id' => $folderId]);
+        $this->assertDatabaseMissing(FolderDisabledFeature::class, ['folder_id' => $folder->id]);
     }
 
     #[Test]
@@ -447,8 +470,8 @@ class ToggleFolderFeatureTest extends TestCase
 
         $folder = FolderFactory::new()->create();
 
-        $this->updateFolderResponse(['folder_id' => $folder->id + 1, 'addBookmarks' => 'disable'])->assertNotFound();
+        $this->updateFolderResponse(['folder_id' => $this->generateFolderId()->present(), 'addBookmarks' => 'disable'])->assertNotFound();
 
-        $this->assertDatabaseMissing(FolderDisabledFeature::class, ['folder_id' => $folder->id + 1]);
+        $this->assertDatabaseMissing(FolderDisabledFeature::class, ['folder_id' => $folder->id]);
     }
 }

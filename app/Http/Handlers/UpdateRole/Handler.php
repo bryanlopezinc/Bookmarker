@@ -6,33 +6,40 @@ namespace App\Http\Handlers\UpdateRole;
 
 use App\Models\Folder;
 use App\Http\Handlers\Constraints;
-use App\Contracts\FolderRequestHandlerInterface as HandlerInterface;
 use App\Http\Handlers\RequestHandlersQueue;
+use App\Models\FolderRole;
+use App\Models\Scopes\WherePublicIdScope;
 use App\Models\User;
+use App\ValueObjects\PublicId\FolderPublicId;
+use App\ValueObjects\PublicId\RolePublicId;
 
 final class Handler
 {
-    public function handle(int $folderId, User $user, int $roleId, string $role): void
+    public function handle(FolderPublicId $folderId, User $user, RolePublicId $roleId, string $role): void
     {
-        $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($user, $roleId, $role));
+        $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($user, $role));
 
-        $query = Folder::query()->select(['id'])->whereKey($folderId);
+        $query = Folder::query()
+            ->tap(new WherePublicIdScope($folderId))
+            ->select([
+                'id',
+                'roleId' => FolderRole::query()
+                    ->select('id')
+                    ->tap(new WherePublicIdScope($roleId))
+                    ->whereColumn('folder_id', 'folders.id')
+            ]);
 
         $requestHandlersQueue->scope($query);
 
-        $folder = $query->firstOrNew();
-
-        $requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
-            $handler->handle($folder);
-        });
+        $requestHandlersQueue->handle($query->firstOrNew());
     }
 
-    private function getConfiguredHandlers(User $user, int $roleId, string $role): array
+    private function getConfiguredHandlers(User $user, string $role): array
     {
         return [
             new Constraints\FolderExistConstraint(),
             new Constraints\CanCreateOrModifyRoleConstraint($user),
-            new Constraints\RoleExistsConstraint($roleId),
+            new Constraints\RoleExistsConstraint(),
             new Constraints\UniqueRoleNameConstraint($role),
             new UpdateFolderRole($role)
         ];

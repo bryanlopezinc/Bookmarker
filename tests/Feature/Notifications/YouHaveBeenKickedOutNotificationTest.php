@@ -37,7 +37,7 @@ class YouHaveBeenKickedOutNotificationTest extends TestCase
             ->assertJsonPath('data.0.attributes.id', fn (string $id) => Str::isUuid($id))
             ->assertJsonPath('data.0.attributes.folder_exists', true)
             ->assertJsonPath('data.0.attributes.notified_on', fn (string $dateTime) => $dateTime === (string) $expectedDateTime)
-            ->assertJsonPath('data.0.attributes.folder_id', $folder->id)
+            ->assertJsonPath('data.0.attributes.folder_id', $folder->public_id->present())
             ->assertJsonPath('data.0.attributes.message', "You were removed from Tech Problems folder.")
             ->assertJsonStructure([
                 'data' => [

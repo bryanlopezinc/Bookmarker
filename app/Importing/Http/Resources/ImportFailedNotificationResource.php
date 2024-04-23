@@ -6,6 +6,7 @@ namespace App\Importing\Http\Resources;
 
 use App\Importing\DataTransferObjects\ImportFailedNotificationData;
 use App\Importing\Enums\ImportBookmarksStatus;
+use App\ValueObjects\PublicId\ImportPublicId;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 final class ImportFailedNotificationResource extends JsonResource
@@ -28,7 +29,7 @@ final class ImportFailedNotificationResource extends JsonResource
             'type' => 'ImportFailedNotification',
             'attributes' => [
                 'id'         => $this->notification->notification->id,
-                'import_id'  => $data['import_id'],
+                'import_id'  => (new ImportPublicId($data['public_id']))->present(),
                 'reason'     => ImportBookmarksStatus::from($data['reason'])->reason(),
                 'message'    => ImportBookmarksStatus::from($data['reason'])->toNotificationMessage(),
                 'notified_on' => $notifiedOn->toDateTimeString(),

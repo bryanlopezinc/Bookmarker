@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\AcceptInvite;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\FolderInviteData;
 use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
@@ -15,7 +14,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class InviterMustBeAnActiveCollaboratorConstraint implements FolderRequestHandlerInterface, Scope
+final class InviterMustBeAnActiveCollaboratorConstraint implements Scope
 {
     private MustBeACollaboratorConstraint $mustBeACollaboratorConstraint;
 
@@ -33,19 +32,18 @@ final class InviterMustBeAnActiveCollaboratorConstraint implements FolderRequest
         $this->mustBeACollaboratorConstraint->apply($builder, $model);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         $folderConstraints = $folder->settings->acceptInviteConstraints;
+
+        $constraint = $this->mustBeACollaboratorConstraint;
 
         if ( ! $folderConstraints->inviterMustBeAnActiveCollaborator()) {
             return;
         }
 
         try {
-            $this->mustBeACollaboratorConstraint->handle($folder);
+            $constraint($folder);
         } catch (FolderNotFoundException) {
             throw HttpException::forbidden([
                 'message' => 'InviterIsNotAnActiveCollaborator'

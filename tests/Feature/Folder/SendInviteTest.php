@@ -19,14 +19,15 @@ use App\Mail\FolderCollaborationInviteMail;
 use Illuminate\Foundation\Testing\WithFaker;
 use App\Models\BannedCollaborator;
 use App\Models\Folder;
-use App\Models\FolderRole;
 use App\UAC;
 use Database\Factories\EmailFactory;
 use Illuminate\Support\Arr;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\Folder\Concerns\InteractsWithValues;
 use Tests\Traits\CreatesCollaboration;
 use Tests\Traits\CreatesRole;
+use Tests\Traits\GeneratesId;
 
 class SendInviteTest extends TestCase
 {
@@ -34,6 +35,7 @@ class SendInviteTest extends TestCase
     use CreatesCollaboration;
     use CreatesRole;
     use InteractsWithValues;
+    use GeneratesId;
 
     protected ToggleFolderFeature $toggleFolderCollaborationRestriction;
     protected FolderInviteDataRepository $invitesRepository;
@@ -81,45 +83,49 @@ class SendInviteTest extends TestCase
     {
         $this->loginUser(UserFactory::new()->make(['id' => 40]));
 
-        $this->sendInviteResponse(['folder_id' => 2])
+        $this->sendInviteResponse(['folder_id' => 2, 'email' => $this->faker->email])
+            ->assertNotFound()
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
+
+        $this->sendInviteResponse(['folder_id' => $id = $this->generateFolderId()->present()])
             ->assertUnprocessable()
             ->assertJsonMissingValidationErrors(['permissions'])
             ->assertJsonValidationErrors(['email' => ['The email field is required']]);
 
-        $this->sendInviteResponse(['email' => 'foo', 'folder_id' => 29])
+        $this->sendInviteResponse(['email' => 'foo', 'folder_id' => $id])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['email' => ['The email must be a valid email address.']]);
 
-        $this->sendInviteResponse(['permissions' => ['bar', 'foo'], 'folder_id' => 4])
+        $this->sendInviteResponse(['permissions' => ['bar', 'foo'], 'folder_id' => $id])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['permissions' => ['The permissions must be a string.']]);
 
-        $this->sendInviteResponse(['permissions' => 'view,foo', 'folder_id' => 44])
+        $this->sendInviteResponse(['permissions' => 'view,foo', 'folder_id' => $id])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['permissions' => ['The selected permissions is invalid.']]);
 
-        $this->sendInviteResponse(['permissions' => 'addBookmarks,addBookmarks', 'folder_id' => 5])
+        $this->sendInviteResponse(['permissions' => 'addBookmarks,addBookmarks', 'folder_id' => $id])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'permissions.0' => ['The permissions.0 field has a duplicate value.'],
                 'permissions.1' => ['The permissions.1 field has a duplicate value.'],
             ]);
 
-        $this->sendInviteResponse(['roles' => 'foo,foo', 'folder_id' => 12])
+        $this->sendInviteResponse(['roles' => 'foo,foo', 'folder_id' => $id])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['roles.0' => ['The roles.0 field has a duplicate value.']]);
 
-        $this->sendInviteResponse(['roles' => str_repeat('F', 65), 'folder_id' => 32])
+        $this->sendInviteResponse(['roles' => str_repeat('F', 65), 'folder_id' => $id])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['roles.0' => ['The roles.0 must not be greater than 64 characters.']]);
 
-        $this->sendInviteResponse(['roles' => implode(',', $this->faker->unique()->words(11)), 'folder_id' => 43])
+        $this->sendInviteResponse(['roles' => implode(',', $this->faker->unique()->words(11)), 'folder_id' => $id])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['roles' => ['The roles must not have more than 10 items.']]);
 
         $this->sendInviteResponse([
             'email'       => $this->faker->unique()->email,
-            'folder_id'   => 44,
+            'folder_id'   => $id,
             'permissions' => '*,addBookmarks',
         ])->assertUnprocessable()->assertJsonValidationErrors([
             'permissions' => ['The permissions field cannot contain any other value with the * wildcard.'],
@@ -141,7 +147,7 @@ class SendInviteTest extends TestCase
         $this->loginUser($user);
         Mail::fake();
 
-        $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->id])->assertOk();
+        $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->public_id->present()])->assertOk();
 
         Mail::assertQueued(function (FolderCollaborationInviteMail $mail) use ($invitee, $user, $mailer, $folder, $inviteToken) {
             $this->assertSame($invitee->email, $mail->to[0]['address']);
@@ -177,7 +183,7 @@ class SendInviteTest extends TestCase
         $this->loginUser($collaborator);
         $this->sendInviteResponse([
             'email'     => $invitee->email,
-            'folder_id' => $folder->id,
+            'folder_id' => $folder->public_id->present(),
         ])->assertOk();
     }
 
@@ -194,7 +200,7 @@ class SendInviteTest extends TestCase
         $this->loginUser($collaborator);
         $this->sendInviteResponse([
             'email'     => $invitee->email,
-            'folder_id' => $folder->id,
+            'folder_id' => $folder->public_id->present(),
         ])->assertOk();
     }
 
@@ -212,7 +218,7 @@ class SendInviteTest extends TestCase
             'verified_at'  => now()
         ]);
 
-        $this->sendInviteResponse(['email' => $secondaryEmail, 'folder_id' => $folder->id])->assertOk();
+        $this->sendInviteResponse(['email' => $secondaryEmail, 'folder_id' => $folder->public_id->present()])->assertOk();
     }
 
     public function testWillReturnNotFoundWhenInviteeIsNotARegisteredUser(): void
@@ -225,7 +231,7 @@ class SendInviteTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->sendInviteResponse(['email' => $this->faker->unique()->email, 'folder_id' => $folder->id])
+        $this->sendInviteResponse(['email' => $this->faker->unique()->email, 'folder_id' => $folder->public_id->present()])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'InviteeNotFound']);
 
@@ -246,7 +252,7 @@ class SendInviteTest extends TestCase
         $this->loginUser(UserFactory::new()->create());
 
         $this->sendInviteResponse([
-            'folder_id' => FolderFactory::new()->create()->id + 1,
+            'folder_id' => $this->generateFolderId()->present(),
             'email'     => UserFactory::new()->create()->email,
         ])->assertNotFound()->assertJsonFragment(['message' => 'FolderNotFound']);
 
@@ -264,7 +270,7 @@ class SendInviteTest extends TestCase
         $folder = FolderFactory::new()->create();
 
         $this->sendInviteResponse([
-            'folder_id' => $folder->id,
+            'folder_id' => $folder->public_id->present(),
             'email'     => UserFactory::new()->create()->email,
         ])->assertNotFound()->assertJsonFragment(['message' => 'FolderNotFound']);
 
@@ -282,23 +288,23 @@ class SendInviteTest extends TestCase
         $this->CreateCollaborationRecord($invitee, $folder);
 
         $this->loginUser($folderOwner);
-        $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->id])
+        $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->public_id->present()])
             ->assertConflict()
             ->assertJsonFragment($error = ['message' => 'UserAlreadyACollaborator']);
 
-        $this->sendInviteResponse(['email' => $inviteeSecondaryEmail->email, 'folder_id' => $folder->id])
+        $this->sendInviteResponse(['email' => $inviteeSecondaryEmail->email, 'folder_id' => $folder->public_id->present()])
             ->assertConflict()
             ->assertJsonFragment($error);
 
         $this->loginUser($collaborator);
         $this->sendInviteResponse([
             'email'     => $invitee->email,
-            'folder_id' => $folder->id,
+            'folder_id' => $folder->public_id->present()
         ])->assertConflict()->assertJsonFragment($error);
 
         $this->sendInviteResponse([
             'email'     => $inviteeSecondaryEmail->email,
-            'folder_id' => $folder->id,
+            'folder_id' => $folder->public_id->present(),
         ])->assertConflict()->assertJsonFragment($error);
     }
 
@@ -315,7 +321,10 @@ class SendInviteTest extends TestCase
         ]);
 
         $this->loginUser($folderOwner);
-        $this->sendInviteResponse($parameters = ['email' => $invitee->email, 'folder_id' => $folder->id])->assertOk();
+        $this->sendInviteResponse($parameters = [
+            'email' => $invitee->email,
+            'folder_id' => $id = $folder->public_id->present()
+        ])->assertOk();
 
         $this->sendInviteResponse($parameters)
             ->assertTooManyRequests()
@@ -325,10 +334,10 @@ class SendInviteTest extends TestCase
             });
 
         //Assert will not rate limit user when sending invite to invitee secondary email
-        $this->sendInviteResponse(['email' => $inviteeSecondaryEmail, 'folder_id' => $folder->id])->assertOk();
+        $this->sendInviteResponse(['email' => $inviteeSecondaryEmail, 'folder_id' => $id])->assertOk();
 
         //Assert will not rate limit user when sending invite to different user
-        $this->sendInviteResponse(['email' => $secondInvitee->email, 'folder_id' => $folder->id])->assertOk();
+        $this->sendInviteResponse(['email' => $secondInvitee->email, 'folder_id' => $id])->assertOk();
 
         //Assert user can send invite to same email after 60 seconds
         $this->travel(61)->seconds(function () use ($parameters) {
@@ -356,7 +365,7 @@ class SendInviteTest extends TestCase
         $this->loginUser($folderOwner);
         $this->sendInviteResponse($params = [
             'email'     => $invitee->email,
-            'folder_id' => $folder->id,
+            'folder_id' => $folder->public_id->present(),
         ])->assertForbidden()
             ->assertJsonFragment($expectation = ['message' => 'MaxCollaboratorsLimitReached']);
 
@@ -392,7 +401,7 @@ class SendInviteTest extends TestCase
         $this->loginUser($folderOwner);
         $this->sendInviteResponse($params = [
             'email'     => $invitee->email,
-            'folder_id' => $folder->id,
+            'folder_id' => $folder->public_id->present(),
         ])->assertForbidden()->assertExactJson($expectation = [
             'message' => 'MaxFolderCollaboratorsLimitReached',
             'info' => 'The Folder has reached its max collaborators limit set by the folder owner.'
@@ -417,20 +426,20 @@ class SendInviteTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
 
         $this->loginUser($folderOwner);
-        $this->sendInviteResponse(['email' => $folderOwner->email, 'folder_id' => $folder->id])
+        $this->sendInviteResponse(['email' => $folderOwner->email, 'folder_id' => $id = $folder->public_id->present()])
             ->assertForbidden()
             ->assertJsonFragment($error = ['message' => 'CannotSendInviteToSelf']);
 
-        $this->sendInviteResponse(['email' => $folderOwnerSecondaryEmail->email, 'folder_id' => $folder->id])
+        $this->sendInviteResponse(['email' => $folderOwnerSecondaryEmail->email, 'folder_id' => $id])
             ->assertForbidden()
             ->assertJsonFragment($error);
 
         $this->loginUser($collaborator);
-        $this->sendInviteResponse(['email' => $collaborator->email, 'folder_id' => $folder->id])
+        $this->sendInviteResponse(['email' => $collaborator->email, 'folder_id' => $id])
             ->assertForbidden()
             ->assertJsonFragment($error);
 
-        $this->sendInviteResponse(['email' => $collaboratorSecondaryEmail->email, 'folder_id' => $folder->id])
+        $this->sendInviteResponse(['email' => $collaboratorSecondaryEmail->email, 'folder_id' => $id])
             ->assertForbidden()
             ->assertJsonFragment($error);
     }
@@ -442,7 +451,7 @@ class SendInviteTest extends TestCase
         $folder = FolderFactory::new()->for($user)->private()->create();
 
         $this->loginUser($user);
-        $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->id])
+        $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->public_id->present()])
             ->assertForbidden()
             ->assertJsonFragment(['message' => 'FolderIsMarkedAsPrivate']);
     }
@@ -454,7 +463,7 @@ class SendInviteTest extends TestCase
         $folder = FolderFactory::new()->for($user)->passwordProtected()->create();
 
         $this->loginUser($user);
-        $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->id])
+        $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->public_id->present()])
             ->assertForbidden()
             ->assertJsonFragment(['message' => 'FolderIsMarkedAsPrivate']);
     }
@@ -474,7 +483,7 @@ class SendInviteTest extends TestCase
         $this->attachRoleToUser($collaborator, $this->createRole(folder: FolderFactory::new()->create(), permissions: Permission::ADD_BOOKMARKS));
 
         $this->loginUser($collaborator);
-        $this->sendInviteResponse($query = ['email' => $invitee->email, 'folder_id' => $folder->id])
+        $this->sendInviteResponse($query = ['email' => $invitee->email, 'folder_id' => $folder->public_id->present()])
             ->assertForbidden()
             ->assertJsonFragment($expectation = ['message' => 'PermissionDenied']);
 
@@ -496,7 +505,7 @@ class SendInviteTest extends TestCase
         $role->delete();
 
         $this->loginUser($collaborator);
-        $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->id])
+        $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->public_id->present()])
             ->assertForbidden()
             ->assertJsonFragment(['message' => 'PermissionDenied']);
     }
@@ -511,11 +520,11 @@ class SendInviteTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
 
         $this->loginUser($collaborator);
-        $this->sendInviteResponse(['email' => $folderOwner->email, 'folder_id' => $folder->id])
+        $this->sendInviteResponse(['email' => $folderOwner->email, 'folder_id' => $folder->public_id->present()])
             ->assertConflict()
             ->assertJsonFragment($error = ['message' => 'UserAlreadyACollaborator']);
 
-        $this->sendInviteResponse(['email' => $folderOwnerSecondaryEmail->email, 'folder_id' => $folder->id])
+        $this->sendInviteResponse(['email' => $folderOwnerSecondaryEmail->email, 'folder_id' => $folder->public_id->present()])
             ->assertConflict()
             ->assertJsonFragment($error);
     }
@@ -532,7 +541,7 @@ class SendInviteTest extends TestCase
         $this->loginUser($collaborator);
         $this->sendInviteResponse($query = [
             'email'       => $invitee->email,
-            'folder_id'   => $folder->id,
+            'folder_id'   => $folder->public_id->present(),
             'permissions' => 'addBookmarks',
         ])->assertBadRequest()
             ->assertJsonFragment($expectation = ['message' => 'CollaboratorCannotSendInviteWithPermissionsOrRoles']);
@@ -542,33 +551,50 @@ class SendInviteTest extends TestCase
         $this->sendInviteResponse($query)->assertBadRequest()->assertJsonFragment($expectation);
     }
 
-    public function testSendInviteWithPermissions(): void
+    #[Test]
+    #[DataProvider('sendInviteWithPermissionsData')]
+    public function sendInviteWithPermissions(array $permissions): void
     {
-        $this->assertCanSendInviteWithPermissions(['*']);
-        $this->assertCanSendInviteWithPermissions(['addBookmarks']);
-        $this->assertCanSendInviteWithPermissions(['removeBookmarks']);
-        $this->assertCanSendInviteWithPermissions(['inviteUsers']);
-        $this->assertCanSendInviteWithPermissions(['updateFolder']);
-        $this->assertCanSendInviteWithPermissions(['removeUser']);
-        $this->assertCanSendInviteWithPermissions(['addBookmarks', 'removeBookmarks']);
-        $this->assertCanSendInviteWithPermissions(['addBookmarks', 'removeBookmarks', 'inviteUsers']);
-    }
+        $inviteToken = $this->faker->uuid;
+        Str::createUuidsUsing(fn () => $inviteToken);
 
-    private function assertCanSendInviteWithPermissions(array $permissions): void
-    {
         [$user, $invitee] = UserFactory::new()->count(2)->create();
 
         $this->loginUser($user);
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $parameters = ['email' => $invitee->email, 'folder_id' => $folder->id];
+        $parameters = ['email' => $invitee->email, 'folder_id' => $folder->public_id->present()];
 
         if ( ! empty($permissions)) {
             $parameters['permissions'] = implode(',', $permissions);
         }
 
         $this->sendInviteResponse($parameters)->assertOk();
+
+        $invitationData = $this->invitesRepository->get($inviteToken);
+
+        $this->assertEquals([], $invitationData->roles);
+
+        $this->assertEquals(
+            UAC::fromRequest($permissions)->toArray(),
+            $invitationData->permissions->toArray()
+        );
+    }
+
+    public static function sendInviteWithPermissionsData(): array
+    {
+        return  [
+            'All'                       => [['*']],
+            'Add bookmarks'             => [['addBookmarks']],
+            'Remove bookmarks'          => [['removeBookmarks']],
+            'Invite users'              => [['inviteUsers']],
+            'Remove Collaborator'       => [['removeUser']],
+            'Update folder name'        => [['updateFolderName']],
+            'Update folder description' => [['updateFolderDescription']],
+            'Update folder thumbnail'   => [['updateFolderThumbnail']],
+            'Many'                      => [['addBookmarks', 'updateFolderName', 'removeUser']]
+        ];
     }
 
     #[Test]
@@ -581,12 +607,12 @@ class SendInviteTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        $folder->roles()->save(new FolderRole(['name' => $firstRoleName = $this->faker->word]));
-        $folder->roles()->save(new FolderRole(['name' => $secondRoleName = $this->faker->word]));
+        $this->createRole($firstRoleName = $this->faker->word, $folder);
+        $this->createRole($secondRoleName = $this->faker->word, $folder);
 
         $this->loginUser($folderOwner);
         $this->sendInviteResponse([
-            'folder_id' => $folder->id,
+            'folder_id' => $folder->public_id->present(),
             'email'     => $invitee->email,
             'roles'     => implode(',', $roleNames = [$firstRoleName, $secondRoleName])
         ])->assertOk();
@@ -607,12 +633,12 @@ class SendInviteTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        $folder->roles()->save(new FolderRole(['name' => $firstRoleName = $this->faker->word]));
-        $folder->roles()->save(new FolderRole(['name' => $secondRoleName = $this->faker->word]));
+        $this->createRole($firstRoleName = $this->faker->word, $folder);
+        $this->createRole($secondRoleName = $this->faker->word, $folder);
 
         $this->loginUser($folderOwner);
         $this->sendInviteResponse([
-            'folder_id'   => $folder->id,
+            'folder_id'   => $folder->public_id->present(),
             'email'       => $invitee->email,
             'roles'       => implode(',', $roleNames = [$firstRoleName, $secondRoleName]),
             'permissions' => 'addBookmarks'
@@ -635,18 +661,18 @@ class SendInviteTest extends TestCase
         [$loggedInUserFolder, $loggedInUserSecondFolder] = FolderFactory::times(2)->for($loggedInUser)->create();
         $otherUserFolder = FolderFactory::new()->for($otherUser)->create();
 
-        $otherUserFolder->roles()->save(new FolderRole(['name' => $otherUserFolderRoleName = $this->faker->word]));
-        $loggedInUserSecondFolder->roles()->save(new FolderRole(['name' => $roleName = $this->faker->word]));
+        $this->createRole($otherUserFolderRoleName = $this->faker->word, $otherUserFolder);
+        $this->createRole($roleName = $this->faker->word, $loggedInUserSecondFolder);
 
         $this->loginUser($loggedInUser);
         $this->sendInviteResponse([
-            'folder_id' => $loggedInUserFolder->id,
+            'folder_id' => $loggedInUserFolder->public_id->present(),
             'email'     => $invitee->email,
             'roles'     => $otherUserFolderRoleName
         ])->assertNotFound()->assertJsonFragment(['message' => 'RoleNotFound']);
 
         $this->sendInviteResponse([
-            'folder_id' => $loggedInUserFolder->id,
+            'folder_id' => $loggedInUserFolder->public_id->present(),
             'email'     => $invitee->email,
             'roles'     => $roleName
         ])->assertNotFound()->assertJsonFragment(['message' => 'RoleNotFound']);
@@ -667,7 +693,7 @@ class SendInviteTest extends TestCase
         $this->loginUser($collaborator);
         $this->sendInviteResponse([
             'email'     => $invitee->email,
-            'folder_id' => $folder->id,
+            'folder_id' => $folder->public_id->present(),
         ])->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
@@ -689,23 +715,23 @@ class SendInviteTest extends TestCase
         $this->loginUser($collaborator);
         $this->sendInviteResponse([
             'email'     => $bannedCollaborator->email,
-            'folder_id' => $folder->id,
+            'folder_id' => $folder->public_id->present()
         ])->assertForbidden()->assertJsonFragment($error = ['message' => 'UserBanned']);
 
         $this->sendInviteResponse([
             'email'     => $bannedCollaboratorSecondEmail->email,
-            'folder_id' => $folder->id,
+            'folder_id' => $folder->public_id->present(),
         ])->assertForbidden()->assertJsonFragment($error);
 
         $this->loginUser($folderOwner);
         $this->sendInviteResponse([
             'email'     => $bannedCollaborator->email,
-            'folder_id' => $folder->id,
+            'folder_id' => $folder->public_id->present(),
         ])->assertForbidden()->assertJsonFragment($error = ['message' => 'UserBanned']);
 
         $this->sendInviteResponse([
             'email'     => $bannedCollaboratorSecondEmail->email,
-            'folder_id' => $folder->id,
+            'folder_id' => $folder->public_id->present(),
         ])->assertForbidden()->assertJsonFragment($error);
     }
 
@@ -718,13 +744,13 @@ class SendInviteTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
 
         //Assert collaborator can update when disabled action is not invite user action
-        $this->toggleFolderCollaborationRestriction->disable($folder->id, Feature::UPDATE_FOLDER);
+        $this->toggleFolderCollaborationRestriction->disable($folder->id, Feature::UPDATE_FOLDER_NAME);
         $this->loginUser($collaborator);
-        $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->id])->assertOk();
+        $this->sendInviteResponse(['email' => $invitee->email, 'folder_id' => $folder->public_id->present()])->assertOk();
 
         $this->toggleFolderCollaborationRestriction->disable($folder->id, Feature::SEND_INVITES);
 
-        $this->sendInviteResponse($query = ['email' => $otherInvitee->email, 'folder_id' => $folder->id])
+        $this->sendInviteResponse($query = ['email' => $otherInvitee->email, 'folder_id' => $folder->public_id->present()])
             ->assertForbidden()
             ->assertJsonFragment(['message' => 'FolderFeatureDisAbled']);
 

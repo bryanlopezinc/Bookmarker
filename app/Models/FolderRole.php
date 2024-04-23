@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\UAC;
+use App\ValueObjects\PublicId\RolePublicId;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 /**
  * @property int                                                        $id
+ * @property RolePublicId                                               $public_id
  * @property string                                                     $name
  * @property int                                                        $folder_id
  * @property \Carbon\Carbon                                             $created_at
@@ -28,6 +30,13 @@ final class FolderRole extends Model
      * {@inheritdoc}
      */
     protected $guarded = [];
+
+    /**
+     * {@inheritdoc}
+     */
+    protected $casts = [
+        'public_id'  => RolePublicId::class
+    ];
 
     public function permissions(): HasManyThrough
     {

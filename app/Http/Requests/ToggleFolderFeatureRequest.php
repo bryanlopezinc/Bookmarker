@@ -27,7 +27,6 @@ final class ToggleFolderFeatureRequest extends FormRequest
         foreach([
             'removeBookmarks',
             'inviteUsers',
-            'updateFolder',
             'removeUser',
             'updateFolderName',
             'updateFolderDescription',

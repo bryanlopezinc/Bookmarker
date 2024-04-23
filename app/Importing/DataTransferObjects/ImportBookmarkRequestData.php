@@ -4,17 +4,25 @@ declare(strict_types=1);
 
 namespace App\Importing\DataTransferObjects;
 
-use App\Importing\Enums\ImportSource;
 use App\Importing\Option;
+use Illuminate\Support\Str;
+use App\Importing\Enums\ImportSource;
 
 final class ImportBookmarkRequestData
 {
     public function __construct(
-        private string $importId,
+        private int $importId,
         private ImportSource $importSource,
         private int $userID,
-        private array $data
+        private array $data,
+        private string $importFileName
     ) {
+        assert(Str::isUuid($importFileName));
+    }
+
+    public function getFileName(): string
+    {
+        return $this->importFileName;
     }
 
     public function userId(): int
@@ -34,7 +42,7 @@ final class ImportBookmarkRequestData
         return $this;
     }
 
-    public function importId(): string
+    public function importId(): int
     {
         return $this->importId;
     }

@@ -7,6 +7,8 @@ namespace App\Http\Controllers\Folder;
 use App\DataTransferObjects\RemoveCollaboratorData;
 use App\Http\Handlers\RemoveCollaborator\Handler;
 use App\Models\User;
+use App\ValueObjects\PublicId\FolderPublicId;
+use App\ValueObjects\PublicId\UserPublicId;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,8 +20,8 @@ final class RemoveCollaboratorController
 
         $service->handle(
             new RemoveCollaboratorData(
-                (int)$collaboratorId,
-                (int)$folderId,
+                UserPublicId::fromRequest($collaboratorId),
+                FolderPublicId::fromRequest($folderId),
                 $request->boolean('ban'),
                 User::fromRequest($request)
             )

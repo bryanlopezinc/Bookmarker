@@ -84,13 +84,19 @@ final class UAC implements Countable, Arrayable, IteratorAggregate
      */
     private static function externalToInternalIdentifiersMap(): array
     {
-        return [
-            'addBookmarks'    => Permission::ADD_BOOKMARKS->value,
-            'removeBookmarks' => Permission::DELETE_BOOKMARKS->value,
-            'inviteUsers'     => Permission::INVITE_USER->value,
-            'updateFolder'    => Permission::UPDATE_FOLDER->value,
-            'removeUser'      => Permission::REMOVE_USER->value,
+        $ids = [
+            'addBookmarks'            => Permission::ADD_BOOKMARKS->value,
+            'removeBookmarks'         => Permission::DELETE_BOOKMARKS->value,
+            'inviteUsers'             => Permission::INVITE_USER->value,
+            'updateFolderName'        => Permission::UPDATE_FOLDER_NAME->value,
+            'updateFolderDescription' => Permission::UPDATE_FOLDER_DESCRIPTION->value,
+            'updateFolderThumbnail'   => Permission::UPDATE_FOLDER_THUMBNAIL->value,
+            'removeUser'              => Permission::REMOVE_USER->value,
         ];
+
+        assert(count($ids) === count(Permission::cases()));
+
+        return $ids;
     }
 
     /**

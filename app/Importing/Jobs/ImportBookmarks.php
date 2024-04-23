@@ -38,7 +38,7 @@ final class ImportBookmarks implements ShouldQueue
         $eventDispatcher->addListener(new Listeners\UpdatesImportStatus());
         $eventDispatcher->addListener(new Listeners\TransferImportsToBookmarksStore($this->importData));
         $eventDispatcher->addListener(new Listeners\NotifiesUserOnImportFailure($user, $this->importData->importId()));
-        $eventDispatcher->addListener(new Listeners\ClearsDataAfterImport($user->id, $this->importData->importId()));
+        $eventDispatcher->addListener(new Listeners\ClearsDataAfterImport($this->importData));
 
         $importer = new Importer(event: $eventDispatcher);
 

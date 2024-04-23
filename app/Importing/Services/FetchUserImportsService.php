@@ -35,7 +35,7 @@ final class FetchUserImportsService
 
         $collection = $userImports->getCollection()->map(function (Import $import) {
             if ($import->status->isRunning()) {
-                $import->statistics = $this->cache->get($import->import_id);
+                $import->statistics = $this->cache->get($import->id);
             }
 
             return $import;

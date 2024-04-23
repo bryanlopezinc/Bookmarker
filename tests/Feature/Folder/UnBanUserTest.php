@@ -9,9 +9,12 @@ use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
+use Tests\Traits\GeneratesId;
 
 class UnBanUserTest extends TestCase
 {
+    use GeneratesId;
+
     protected function unBanUserResponse(array $parameters = []): TestResponse
     {
         return $this->deleteJson(route('unBanUser', $parameters));
@@ -29,8 +32,19 @@ class UnBanUserTest extends TestCase
 
     public function testWillReturnNotFoundWhenRouteParametersAreInvalid(): void
     {
-        $this->unBanUserResponse(['folder_id' => 44, 'collaborator_id' => 'foo'])->assertNotFound();
-        $this->unBanUserResponse(['folder_id' => 'foo', 'collaborator_id' => 44])->assertNotFound();
+        $this->loginUser();
+
+        $this->unBanUserResponse([
+            'folder_id' => 44,
+            'collaborator_id' => $this->generateUserId()->present()
+        ])->assertNotFound()
+        ->assertJsonFragment(['message' => 'FolderNotFound']);
+
+        $this->unBanUserResponse([
+            'folder_id' => $this->generateFolderId()->present(),
+            'collaborator_id' => 'foo'
+        ])->assertNotFound()
+        ->assertJsonFragment(['message' => 'UserNotFound']);
     }
 
     public function testSuccess(): void
@@ -43,7 +57,7 @@ class UnBanUserTest extends TestCase
         $this->ban($otherCollaborator->id, $folder->id);
 
         $this->loginUser($folderOwner);
-        $this->unBanUserResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
+        $this->unBanUserResponse(['folder_id' => $folder->public_id->present(), 'collaborator_id' => $collaborator->public_id->present()])
             ->assertOk();
 
         $bannedUser = BannedCollaborator::query()->where('folder_id', $folder->id)->sole();
@@ -68,7 +82,7 @@ class UnBanUserTest extends TestCase
         $this->ban($collaborator->id, $folder->id);
 
         $this->loginUser(UserFactory::new()->create());
-        $this->unBanUserResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
+        $this->unBanUserResponse(['folder_id' => $folder->public_id->present(), 'collaborator_id' => $collaborator->public_id->present()])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
@@ -82,12 +96,12 @@ class UnBanUserTest extends TestCase
         $this->ban($collaborator->id, $folder->id);
 
         $this->loginUser($folderOwner);
-        $this->unBanUserResponse(['folder_id' => $folder->id + 1, 'collaborator_id' => $collaborator->id])
+        $this->unBanUserResponse(['folder_id' => $this->generateFolderId()->present(), 'collaborator_id' => $collaborator->public_id->present()])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
 
         $this->loginUser(UserFactory::new()->create());
-        $this->unBanUserResponse(['folder_id' => $folder->id + 1, 'collaborator_id' => $collaborator->id])
+        $this->unBanUserResponse(['folder_id' => $this->generateFolderId()->present(), 'collaborator_id' => $collaborator->public_id->present()])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
@@ -99,7 +113,7 @@ class UnBanUserTest extends TestCase
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
         $this->loginUser($folderOwner);
-        $this->unBanUserResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
+        $this->unBanUserResponse(['folder_id' => $folder->public_id->present(), 'collaborator_id' => $collaborator->public_id->present()])
             ->assertNotFound()
             ->assertExactJson(['message' => 'UserNotFound']);
     }

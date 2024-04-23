@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\FetchFolderBookmarks;
 
-use App\Contracts\FolderRequestHandlerInterface;
-use App\Contracts\StopsRequestHandling;
 use App\DataTransferObjects\FetchFolderBookmarksRequestData as Data;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
@@ -15,11 +13,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Http\Response;
 
-final class FolderPasswordConstraint implements FolderRequestHandlerInterface, Scope, StopsRequestHandling
+final class FolderPasswordConstraint implements Scope
 {
     private readonly Data $data;
     private readonly Hasher $hasher;
-    private bool $stopRequestHandling = false;
+    public bool $stopRequestHandling = false;
 
     public function __construct(Data $data, Hasher $hasher = null)
     {
@@ -32,15 +30,7 @@ final class FolderPasswordConstraint implements FolderRequestHandlerInterface, S
         $builder->addSelect(['visibility', 'password', 'user_id']);
     }
 
-    public function stopRequestHandling(): bool
-    {
-        return $this->stopRequestHandling;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         $folderBelongsToAuthUser = $this->data->authUser->exists && $folder->user_id === $this->data->authUser->id;
 

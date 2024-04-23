@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\AcceptInvite;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\FolderInviteData;
 use App\Models\Folder;
 use App\Models\Scopes\IsMutedCollaboratorScope;
@@ -16,7 +15,7 @@ use App\Notifications\NewCollaboratorNotification as Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class SendNewCollaboratorNotification implements FolderRequestHandlerInterface, Scope
+final class SendNewCollaboratorNotification implements Scope
 {
     public function __construct(private readonly FolderInviteData $invitationData)
     {
@@ -29,10 +28,7 @@ final class SendNewCollaboratorNotification implements FolderRequestHandlerInter
         $builder->addSelect(['settings', 'user_id'])->tap($callback);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         [$inviter, $invitee] = [$folder->inviter, $folder->invitee];
 

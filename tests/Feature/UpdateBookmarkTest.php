@@ -12,45 +12,52 @@ use Database\Factories\BookmarkFactory;
 use Database\Factories\TagFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
+use Tests\Traits\GeneratesId;
 use Tests\Traits\WillCheckBookmarksHealth;
 
 class UpdateBookmarkTest extends TestCase
 {
     use WithFaker;
     use WillCheckBookmarksHealth;
+    use GeneratesId;
 
     protected function updateBookmarkResponse(array $parameters = []): TestResponse
     {
-        return $this->patchJson(route('updateBookmark'), $parameters);
+        return $this->patchJson(
+            route('updateBookmark', Arr::only($parameters, ['bookmark_id'])),
+            $parameters
+        );
     }
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/bookmarks', 'updateBookmark');
+        $this->assertRouteIsAccessibleViaPath('v1/bookmarks/{bookmark_id}', 'updateBookmark');
     }
 
     public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
-        $this->updateBookmarkResponse()->assertUnauthorized();
+        $this->updateBookmarkResponse(['bookmark_id' => 4])->assertUnauthorized();
     }
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         $this->loginUser(UserFactory::new()->create());
 
-        $this->updateBookmarkResponse()
-            ->assertUnprocessable()
-            ->assertJsonValidationErrorFor('id');
+        $this->updateBookmarkResponse(['bookmark_id' => 3, 'title' => 'foo'])
+            ->assertNotFound()
+            ->assertJsonFragment(['message' => 'BookmarkNotFound']);
 
-        $this->updateBookmarkResponse(['id' => 112])
+        $this->updateBookmarkResponse(['bookmark_id' => $id = $this->generateBookmarkId()->present()])
             ->assertJsonValidationErrors([
                 'title' => 'The title field is required when none of tags / description are present.'
             ]);
 
         $this->updateBookmarkResponse([
-            'tags' => 'howTo,howTo,stackOverflow'
+            'tags' => 'howTo,howTo,stackOverflow',
+            'bookmark_id' => $id
         ])->assertJsonValidationErrors([
             "tags.0" => [
                 "The tags.0 field has a duplicate value."
@@ -69,7 +76,7 @@ class UpdateBookmarkTest extends TestCase
         $model = BookmarkFactory::new()->for($user)->create();
 
         $this->updateBookmarkResponse([
-            'id'          => $model->id,
+            'bookmark_id' => $model->public_id->present(),
             'title'       => $title = $title = $this->faker->sentence,
             'tags'        => $tag = $this->faker->word,
             'description' => $description = $this->faker->sentence
@@ -101,8 +108,8 @@ class UpdateBookmarkTest extends TestCase
         $model = BookmarkFactory::new()->for($user)->create();
 
         $this->updateBookmarkResponse([
-            'id'   => $model->id,
-            'tags' => $tag = $this->faker->word,
+            'bookmark_id' => $model->public_id->present(),
+            'tags'        => $this->faker->word,
         ])->assertOk();
 
         /** @var Bookmark */
@@ -126,8 +133,8 @@ class UpdateBookmarkTest extends TestCase
         $model = BookmarkFactory::new()->for($user)->create();
 
         $this->updateBookmarkResponse([
-            'id'    => $model->id,
-            'title' => $title = $this->faker->sentence
+            'bookmark_id' => $model->public_id->present(),
+            'title'       => $title = $this->faker->sentence
         ])->assertOk();
 
         /** @var Bookmark */
@@ -151,7 +158,7 @@ class UpdateBookmarkTest extends TestCase
         $model = BookmarkFactory::new()->for($user)->create();
 
         $this->updateBookmarkResponse([
-            'id'          => $model->id,
+            'bookmark_id' => $model->public_id->present(),
             'description' => $description = $this->faker->sentence
         ])->assertOk();
 
@@ -181,8 +188,8 @@ class UpdateBookmarkTest extends TestCase
         );
 
         $this->updateBookmarkResponse([
-            'id'   => $model->id,
-            'tags' => TagFactory::new()->count(6)->make()->pluck('name')->implode(',')
+            'bookmark_id' => $model->public_id->present(),
+            'tags'        => TagFactory::new()->count(6)->make()->pluck('name')->implode(',')
         ])->assertStatus(400)
             ->assertExactJson(['message' => 'MaxBookmarkTagsLengthExceeded']);
     }
@@ -192,8 +199,8 @@ class UpdateBookmarkTest extends TestCase
         $this->loginUser(UserFactory::new()->create());
 
         $this->updateBookmarkResponse([
-            'id'    => BookmarkFactory::new()->create()->id + 1,
-            'title' => 'title'
+            'bookmark_id' => $this->generateBookmarkId()->present(),
+            'title'       => 'title'
         ])->assertNotFound()
             ->assertExactJson(['message' => 'BookmarkNotFound']);
     }
@@ -205,8 +212,8 @@ class UpdateBookmarkTest extends TestCase
 
         $this->loginUser($userWithBadIntention);
         $this->updateBookmarkResponse([
-            'id'    => $userBookmark->id,
-            'title' => 'title'
+            'bookmark_id' => $userBookmark->public_id->present(),
+            'title'       => 'title'
         ])->assertNotFound()
             ->assertExactJson(['message' => 'BookmarkNotFound']);
     }
@@ -224,8 +231,8 @@ class UpdateBookmarkTest extends TestCase
         );
 
         $this->updateBookmarkResponse([
-            'id'   => Bookmark::query()->where('user_id', $user->id)->sole('id')->id,
-            'tags' => implode(',', [$this->faker->word, $tags[0]]),
+            'bookmark_id' => $model->public_id->present(),
+            'tags'        => implode(',', [$this->faker->word, $tags[0]]),
         ])->assertStatus(409)
             ->assertExactJson(['message' => 'DuplicateTags']);
     }
@@ -237,8 +244,8 @@ class UpdateBookmarkTest extends TestCase
         $model = BookmarkFactory::new()->for($user)->create();
 
         $this->updateBookmarkResponse([
-            'id' => $model->id,
-            'title' => $this->faker->sentence
+            'bookmark_id' => $model->public_id->present(),
+            'title'       => $this->faker->sentence
         ])->assertOk();
 
         $this->assertBookmarksHealthWillBeChecked([$model->id]);

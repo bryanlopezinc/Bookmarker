@@ -9,11 +9,13 @@ use App\Exceptions\HttpException;
 use App\Models\Folder;
 use App\Models\Scopes\UserIsACollaboratorScope;
 use App\Models\Scopes\WhereFolderOwnerExists;
+use App\Models\Scopes\WherePublicIdScope;
 use App\Models\User;
 use App\Notifications\CollaboratorExitNotification;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\Repositories\Folder\CollaboratorRepository;
 use App\UAC;
+use App\ValueObjects\PublicId\FolderPublicId;
 use Illuminate\Support\Facades\Notification;
 
 final class LeaveFolderCollaborationService
@@ -24,21 +26,21 @@ final class LeaveFolderCollaborationService
     ) {
     }
 
-    public function leave(int $folderID): void
+    public function leave(FolderPublicId $folderID): void
     {
         $collaborator = User::fromRequest(request());
 
-        $folder = Folder::onlyAttributes(['id', 'user_id', 'settings'])
+        $folder = Folder::select(['id', 'user_id', 'settings'])
             ->tap(new WhereFolderOwnerExists())
             ->tap(new UserIsACollaboratorScope($collaborator->id))
-            ->whereKey($folderID)
+            ->tap(new WherePublicIdScope($folderID))
             ->firstOrNew();
-
-        $collaboratorPermissions = $this->permissionsRepository->all($collaborator->id, $folderID);
 
         if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
+
+        $collaboratorPermissions = $this->permissionsRepository->all($collaborator->id, $folder->id);
 
         $this->ensureCollaboratorDoesNotOwnFolder($collaborator->id, $folder);
 
@@ -46,7 +48,7 @@ final class LeaveFolderCollaborationService
 
         $this->collaboratorRepository->delete($folder->id, $collaborator->id);
 
-        $this->permissionsRepository->delete($collaborator->id, $folderID);
+        $this->permissionsRepository->delete($collaborator->id, $folder->id);
 
         $this->notifyFolderOwner($collaborator, $folder, $collaboratorPermissions);
     }

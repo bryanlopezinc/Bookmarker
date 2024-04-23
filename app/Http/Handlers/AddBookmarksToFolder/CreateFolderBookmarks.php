@@ -5,27 +5,36 @@ declare(strict_types=1);
 namespace App\Http\Handlers\AddBookmarksToFolder;
 
 use App\Actions\CreateFolderBookmarks as CreateFolderBookmarksAction;
-use App\Contracts\FolderRequestHandlerInterface;
+use App\Models\Bookmark;
 use App\Models\Folder;
 use App\DataTransferObjects\AddBookmarksToFolderRequestData as Data;
+use Illuminate\Support\Arr;
 
-final class CreateFolderBookmarks implements FolderRequestHandlerInterface
+final class CreateFolderBookmarks
 {
-    public function __construct(private readonly Data $data)
+    /**
+     * @param array<Bookmark> $bookmarks
+     */
+    public function __construct(private readonly array $bookmarks, public readonly Data $data)
     {
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         (new CreateFolderBookmarksAction())->create(
             $folder->id,
-            $this->data->bookmarkIds,
-            $this->data->makeHidden
+            Arr::pluck($this->bookmarks, 'id'),
+            $this->getBookmarkIdsToBeMarkedAsHidden()
         );
 
         $folder->touch();
+    }
+
+    private function getBookmarkIdsToBeMarkedAsHidden(): array
+    {
+        return collect($this->bookmarks)
+            ->filter(fn (Bookmark $bookmark) => in_array($bookmark->public_id->present(), $this->data->makeHidden, true))
+            ->pluck('id')
+            ->all();
     }
 }

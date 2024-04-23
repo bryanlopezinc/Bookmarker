@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Handlers\AcceptInvite;
 
 use App\Cache\FolderInviteDataRepository;
-use App\Contracts\FolderRequestHandlerInterface as HandlerInterface;
 use App\Models\Folder;
 use App\Http\Handlers\Constraints;
 use App\Contracts\AcceptFolderInviteRequestHandlerInterface;
@@ -36,11 +35,7 @@ final class Handler implements AcceptFolderInviteRequestHandlerInterface
 
         $requestHandlersQueue->scope($query);
 
-        $folder = $query->firstOrNew();
-
-        $requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
-            $handler->handle($folder);
-        });
+        $requestHandlersQueue->handle($query->firstOrNew());
     }
 
     private function getConfiguredHandlers(FolderInviteData $payload): array

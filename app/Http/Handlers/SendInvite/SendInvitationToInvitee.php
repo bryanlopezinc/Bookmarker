@@ -7,7 +7,6 @@ namespace App\Http\Handlers\SendInvite;
 use App\Models\Folder;
 use Illuminate\Support\Str;
 use App\Cache\FolderInviteDataRepository;
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\FolderInviteData;
 use App\DataTransferObjects\SendInviteRequestData;
 use App\Mail\FolderCollaborationInviteMail as InvitationMail;
@@ -18,7 +17,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Support\Facades\Mail;
 
-final class SendInvitationToInvitee implements FolderRequestHandlerInterface, Scope
+final class SendInvitationToInvitee implements Scope
 {
     private readonly FolderInviteDataRepository $repository;
     private readonly Mailer $mailer;
@@ -42,10 +41,7 @@ final class SendInvitationToInvitee implements FolderRequestHandlerInterface, Sc
         $builder->addSelect(['name']);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         $invitationData = new FolderInviteData(
             $this->data->authUser->id,

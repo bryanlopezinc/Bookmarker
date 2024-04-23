@@ -7,9 +7,12 @@ namespace App\Http\Controllers;
 use App\Exceptions\BookmarkNotFoundException;
 use App\Http\Resources\BookmarkResource;
 use App\Http\Resources\PaginatedResourceCollection as ResourceCollection;
+use App\Models\Bookmark;
+use App\Models\Scopes\WherePublicIdScope;
+use App\Models\User;
 use App\PaginationData;
 use App\Repositories\BookmarkRepository;
-use App\ValueObjects\UserId;
+use App\ValueObjects\PublicId\BookmarkPublicId;
 use Illuminate\Http\Request;
 
 final class FetchDuplicateBookmarksController
@@ -18,16 +21,19 @@ final class FetchDuplicateBookmarksController
     {
         $request->validate(PaginationData::new()->asValidationRules());
 
-        $bookmark = $repository->findById(
-            (int)$bookmarkId,
-            ['url_canonical_hash', 'user_id', 'id']
-        );
+        $bookmark = Bookmark::select(['url_canonical_hash', 'user_id', 'id'])
+            ->tap(new WherePublicIdScope(BookmarkPublicId::fromRequest($bookmarkId)))
+            ->firstOrNew();
+
+        if( ! $bookmark->exists) {
+            throw new BookmarkNotFoundException();
+        }
 
         BookmarkNotFoundException::throwIfDoesNotBelongToAuthUser($bookmark);
 
         $result = $repository->fetchPossibleDuplicates(
             $bookmark,
-            UserId::fromAuthUser()->value(),
+            User::fromRequest($request)->id,
             PaginationData::fromRequest($request)
         );
 

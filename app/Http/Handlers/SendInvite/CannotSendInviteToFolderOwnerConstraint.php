@@ -4,21 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\SendInvite;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
 use App\Models\User;
 
-final class CannotSendInviteToFolderOwnerConstraint implements FolderRequestHandlerInterface
+final class CannotSendInviteToFolderOwnerConstraint
 {
     public function __construct(private readonly User $invitee)
     {
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         $isSendingInviteToFolderOwner = $folder->user_id === $this->invitee->id;
 

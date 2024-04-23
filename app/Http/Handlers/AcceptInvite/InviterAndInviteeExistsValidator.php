@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\AcceptInvite;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\FolderInviteData;
 use App\Exceptions\AcceptFolderInviteException;
 use App\Models\Folder;
@@ -14,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Support\Facades\DB;
 
-final class InviterAndInviteeExistsValidator implements FolderRequestHandlerInterface, Scope
+final class InviterAndInviteeExistsValidator implements Scope
 {
     public function __construct(private readonly FolderInviteData $invitationData)
     {
@@ -31,10 +30,7 @@ final class InviterAndInviteeExistsValidator implements FolderRequestHandlerInte
             ->addSelect(['invitee' => User::select($expression)->where('id', $invitationData->inviteeId)]);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         if (is_null($folder->invitee)) {
             throw AcceptFolderInviteException::inviteeAccountNoLongerExists();

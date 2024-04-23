@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\UpdateFolder;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\UpdateFolderRequestData;
 use App\Enums\Feature;
 use App\Exceptions\FolderFeatureDisabledException;
@@ -16,7 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
-final class FeatureMustBeEnabledConstraint implements Scope, FolderRequestHandlerInterface
+final class FeatureMustBeEnabledConstraint implements Scope
 {
     public function __construct(private readonly UpdateFolderRequestData $data)
     {
@@ -53,10 +52,7 @@ final class FeatureMustBeEnabledConstraint implements Scope, FolderRequestHandle
             $this->data->isUpdatingThumbnail;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         /** @var \Illuminate\Support\Collection */
         $disabledFeatures = $folder->updateAbleAttributesThatAreDisabled ?? collect();
@@ -71,10 +67,6 @@ final class FeatureMustBeEnabledConstraint implements Scope, FolderRequestHandle
 
         if ($folderBelongsToAuthUser || $disabledFeatures->isEmpty()) {
             return;
-        }
-
-        if ($isDisabled(Feature::UPDATE_FOLDER)) {
-            throw $exception;
         }
 
         if ($isDisabled(Feature::UPDATE_FOLDER_NAME) && $this->data->isUpdatingName) {

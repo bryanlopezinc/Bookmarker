@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\ValueObjects\PublicId\BookmarkSourceId;
 use Illuminate\Database\Eloquent\Model;
 
 /**
  * @property int                 $id
+ * @property BookmarkSourceId    $public_id
  * @property string              $host
  * @property string              $name
  * @property \Carbon\Carbon|null $name_updated_at
@@ -26,4 +28,11 @@ final class Source extends Model
      * {@inheritdoc}
      */
     protected $guarded = [];
+
+    /**
+     * {@inheritdoc}
+     */
+    protected $casts = [
+        'public_id'  => BookmarkSourceId::class
+    ];
 }

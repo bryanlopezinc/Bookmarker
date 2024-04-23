@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\UpdateFolder;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\UpdateFolderRequestData;
 use App\Models\Folder;
 use App\Models\User;
@@ -16,7 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Support\Facades\Notification;
 
-final class SendFolderUpdatedNotification implements FolderRequestHandlerInterface, Scope
+final class SendFolderUpdatedNotification implements Scope
 {
     public function __construct(private readonly UpdateFolderRequestData $data)
     {
@@ -30,10 +29,7 @@ final class SendFolderUpdatedNotification implements FolderRequestHandlerInterfa
         $builder->addSelect(['settings', 'user_id']);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         $wasUpdatedByFolderOwner = $folder->user_id === $this->data->authUser->id;
         $settings = $folder->settings;

@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\RemoveFolderBookmarks;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Models\FolderBookmark;
 use App\Models\Folder;
 use Illuminate\Database\Eloquent\Collection;
 
-final class DeleteFolderBookmarks implements FolderRequestHandlerInterface
+final class DeleteFolderBookmarks
 {
     /**
      * @param array<FolderBookmark> $folderBookmarks
@@ -18,10 +17,7 @@ final class DeleteFolderBookmarks implements FolderRequestHandlerInterface
     {
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         $deleted = (new Collection($this->folderBookmarks))->toQuery()->delete();
 

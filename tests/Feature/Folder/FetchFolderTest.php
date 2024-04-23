@@ -15,35 +15,35 @@ use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\CreatesCollaboration;
+use Tests\Traits\GeneratesId;
 
 class FetchFolderTest extends TestCase
 {
     use CreatesCollaboration;
+    use GeneratesId;
 
     protected function fetchFolderResponse(array $parameters = []): TestResponse
     {
-        if (array_key_exists('id', $parameters)) {
-            $parameters['id'] = (string) $parameters['id'];
-        }
-
         return $this->getJson(route('fetchFolder', $parameters));
     }
 
     public function testIsAccessibleViaPath(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/folders', 'fetchFolder');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/{folder_id}', 'fetchFolder');
     }
 
     public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
-        $this->fetchFolderResponse()->assertUnauthorized();
+        $this->fetchFolderResponse(['folder_id' => $this->generateFolderId()->present()])->assertUnauthorized();
     }
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         $this->loginUser(UserFactory::new()->create());
 
-        $this->fetchFolderResponse()->assertJsonValidationErrors(['id']);
+        $this->fetchFolderResponse(['folder_id' => 'foo'])
+            ->assertNotFound()
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     public function testFetchFolder(): void
@@ -53,12 +53,12 @@ class FetchFolderTest extends TestCase
         /** @var Model */
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->fetchFolderResponse(['id' => $folder->id])
+        $this->fetchFolderResponse(['folder_id' => $folder->public_id->present()])
             ->assertOk()
             ->assertJsonCount(9, 'data.attributes')
             ->assertJson(function (AssertableJson $json) use ($folder) {
                 $json->etc();
-                $json->where('data.attributes.id', $folder->id);
+                $json->where('data.attributes.id', $folder->public_id->present());
                 $json->where('data.attributes.visibility', 'public');
                 $json->where('data.attributes.storage.capacity', 200);
                 $json->where('data.attributes.storage.items_count', 0);
@@ -108,13 +108,13 @@ class FetchFolderTest extends TestCase
 
         $repository->create($folder->id, $bookmarks->pluck('id')->all());
 
-        $this->fetchFolderResponse(['id' => $folder->id])
+        $this->fetchFolderResponse(['folder_id' => $publicId = $folder->public_id->present()])
             ->assertOk()
             ->assertJsonPath('data.attributes.storage.items_count', 2);
 
         $bookmarks->first()->delete();
 
-        $this->fetchFolderResponse(['id' => $folder->id])
+        $this->fetchFolderResponse(['folder_id' => $publicId])
             ->assertOk()
             ->assertJsonPath('data.attributes.storage.items_count', 1);
     }
@@ -131,13 +131,13 @@ class FetchFolderTest extends TestCase
         $this->CreateCollaborationRecord($users[0], $folder, UAC::all()->toArray());
         $this->CreateCollaborationRecord($users[1], $folder, UAC::all()->toArray());
 
-        $this->fetchFolderResponse(['id' => $folder->id])
+        $this->fetchFolderResponse(['folder_id' => $publicId = $folder->public_id->present()])
             ->assertOk()
             ->assertJsonPath('data.attributes.collaborators_count', 2);
 
         $users->first()->delete();
 
-        $this->fetchFolderResponse(['id' => $folder->id])
+        $this->fetchFolderResponse(['folder_id' => $publicId])
             ->assertOk()
             ->assertJsonPath('data.attributes.collaborators_count', 1);
     }
@@ -149,7 +149,7 @@ class FetchFolderTest extends TestCase
         /** @var Model */
         $folder = FolderFactory::new()->for($user)->private()->create();
 
-        $this->fetchFolderResponse(['id' => $folder->id])
+        $this->fetchFolderResponse(['folder_id' => $folder->public_id->present()])
             ->assertOk()
             ->assertJsonPath('data.attributes.visibility', 'private');
     }
@@ -162,7 +162,7 @@ class FetchFolderTest extends TestCase
         /** @var Model */
         $folder = FolderFactory::new()->for($user)->visibleToCollaboratorsOnly()->create();
 
-        $this->fetchFolderResponse(['id' => $folder->id])
+        $this->fetchFolderResponse(['folder_id' => $folder->public_id->present()])
             ->assertOk()
             ->assertJsonPath('data.attributes.visibility', 'collaborators');
     }
@@ -171,10 +171,7 @@ class FetchFolderTest extends TestCase
     {
         $this->loginUser($user = UserFactory::new()->create());
 
-        /** @var Model */
-        $folder = FolderFactory::new()->for($user)->create();
-
-        $this->fetchFolderResponse(['id' => $folder->id + 1])
+        $this->fetchFolderResponse(['folder_id' => $this->generateFolderId()->present()])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
@@ -183,7 +180,7 @@ class FetchFolderTest extends TestCase
     {
         $this->loginUser(UserFactory::new()->create());
 
-        $this->fetchFolderResponse(['id' => FolderFactory::new()->create()->id])
+        $this->fetchFolderResponse(['folder_id' => FolderFactory::new()->create()->public_id->present()])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
@@ -192,18 +189,17 @@ class FetchFolderTest extends TestCase
     {
         $this->loginUser($user = UserFactory::new()->create());
 
-        /** @var Model */
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->fetchFolderResponse([
-            'id' => $folder->id,
+            'folder_id' => $folder->public_id->present(),
             'fields' => 'id,name,description'
         ])
             ->assertOk()
             ->assertJsonCount(3, 'data.attributes')
             ->assertJson(function (AssertableJson $json) use ($folder) {
                 $json->etc();
-                $json->where('data.attributes.id', $folder->id);
+                $json->where('data.attributes.id', $folder->public_id->present());
                 $json->where('data.attributes.name', $folder->name->present());
                 $json->where('data.attributes.description', $folder->description);
             })
@@ -224,7 +220,7 @@ class FetchFolderTest extends TestCase
         $this->loginUser(UserFactory::new()->create());
 
         $this->fetchFolderResponse([
-            'id' => 33,
+            'folder_id' => $publicId = $this->generateFolderId()->present(),
             'fields' => 'id,name,foo,1'
         ])->assertUnprocessable()
             ->assertJsonValidationErrors([
@@ -232,7 +228,7 @@ class FetchFolderTest extends TestCase
             ]);
 
         $this->fetchFolderResponse([
-            'id' => 33,
+            'folder_id' => $publicId,
             'fields' => '1,2,3,4'
         ])->assertUnprocessable()
             ->assertJsonValidationErrors([
@@ -240,7 +236,7 @@ class FetchFolderTest extends TestCase
             ]);
 
         $this->fetchFolderResponse([
-            'id' => 33,
+            'folder_id' => $publicId,
             'fields' => 'id,name,description,description'
         ])
             ->assertUnprocessable()
@@ -251,7 +247,7 @@ class FetchFolderTest extends TestCase
             ]);
 
         $this->fetchFolderResponse([
-            'id' => 33,
+            'folder_id' => $publicId,
             'fields' => 'id,name,storage,storage.items_count'
         ])
             ->assertUnprocessable()

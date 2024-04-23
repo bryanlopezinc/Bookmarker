@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\CreateFolder;
 
+use App\Contracts\IdGeneratorInterface;
 use App\DataTransferObjects\CreateFolderData;
 use App\Enums\FolderVisibility;
 use App\Filesystem\FolderThumbnailFileSystem;
@@ -13,10 +14,12 @@ use App\ValueObjects\FolderSettings;
 final class CreateFolder implements HandlerInterface
 {
     private readonly FolderThumbnailFileSystem $filesystem;
+    private readonly IdGeneratorInterface $IdGenerator;
 
-    public function __construct(FolderThumbnailFileSystem $filesystem = null)
+    public function __construct(FolderThumbnailFileSystem $filesystem = null, IdGeneratorInterface $IdGenerator = null)
     {
         $this->filesystem = $filesystem ?: new FolderThumbnailFileSystem();
+        $this->IdGenerator = $IdGenerator ??= app(IdGeneratorInterface::class);
     }
 
     public function create(CreateFolderData $data): void
@@ -28,6 +31,7 @@ final class CreateFolder implements HandlerInterface
         }
 
         Folder::create([
+            'public_id'   => $this->IdGenerator->generate(),
             'description' => $data->description,
             'name'        => $data->name,
             'user_id'     => $data->owner->id,

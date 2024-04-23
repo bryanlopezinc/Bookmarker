@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Folder;
 
 use App\Actions\ToggleFolderFeature;
+use App\Collections\UserPublicIdsCollection;
 use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
@@ -22,6 +23,7 @@ use Tests\Feature\Folder\Concerns\AssertFolderCollaboratorMetrics;
 use Tests\TestCase;
 use Tests\Traits\CreatesCollaboration;
 use Tests\Traits\CreatesRole;
+use Tests\Traits\GeneratesId;
 
 class RemoveCollaboratorTest extends TestCase
 {
@@ -29,6 +31,7 @@ class RemoveCollaboratorTest extends TestCase
     use CreatesCollaboration;
     use AssertFolderCollaboratorMetrics;
     use CreatesRole;
+    use GeneratesId;
 
     protected function deleteCollaboratorResponse(array $parameters = []): TestResponse
     {
@@ -45,18 +48,23 @@ class RemoveCollaboratorTest extends TestCase
         $this->deleteCollaboratorResponse(['folder_id' => 44, 'collaborator_id' => 33])->assertUnauthorized();
     }
 
-    public function testWillReturnNotFoundWhenRouteParametersAreInvalid(): void
-    {
-        $this->deleteCollaboratorResponse(['folder_id' => 44, 'collaborator_id' => 'foo'])->assertNotFound();
-        $this->deleteCollaboratorResponse(['folder_id' => 'foo', 'collaborator_id' => 44])->assertNotFound();
-    }
-
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
         $this->loginUser(UserFactory::new()->create());
 
-        $this->deleteCollaboratorResponse(['ban' => 'foo', 'folder_id' => 44, 'collaborator_id' => 33])
-            ->assertUnprocessable()
+        $this->deleteCollaboratorResponse(['folder_id' => 44, 'collaborator_id' => $this->generateUserId()->present()])
+            ->assertNotFound()
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
+
+        $this->deleteCollaboratorResponse(['folder_id' => $this->generateFolderId()->present(), 'collaborator_id' => 44])
+            ->assertNotFound()
+            ->assertJsonFragment(['message' => 'UserNotFound']);
+
+        $this->deleteCollaboratorResponse([
+            'ban'             => 'foo',
+            'folder_id'       => $this->generateFolderId()->present(),
+            'collaborator_id' => $this->generateUserId()->present()
+        ])->assertUnprocessable()
             ->assertJsonValidationErrors(['ban']);
     }
 
@@ -72,7 +80,10 @@ class RemoveCollaboratorTest extends TestCase
         $this->CreateCollaborationRecord($otherCollaborator, $folder, UAC::all()->toArray());
 
         $this->loginUser($folderOwner);
-        $this->deleteCollaboratorResponse(['collaborator_id' => $collaborator->id, 'folder_id' => $folder->id])->assertOk();
+        $this->deleteCollaboratorResponse([
+            'collaborator_id' => $collaborator->public_id->present(),
+            'folder_id'       => $folder->public_id->present()
+        ])->assertOk();
 
         Notification::assertNothingSentTo($folderOwner);
 
@@ -95,27 +106,30 @@ class RemoveCollaboratorTest extends TestCase
         [$collaborator, $collaboratorWithRole] = UserFactory::times(2)->create();
 
         $folder = FolderFactory::new()->create();
+        $folderPublicId = $folder->public_id->present();
 
         $collaboratorsToBeKickedOut = UserFactory::times(3)
             ->create()
             ->each(fn (User $collaborator) => $this->CreateCollaborationRecord($collaborator, $folder));
+
+        $collaboratorsToBeKickedOutPublicIds = UserPublicIdsCollection::fromObjects($collaboratorsToBeKickedOut)->present();
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::REMOVE_USER);
         $this->CreateCollaborationRecord($collaboratorWithRole, $folder);
         $this->attachRoleToUser($collaboratorWithRole, $this->createRole(folder: $folder, permissions: Permission::REMOVE_USER));
 
         $this->loginUser($collaborator);
-        $this->deleteCollaboratorResponse(['collaborator_id' => $collaboratorsToBeKickedOut[0]->id, 'folder_id' => $folder->id])->assertOk();
+        $this->deleteCollaboratorResponse(['collaborator_id' => $collaboratorsToBeKickedOutPublicIds[0], 'folder_id' => $folderPublicId])->assertOk();
 
         $this->assertFolderCollaboratorMetric($collaborator->id, $folder->id, $type = CollaboratorMetricType::COLLABORATORS_REMOVED);
         $this->assertFolderCollaboratorMetricsSummary($collaborator->id, $folder->id, $type);
         $this->assertNotContains($collaboratorsToBeKickedOut[0]->id, $folder->collaborators->pluck('id'));
 
-        $this->deleteCollaboratorResponse(['collaborator_id' => $collaboratorsToBeKickedOut[1]->id, 'folder_id' => $folder->id])->assertOk();
+        $this->deleteCollaboratorResponse(['collaborator_id' => $collaboratorsToBeKickedOutPublicIds[1], 'folder_id' => $folderPublicId])->assertOk();
         $this->assertFolderCollaboratorMetricsSummary($collaborator->id, $folder->id, $type, 2);
 
         $this->loginUser($collaboratorWithRole);
-        $this->deleteCollaboratorResponse(['collaborator_id' => $collaboratorsToBeKickedOut[2]->id, 'folder_id' => $folder->id])->assertOk();
+        $this->deleteCollaboratorResponse(['collaborator_id' => $collaboratorsToBeKickedOutPublicIds[2], 'folder_id' => $folderPublicId])->assertOk();
         $this->assertNotContains($collaboratorsToBeKickedOut[0]->id, $folder->refresh()->collaborators->pluck('id'));
     }
 
@@ -129,21 +143,23 @@ class RemoveCollaboratorTest extends TestCase
             ->create()
             ->each(fn (User $collaborator) => $this->CreateCollaborationRecord($collaborator, $folder));
 
+        $collaboratorsToBeKickedOutPublicIds = UserPublicIdsCollection::fromObjects($collaboratorsToBeKickedOut)->present();
+
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::REMOVE_USER);
 
         $this->loginUser($folderOwner);
         $this->deleteCollaboratorResponse([
-            'collaborator_id' => $collaboratorsToBeKickedOut[0]->id,
-            'folder_id' => $folder->id,
-            'ban'       => true
+            'collaborator_id' => $collaboratorsToBeKickedOutPublicIds[0],
+            'folder_id'       => $folder->public_id->present(),
+            'ban'             => true
         ])->assertOk();
 
         $this->assertContains($collaboratorsToBeKickedOut[0]->id, $folder->bannedUsers->pluck('id'));
 
         $this->loginUser($collaborator);
         $this->deleteCollaboratorResponse([
-            'collaborator_id' => $collaboratorsToBeKickedOut[1]->id,
-            'folder_id' => $folder->id,
+            'collaborator_id' => $collaboratorsToBeKickedOutPublicIds[1],
+            'folder_id' => $folder->public_id->present(),
             'ban'       => true
         ])->assertOk();
 
@@ -152,12 +168,11 @@ class RemoveCollaboratorTest extends TestCase
 
     public function testWillReturnNotFoundWhenFolderDoesNotExist(): void
     {
-        $this->loginUser($user = UserFactory::new()->create());
-        $folder = FolderFactory::new()->for($user)->create();
+        $this->loginUser(UserFactory::new()->create());
 
         $this->deleteCollaboratorResponse([
-            'collaborator_id' => UserFactory::new()->create()->id,
-            'folder_id' => $folder->id + 1
+            'collaborator_id' => UserFactory::new()->create()->public_id->present(),
+            'folder_id'       => $this->generateFolderId()->present()
         ])->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
@@ -167,8 +182,8 @@ class RemoveCollaboratorTest extends TestCase
         $this->loginUser(UserFactory::new()->create());
 
         $this->deleteCollaboratorResponse([
-            'collaborator_id' => UserFactory::new()->create()->id,
-            'folder_id' => FolderFactory::new()->create()->id
+            'collaborator_id' => UserFactory::new()->create()->public_id->present(),
+            'folder_id'       => FolderFactory::new()->create()->public_id->present()
         ])->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
@@ -180,8 +195,8 @@ class RemoveCollaboratorTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->deleteCollaboratorResponse([
-            'collaborator_id' => UserFactory::new()->create()->id,
-            'folder_id' => $folder->id
+            'collaborator_id' => UserFactory::new()->create()->public_id->present(),
+            'folder_id'      => $folder->public_id->present()
         ])->assertNotFound()
             ->assertJsonFragment(['message' => 'UserNotACollaborator']);
     }
@@ -192,8 +207,8 @@ class RemoveCollaboratorTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->deleteCollaboratorResponse([
-            'collaborator_id' => UserFactory::new()->create()->id + 1,
-            'folder_id' => $folder->id
+            'collaborator_id' => $this->generateUserId()->present(),
+            'folder_id'       => $folder->public_id->present()
         ])->assertNotFound()
             ->assertJsonFragment(['message' => 'UserNotACollaborator']);
     }
@@ -207,12 +222,12 @@ class RemoveCollaboratorTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::REMOVE_USER);
 
         $this->loginUser($folderOwner);
-        $this->deleteCollaboratorResponse(['collaborator_id' => $folderOwner->id, 'folder_id' => $folder->id])
+        $this->deleteCollaboratorResponse(['collaborator_id' => $folderOwner->public_id->present(), 'folder_id' => $folder->public_id->present()])
             ->assertForbidden()
             ->assertJsonFragment($expectation = ['message' => 'CannotRemoveSelf']);
 
         $this->loginUser($collaborator);
-        $this->deleteCollaboratorResponse(['collaborator_id' => $collaborator->id, 'folder_id' => $folder->id])
+        $this->deleteCollaboratorResponse(['collaborator_id' => $collaborator->public_id->present(), 'folder_id' => $folder->public_id->present()])
             ->assertForbidden()
             ->assertJsonFragment($expectation);
 
@@ -229,7 +244,7 @@ class RemoveCollaboratorTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::REMOVE_USER);
 
         $this->loginUser($collaborator);
-        $this->deleteCollaboratorResponse(['collaborator_id' => $folderOwner->id, 'folder_id' => $folder->id])
+        $this->deleteCollaboratorResponse(['collaborator_id' => $folderOwner->public_id->present(), 'folder_id' => $folder->public_id->present()])
             ->assertForbidden()
             ->assertJsonFragment(['message' => 'CannotRemoveFolderOwner']);
     }
@@ -245,7 +260,7 @@ class RemoveCollaboratorTest extends TestCase
         $this->CreateCollaborationRecord($collaboratorToBeKickedOut, $folder);
 
         $this->loginUser($collaborator);
-        $this->deleteCollaboratorResponse(['collaborator_id' => $collaboratorToBeKickedOut->id, 'folder_id' => $folder->id])
+        $this->deleteCollaboratorResponse(['collaborator_id' => $collaboratorToBeKickedOut->public_id->present(), 'folder_id' => $folder->public_id->present()])
             ->assertForbidden()
             ->assertJsonFragment(['message' => 'PermissionDenied']);
 
@@ -266,15 +281,17 @@ class RemoveCollaboratorTest extends TestCase
             ->create()
             ->each(fn (User $collaborator) => $this->CreateCollaborationRecord($collaborator, $folder));
 
+        $collaboratorsToBeKickedOutPublicIds = UserPublicIdsCollection::fromObjects($collaboratorsToBeKickedOut)->present();
+
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::REMOVE_USER);
 
         //Assert collaborator can remove bookmark when disabled action is not remove user feature
         $updateCollaboratorActionService->disable($folder->id, Feature::ADD_BOOKMARKS);
         $this->loginUser($collaborator);
-        $this->deleteCollaboratorResponse(['collaborator_id' => $collaboratorsToBeKickedOut[0]->id, 'folder_id' => $folder->id])->assertOk();
+        $this->deleteCollaboratorResponse(['collaborator_id' => $collaboratorsToBeKickedOutPublicIds[0], 'folder_id' => $folder->public_id->present()])->assertOk();
 
         $updateCollaboratorActionService->disable($folder->id, Feature::REMOVE_USER);
-        $this->deleteCollaboratorResponse(['collaborator_id' => $collaboratorsToBeKickedOut[1]->id, 'folder_id' => $folder->id])
+        $this->deleteCollaboratorResponse(['collaborator_id' => $collaboratorsToBeKickedOutPublicIds[1], 'folder_id' => $folder->public_id->present()])
             ->assertForbidden()
             ->assertJsonFragment(['message' => 'FolderFeatureDisAbled']);
 
@@ -293,8 +310,8 @@ class RemoveCollaboratorTest extends TestCase
 
         $this->loginUser($folderOwner);
         $this->deleteCollaboratorResponse([
-            'collaborator_id' => $collaborator->id,
-            'folder_id' => $folder->id
+            'collaborator_id' => $collaborator->public_id->present(),
+            'folder_id'       => $folder->public_id->present()
         ])->assertOk();
 
         $notificationData = $collaborator->notifications()->sole(['data', 'type']);
@@ -302,8 +319,11 @@ class RemoveCollaboratorTest extends TestCase
         $this->assertEquals($notificationData->data, [
             'N-type'      => 'YouHaveBeenKickedOut',
             'version'     => '1.0.0',
-            'folder_id'   => $folder->id,
-            'folder_name' => $folder->name->value
+            'folder'   => [
+                'id'   => $folder->id,
+                'name' => $folder->name->value,
+                'public_id' => $folder->public_id->value
+            ],
         ]);
     }
 
@@ -316,16 +336,26 @@ class RemoveCollaboratorTest extends TestCase
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::REMOVE_USER);
 
+        /** @var User[] */
         $collaboratorsKickedOut = UserFactory::times(2)
             ->create()
             ->each(fn (User $collaborator) => $this->CreateCollaborationRecord($collaborator, $folder));
 
+        $collaboratorsToBeKickedOutPublicIds = UserPublicIdsCollection::fromObjects($collaboratorsKickedOut)->present();
+
         $this->loginUser($collaborator);
-        $this->deleteCollaboratorResponse(['collaborator_id' => $collaboratorsKickedOut[0]->id, 'folder_id' => $folder->id])->assertOk();
+        $this->deleteCollaboratorResponse([
+            'collaborator_id' => $collaboratorsToBeKickedOutPublicIds[0],
+            'folder_id' => $folder->public_id->present()
+        ])->assertOk();
 
         //To Ensure will always sort by latest (created_at)
-        $this->travel(1)->minute(function () use ($collaboratorsKickedOut, $folder) {
-            $this->deleteCollaboratorResponse(['collaborator_id' => $collaboratorsKickedOut[1]->id, 'folder_id' => $folder->id, 'ban' => true])->assertOk();
+        $this->travel(1)->minute(function () use ($collaboratorsToBeKickedOutPublicIds, $folder) {
+            $this->deleteCollaboratorResponse([
+                'collaborator_id' => $collaboratorsToBeKickedOutPublicIds[1],
+                'folder_id'       => $folder->public_id->present(),
+                'ban'             => true
+            ])->assertOk();
         });
 
         $notificationsData = $folderOwner->notifications()->get(['data'])->pluck('data')->toArray();
@@ -336,6 +366,7 @@ class RemoveCollaboratorTest extends TestCase
         $json->where('0.was_banned', true)
             ->where('1.was_banned', false)
             ->where('0.collaborator.id', $collaboratorsKickedOut[1]->id)
+            ->where('0.collaborator.public_id', $collaboratorsKickedOut[1]->public_id->value)
             ->where('0.collaborator.name', $collaboratorsKickedOut[1]->full_name->value)
             ->each(function (AssertableJson $json) use ($folder, $collaborator) {
                 $json->where('version', '1.0.0')
@@ -343,6 +374,7 @@ class RemoveCollaboratorTest extends TestCase
                     ->where('folder.id', $folder->id)
                     ->where('folder.name', $folder->name->value)
                     ->where('removed_by.id', $collaborator->id)
+                    ->where('removed_by.public_id', $collaborator->public_id->value)
                     ->where('removed_by.name', $collaborator->full_name->value)
                     ->etc();
             });

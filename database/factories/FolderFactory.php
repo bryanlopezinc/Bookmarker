@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Contracts\IdGeneratorInterface;
 use App\Models\Folder;
 use Illuminate\Support\Str;
 use App\Enums\FolderVisibility;
@@ -24,7 +25,11 @@ final class FolderFactory extends Factory
      */
     public function definition()
     {
+        /** @var IdGeneratorInterface */
+        $IdGenerator = app(IdGeneratorInterface::class);
+
         return [
+            'public_id'   => $IdGenerator->generate(),
             'name'        => $this->faker->word,
             'description' => $this->faker->sentence,
             'user_id'     => UserFactory::new(),

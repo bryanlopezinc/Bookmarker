@@ -18,6 +18,7 @@ use App\Notifications\NewCollaboratorNotification;
 use App\Notifications\YouHaveBeenBootedOutNotification;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
+use Database\Factories\ImportFactory;
 use PHPUnit\Framework\Attributes\Test;
 
 class WillSortByLatestTest extends TestCase
@@ -31,6 +32,7 @@ class WillSortByLatestTest extends TestCase
 
         $bookmarks = BookmarkFactory::times(3)->create()->pluck('id');
         $userFolders = FolderFactory::times(3)->for($user)->create();
+        $import = ImportFactory::new()->create();
 
         $notifications = [
             new BookmarksAddedToFolderNotification($bookmarks->all(), $userFolders[0], $firstCollaborator),
@@ -38,7 +40,7 @@ class WillSortByLatestTest extends TestCase
             new NewCollaboratorNotification($newCollaborator, $userFolders[2], $secondCollaborator),
             new CollaboratorExitNotification($userFolders[2], $newCollaborator),
             new FolderNameUpdatedNotification($userFolders[1], $firstCollaborator),
-            new ImportFailedNotification(fake()->uuid, ImportBookmarksOutcome::failed(ImportBookmarksStatus::FAILED_DUE_TO_SYSTEM_ERROR, new ImportStats())),
+            new ImportFailedNotification($import, ImportBookmarksOutcome::failed(ImportBookmarksStatus::FAILED_DUE_TO_SYSTEM_ERROR, new ImportStats())),
             new YouHaveBeenBootedOutNotification(FolderFactory::new()->create())
         ];
 

@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\RemoveCollaborator;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Models\Folder;
 use App\DataTransferObjects\RemoveCollaboratorData as Data;
 use App\Models\BannedCollaborator;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\Repositories\Folder\CollaboratorRepository;
 
-final class RemoveCollaborator implements FolderRequestHandlerInterface
+final class RemoveCollaborator
 {
     private CollaboratorPermissionsRepository $permissions;
     private CollaboratorRepository $collaboratorRepository;
@@ -27,19 +26,18 @@ final class RemoveCollaborator implements FolderRequestHandlerInterface
         $this->collaboratorRepository = $collaboratorRepository ??= new CollaboratorRepository();
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
-        $this->collaboratorRepository->delete($folder->id, $this->data->collaboratorId);
+        $collaboratorId = $folder->collaboratorId;
 
-        $this->permissions->delete($this->data->collaboratorId, $folder->id);
+        $this->collaboratorRepository->delete($folder->id, $collaboratorId);
+
+        $this->permissions->delete($collaboratorId, $folder->id);
 
         if ($this->data->ban) {
             BannedCollaborator::query()->create([
                 'folder_id' => $folder->id,
-                'user_id'   => $this->data->collaboratorId
+                'user_id'   => $collaboratorId
             ]);
         }
     }

@@ -17,6 +17,7 @@ use Tests\TestCase;
 use Laravel\Passport\Client;
 use App\Cache\User2FACodeRepository;
 use App\ValueObjects\TwoFACode;
+use App\ValueObjects\PublicId\UserPublicId;
 
 class LoginUserTest extends TestCase
 {
@@ -129,6 +130,11 @@ class LoginUserTest extends TestCase
             ->assertJsonCount(3, 'data')
             ->assertJsonCount(8, 'data.attributes')
             ->assertJsonCount(4, 'data.token')
+            ->assertJsonPath('data.attributes.id', function (string $Id) {
+                UserPublicId::fromRequest($Id);
+
+                return true;
+            })
             ->assertJson(function (AssertableJson $json) {
                 $json->where('data.token.expires_in', function (int $expiresAt) {
                     $this->assertLessThanOrEqual(1, now()->diffInHours(now()->addSeconds($expiresAt)));

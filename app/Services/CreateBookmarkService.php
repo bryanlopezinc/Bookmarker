@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Contracts\IdGeneratorInterface;
 use App\Importing\DataTransferObjects\ImportedBookmark;
 use App\Enums\BookmarkCreationSource;
 use App\ValueObjects\Url;
@@ -18,10 +19,12 @@ use Exception;
 class CreateBookmarkService
 {
     private TagRepository $tagRepository;
+    private IdGeneratorInterface $idGenerator;
 
-    public function __construct(TagRepository $tagRepository = null)
+    public function __construct(TagRepository $tagRepository = null, IdGeneratorInterface $idGenerator = null)
     {
-        $this->tagRepository = $tagRepository ?: new TagRepository();
+        $this->tagRepository = $tagRepository ??= new TagRepository();
+        $this->idGenerator = $idGenerator ??= app(IdGeneratorInterface::class);
     }
 
     public function fromRequest(CreateOrUpdateBookmarkRequest $request): void
@@ -30,10 +33,11 @@ class CreateBookmarkService
 
         $source = Source::query()->firstOrCreate(
             ['host' => $url->getHost()],
-            ['name' => $url->toString()]
+            ['name' => $url->toString(), 'public_id' => $this->idGenerator->generate()]
         );
 
         $bookmark = Bookmark::query()->create([
+            'public_id'               => $this->idGenerator->generate(),
             'title'                   => $request->validated('title', $url->toString()),
             'has_custom_title'        => $request->has('title'),
             'url'                     => $url->toString(),
@@ -69,10 +73,11 @@ class CreateBookmarkService
 
         $source = Source::query()->firstOrCreate(
             ['host' => $importedBookmark->url->getHost()],
-            ['name' => $importedBookmark->url->toString()]
+            ['name' => $importedBookmark->url->toString(), 'public_id' => $this->idGenerator->generate()]
         );
 
         $bookmark = Bookmark::query()->create([
+            'public_id'               => $this->idGenerator->generate(),
             'title'                   => $importedBookmark->url->toString(),
             'has_custom_title'        => false,
             'url'                     => $importedBookmark->url->toString(),
@@ -99,10 +104,11 @@ class CreateBookmarkService
 
         $source = Source::query()->firstOrCreate(
             ['host' => $url->getHost()],
-            ['name' => $url->toString()]
+            ['name' => $url->toString(), 'public_id' => $this->idGenerator->generate()]
         );
 
         $bookmark = Bookmark::query()->create([
+            'public_id'               => $this->idGenerator->generate(),
             'title'                   => $url->toString(),
             'has_custom_title'        => false,
             'url'                     => $url->toString(),

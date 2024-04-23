@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\Folder\Mute;
 
 use App\Filesystem\ProfileImageFileSystem;
+use App\Models\Folder;
+use App\Models\User;
 use App\Services\Folder\MuteCollaboratorService;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -12,10 +14,12 @@ use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\AssertValidPaginationData;
 use Tests\TestCase;
+use Tests\Traits\GeneratesId;
 
 class FetchMutedCollaboratorsTest extends TestCase
 {
     use AssertValidPaginationData;
+    use GeneratesId;
 
     protected MuteCollaboratorService $service;
 
@@ -40,13 +44,13 @@ class FetchMutedCollaboratorsTest extends TestCase
     #[Test]
     public function uri(): void
     {
-        $this->assertRouteIsAccessibleViaPath('v1/folders/mute', 'fetchMutedCollaborator');
+        $this->assertRouteIsAccessibleViaPath('v1/folders/{folder_id}/mute', 'fetchMutedCollaborator');
     }
 
     #[Test]
     public function willReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
-        $this->fetchMuteCollaboratorsResponse()->assertUnauthorized();
+        $this->fetchMuteCollaboratorsResponse(['folder_id' => 4])->assertUnauthorized();
     }
 
     #[Test]
@@ -54,15 +58,15 @@ class FetchMutedCollaboratorsTest extends TestCase
     {
         $this->loginUser(UserFactory::new()->create());
 
-        $this->fetchMuteCollaboratorsResponse()
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['folder_id' => 'The folder id field is required.',]);
+        $this->fetchMuteCollaboratorsResponse(['folder_id' => 44])
+            ->assertNotFound()
+            ->assertJsonFragment(['message' => 'FolderNotFound',]);
 
-        $this->fetchMuteCollaboratorsResponse(['folder_id' => 3, 'name' => str_repeat('r', 11)])
+        $this->fetchMuteCollaboratorsResponse(['folder_id' => $this->generateFolderId()->present(), 'name' => str_repeat('r', 11)])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['name' => 'The name must not be greater than 10 characters.',]);
 
-        $this->assertValidPaginationData($this, 'fetchMutedCollaborator', ['folder_id' => 2]);
+        $this->assertValidPaginationData($this, 'fetchMutedCollaborator', ['folder_id' => $this->generateFolderId()->present()]);
     }
 
     #[Test]
@@ -78,11 +82,11 @@ class FetchMutedCollaboratorsTest extends TestCase
         $this->service->mute($folders[1]->id, $otherCollaborator->id, $folderOwner->id);
 
         $this->loginUser($folderOwner);
-        $this->fetchMuteCollaboratorsResponse(['folder_id' => $folders[0]->id])
+        $this->fetchMuteCollaboratorsResponse(['folder_id' => $folders[0]->public_id->present()])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(3, 'data.0.attributes')
-            ->assertJsonPath('data.0.attributes.id', $collaborator->id)
+            ->assertJsonPath('data.0.attributes.id', $collaborator->public_id->present())
             ->assertJsonPath('data.0.attributes.profile_image_url', (new ProfileImageFileSystem())->publicUrl($collaborator->profile_image_path))
             ->assertJsonPath('data.0.attributes.name', "{$collaborator->first_name} {$collaborator->last_name}")
             ->assertJsonPath('data.0.type', 'mutedCollaborator')
@@ -111,11 +115,11 @@ class FetchMutedCollaboratorsTest extends TestCase
         $this->service->mute($folder->id, $otherCollaborator->id, $folderOwner->id);
 
         $this->loginUser($folderOwner);
-        $this->fetchMuteCollaboratorsResponse(['folder_id' => $folder->id])
+        $this->fetchMuteCollaboratorsResponse(['folder_id' => $folder->public_id->present()])
             ->assertOk()
             ->assertJsonCount(2, 'data')
-            ->assertJsonPath('data.0.attributes.id', $otherCollaborator->id)
-            ->assertJsonPath('data.1.attributes.id', $collaborator->id);
+            ->assertJsonPath('data.0.attributes.id', $otherCollaborator->public_id->present())
+            ->assertJsonPath('data.1.attributes.id', $collaborator->public_id->present());
     }
 
     #[Test]
@@ -130,7 +134,7 @@ class FetchMutedCollaboratorsTest extends TestCase
         $collaborator->delete();
 
         $this->loginUser($folderOwner);
-        $this->fetchMuteCollaboratorsResponse(['folder_id' => $folder->id])
+        $this->fetchMuteCollaboratorsResponse(['folder_id' => $folder->public_id->present()])
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }
@@ -140,6 +144,7 @@ class FetchMutedCollaboratorsTest extends TestCase
     {
         $this->loginUser($user = UserFactory::new()->create());
 
+        /** @var User[] */
         $collaborators = UserFactory::times(3)
             ->sequence(
                 ['first_name' => 'Bryan'],
@@ -148,21 +153,22 @@ class FetchMutedCollaboratorsTest extends TestCase
             )
             ->create();
 
+        /** @var Folder[] */
         $userFolders = FolderFactory::times(2)->for($user)->create();
 
         $this->service->mute($userFolders[0]->id, $collaborators[0]->id, $user->id);
         $this->service->mute($userFolders[1]->id, $collaborators[1]->id, $user->id);
         $this->service->mute($userFolders[0]->id, $collaborators[2]->id, $user->id);
 
-        $this->fetchMuteCollaboratorsResponse(['folder_id' => $userFolders[0]->id, 'name' => 'bryan'])
+        $this->fetchMuteCollaboratorsResponse(['folder_id' => $userFolders[0]->public_id->present(), 'name' => 'bryan'])
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.attributes.id', $collaborators[0]->id);
+            ->assertJsonPath('data.0.attributes.id', $collaborators[0]->public_id->present());
 
-        $this->fetchMuteCollaboratorsResponse(['folder_id' => $userFolders[1]->id, 'name' => 'bryan'])
+        $this->fetchMuteCollaboratorsResponse(['folder_id' => $userFolders[1]->public_id->present(), 'name' => 'bryan'])
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.attributes.id', $collaborators[1]->id);
+            ->assertJsonPath('data.0.attributes.id', $collaborators[1]->public_id->present());
     }
 
     #[Test]
@@ -173,7 +179,7 @@ class FetchMutedCollaboratorsTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $this->loginUser($user);
-        $this->fetchMuteCollaboratorsResponse(['folder_id' => $folder->id])
+        $this->fetchMuteCollaboratorsResponse(['folder_id' => $folder->public_id->present()])
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }
@@ -186,7 +192,7 @@ class FetchMutedCollaboratorsTest extends TestCase
         $folder = FolderFactory::new()->create();
 
         $this->loginUser($folderOwner);
-        $this->fetchMuteCollaboratorsResponse(['folder_id' => $folder->id])
+        $this->fetchMuteCollaboratorsResponse(['folder_id' => $folder->public_id->present()])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
@@ -196,10 +202,8 @@ class FetchMutedCollaboratorsTest extends TestCase
     {
         $folderOwner = UserFactory::new()->create();
 
-        $folder = FolderFactory::new()->create();
-
         $this->loginUser($folderOwner);
-        $this->fetchMuteCollaboratorsResponse(['folder_id' => $folder->id + 1])
+        $this->fetchMuteCollaboratorsResponse(['folder_id' => $this->generateFolderId()->present()])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
@@ -216,16 +220,16 @@ class FetchMutedCollaboratorsTest extends TestCase
 
         $this->loginUser($folderOwner);
         $this->travel(55)->minutes(function () use ($folder) {
-            $this->fetchMuteCollaboratorsResponse(['folder_id' => $folder->id])
+            $this->fetchMuteCollaboratorsResponse(['folder_id' => $folder->public_id->present()])
                 ->assertOk()
                 ->assertJsonCount(2, 'data');
         });
 
         $this->travel(61)->minutes(function () use ($folder, $otherCollaborator) {
-            $this->fetchMuteCollaboratorsResponse(['folder_id' => $folder->id])
+            $this->fetchMuteCollaboratorsResponse(['folder_id' => $folder->public_id->present()])
                 ->assertOk()
                 ->assertJsonCount(1, 'data')
-                ->assertJsonPath('data.0.attributes.id', $otherCollaborator->id);
+                ->assertJsonPath('data.0.attributes.id', $otherCollaborator->public_id->present());
         });
     }
 }

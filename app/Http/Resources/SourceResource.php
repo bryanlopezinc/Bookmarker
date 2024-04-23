@@ -19,7 +19,7 @@ final class SourceResource extends JsonResource
         return [
             'type'       => 'source',
             'attributes' => [
-                'id'   => $this->source->id,
+                'id'   => $this->source->public_id->present(),
                 'name' => $this->source->name,
             ]
         ];

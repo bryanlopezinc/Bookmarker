@@ -8,7 +8,9 @@ use App\Models\Folder;
 use App\Models\User;
 use App\Models\Bookmark;
 use App\ValueObjects\FolderName;
+use App\ValueObjects\PublicId\FolderPublicId;
 use App\ValueObjects\FullName;
+use App\ValueObjects\PublicId\UserPublicId;
 
 final class NewFolderBookmarksNotificationData
 {
@@ -19,8 +21,8 @@ final class NewFolderBookmarksNotificationData
         public readonly ?Folder $folder,
         public readonly ?User $collaborator,
         public readonly FullName $collaboratorFullName,
-        public readonly int $collaboratorId,
-        public readonly int $folderId,
+        public readonly UserPublicId $collaboratorId,
+        public readonly FolderPublicId $folderId,
         public readonly FolderName $folderName,
         public readonly array $bookmarks,
         public readonly string $notificationId,

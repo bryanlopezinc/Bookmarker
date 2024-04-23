@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
+use App\Contracts\ResourceNotFoundExceptionInterface;
 use App\Models\Bookmark;
-use App\ValueObjects\UserId;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
 use Throwable;
 
-final class BookmarkNotFoundException extends RuntimeException
+final class BookmarkNotFoundException extends RuntimeException implements ResourceNotFoundExceptionInterface
 {
     public function __construct(
         string $message = 'BookmarkNotFound',
@@ -30,7 +31,7 @@ final class BookmarkNotFoundException extends RuntimeException
      */
     public static function throwIfDoesNotBelongToAuthUser(Bookmark $bookmark): void
     {
-        if ($bookmark->user_id !== UserId::fromAuthUser()->value()) {
+        if ($bookmark->user_id !== User::fromRequest(request())->id) {
             throw new self();
         }
     }

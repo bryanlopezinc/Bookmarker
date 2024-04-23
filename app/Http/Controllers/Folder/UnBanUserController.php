@@ -8,14 +8,24 @@ use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\UserNotFoundException;
 use App\Models\BannedCollaborator;
 use App\Models\Folder;
+use App\Models\Scopes\WherePublicIdScope;
+use App\Models\User;
+use App\ValueObjects\PublicId\FolderPublicId;
+use App\ValueObjects\PublicId\UserPublicId;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 final class UnBanUserController
 {
-    public function __invoke(Request $request, string $folderId, string $collaboratorId): JsonResponse
+    public function __invoke(string $folderId, string $collaboratorId): JsonResponse
     {
-        $folder = Folder::query()->select('user_id')->whereKey($folderId)->firstOrNew();
+        $folder = Folder::query()
+            ->select([
+                'user_id',
+                'id',
+                'collaboratorId' => User::select(['id'])->tap(new WherePublicIdScope(UserPublicId::fromRequest($collaboratorId)))
+            ])
+            ->tap(new WherePublicIdScope(FolderPublicId::fromRequest($folderId)))
+            ->firstOrNew();
 
         if ( ! $folder->exists) {
             throw new FolderNotFoundException();
@@ -24,8 +34,8 @@ final class UnBanUserController
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 
         $affectedRows = BannedCollaborator::query()
-            ->where('user_id', $collaboratorId)
-            ->where('folder_id', $folderId)
+            ->where('user_id', $folder->collaboratorId)
+            ->where('folder_id', $folder->id)
             ->delete();
 
         if ($affectedRows === 0) {

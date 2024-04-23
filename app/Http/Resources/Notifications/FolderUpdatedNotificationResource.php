@@ -27,8 +27,8 @@ final class FolderUpdatedNotificationResource extends JsonResource
                 'collaborator_exists' => $this->notification->collaborator !== null,
                 'folder_exists'       => $this->notification->folder !== null,
                 'notified_on'          => $this->notification->notifiedOn,
-                'collaborator_id'     => $this->notification->collaboratorId,
-                'folder_id'           => $this->notification->folderId,
+                'collaborator_id'     => $this->notification->collaboratorId->present(),
+                'folder_id'           => $this->notification->folderId->present(),
                 'message'             => match ($this->notification->modifiedAttribute) {
                     'name'        => $this->folderNameChangedNotificationMessage(),
                     'description' => $this->folderDescriptionChangedNotificationMessage(),
@@ -55,7 +55,7 @@ final class FolderUpdatedNotificationResource extends JsonResource
 
     private function presentFolderName(): string
     {
-        return $this->notification->folder?->name?->present() ?: $this->notification->folderName->present();
+        return  $this->notification->folderName->present();
     }
 
     private function folderDescriptionChangedNotificationMessage(): string

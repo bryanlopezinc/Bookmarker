@@ -24,7 +24,7 @@ final class FolderBookmarkResource extends JsonResource
         data_set(
             $bookmarkResource,
             'attributes.belongs_to_auth_user',
-            auth('api')->id() === $this->folderBookmark->bookmark->user_id
+            auth()->id() === $this->folderBookmark->bookmark->user_id
         );
 
         return $bookmarkResource;
@@ -34,14 +34,14 @@ final class FolderBookmarkResource extends JsonResource
     {
         $bookmark = $this->folderBookmark->bookmark;
 
-        $isLoggedIn = auth('api')->check();
+        $isLoggedIn = auth()->check();
 
         if ($bookmark->isUserFavorite) {
             return false;
         }
 
         if ($isLoggedIn) {
-            return $bookmark->user_id === auth('api')->id();
+            return $bookmark->user_id === auth()->id();
         }
 
         return false;

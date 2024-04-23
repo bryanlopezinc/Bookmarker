@@ -23,7 +23,7 @@ final class FetchNotificationResourcesRepository
      */
     private const USER_ID_KEYS = [
         'collaborator_id',
-        'new_collaborator_id',
+        'new_collaborator.id',
         'collaborator.id',
         'removed_by.id'
     ];
@@ -91,7 +91,7 @@ final class FetchNotificationResourcesRepository
         if ( ! empty($folderIds = $this->extractIds('folders'))) {
             $query->addSelect([
                 'folders' => Folder::query()
-                    ->select(DB::raw("JSON_ARRAYAGG(JSON_OBJECT('name', name, 'id', id))"))
+                    ->select(DB::raw("JSON_ARRAYAGG(JSON_OBJECT('name', name, 'id', id, 'public_id', public_id))"))
                     ->whereIntegerInRaw('id', $folderIds)
             ]);
         }

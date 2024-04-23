@@ -26,9 +26,9 @@ class UpdatesImportStatusTest extends TestCase
         $pendingImport = ImportFactory::new()->create();
 
         $listener = new UpdatesImportStatus();
-        $listener->importsStarted(new ImportBookmarkRequestData($pendingImport->import_id, ImportSource::CHROME, 33, []));
+        $listener->importsStarted(new ImportBookmarkRequestData($pendingImport->id, ImportSource::CHROME, 33, [], '94e35144-3ab7-47c1-8109-aa1c81e590dd'));
 
-        $runningImport = Import::query()->where('import_id', $pendingImport->import_id)->sole();
+        $runningImport = Import::query()->where('id', $pendingImport->id)->sole();
         $this->assertEquals($runningImport->status, ImportBookmarksStatus::IMPORTING);
     }
 
@@ -38,11 +38,11 @@ class UpdatesImportStatusTest extends TestCase
         $runningImport = ImportFactory::new()->importing()->create();
 
         $listener = new UpdatesImportStatus();
-        $listener->setImportId($runningImport->import_id);
+        $listener->setImportId($runningImport->id);
         $listener->importsEnded(ImportBookmarksOutcome::success($stats = new ImportStats(10, 2, 50, 2, 1)));
 
         /** @var Import */
-        $successfulImport = Import::query()->where('import_id', $runningImport->import_id)->sole();
+        $successfulImport = Import::query()->where('id', $runningImport->id)->sole();
         $this->assertEquals($successfulImport->status, ImportBookmarksStatus::IMPORTING);
         $this->assertEquals($successfulImport->statistics, $stats);
     }
@@ -53,11 +53,11 @@ class UpdatesImportStatusTest extends TestCase
         $runningImport = ImportFactory::new()->importing()->create();
 
         $listener = new UpdatesImportStatus();
-        $listener->setImportId($runningImport->import_id);
+        $listener->setImportId($runningImport->id);
         $listener->importsEnded(ImportBookmarksOutcome::failed(ImportBookmarksStatus::FAILED_DUE_TO_SYSTEM_ERROR, $stats = new ImportStats(10, 2, 50, 2, 1)));
 
         /** @var Import */
-        $failedImport = Import::query()->where('import_id', $runningImport->import_id)->sole();
+        $failedImport = Import::query()->where('id', $runningImport->id)->sole();
         $this->assertEquals($failedImport->status, ImportBookmarksStatus::FAILED_DUE_TO_SYSTEM_ERROR);
         $this->assertEquals($failedImport->statistics, $stats);
     }

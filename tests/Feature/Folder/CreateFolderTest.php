@@ -97,6 +97,7 @@ class CreateFolderTest extends TestCase
         $this->assertTrue($folder->visibility->isPublic());
         $this->assertEmpty($folder->settings->toArray());
         $this->assertTrue($filesystem->exists($folder->icon_path));
+        $this->assertNotEquals($folder->public_id->value, $folder->public_id->present());
         $this->setInteracted(['thumbnail']);
     }
 

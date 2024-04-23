@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\Constraints;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Models\Folder;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
@@ -13,17 +12,14 @@ use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 
-final class FolderVisibilityConstraint implements Scope, FolderRequestHandlerInterface
+final class FolderVisibilityConstraint implements Scope
 {
     public function apply(Builder|EloquentBuilder $builder, Model $model): void
     {
         $builder->addSelect(['visibility']);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         $visibility = $folder->visibility;
 

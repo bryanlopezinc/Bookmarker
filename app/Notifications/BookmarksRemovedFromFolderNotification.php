@@ -19,7 +19,7 @@ final class BookmarksRemovedFromFolderNotification extends Notification implemen
     public function __construct(
         private array $bookmarkIDs,
         private Folder $folder,
-        private User $user,
+        private User $collaborator,
     ) {
         $this->afterCommit();
     }
@@ -43,10 +43,16 @@ final class BookmarksRemovedFromFolderNotification extends Notification implemen
         return $this->formatNotificationData([
             'N-type' => $this->databaseType(),
             'bookmark_ids'    => $this->bookmarkIDs,
-            'folder_id'       => $this->folder->id,
-            'collaborator_id' => $this->user->id,
-            'full_name'       => $this->user->full_name->value,
-            'folder_name'     => $this->folder->name->value
+            'folder'          => [
+                'id'        => $this->folder->id,
+                'public_id' => $this->folder->public_id->value,
+                'name'      => $this->folder->name->value,
+            ],
+            'collaborator'          => [
+                'id'        => $this->collaborator->id,
+                'public_id' => $this->collaborator->public_id->value,
+                'name'      => $this->collaborator->full_name->value,
+            ],
         ]);
     }
 

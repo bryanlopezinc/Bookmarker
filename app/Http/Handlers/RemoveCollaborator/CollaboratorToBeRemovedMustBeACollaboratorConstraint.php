@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\RemoveCollaborator;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
 use Illuminate\Database\Eloquent\Builder;
@@ -13,7 +12,7 @@ use Illuminate\Database\Eloquent\Scope;
 use App\DataTransferObjects\RemoveCollaboratorData as Data;
 use App\Models\Scopes\UserIsACollaboratorScope;
 
-final class CollaboratorToBeRemovedMustBeACollaboratorConstraint implements FolderRequestHandlerInterface, Scope
+final class CollaboratorToBeRemovedMustBeACollaboratorConstraint implements Scope
 {
     public function __construct(private readonly Data $data)
     {
@@ -27,10 +26,7 @@ final class CollaboratorToBeRemovedMustBeACollaboratorConstraint implements Fold
         $builder->tap(new UserIsACollaboratorScope($this->data->collaboratorId, 'CollaboratorToBeRemovedIsACollaborator'));
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         if ( ! $folder->CollaboratorToBeRemovedIsACollaborator) {
             throw HttpException::notFound([

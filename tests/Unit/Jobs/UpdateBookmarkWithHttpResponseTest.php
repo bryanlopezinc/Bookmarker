@@ -275,9 +275,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
             'name'            => 'foo'
         ]);
 
-        $bookmark = BookmarkFactory::new()->create([
-            'source_id' => $source->id
-        ])->setRelation('source', $source);
+        $bookmark = BookmarkFactory::new()->create(['source_id' => $source->id])->setRelation('source', $source);
 
         $this->mockClient(function (MockObject $mock) {
             $mock->method('fetchBookmarkPageData')
@@ -293,10 +291,7 @@ class UpdateBookmarkWithHttpResponseTest extends TestCase
 
         $this->handleUpdateBookmarkJob($bookmark);
 
-        $this->assertDatabaseHas(Source::class, [
-            'id'   => $source->id,
-            'name' => 'PlayStation'
-        ]);
+        $this->assertEquals('foo', $source->refresh()->name);
     }
 
     private function mockClient(Closure $mock): void

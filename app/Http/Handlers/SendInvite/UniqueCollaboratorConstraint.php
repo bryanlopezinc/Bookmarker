@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\SendInvite;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
 use App\Models\FolderCollaborator;
@@ -14,7 +13,7 @@ use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class UniqueCollaboratorConstraint implements FolderRequestHandlerInterface, Scope
+final class UniqueCollaboratorConstraint implements Scope
 {
     public function __construct(private readonly User $invitee)
     {
@@ -29,10 +28,7 @@ final class UniqueCollaboratorConstraint implements FolderRequestHandlerInterfac
         ]);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         if ($folder->inviteeIsAlreadyAMember) {
             throw HttpException::conflict([

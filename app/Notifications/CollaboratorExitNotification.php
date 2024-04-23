@@ -39,10 +39,16 @@ final class CollaboratorExitNotification extends Notification implements ShouldQ
     {
         return $this->formatNotificationData([
             'N-type'          => $this->databaseType(),
-            'folder_id'       => $this->folder->id,
-            'collaborator_id' => $this->collaboratorThatLeft->id,
-            'folder_name'     => $this->folder->name->value,
-            'collaborator_full_name' => $this->collaboratorThatLeft->full_name->value,
+            'folder'          => [
+                'id'        => $this->folder->id,
+                'public_id' => $this->folder->public_id->value,
+                'name'      => $this->folder->name->value
+            ],
+            'collaborator' => [
+                'id'        => $this->collaboratorThatLeft->id,
+                'full_name' => $this->collaboratorThatLeft->full_name->value,
+                'public_id' => $this->collaboratorThatLeft->public_id->value
+            ]
         ]);
     }
 

@@ -6,6 +6,7 @@ namespace App\Importing\Notifications;
 
 use App\Enums\NotificationType;
 use App\Importing\ImportBookmarksOutcome;
+use App\Importing\Models\Import;
 use App\Notifications\FormatDatabaseNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
@@ -16,7 +17,7 @@ final class ImportFailedNotification extends Notification implements ShouldQueue
     use Queueable;
     use FormatDatabaseNotification;
 
-    public function __construct(private string $importId, private ImportBookmarksOutcome $result)
+    public function __construct(private Import $import, private ImportBookmarksOutcome $result)
     {
     }
 
@@ -38,7 +39,8 @@ final class ImportFailedNotification extends Notification implements ShouldQueue
     {
         return $this->formatNotificationData([
             'N-type'    => $this->databaseType(),
-            'import_id' => $this->importId,
+            'import_id' => $this->import->id,
+            'public_id' => $this->import->public_id->value,
             'reason'    => $this->result->status->value,
         ]);
     }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\UpdateFolder;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\UpdateFolderRequestData;
 use App\Enums\FolderVisibility;
 use App\Exceptions\HttpException;
@@ -16,7 +15,7 @@ use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class CannotMakeFolderWithCollaboratorPrivateConstraint implements FolderRequestHandlerInterface, Scope
+final class CannotMakeFolderWithCollaboratorPrivateConstraint implements Scope
 {
     public function __construct(private readonly UpdateFolderRequestData $data)
     {
@@ -42,10 +41,7 @@ final class CannotMakeFolderWithCollaboratorPrivateConstraint implements FolderR
         ]);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         if ( ! $this->data->isUpdatingVisibility) {
             return;

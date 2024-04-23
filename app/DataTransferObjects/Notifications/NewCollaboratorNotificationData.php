@@ -7,7 +7,9 @@ namespace App\DataTransferObjects\Notifications;
 use App\Models\Folder;
 use App\Models\User;
 use App\ValueObjects\FolderName;
+use App\ValueObjects\PublicId\FolderPublicId;
 use App\ValueObjects\FullName;
+use App\ValueObjects\PublicId\UserPublicId;
 
 final class NewCollaboratorNotificationData
 {
@@ -15,11 +17,11 @@ final class NewCollaboratorNotificationData
         public readonly ?User $collaborator,
         public readonly ?Folder $folder,
         public readonly ?User $newCollaborator,
-        public readonly int $collaboratorId,
-        public readonly int $newCollaboratorId,
+        public readonly UserPublicId $collaboratorId,
+        public readonly UserPublicId $newCollaboratorId,
         public readonly FullName $collaboratorFullName,
         public readonly FullName $newCollaboratorFullName,
-        public readonly int $folderId,
+        public readonly FolderPublicId $folderId,
         public readonly FolderName $folderName,
         public readonly string $uuid,
         public readonly string $notifiedOn

@@ -33,6 +33,8 @@ class FolderUpdatedTest extends TestCase
             new FolderNameUpdatedNotification($folder, $collaborator)
         );
 
+        $folder->save();
+
         $collaborator->update(['first_name' => 'john', 'last_name' => 'doe']);
 
         $folder->update(['name' => 'john doe problems']);
@@ -45,11 +47,11 @@ class FolderUpdatedTest extends TestCase
             ->assertJsonPath('data.0.type', 'FolderUpdatedNotification')
             ->assertJsonPath('data.0.attributes.collaborator_exists', true)
             ->assertJsonPath('data.0.attributes.folder_exists', true)
-            ->assertJsonPath('data.0.attributes.message', 'John Doe changed John Doe Problems name from Foo to Baz.')
+            ->assertJsonPath('data.0.attributes.message', 'John Doe changed Foo name from Foo to Baz.')
             ->assertJsonPath('data.0.attributes.id', fn (string $id) => Str::isUuid($id))
             ->assertJsonPath('data.0.attributes.notified_on', fn (string $dateTime) => $dateTime === (string) $expectedDateTime)
-            ->assertJsonPath('data.0.attributes.collaborator_id', $collaborator->id)
-            ->assertJsonPath('data.0.attributes.folder_id', $folder->id)
+            ->assertJsonPath('data.0.attributes.collaborator_id', $collaborator->public_id->present())
+            ->assertJsonPath('data.0.attributes.folder_id', $folder->public_id->present())
             ->assertJsonCount(7, 'data.0.attributes')
             ->assertJsonStructure([
                 'data' => [
@@ -82,6 +84,8 @@ class FolderUpdatedTest extends TestCase
             new FolderDescriptionUpdatedNotification($folder, $collaborator)
         );
 
+        $folder->save();
+
         $this->loginUser($folderOwner);
         $this->fetchNotificationsResponse()
             ->assertOk()
@@ -100,6 +104,8 @@ class FolderUpdatedTest extends TestCase
         $folderOwner->notify(
             new FolderIconUpdatedNotification($folder, $collaborator)
         );
+
+        $folder->save();
 
         $this->loginUser($folderOwner);
         $this->fetchNotificationsResponse()
@@ -139,6 +145,8 @@ class FolderUpdatedTest extends TestCase
         $folderOwner->notify(
             new FolderNameUpdatedNotification($folder, $collaborator)
         );
+
+        $folder->save();
 
         $collaborator->delete();
 

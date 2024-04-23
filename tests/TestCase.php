@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Route;
@@ -13,8 +14,10 @@ abstract class TestCase extends BaseTestCase
 {
     use CreatesApplication;
 
-    final protected function loginUser(Authenticatable $user): void
+    final protected function loginUser(Authenticatable $user = null): void
     {
+        $user = $user ??= UserFactory::new()->create();
+
         Passport::actingAs($user);
     }
 

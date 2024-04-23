@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\Constraints;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Exceptions\PermissionDeniedException;
 use App\Models\Folder;
 use App\Models\User;
@@ -12,7 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class CanCreateOrModifyRoleConstraint implements FolderRequestHandlerInterface, Scope
+final class CanCreateOrModifyRoleConstraint implements Scope
 {
     private readonly MustBeACollaboratorConstraint $mustBeACollaboratorConstraint;
     private readonly User $authUser;
@@ -31,18 +30,17 @@ final class CanCreateOrModifyRoleConstraint implements FolderRequestHandlerInter
         $this->mustBeACollaboratorConstraint->apply($builder, $model);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         $folderBelongsToAuthUser = $folder->user_id === $this->authUser->id;
+
+        $constraint = $this->mustBeACollaboratorConstraint;
 
         if ($folderBelongsToAuthUser) {
             return;
         }
 
-        $this->mustBeACollaboratorConstraint->handle($folder);
+        $constraint($folder);
 
         if ($this->mustBeACollaboratorConstraint->userIsACollaborator($folder)) {
             throw new PermissionDeniedException();

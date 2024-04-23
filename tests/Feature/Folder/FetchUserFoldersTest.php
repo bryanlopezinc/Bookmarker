@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Folder;
 
 use App\Actions\CreateFolderBookmarks;
+use App\Collections\FolderPublicIdsCollection;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -65,7 +66,7 @@ class FetchUserFoldersTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(9, 'data.0.attributes')
-            ->assertJsonPath('data.0.attributes.id', $folder->id)
+            ->assertJsonPath('data.0.attributes.id', $folder->public_id->present())
             ->assertJsonStructure([
                 'data' => [
                     '*' => [
@@ -113,11 +114,13 @@ class FetchUserFoldersTest extends TestCase
 
         $folders = FolderFactory::new()->for($user)->count(2)->create();
 
+        $foldersPublicIds = FolderPublicIdsCollection::fromObjects($folders)->present();
+
         $this->userFoldersResponse([])
             ->assertOk()
             ->assertJsonCount(2, 'data')
-            ->assertJsonPath('data.0.attributes.id', $folders[1]->id)
-            ->assertJsonPath('data.1.attributes.id', $folders[0]->id);
+            ->assertJsonPath('data.0.attributes.id', $foldersPublicIds[1])
+            ->assertJsonPath('data.1.attributes.id', $foldersPublicIds[0]);
     }
 
     public function testSortByLatest(): void
@@ -126,11 +129,13 @@ class FetchUserFoldersTest extends TestCase
 
         $folders = FolderFactory::new()->for($user)->count(2)->create();
 
+        $foldersPublicIds = FolderPublicIdsCollection::fromObjects($folders)->present();
+
         $this->userFoldersResponse(['sort' => 'newest'])
             ->assertOk()
             ->assertJsonCount(2, 'data')
-            ->assertJsonPath('data.0.attributes.id', $folders[1]->id)
-            ->assertJsonPath('data.1.attributes.id', $folders[0]->id);
+            ->assertJsonPath('data.0.attributes.id', $foldersPublicIds[1])
+            ->assertJsonPath('data.1.attributes.id', $foldersPublicIds[0]);
     }
 
     public function testSortByOldest(): void
@@ -139,11 +144,13 @@ class FetchUserFoldersTest extends TestCase
 
         $folders = FolderFactory::new()->for($user)->count(2)->create();
 
+        $foldersPublicIds = FolderPublicIdsCollection::fromObjects($folders)->present();
+
         $this->userFoldersResponse(['sort' => 'oldest'])
             ->assertOk()
             ->assertJsonCount(2, 'data')
-            ->assertJsonPath('data.0.attributes.id', $folders[0]->id)
-            ->assertJsonPath('data.1.attributes.id', $folders[1]->id);
+            ->assertJsonPath('data.0.attributes.id', $foldersPublicIds[0])
+            ->assertJsonPath('data.1.attributes.id', $foldersPublicIds[1]);
     }
 
     public function testSortByMostItems(): void
@@ -152,12 +159,14 @@ class FetchUserFoldersTest extends TestCase
 
         $folders = FolderFactory::new()->count(3)->for($user)->create();
 
+        $foldersPublicIds = FolderPublicIdsCollection::fromObjects($folders)->present();
+
         $this->addBookmarksToFolder->create($folders[1]->id, BookmarkFactory::new()->create()->id);
 
         $this->userFoldersResponse(['sort' => 'most_items'])
             ->assertOk()
             ->assertJsonCount(3, 'data')
-            ->assertJsonPath('data.0.attributes.id', $folders[1]->id);
+            ->assertJsonPath('data.0.attributes.id', $foldersPublicIds[1]);
     }
 
     public function testSortByLeastItems(): void
@@ -166,15 +175,17 @@ class FetchUserFoldersTest extends TestCase
 
         $folders = FolderFactory::new()->count(3)->for($user)->create();
 
+        $foldersPublicIds = FolderPublicIdsCollection::fromObjects($folders)->present();
+
         $this->addBookmarksToFolder->create($folders[1]->id, BookmarkFactory::times(3)->create()->pluck('id')->all());
         $this->addBookmarksToFolder->create($folders[0]->id, BookmarkFactory::times(2)->create()->pluck('id')->all());
 
         $this->userFoldersResponse(['sort' => 'least_items'])
             ->assertOk()
             ->assertJsonCount(3, 'data')
-            ->assertJsonPath('data.0.attributes.id', $folders[2]->id)
-            ->assertJsonPath('data.1.attributes.id', $folders[0]->id)
-            ->assertJsonPath('data.2.attributes.id', $folders[1]->id);
+            ->assertJsonPath('data.0.attributes.id', $foldersPublicIds[2])
+            ->assertJsonPath('data.1.attributes.id', $foldersPublicIds[0])
+            ->assertJsonPath('data.2.attributes.id', $foldersPublicIds[1]);
     }
 
     public function testSortByRecentlyUpdated(): void
@@ -183,12 +194,14 @@ class FetchUserFoldersTest extends TestCase
 
         $folders = FolderFactory::new()->count(3)->for($user)->create();
 
+        $foldersPublicIds = FolderPublicIdsCollection::fromObjects($folders)->present();
+
         $this->travel(5)->minutes(fn () => $folders[1]->update(['name' => $this->faker->word]));
 
         $this->userFoldersResponse(['sort' => 'updated_recently'])
             ->assertOk()
             ->assertJsonCount(3, 'data')
-            ->assertJsonPath('data.0.attributes.id', $folders[1]->id);
+            ->assertJsonPath('data.0.attributes.id', $foldersPublicIds[1]);
     }
 
     public function testVisibility(): void

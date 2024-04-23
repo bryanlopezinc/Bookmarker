@@ -4,38 +4,38 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Contracts\HasPublicIdInterface;
 use App\Enums\FolderVisibility;
 use App\ValueObjects\FolderName;
+use App\ValueObjects\PublicId\FolderPublicId;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use App\ValueObjects\FolderSettings;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
- * @property        int                    $id
- * @property        string|null            $description
- * @property        int                    $bookmarks_count
- * @property        int                    $collaborators_count
- * @property        string|null            $password
- * @property        int                    $user_id
- * @property        FolderName             $name
- * @property        FolderSettings         $settings
- * @property        FolderVisibility       $visibility
- * @property        \Carbon\Carbon         $created_at
- * @property        \Carbon\Carbon         $updated_at
- * @property        Collection<FolderRole> $roles
- * @property        Collection<User>       $collaborators
- * @property        Collection<User>       $bannedUsers
- * @property        Collection<Bookmark>   $bookmarks
- * @property        string|null            $icon_path
- * @method   static Builder|QueryBuilder   onlyAttributes(array $attributes = [])
+ * @property int                    $id
+ * @property FolderPublicId         $public_id
+ * @property string|null            $description
+ * @property int                    $bookmarks_count
+ * @property int                    $collaborators_count
+ * @property string|null            $password
+ * @property int                    $user_id
+ * @property FolderName             $name
+ * @property FolderSettings         $settings
+ * @property FolderVisibility       $visibility
+ * @property \Carbon\Carbon         $created_at
+ * @property \Carbon\Carbon         $updated_at
+ * @property Collection<FolderRole> $roles
+ * @property Collection<User>       $collaborators
+ * @property Collection<User>       $bannedUsers
+ * @property Collection<Bookmark>   $bookmarks
+ * @property string|null            $icon_path
  */
-final class Folder extends Model
+final class Folder extends Model implements HasPublicIdInterface
 {
     /**
      * {@inheritdoc}
@@ -52,8 +52,17 @@ final class Folder extends Model
      */
     protected $casts = [
         'visibility' => FolderVisibility::class,
-        'password' => 'hashed',
+        'password'   => 'hashed',
+        'public_id'  => FolderPublicId::class
     ];
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getPublicIdentifier(): FolderPublicId
+    {
+        return $this->public_id;
+    }
 
     public function user(): BelongsTo
     {
@@ -115,19 +124,5 @@ final class Folder extends Model
             'id', // Local key on the Folder table
             'bookmark_id' // Local key on the FolderBookmark table
         )->whereExists(Bookmark::whereRaw('id = folders_bookmarks.bookmark_id'));
-    }
-
-    /**
-     * @param \Illuminate\Database\Eloquent\Builder $builder
-     *
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function scopeOnlyAttributes($builder, array $attributes = [])
-    {
-        if (empty($attributes)) {
-            $builder->addSelect('folders.*')->withCount(['bookmarks', 'collaborators']);
-        }
-
-        return $builder;
     }
 }

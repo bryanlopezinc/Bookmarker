@@ -51,12 +51,18 @@ abstract class AbstractFolderUpdatedNotification extends Notification //implemen
     public function toDatabase($notifiable): array
     {
         $data = [
-            'N-type'                 => $this->databaseType(),
-            'collaborator_id'        => $this->updatedBy->id,
-            'collaborator_full_name' => $this->updatedBy->full_name->value,
-            'folder_id'              => $this->folder->id,
-            'folder_name'            => $this->folder->getOriginal('name')->value,
-            'modified'                => $this->modifiedAttribute,
+            'N-type'  => $this->databaseType(),
+            'modified' => $this->modifiedAttribute,
+            'folder'  => [
+                'id'        => $this->folder->id,
+                'public_id' => $this->folder->public_id->value,
+                'name'      => $this->folder->getOriginal('name')->value
+            ],
+            'collaborator' => [
+                'id'        => $this->updatedBy->id,
+                'full_name' => $this->updatedBy->full_name->value,
+                'public_id' => $this->updatedBy->public_id->value
+            ],
         ];
 
         if ( ! empty($changes = $this->getChanges())) {
@@ -68,7 +74,7 @@ abstract class AbstractFolderUpdatedNotification extends Notification //implemen
 
     protected function getChanges(): array
     {
-        return[
+        return [
             'from' => $this->folder->getOriginal($this->modifiedAttribute),
             'to'   => $this->folder->getDirty()[$this->modifiedAttribute] ?? $this->folder->{$this->modifiedAttribute}
         ];

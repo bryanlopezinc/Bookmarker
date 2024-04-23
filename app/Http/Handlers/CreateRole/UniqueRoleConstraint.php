@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\CreateRole;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
 use App\Models\FolderRole;
@@ -13,7 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class UniqueRoleConstraint implements FolderRequestHandlerInterface, Scope
+final class UniqueRoleConstraint implements Scope
 {
     private readonly UAC $permissions;
 
@@ -42,10 +41,7 @@ final class UniqueRoleConstraint implements FolderRequestHandlerInterface, Scope
         ]);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         $roleWithExactSamePermissions = $folder->roleWithExactSamePermissions;
 

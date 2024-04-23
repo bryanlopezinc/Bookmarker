@@ -23,7 +23,7 @@ final class ImportResource extends JsonResource
         return [
             'type' => 'UserImport',
             'attributes' => [
-                'id'          => $this->import->import_id,
+                'id'          => $this->import->public_id->present(),
                 'status'      => $this->import->status->category(),
                 'imported_at' => $this->import->created_at->toDateTimeString(),
                 'stats'       => [

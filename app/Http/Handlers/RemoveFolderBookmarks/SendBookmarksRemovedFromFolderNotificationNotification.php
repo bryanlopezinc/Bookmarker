@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\RemoveFolderBookmarks;
 
-use App\Contracts\FolderRequestHandlerInterface;
-use App\DataTransferObjects\RemoveFolderBookmarksRequestData;
+use App\DataTransferObjects\RemoveFolderBookmarksRequestData as Data;
 use App\Models\Folder;
 use App\Models\Scopes\IsMutedCollaboratorScope;
 use App\Models\User;
@@ -13,11 +12,16 @@ use App\Notifications\BookmarksRemovedFromFolderNotification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Notification;
+use App\Models\FolderBookmark;
 
-final class SendBookmarksRemovedFromFolderNotificationNotification implements FolderRequestHandlerInterface, Scope
+final class SendBookmarksRemovedFromFolderNotificationNotification implements Scope
 {
-    public function __construct(private readonly RemoveFolderBookmarksRequestData $data)
+    /**
+     * @param array<FolderBookmark> $folderBookmarks
+     */
+    public function __construct(private readonly Data $data, private readonly array $folderBookmarks)
     {
     }
 
@@ -28,14 +32,16 @@ final class SendBookmarksRemovedFromFolderNotificationNotification implements Fo
         );
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         $folderSettings = $folder->settings;
+
         $folderBelongsToAuthUser = $this->data->authUser->id === $folder->user_id;
-        [$authUser, $bookmarkIds] = [$this->data->authUser, $this->data->bookmarkIds];
+
+        [$authUser, $bookmarkIds] = [
+            $this->data->authUser,
+            Arr::pluck($this->folderBookmarks, 'bookmark_id')
+        ];
 
         if (
             $folderBelongsToAuthUser                                ||

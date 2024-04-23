@@ -24,15 +24,15 @@ final class CollaboratorRemovedNotificationResource extends JsonResource
                 'notified_on' => $this->notification->notifiedOn,
                 'message'    => $this->notificationMessage(),
                 'folder'     => [
-                    'id'     => $this->notification->folderId,
+                    'id'     => $this->notification->folderId->present(),
                     'exists' => $this->notification->folder !== null,
                 ],
                 'collaborator' => [
-                    'id'     => $this->notification->collaboratorId,
+                    'id'     => $this->notification->collaboratorId->present(),
                     'exists' => $this->notification->collaborator !== null,
                 ],
                 'removed_by' => [
-                    'id'     => $this->notification->removedById,
+                    'id'     => $this->notification->removedById->present(),
                     'exists' => $this->notification->removedBy !== null,
                 ],
             ]

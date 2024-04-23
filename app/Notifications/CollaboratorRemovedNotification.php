@@ -42,9 +42,21 @@ final class CollaboratorRemovedNotification extends Notification
     {
         return $this->formatNotificationData([
             'N-type'       => $this->databaseType(),
-            'folder'       => ['id' => $this->folder->id, 'name' => $this->folder->name->value,],
-            'collaborator' => ['id' => $this->collaborator->id, 'name' => $this->collaborator->full_name->value],
-            'removed_by'   => ['id' => $this->removedBy->id, 'name' => $this->removedBy->full_name->value],
+            'folder'       => [
+                'id' => $this->folder->id,
+                'public_id' => $this->folder->public_id->value,
+                'name' => $this->folder->name->value,
+            ],
+            'collaborator' => [
+                'id' => $this->collaborator->id,
+                'name' => $this->collaborator->full_name->value,
+                'public_id' => $this->collaborator->public_id->value,
+            ],
+            'removed_by'   => [
+                'id' => $this->removedBy->id,
+                'name' => $this->removedBy->full_name->value,
+                'public_id' => $this->removedBy->public_id->value,
+            ],
             'was_banned'   => $this->wasBanned
         ]);
     }

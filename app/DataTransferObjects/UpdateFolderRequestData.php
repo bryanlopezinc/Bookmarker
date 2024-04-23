@@ -17,7 +17,7 @@ final class UpdateFolderRequestData
     public readonly string $userPassword;
     public readonly bool $userPasswordIsSet;
     public readonly string $folderPassword;
-    public readonly bool $folderPasswordIsSet;
+    public readonly bool $isUpdatingFolderPassword;
     public readonly string $name;
     public readonly bool $isUpdatingName;
     public readonly ?string $description;
@@ -39,21 +39,21 @@ final class UpdateFolderRequestData
         $missingValuePlaceHolder = new MissingValue();
 
         $data = [
-            'authUser'              => User::fromRequest($request),
-            'visibility'            => $request->input('visibility', $missingValuePlaceHolder),
-            'isUpdatingVisibility'  => $request->has('visibility'),
-            'userPassword'          => $request->input('password', $missingValuePlaceHolder),
-            'userPasswordIsSet'     => $request->has('password'),
-            'folderPassword'        => $request->input('folder_password', $missingValuePlaceHolder),
-            'folderPasswordIsSet'   => $request->has('folder_password'),
-            'name'                  => $request->input('name', $missingValuePlaceHolder),
-            'isUpdatingName'        => $request->has('name'),
-            'description'           => $request->input('description'),
-            'isUpdatingDescription' => $request->has('description'),
-            'settings'              => $request->input('settings', $missingValuePlaceHolder),
-            'isUpdatingSettings'    => $request->has('settings'),
-            'thumbnail'             => $request->file('thumbnail'),
-            'isUpdatingThumbnail'   => $request->has('thumbnail')
+            'authUser'                 => User::fromRequest($request),
+            'visibility'               => $request->input('visibility', $missingValuePlaceHolder),
+            'isUpdatingVisibility'     => $request->has('visibility'),
+            'userPassword'             => $request->input('password', $missingValuePlaceHolder),
+            'userPasswordIsSet'        => $request->has('password'),
+            'folderPassword'           => $request->input('folder_password', $missingValuePlaceHolder),
+            'isUpdatingFolderPassword' => $request->has('folder_password'),
+            'name'                     => $request->input('name', $missingValuePlaceHolder),
+            'isUpdatingName'           => $request->has('name'),
+            'description'              => $request->input('description'),
+            'isUpdatingDescription'    => $request->has('description'),
+            'settings'                 => $request->input('settings', $missingValuePlaceHolder),
+            'isUpdatingSettings'       => $request->has('settings'),
+            'thumbnail'                => $request->file('thumbnail'),
+            'isUpdatingThumbnail'      => $request->has('thumbnail')
         ];
 
         return new self(array_filter($data, fn ($value) => ! $value instanceof MissingValue));

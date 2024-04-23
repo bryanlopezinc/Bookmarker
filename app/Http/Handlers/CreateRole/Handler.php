@@ -6,26 +6,23 @@ namespace App\Http\Handlers\CreateRole;
 
 use App\Models\Folder;
 use App\Http\Handlers\Constraints;
-use App\Contracts\FolderRequestHandlerInterface as HandlerInterface;
 use App\DataTransferObjects\CreateFolderRoleData;
 use App\Http\Handlers\RequestHandlersQueue;
+use App\Models\Scopes\WherePublicIdScope;
 use App\UAC;
+use App\ValueObjects\PublicId\FolderPublicId;
 
 final class Handler
 {
-    public function handle(int $folderId, CreateFolderRoleData $data): void
+    public function handle(FolderPublicId $folderId, CreateFolderRoleData $data): void
     {
         $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data));
 
-        $query = Folder::query()->select(['id'])->whereKey($folderId);
+        $query = Folder::query()->select(['id'])->tap(new WherePublicIdScope($folderId));
 
         $requestHandlersQueue->scope($query);
 
-        $folder = $query->firstOrNew();
-
-        $requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
-            $handler->handle($folder);
-        });
+        $requestHandlersQueue->handle($query->firstOrNew());
     }
 
     private function getConfiguredHandlers(CreateFolderRoleData $data): array

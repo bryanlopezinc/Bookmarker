@@ -4,22 +4,18 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\AddBookmarksToFolder;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\AddBookmarksToFolderRequestData as Data;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
 use Illuminate\Http\Response;
 
-final class CollaboratorCannotMarkBookmarksAsHiddenConstraint implements FolderRequestHandlerInterface
+final class CollaboratorCannotMarkBookmarksAsHiddenConstraint
 {
     public function __construct(private readonly Data $data)
     {
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         $folderBelongsToAuthUser = $folder->user_id === $this->data->authUser->id;
 

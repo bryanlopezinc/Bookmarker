@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\Constraints;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
 use Illuminate\Database\Query\Builder;
@@ -12,14 +11,14 @@ use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class UserDefinedFolderCollaboratorsLimitConstraint implements Scope, FolderRequestHandlerInterface
+final class UserDefinedFolderCollaboratorsLimitConstraint implements Scope
 {
     public function apply(Builder|EloquentBuilder $builder, Model $model): void
     {
         $builder->addSelect('settings');
     }
 
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         $maxCollaboratorsLimitDefinedByFolderOwner = $folder->settings->maxCollaboratorsLimit;
 

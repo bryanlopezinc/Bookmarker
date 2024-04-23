@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Contracts\IdGeneratorInterface;
 use App\Enums\BookmarkCreationSource;
 use App\Models\Bookmark;
 use App\Utils\UrlHasher;
@@ -26,7 +27,11 @@ final class BookmarkFactory extends Factory
     {
         $hasher = new UrlHasher();
 
+        /** @var IdGeneratorInterface */
+        $generator = app(IdGeneratorInterface::class);
+
         return [
+            'public_id'               => $generator->generate(),
             'title'                   => $url = $this->faker->url(),
             'has_custom_title'        => false,
             'url'                     => $url,

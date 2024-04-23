@@ -7,7 +7,6 @@ namespace App\Http\Controllers;
 use App\Models\SecondaryEmail;
 use App\Models\User;
 use App\Services\AddEmailToAccountService as Service;
-use App\ValueObjects\UserId;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -26,7 +25,7 @@ final class AddEmailToAccountController
             ]
         ]);
 
-        $service(UserId::fromAuthUser()->value(), $request->input('email'));
+        $service(User::fromRequest($request)->id, $request->input('email'));
 
         return response()->json();
     }

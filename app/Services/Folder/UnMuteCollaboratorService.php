@@ -9,20 +9,25 @@ use App\Exceptions\UserNotFoundException;
 use App\Models\Folder;
 use App\Models\MutedCollaborator;
 use App\Models\Scopes\WhereFolderOwnerExists;
+use App\Models\Scopes\WherePublicIdScope;
+use App\Models\User;
+use App\ValueObjects\PublicId\FolderPublicId;
+use App\ValueObjects\PublicId\UserPublicId;
 
 final class UnMuteCollaboratorService
 {
-    public function __invoke(int $folderId, int $collaboratorId): void
+    public function __invoke(FolderPublicId $folderId, UserPublicId $collaboratorId): void
     {
-        $folder = Folder::onlyAttributes(['user_id'])
+        $folder = Folder::query()
+            ->select(['user_id'])
             ->addSelect([
-                'muteRecordId' => MutedCollaborator::select('id')->where([
-                    'folder_id' => $folderId,
-                    'user_id'   => $collaboratorId,
-                ])
+                'muteRecordId' => MutedCollaborator::query()
+                    ->select('id')
+                    ->whereColumn('folder_id', 'folders.id')
+                    ->where('user_id', User::select('id')->tap(new WherePublicIdScope($collaboratorId)))
             ])
             ->tap(new WhereFolderOwnerExists())
-            ->whereKey($folderId)
+            ->tap(new WherePublicIdScope($folderId))
             ->firstOrNew();
 
         if ( ! $folder->exists) {

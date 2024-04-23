@@ -17,7 +17,6 @@ final class FolderInviteDataRepository
 
     public function store(string $uuid, FolderInviteData $data): void
     {
-
         $data = [
             'inviterId'   => $data->inviterId,
             'inviteeId'   => $data->inviteeId,

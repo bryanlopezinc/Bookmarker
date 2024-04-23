@@ -24,7 +24,7 @@ final class YouHaveBeenBootedOutNotificationResource extends JsonResource
                 'notified_on'    => $this->notification->notifiedOn,
                 'folder_exists' => $this->notification->folder !== null,
                 'message'       => $this->notificationMessage(),
-                'folder_id'     => $this->notification->folderId
+                'folder_id'     => $this->notification->folderId->present()
             ]
         ];
     }

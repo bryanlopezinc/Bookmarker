@@ -27,7 +27,7 @@ class RecordsImportStatTest extends TestCase
         $cache = new Repository(new ArrayStore());
 
         $listener = new RecordsImportStat(new ImportStatRepository($cache, 84600));
-        $listener->importsStarted(new ImportBookmarkRequestData('key', ImportSource::CHROME, 33, []));
+        $listener->importsStarted(new ImportBookmarkRequestData(22, ImportSource::CHROME, 33, [], '94e35144-3ab7-47c1-8109-aa1c81e590dd'));
 
         $this->assertEquals($listener->getReport(), new ImportStats());
 

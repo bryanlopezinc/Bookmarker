@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers;
 
-use App\Contracts\StopsRequestHandling;
 use ArrayIterator;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Builder;
@@ -54,15 +53,16 @@ final class RequestHandlersQueue implements IteratorAggregate
         return new ArrayIterator($this->requestHandlersQueue);
     }
 
-    /**
-     * @param callable(THandler): void $callback
-     */
-    public function handle(callable $callback): void
+    public function handle(mixed $args): void
     {
         foreach ($this as $handler) {
-            $callback($handler);
+            if( ! is_callable($handler)) {
+                continue;
+            }
 
-            if ($handler instanceof StopsRequestHandling && $handler->stopRequestHandling()) {
+            $handler($args);
+
+            if(property_exists($handler, 'stopRequestHandling') && $handler->stopRequestHandling) {
                 break;
             }
         }

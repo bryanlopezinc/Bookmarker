@@ -12,12 +12,14 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 use Tests\Traits\AssertsBookmarkJson;
+use Tests\Traits\GeneratesId;
 
 class FetchDuplicatesTest extends TestCase
 {
     use WithFaker;
     use AssertsBookmarkJson;
     use AssertValidPaginationData;
+    use GeneratesId;
 
     protected function fetchDuplicatesResponse(array $parameters = []): TestResponse
     {
@@ -42,21 +44,16 @@ class FetchDuplicatesTest extends TestCase
     {
         $this->loginUser(UserFactory::new()->create());
 
-        $this->assertValidPaginationData($this, 'fetchPossibleDuplicates', ['bookmark_id' => 3]);
-    }
-
-    public function testWillReturnNotFoundWhenBookmarkIdIsInvalid(): void
-    {
-        $this->loginUser(UserFactory::new()->create());
-
         $this->fetchDuplicatesResponse(['bookmark_id' => 'foo'])->assertNotFound();
+
+        $this->assertValidPaginationData($this, 'fetchPossibleDuplicates', ['bookmark_id' => 3]);
     }
 
     public function testWillReturnNotFoundWhenBookmarkDoesNotBelongToUser(): void
     {
         $this->loginUser(UserFactory::new()->create());
 
-        $this->fetchDuplicatesResponse(['bookmark_id' => BookmarkFactory::new()->create()->id])
+        $this->fetchDuplicatesResponse(['bookmark_id' => BookmarkFactory::new()->create()->public_id->present()])
             ->assertNotFound()
             ->assertExactJson(['message' => 'BookmarkNotFound']);
     }
@@ -69,10 +66,10 @@ class FetchDuplicatesTest extends TestCase
 
         $duplicates = BookmarkFactory::times(2)->for($user)->create(['url_canonical_hash' => $hash]);
 
-        $this->fetchDuplicatesResponse(['bookmark_id' => $duplicates->first()])
+        $this->fetchDuplicatesResponse(['bookmark_id' => $duplicates->first()->public_id->present()])
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.attributes.id', $duplicates->last()->id);
+            ->assertJsonPath('data.0.attributes.id', $duplicates->last()->public_id->present());
     }
 
     public function testWillReturnOnlyUserBookmarks(): void
@@ -83,19 +80,19 @@ class FetchDuplicatesTest extends TestCase
 
         BookmarkFactory::times(5)->create(['url_canonical_hash' => $hash]);
 
-        $duplicates = BookmarkFactory::times(2)->for($user)->create(['url_canonical_hash' => $hash])->pluck('id');
+        $duplicates = BookmarkFactory::times(2)->for($user)->create(['url_canonical_hash' => $hash]);
 
-        $this->fetchDuplicatesResponse(['bookmark_id' => $duplicates->first()])
+        $this->fetchDuplicatesResponse(['bookmark_id' => $duplicates->first()->public_id->present()])
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.attributes.id', $duplicates->last());
+            ->assertJsonPath('data.0.attributes.id', $duplicates->last()->public_id->present());
     }
 
     public function testWillReturnNotFoundWhenBookmarkDoesNotExist(): void
     {
         $this->loginUser(UserFactory::new()->create());
 
-        $this->fetchDuplicatesResponse(['bookmark_id' => BookmarkFactory::new()->create()->id + 1])
+        $this->fetchDuplicatesResponse(['bookmark_id' => $this->generateBookmarkId()->present()])
             ->assertNotFound()
             ->assertExactJson(['message' => 'BookmarkNotFound']);
     }

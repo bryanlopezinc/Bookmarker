@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Contracts\HasPublicIdInterface;
 use App\Enums\TwoFaMode;
 use App\ValueObjects\FullName;
+use App\ValueObjects\PublicId\UserPublicId;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -20,6 +22,7 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 
 /**
  * @property        int                            $id
+ * @property        UserPublicId                   $public_id
  * @property        string                         $username
  * @property        string                         $first_name
  * @property        string                         $last_name
@@ -37,7 +40,7 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
  * @property        EloquentCollection<FolderRole> $roles
  * @method   static Builder                        WithQueryOptions(array $columns = [])
  */
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail, HasPublicIdInterface
 {
     use HasApiTokens;
     use HasFactory;
@@ -55,7 +58,8 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'two_fa_mode' => TwoFaMode::class
+        'two_fa_mode'      => TwoFaMode::class,
+        'public_id'        => UserPublicId::class,
     ];
 
     public static function fromRequest(Request $request): User
@@ -64,6 +68,14 @@ class User extends Authenticatable implements MustVerifyEmail
         $user = $request->user();
 
         return $user;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getPublicIdentifier(): UserPublicId
+    {
+        return $this->public_id;
     }
 
     public function roles(): HasManyThrough

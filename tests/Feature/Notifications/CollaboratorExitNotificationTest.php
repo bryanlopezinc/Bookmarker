@@ -39,8 +39,8 @@ class CollaboratorExitNotificationTest extends TestCase
             ->assertJsonPath('data.0.attributes.message', 'Bruce Wayne left Gotham Problems folder.')
             ->assertJsonPath('data.0.attributes.folder_exists', true)
             ->assertJsonPath('data.0.attributes.notified_on', fn (string $dateTime) => $dateTime === (string) $expectedDateTime)
-            ->assertJsonPath('data.0.attributes.collaborator_id', $collaborator->id)
-            ->assertJsonPath('data.0.attributes.folder_id', $folder->id)
+            ->assertJsonPath('data.0.attributes.collaborator_id', $collaborator->public_id->present())
+            ->assertJsonPath('data.0.attributes.folder_id', $folder->public_id->present())
             ->assertJsonCount(7, 'data.0.attributes')
             ->assertJsonStructure([
                 'data' => [

@@ -8,15 +8,21 @@ use App\Http\Handlers\UpdateRole\Handler;
 use Illuminate\Http\JsonResponse;
 use App\Http\Requests\CreateOrUpdateRoleRequest as Request;
 use App\Models\User;
+use App\ValueObjects\PublicId\FolderPublicId;
+use App\ValueObjects\PublicId\RolePublicId;
 
 final class UpdateRoleController
 {
     public function __invoke(Request $request, Handler $handler, string $folderId, string $roleId): JsonResponse
     {
+        [$folderId, $roleId] = [
+            FolderPublicId::fromRequest($folderId), RolePublicId::fromRequest($roleId)
+        ];
+
         $handler->handle(
-            (int) $folderId,
+            $folderId,
             User::fromRequest($request),
-            (int) $roleId,
+            $roleId,
             $request->validated('name')
         );
 

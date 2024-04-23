@@ -6,28 +6,24 @@ namespace App\Http\Handlers\UpdateFolder;
 
 use App\Models\Folder;
 use App\Http\Handlers\Constraints;
-use App\Contracts\FolderRequestHandlerInterface as HandlerInterface;
 use App\DataTransferObjects\UpdateFolderRequestData;
 use App\Enums\CollaboratorMetricType;
-use App\Enums\Permission;
 use App\Http\Handlers\CollaboratorMetricsRecorder;
 use App\Http\Handlers\RequestHandlersQueue;
+use App\Models\Scopes\WherePublicIdScope;
+use App\ValueObjects\PublicId\FolderPublicId;
 
 final class Handler
 {
-    public function handle(int $folderId, UpdateFolderRequestData $data): void
+    public function handle(FolderPublicId $folderId, UpdateFolderRequestData $data): void
     {
         $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data));
 
-        $query = Folder::query()->select(['id'])->whereKey($folderId);
+        $query = Folder::query()->select(['id'])->tap(new WherePublicIdScope($folderId));
 
         $requestHandlersQueue->scope($query);
 
-        $folder = $query->firstOrNew();
-
-        $requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
-            $handler->handle($folder);
-        });
+        $requestHandlersQueue->handle($query->firstOrNew());
     }
 
     private function getConfiguredHandlers(UpdateFolderRequestData $data): array
@@ -35,7 +31,7 @@ final class Handler
         return [
             new Constraints\FolderExistConstraint(),
             new Constraints\MustBeACollaboratorConstraint($data->authUser),
-            new Constraints\PermissionConstraint($data->authUser, Permission::UPDATE_FOLDER),
+            new PermissionConstraint($data),
             new CanUpdateAttributesConstraint($data),
             new CannotMakeFolderWithCollaboratorPrivateConstraint($data),
             new FeatureMustBeEnabledConstraint($data),

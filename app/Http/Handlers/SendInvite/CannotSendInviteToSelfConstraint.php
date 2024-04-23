@@ -4,22 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\SendInvite;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\SendInviteRequestData;
 use App\Exceptions\HttpException;
-use App\Models\Folder;
 use App\Models\User;
 
-final class CannotSendInviteToSelfConstraint implements FolderRequestHandlerInterface
+final class CannotSendInviteToSelfConstraint
 {
     public function __construct(private readonly SendInviteRequestData $requestData, private readonly User $invitee)
     {
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(): void
     {
         $isSendingInvitationToSelf = $this->invitee->id === $this->requestData->authUser->id;
 

@@ -10,12 +10,17 @@ use App\Http\Requests\ToggleFolderFeatureRequest as Request;
 use App\Models\Folder;
 use App\Models\FolderDisabledFeature as Model;
 use App\Models\FolderFeature;
+use App\Models\Scopes\WherePublicIdScope;
+use App\ValueObjects\PublicId\FolderPublicId;
 
 final class ToggleFolderFeature
 {
-    public function fromRequest(Request $request, int $folderId): void
+    public function fromRequest(Request $request, FolderPublicId $folderId): void
     {
-        $folder = Folder::query()->select(['user_id'])->whereKey($folderId)->firstOrNew();
+        $folder = Folder::query()
+            ->select(['user_id', 'id'])
+            ->tap(new WherePublicIdScope($folderId))
+            ->firstOrNew();
 
         [$feature, $action] = $this->mapFeatures($request);
 
@@ -26,7 +31,7 @@ final class ToggleFolderFeature
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 
         $disabledFeature = Model::query()
-            ->where($attributes = ['folder_id' => $folderId, 'feature_id' => $feature->id])
+            ->where($attributes = ['folder_id' => $folder->id, 'feature_id' => $feature->id])
             ->firstOr(fn () => new Model($attributes));
 
         if ($disabledFeature->exists && $action === 'disable') {

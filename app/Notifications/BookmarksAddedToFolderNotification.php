@@ -43,10 +43,16 @@ final class BookmarksAddedToFolderNotification extends Notification implements S
         return $this->formatNotificationData([
             'N-type'          => $this->databaseType(),
             'bookmark_ids'    => $this->bookmarkIds,
-            'folder_id'       => $this->folder->id,
-            'collaborator_id' => $this->user->id,
-            'full_name'       => $this->user->full_name->value,
-            'folder_name'     => $this->folder->name->value
+            'folder'          => [
+                'id'        => $this->folder->id,
+                'public_id' => $this->folder->public_id->value,
+                'name'      => $this->folder->name->value
+            ],
+            'collaborator' => [
+                'id'        => $this->user->id,
+                'full_name' => $this->user->full_name->value,
+                'public_id' => $this->user->public_id->value
+            ]
         ]);
     }
 

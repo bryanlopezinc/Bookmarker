@@ -4,22 +4,24 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder\Role;
 
-use App\Enums\Permission;
-use Database\Factories\FolderFactory;
-use Database\Factories\UserFactory;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Support\Arr;
-use Illuminate\Testing\TestResponse;
-use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Tests\Traits\CreatesCollaboration;
+use App\Enums\Permission;
+use Illuminate\Support\Arr;
 use Tests\Traits\CreatesRole;
+use Database\Factories\UserFactory;
+use Illuminate\Testing\TestResponse;
+use Database\Factories\FolderFactory;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\Traits\CreatesCollaboration;
+use Illuminate\Foundation\Testing\WithFaker;
+use Tests\Traits\GeneratesId;
 
 class RemoveRolePermissionTest extends TestCase
 {
     use WithFaker;
     use CreatesCollaboration;
     use CreatesRole;
+    use GeneratesId;
     //use InteractsWithValues;
 
     protected function deleteRolePermissionResponse(array $parameters = []): TestResponse
@@ -47,10 +49,18 @@ class RemoveRolePermissionTest extends TestCase
     {
         $this->loginUser(UserFactory::new()->make(['id' => 55]));
 
-        $routeParameters = ['folder_id' => $this->faker->randomDigitNotZero(), 'role_id' => $this->faker->randomDigitNotZero()];
+        $routeParameters = [
+            'folder_id' => $this->generateFolderId()->present(),
+            'role_id'   => $this->generateRoleId()->present()
+        ];
 
-        $this->deleteRolePermissionResponse(['folder_id' => 'baz', 'role_id' => 5])->assertNotFound();
-        $this->deleteRolePermissionResponse(['folder_id' => 9, 'role_id' => 'foo'])->assertNotFound();
+        $this->deleteRolePermissionResponse(['folder_id' => 'baz', 'role_id' => 5, 'permission' => 'addBookmarks'])
+            ->assertNotFound()
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
+
+        $this->deleteRolePermissionResponse(['folder_id' => $routeParameters['folder_id'], 'role_id' => 'foo', 'permission' => 'addBookmarks'])
+            ->assertNotFound()
+            ->assertJsonFragment(['message' => 'RoleNotFound']);
 
         $this->deleteRolePermissionResponse($routeParameters)
             ->assertUnprocessable()
@@ -74,8 +84,8 @@ class RemoveRolePermissionTest extends TestCase
 
         $this->deleteRolePermissionResponse($query = [
             'permission' => 'removeBookmarks',
-            'folder_id'  => $folder->id,
-            'role_id'    => $role->id
+            'folder_id'  => $folder->public_id->present(),
+            'role_id'    => $role->public_id->present()
         ])->assertOk();
 
         $this->assertEquals(
@@ -100,8 +110,8 @@ class RemoveRolePermissionTest extends TestCase
 
         $this->deleteRolePermissionResponse([
             'permission' => 'removeBookmarks',
-            'folder_id'  => $folder->id,
-            'role_id'    => $role->id
+            'folder_id'  => $folder->public_id->present(),
+            'role_id'    => $role->public_id->present()
         ])->assertBadRequest()->assertJsonFragment(['message' => 'CannotRemoveAllRolePermissions']);
 
         $this->assertEqualsCanonicalizing(
@@ -119,10 +129,12 @@ class RemoveRolePermissionTest extends TestCase
 
         $role = $this->createRole(folder: $folder, permissions: Permission::ADD_BOOKMARKS);
 
+        $role->delete();
+
         $this->deleteRolePermissionResponse([
             'permission' => 'addBookmarks',
-            'folder_id'  => $folder->id,
-            'role_id'    => $role->id + 1
+            'folder_id'  => $folder->public_id->present(),
+            'role_id'    => $role->public_id->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'RoleNotFound']);
     }
 
@@ -138,14 +150,14 @@ class RemoveRolePermissionTest extends TestCase
         $this->loginUser($user);
         $this->deleteRolePermissionResponse([
             'permission' => 'addBookmarks',
-            'folder_id'  => FolderFactory::new()->for($user)->create()->id,
-            'role_id'    => $userFolderRole->id
+            'folder_id'  => FolderFactory::new()->for($user)->create()->public_id->present(),
+            'role_id'    => $userFolderRole->public_id->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'RoleNotFound']);
 
         $this->deleteRolePermissionResponse([
             'permission' => 'addBookmarks',
-            'folder_id'  => $folder->id,
-            'role_id'    => $anotherUserFolderRole->id
+            'folder_id'  => $folder->public_id->present(),
+            'role_id'    => $anotherUserFolderRole->public_id->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'RoleNotFound']);
 
         $this->assertEquals(
@@ -169,8 +181,8 @@ class RemoveRolePermissionTest extends TestCase
         $this->loginUser($user);
         $this->deleteRolePermissionResponse([
             'permission' => 'addBookmarks',
-            'folder_id' => $folder->id,
-            'role_id'   => $role->id
+            'folder_id' => $folder->public_id->present(),
+            'role_id'   => $role->public_id->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'FolderNotFound']);
 
         $this->assertEquals(
@@ -191,8 +203,8 @@ class RemoveRolePermissionTest extends TestCase
         $this->loginUser($collaborator);
         $this->deleteRolePermissionResponse([
             'permission' => 'addBookmarks',
-            'folder_id' => $folder->id,
-            'role_id'   => $role->id
+            'folder_id' => $folder->public_id->present(),
+            'role_id'   => $role->public_id->present()
         ])->assertForbidden()->assertJsonFragment(['message' => 'PermissionDenied']);
 
         $this->assertEquals(
@@ -204,13 +216,15 @@ class RemoveRolePermissionTest extends TestCase
     #[Test]
     public function willReturnNotFoundWhenFolderDoesNotExists(): void
     {
-        $folder = FolderFactory::new()->create();
+        $role = $this->createRole();
+
+        $role->delete();
 
         $this->loginUser(UserFactory::new()->create());
         $this->deleteRolePermissionResponse([
-            'role_id'    => 3,
+            'role_id'    => $role->public_id->present(),
             'permission' => 'addBookmarks',
-            'folder_id'  => $folder->id + 211
+            'folder_id'  => $this->generateFolderId()->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 }

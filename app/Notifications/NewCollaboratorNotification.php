@@ -42,12 +42,21 @@ final class NewCollaboratorNotification extends Notification implements ShouldQu
     {
         return $this->formatNotificationData([
             'N-type'                 => $this->databaseType(),
-            'collaborator_id'        => $this->collaborator->id,
-            'collaborator_full_name' => $this->collaborator->full_name->value,
-            'folder_id'              => $this->folder->id,
-            'folder_name'            => $this->folder->name->value,
-            'new_collaborator_id'    => $this->newCollaborator->id,
-            'new_collaborator_full_name' => $this->newCollaborator->full_name->value
+            'folder'          => [
+                'id'        => $this->folder->id,
+                'public_id' => $this->folder->public_id->value,
+                'name'      => $this->folder->name->value
+            ],
+            'collaborator' => [
+                'id'        => $this->collaborator->id,
+                'full_name' => $this->collaborator->full_name->value,
+                'public_id' => $this->collaborator->public_id->value
+            ],
+            'new_collaborator' => [
+                'id'        => $this->newCollaborator->id,
+                'full_name' => $this->newCollaborator->full_name->value,
+                'public_id' => $this->newCollaborator->public_id->value
+            ]
         ]);
     }
 

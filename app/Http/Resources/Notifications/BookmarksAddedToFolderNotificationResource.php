@@ -26,8 +26,8 @@ final class BookmarksAddedToFolderNotificationResource extends JsonResource
                 'folder_exists'       => $this->notification->folder !== null,
                 'message'             => $this->notificationMessage(),
                 'notified_on'          => $this->notification->notifiedOn,
-                'collaborator_id'     =>  $this->notification->collaboratorId,
-                'folder_id'           => $this->notification->folderId,
+                'collaborator_id'     =>  $this->notification->collaboratorId->present(),
+                'folder_id'           => $this->notification->folderId->present(),
             ]
         ];
     }

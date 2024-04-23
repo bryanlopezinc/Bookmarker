@@ -28,7 +28,7 @@ final class FetchFolderCollaborators
         $result = User::query()
             ->withCasts(['permissions' => 'json'])
             ->select([
-                'users.id',
+                'users.public_id',
                 'full_name',
                 'profile_image_path',
                 'permissions' => FolderPermission::query()

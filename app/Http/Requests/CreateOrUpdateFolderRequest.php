@@ -12,11 +12,6 @@ use App\Repositories\Folder\HttpFolderSettingSchema as Schema;
 
 final class CreateOrUpdateFolderRequest extends FormRequest
 {
-    protected function isCreateFolderRequest(): bool
-    {
-        return $this->routeIs('createFolder');
-    }
-
     public function rules(): array
     {
         $maxThumbnailSize = setting('MAX_FOLDER_THUMBNAIL_SIZE');
@@ -35,13 +30,15 @@ final class CreateOrUpdateFolderRequest extends FormRequest
 
     private function folderNameRules(): array
     {
+        $isCreateFolderRequest = $this->routeIs('createFolder');
+
         return [
             'string',
             'max:50',
             'filled',
-            Rule::requiredIf($this->isCreateFolderRequest()),
+            Rule::requiredIf($isCreateFolderRequest),
             Rule::when(
-                ! $this->isCreateFolderRequest(),
+                ! $isCreateFolderRequest,
                 [Rule::requiredIf( ! $this->hasAny('description', 'visibility', 'folder_password', 'settings', 'thumbnail'))]
             )
         ];

@@ -15,11 +15,13 @@ use Tests\TestCase;
 use App\Enums\Permission;
 use App\Models\FolderCollaborator;
 use Tests\Traits\CreatesCollaboration;
+use Tests\Traits\GeneratesId;
 
 class LeaveFolderCollaborationTest extends TestCase
 {
     use WithFaker;
     use CreatesCollaboration;
+    use GeneratesId;
 
     protected function leaveFolderCollaborationResponse(array $parameters = []): TestResponse
     {
@@ -44,7 +46,9 @@ class LeaveFolderCollaborationTest extends TestCase
     {
         $this->loginUser(UserFactory::new()->create());
 
-        $this->leaveFolderCollaborationResponse(['folder_id' => '2bar'])->assertNotFound();
+        $this->leaveFolderCollaborationResponse(['folder_id' => '2bar'])
+            ->assertNotFound()
+            ->assertJsonFragment(['FolderNotFound']);
     }
 
     public function testExit(): void
@@ -56,7 +60,7 @@ class LeaveFolderCollaborationTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
 
         $this->loginUser($collaborator);
-        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
+        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->public_id->present()])->assertOk();
 
         $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
             'user_id'   => $collaborator->id,
@@ -72,7 +76,7 @@ class LeaveFolderCollaborationTest extends TestCase
     public function testWillReturnNotFoundWhenUserIsNotACollaborator(): void
     {
         $this->loginUser(UserFactory::new()->create());
-        $this->leaveFolderCollaborationResponse(['folder_id' =>  FolderFactory::new()->create()->id])
+        $this->leaveFolderCollaborationResponse(['folder_id' =>  FolderFactory::new()->create()->public_id->present()])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
@@ -81,7 +85,7 @@ class LeaveFolderCollaborationTest extends TestCase
     {
         $this->loginUser(UserFactory::new()->create());
         $this->leaveFolderCollaborationResponse([
-            'folder_id' =>  FolderFactory::new()->create()->id + 1
+            'folder_id' => $this->generateFolderId()->present()
         ])->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
@@ -90,7 +94,7 @@ class LeaveFolderCollaborationTest extends TestCase
     {
         $this->loginUser($folderOwner = UserFactory::new()->create());
 
-        $this->leaveFolderCollaborationResponse(['folder_id' =>  FolderFactory::new()->for($folderOwner)->create()->id])
+        $this->leaveFolderCollaborationResponse(['folder_id' =>  FolderFactory::new()->for($folderOwner)->create()->public_id->present()])
             ->assertForbidden()
             ->assertExactJson(['message' => 'CannotExitOwnFolder']);
     }
@@ -103,9 +107,7 @@ class LeaveFolderCollaborationTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder);
 
         $this->loginUser($collaborator);
-        $this->leaveFolderCollaborationResponse([
-            'folder_id' => $folder->id
-        ])->assertOk();
+        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->public_id->present()])->assertOk();
 
         $notificationData = $folderOwner->notifications()->sole(['data', 'type']);
 
@@ -113,10 +115,16 @@ class LeaveFolderCollaborationTest extends TestCase
         $this->assertEquals($notificationData->data, [
             'N-type'  => 'CollaboratorExitedFolder',
             'version' => '1.0.0',
-            'folder_id' => $folder->id,
-            'collaborator_id' => $collaborator->id,
-            'folder_name' => $folder->name->value,
-            'collaborator_full_name' => $collaborator->full_name->value
+            'folder'          => [
+                'id'        => $folder->id,
+                'public_id' => $folder->public_id->value,
+                'name'      => $folder->name->value
+            ],
+            'collaborator' => [
+                'id'        => $collaborator->id,
+                'full_name' => $collaborator->full_name->value,
+                'public_id' => $collaborator->public_id->value
+            ]
         ]);
     }
 
@@ -134,7 +142,7 @@ class LeaveFolderCollaborationTest extends TestCase
         Notification::fake();
 
         $this->loginUser($collaborator);
-        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
+        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->public_id->present()])->assertOk();
 
         Notification::assertNothingSent();
     }
@@ -153,7 +161,7 @@ class LeaveFolderCollaborationTest extends TestCase
         Notification::fake();
 
         $this->loginUser($collaborator);
-        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
+        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->public_id->present()])->assertOk();
 
         Notification::assertNothingSent();
     }
@@ -173,7 +181,7 @@ class LeaveFolderCollaborationTest extends TestCase
         Notification::fake();
 
         $this->loginUser($collaborator);
-        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
+        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->public_id->present()])->assertOk();
 
         Notification::assertNothingSent();
     }
@@ -192,7 +200,7 @@ class LeaveFolderCollaborationTest extends TestCase
         Notification::fake();
 
         $this->loginUser($collaborator);
-        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
+        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->public_id->present()])->assertOk();
 
         Notification::assertNothingSent();
     }
@@ -211,7 +219,7 @@ class LeaveFolderCollaborationTest extends TestCase
         Notification::fake();
 
         $this->loginUser($collaborator);
-        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
+        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->public_id->present()])->assertOk();
 
         Notification::assertNothingSent();
     }
@@ -230,7 +238,7 @@ class LeaveFolderCollaborationTest extends TestCase
         Notification::fake();
 
         $this->loginUser($collaborator);
-        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->id])->assertOk();
+        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->public_id->present()])->assertOk();
 
         Notification::assertSentTimes(\App\Notifications\CollaboratorExitNotification::class, 1);
     }

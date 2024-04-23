@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\AcceptInvite;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\FolderInviteData;
 use App\Models\Folder;
 use App\Models\FolderCollaboratorRole;
@@ -14,7 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class CreateNewCollaborator implements FolderRequestHandlerInterface, Scope
+final class CreateNewCollaborator implements Scope
 {
     private readonly CollaboratorRepository $collaboratorRepository;
     private readonly CollaboratorPermissionsRepository $permissions;
@@ -39,10 +38,7 @@ final class CreateNewCollaborator implements FolderRequestHandlerInterface, Scop
         }
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         $permissions = $this->invitationData->permissions;
 

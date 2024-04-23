@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\AddBookmarksToFolder;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Models\Folder;
 use App\Models\Scopes\IsMutedCollaboratorScope;
 use App\Models\User;
@@ -16,9 +15,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use App\DataTransferObjects\AddBookmarksToFolderRequestData as Data;
 
-final class SendBookmarksAddedToFolderNotification implements FolderRequestHandlerInterface, Scope
+final class SendBookmarksAddedToFolderNotification implements Scope
 {
-    public function __construct(private readonly Data $data)
+    public function __construct(private readonly Data $data, private readonly array $bookmarkIds)
     {
     }
 
@@ -27,21 +26,19 @@ final class SendBookmarksAddedToFolderNotification implements FolderRequestHandl
         $builder->addSelect(['user_id', 'settings'])->tap(new IsMutedCollaboratorScope($this->data->authUser->id));
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         $settings = $folder->settings;
         $folderBelongsToAuthUser = $this->data->authUser->id === $folder->user_id;
-        [$authUser, $bookmarkIds] = [$this->data->authUser, $this->data->bookmarkIds];
+        [$authUser, $bookmarkIds] = [$this->data->authUser, $this->bookmarkIds];
 
-        if (
-            $folderBelongsToAuthUser ||
-            $settings->notificationsAreDisabled  ||
+        $shouldNotSendNotification =
+            $folderBelongsToAuthUser                     ||
+            $settings->notificationsAreDisabled           ||
             $settings->newBookmarksNotificationIsDisabled ||
-            $folder->collaboratorIsMuted
-        ) {
+            $folder->collaboratorIsMuted;
+
+        if ($shouldNotSendNotification) {
             return;
         }
 

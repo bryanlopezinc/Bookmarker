@@ -43,8 +43,15 @@ class UnmuteCollaboratorTest extends TestCase
     #[Test]
     public function willReturnNotFoundWhenRouteParametersAreInvalid(): void
     {
-        $this->UnMuteCollaboratorResponse(['folder_id' => 44, 'collaborator_id' => 'foo'])->assertNotFound();
-        $this->UnMuteCollaboratorResponse(['folder_id' => 'foo', 'collaborator_id' => 44])->assertNotFound();
+        $this->loginUser(UserFactory::new()->create());
+
+        $this->UnMuteCollaboratorResponse(['folder_id' => 44, 'collaborator_id' => 'foo'])
+            ->assertNotFound()
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
+
+        $this->UnMuteCollaboratorResponse(['folder_id' => 'foo', 'collaborator_id' => 44])
+            ->assertNotFound()
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 
     #[Test]
@@ -58,7 +65,7 @@ class UnmuteCollaboratorTest extends TestCase
         $this->service->mute($folder->id, $otherCollaborator->id, $folderOwner->id);
 
         $this->loginUser($folderOwner);
-        $this->UnMuteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
+        $this->UnMuteCollaboratorResponse(['folder_id' => $folder->public_id->present(), 'collaborator_id' => $collaborator->public_id->present()])
             ->assertOk();
 
         $this->assertDatabaseMissing(MutedCollaborator::class, [
@@ -80,7 +87,7 @@ class UnmuteCollaboratorTest extends TestCase
         $folder = FolderFactory::new()->create();
 
         $this->loginUser($folderOwner);
-        $this->UnMuteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => 3])
+        $this->UnMuteCollaboratorResponse(['folder_id' => $folder->public_id->present(), 'collaborator_id' => UserFactory::publicId()->present()])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
@@ -93,7 +100,7 @@ class UnmuteCollaboratorTest extends TestCase
         $folder = FolderFactory::new()->create();
 
         $this->loginUser($folderOwner);
-        $this->UnMuteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => 3])
+        $this->UnMuteCollaboratorResponse(['folder_id' => $folder->public_id->present(), 'collaborator_id' => UserFactory::publicId()->present()])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
@@ -101,12 +108,12 @@ class UnmuteCollaboratorTest extends TestCase
     #[Test]
     public function willReturnNotFoundWhenCollaboratorDoesNotExists(): void
     {
-        [$folderOwner, $collaborator] = UserFactory::times(2)->create();
+        $folderOwner = UserFactory::new()->create();
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
         $this->loginUser($folderOwner);
-        $this->UnMuteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id + 1])
+        $this->UnMuteCollaboratorResponse(['folder_id' => $folder->public_id->present(), 'collaborator_id' => UserFactory::publicId()->present()])
             ->assertNotFound()
             ->assertExactJson(['message' => 'UserNotFound']);
     }
@@ -119,7 +126,7 @@ class UnmuteCollaboratorTest extends TestCase
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
         $this->loginUser($folderOwner);
-        $this->UnMuteCollaboratorResponse(['folder_id' => $folder->id, 'collaborator_id' => $collaborator->id])
+        $this->UnMuteCollaboratorResponse(['folder_id' => $folder->public_id->present(), 'collaborator_id' => $collaborator->public_id->present()])
             ->assertNotFound()
             ->assertExactJson(['message' => 'UserNotFound']);
     }

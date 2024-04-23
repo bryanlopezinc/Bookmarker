@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Importing\Services;
 
+use App\Contracts\IdGeneratorInterface;
 use App\Importing\Enums\ImportSource;
 use Illuminate\Support\Str;
 use App\Importing\Filesystem;
@@ -14,21 +15,19 @@ use App\Importing\Enums\ImportBookmarksStatus;
 use App\Importing\DataTransferObjects\ImportStats;
 use App\Importing\Http\Requests\ImportBookmarkRequest;
 use App\Importing\Models\Import;
-use App\ValueObjects\UserId;
+use App\Models\User;
 
 final class ImportBookmarksService
 {
-    public function __construct(private Filesystem $filesystem)
+    public function __construct(private readonly Filesystem $filesystem, private readonly IdGeneratorInterface $idGenerator)
     {
     }
 
     public function fromRequest(ImportBookmarkRequest $request): void
     {
-        $userID = UserId::fromAuthUser()->value();
+        $userID = User::fromRequest($request)->id;
 
-        $importId = Str::uuid()->toString();
-
-        $this->filesystem->put($request->allFiles()['html']->getContent(), $userID, $importId);
+        $this->filesystem->put($request->allFiles()['html']->getContent(), $filename = Str::uuid()->toString());
 
         // Remove the file from the request data because
         // \Illuminate\Http\UploadedFile cannot be serialized
@@ -37,15 +36,21 @@ final class ImportBookmarksService
             ->reject(fn ($value) => $value instanceof UploadedFile)
             ->all();
 
-        Import::query()->create([
-            'import_id' => $importId,
-            'user_id' => $userID,
-            'status'  => ImportBookmarksStatus::PENDING,
+        $import = Import::query()->create([
+            'public_id'  => $this->idGenerator->generate(),
+            'user_id'    => $userID,
+            'status'     => ImportBookmarksStatus::PENDING,
             'statistics' => new ImportStats()
         ]);
 
         dispatch(new ImportBookmarks(
-            new ImportBookmarkRequestData($importId, ImportSource::fromRequest($request), $userID, $validated)
+            new ImportBookmarkRequestData(
+                $import->id,
+                ImportSource::fromRequest($request),
+                $userID,
+                $validated,
+                $filename
+            )
         ));
     }
 }

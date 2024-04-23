@@ -6,18 +6,19 @@ namespace App\Http\Handlers\SendInvite;
 
 use App\Models\User;
 use App\Models\Folder;
-use App\Contracts\FolderRequestHandlerInterface as HandlerInterface;
 use App\DataTransferObjects\SendInviteRequestData;
 use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Http\Handlers\Constraints;
 use App\Http\Handlers\RequestHandlersQueue;
+use App\Models\Scopes\WherePublicIdScope;
+use App\ValueObjects\PublicId\FolderPublicId;
 
 final class Handler
 {
-    public function handle(int $folderId, SendInviteRequestData $data): void
+    public function handle(FolderPublicId $folderId, SendInviteRequestData $data): void
     {
-        $query = Folder::query()->select(['id'])->whereKey($folderId);
+        $query = Folder::query()->select(['id'])->tap(new WherePublicIdScope($folderId));
 
         $invitee = User::select(['users.id'])
             ->leftJoin('users_emails', 'users.id', '=', 'users_emails.user_id')
@@ -29,11 +30,7 @@ final class Handler
 
         $requestHandlersQueue->scope($query);
 
-        $folder = $query->firstOrNew();
-
-        $requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
-            $handler->handle($folder);
-        });
+        $requestHandlersQueue->handle($query->firstOrNew());
     }
 
     private function getConfiguredHandlers(SendInviteRequestData $data, User $invitee): array

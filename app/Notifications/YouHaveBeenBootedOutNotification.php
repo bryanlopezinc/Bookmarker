@@ -38,8 +38,11 @@ final class YouHaveBeenBootedOutNotification extends Notification implements Sho
     {
         return $this->formatNotificationData([
             'N-type'      => $this->databaseType(),
-            'folder_id'   => $this->folder->id,
-            'folder_name' => $this->folder->name->value,
+            'folder'   => [
+                'id'        => $this->folder->id,
+                'name'      => $this->folder->name->value,
+                'public_id' => $this->folder->public_id->value
+            ],
         ]);
     }
 

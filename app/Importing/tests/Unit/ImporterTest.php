@@ -27,9 +27,12 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\Stub\ReturnCallback;
 use Tests\TestCase;
 use Closure;
+use Illuminate\Foundation\Testing\WithFaker;
 
 class ImporterTest extends TestCase
 {
+    use WithFaker;
+
     #[Test]
     public function willThrowExceptionWhenFileDoesNotExists(): void
     {
@@ -41,7 +44,7 @@ class ImporterTest extends TestCase
 
         $importer = $this->getImporterInstance(filesystem: $filesystem);
 
-        $importer->import(new ImportData('foo', ImportSource::CHROME, 22, []));
+        $importer->import(new ImportData(22, ImportSource::CHROME, 22, [], $this->faker->uuid));
     }
 
     public function getImporterInstance($filesystem, $listener = null, $iterator = new HtmlFileIterator()): Importer
@@ -114,7 +117,7 @@ class ImporterTest extends TestCase
             );
 
         $importer = $this->getImporterInstance(listener: $listener, filesystem: $filesystem);
-        $importData = new ImportData('foo', ImportSource::CHROME, 22, []);
+        $importData = new ImportData(2, ImportSource::CHROME, 22, [], $this->faker->uuid);
 
         $importer->import($importData);
         $importer->import($importData->setSource(ImportSource::FIREFOX));
@@ -159,7 +162,7 @@ class ImporterTest extends TestCase
         $bookmarkImportedListener->expects($this->never())->method('bookmarkImported');
 
         $importer = $this->getImporterInstance(listener: [$listener, $bookmarkImportedListener], filesystem: $filesystem);
-        $importData = new ImportData('foo', ImportSource::CHROME, 22, []);
+        $importData = new ImportData(22, ImportSource::CHROME, 22, [], $this->faker->uuid);
 
         $importer->import($importData);
         $importer->import($importData->setSource(ImportSource::FIREFOX));
@@ -185,7 +188,7 @@ class ImporterTest extends TestCase
         });
 
         $importer = $this->getImporterInstance(filesystem: $filesystem);
-        $importData = new ImportData('foo', ImportSource::FIREFOX, 22, ['invalid_bookmark_tag' => 'fail_import']);
+        $importData = new ImportData(42, ImportSource::FIREFOX, 22, ['invalid_bookmark_tag' => 'fail_import'], $this->faker->uuid);
 
         $result = $importer->import($importData)->statistics;
         $this->assertEquals($result->totalFailed, 1);

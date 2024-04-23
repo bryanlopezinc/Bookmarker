@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use App\Rules\ResourceIdRule;
+use App\Rules\PublicId\BookmarkPublicIdRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -14,9 +14,9 @@ final class AddBookmarksToFolderRequest extends FormRequest
     {
         return [
             'bookmarks'     => ['required', 'array', 'max:50'],
-            'bookmarks.*'   => [new ResourceIdRule(), 'distinct:strict'],
+            'bookmarks.*'   => [new BookmarkPublicIdRule(), 'distinct:strict'],
             'make_hidden'   => ['nullable', 'array'],
-            'make_hidden.*' => [new ResourceIdRule(), 'distinct:strict',]
+            'make_hidden.*' => [new BookmarkPublicIdRule(), 'distinct:strict',]
         ];
     }
 

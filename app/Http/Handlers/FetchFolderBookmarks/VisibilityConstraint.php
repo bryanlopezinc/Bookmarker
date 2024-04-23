@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\FetchFolderBookmarks;
 
-use App\Contracts\FolderRequestHandlerInterface;
-use App\Contracts\StopsRequestHandling;
 use App\DataTransferObjects\FetchFolderBookmarksRequestData as Data;
 use App\Exceptions\FolderNotFoundException;
 use App\Models\Folder;
@@ -13,9 +11,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class VisibilityConstraint implements FolderRequestHandlerInterface, Scope, StopsRequestHandling
+final class VisibilityConstraint implements Scope
 {
-    private bool $stopRequestHandling = false;
+    public bool $stopRequestHandling = false;
 
     public function __construct(private readonly Data $data)
     {
@@ -26,12 +24,7 @@ final class VisibilityConstraint implements FolderRequestHandlerInterface, Scope
         $builder->addSelect(['visibility']);
     }
 
-    public function stopRequestHandling(): bool
-    {
-        return $this->stopRequestHandling;
-    }
-
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         $isLoggedIn = $this->data->authUser->exists;
 

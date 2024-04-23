@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\UpdateFolder;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\UpdateFolderRequestData;
 use App\Enums\FolderVisibility;
 use App\Exceptions\FolderNotModifiedAfterOperationException;
@@ -17,16 +16,16 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class UpdateFolder implements FolderRequestHandlerInterface, Scope
+final class UpdateFolder implements Scope
 {
     private readonly UpdateFolderRequestData $data;
-    private readonly FolderRequestHandlerInterface $notificationSender;
+    private readonly object $notificationSender;
     private readonly FolderSettingsNormalizer $normalizer;
     private readonly FolderThumbnailFileSystem $filesystem;
 
     public function __construct(
         UpdateFolderRequestData $data,
-        FolderRequestHandlerInterface $notificationSender,
+        object $notificationSender,
         FolderSettingsNormalizer $normalizer = null,
         FolderThumbnailFileSystem $filesystem = null
     ) {
@@ -48,12 +47,10 @@ final class UpdateFolder implements FolderRequestHandlerInterface, Scope
         }
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $updatable): void
+    public function __invoke(Folder $updatable): void
     {
         $folder = clone $updatable;
+        $notificationSender = $this->notificationSender;
 
         $newVisibility = fn () => FolderVisibility::fromRequest($this->data->visibility);
 
@@ -80,7 +77,7 @@ final class UpdateFolder implements FolderRequestHandlerInterface, Scope
             $folder->visibility = $newVisibility();
         }
 
-        if ($this->data->folderPasswordIsSet) {
+        if ($this->data->isUpdatingFolderPassword) {
             $folder->password = $this->data->folderPassword;
         }
 
@@ -97,7 +94,7 @@ final class UpdateFolder implements FolderRequestHandlerInterface, Scope
 
         $folder->save();
 
-        $this->notificationSender->handle($updatedFolder);
+        $notificationSender($updatedFolder); //@phpstan-ignore-line
     }
 
     private function isUpdatingThumbnail(Folder $folder): bool

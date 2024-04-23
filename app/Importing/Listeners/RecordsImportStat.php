@@ -22,7 +22,7 @@ final class RecordsImportStat implements
     Contracts\ImportFailedListenerInterface,
     Contracts\BookmarkImportedListenerInterface
 {
-    private string $importId;
+    private ImportBookmarkRequestData $data;
     private int $totalImported = 0;
     private int $totalFound = 0;
     private int $totalSkipped = 0;
@@ -38,7 +38,7 @@ final class RecordsImportStat implements
      */
     public function importsStarted(ImportBookmarkRequestData $data): void
     {
-        $this->importId = $data->importId();
+        $this->data = $data;
     }
 
     /**
@@ -74,7 +74,7 @@ final class RecordsImportStat implements
     private function save(): void
     {
         $this->repository->put(
-            $this->importId,
+            $this->data->importId(),
             new ImportStats(
                 $this->totalImported,
                 $this->totalSkipped,
@@ -110,6 +110,6 @@ final class RecordsImportStat implements
      */
     public function getReport(): ImportStats
     {
-        return $this->repository->get($this->importId);
+        return $this->repository->get($this->data->importId());
     }
 }

@@ -22,11 +22,11 @@ use Laravel\Passport\Passport;
 use Tests\TestCase;
 use App\Models\Folder;
 use App\Models\FolderCollaborator;
-use App\Models\FolderRole;
 use App\Models\User;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\Services\Folder\MuteCollaboratorService;
 use App\UAC;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\Folder\Concerns\AssertFolderCollaboratorMetrics;
 use Tests\Traits\CreatesCollaboration;
@@ -243,28 +243,15 @@ class AcceptFolderInviteTest extends TestCase
             ->assertJsonFragment(['message' => 'FolderIsMarkedAsPrivate',]);
     }
 
-    public function testAcceptInviteWithPermissions(): void
-    {
-        $this->assertAcceptInvite([]); //Will give only view-bookmarks permission if no permissions were specified
-        $this->assertAcceptInvite([Permission::ADD_BOOKMARKS]);
-        $this->assertAcceptInvite([Permission::DELETE_BOOKMARKS]);
-        $this->assertAcceptInvite([Permission::INVITE_USER]);
-        $this->assertAcceptInvite([Permission::UPDATE_FOLDER]);
-        $this->assertAcceptInvite([Permission::DELETE_BOOKMARKS, Permission::ADD_BOOKMARKS]);
-        $this->assertAcceptInvite(['*']);
-    }
-
-    private function assertAcceptInvite(array $permissions): void
+    #[Test]
+    #[DataProvider('acceptInviteData')]
+    public function acceptInvite(array $permissions): void
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
         [$user, $invitee] = UserFactory::new()->count(2)->create();
 
         $folder = FolderFactory::new()->for($user)->create();
-
-        if (in_array('*', $permissions)) {
-            $permissions = UAC::all()->toArray();
-        }
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
@@ -273,7 +260,6 @@ class AcceptFolderInviteTest extends TestCase
                 $invitee->id,
                 $folder->id,
                 $permissions = new UAC($permissions),
-                []
             )
         );
 
@@ -281,7 +267,25 @@ class AcceptFolderInviteTest extends TestCase
 
         $savedPermissions = (new CollaboratorPermissionsRepository())->all($invitee->id, $folder->id);
 
-        $this->assertEquals(array_diff($permissions->toArray(), $savedPermissions->toArray()), []);
+        $this->assertEqualsCanonicalizing(
+            $permissions->toArray(),
+            $savedPermissions->toArray(),
+        );
+    }
+
+    public static function acceptInviteData(): array
+    {
+        return  [
+            'No permissions'            => [[]],
+            'All'                       => [UAC::all()->toArray()],
+            'Add bookmarks'             => [[Permission::ADD_BOOKMARKS]],
+            'Remove bookmarks'          => [[Permission::DELETE_BOOKMARKS]],
+            'Invite users'              => [[Permission::INVITE_USER]],
+            'Update folder name'        => [[Permission::UPDATE_FOLDER_NAME]],
+            'Update folder description' => [[Permission::UPDATE_FOLDER_DESCRIPTION]],
+            'Update folder thumbnail'   => [[Permission::UPDATE_FOLDER_THUMBNAIL]],
+            'Add and Remove bookmarks'  => [[Permission::DELETE_BOOKMARKS, Permission::ADD_BOOKMARKS]]
+        ];
     }
 
     #[Test]
@@ -293,7 +297,7 @@ class AcceptFolderInviteTest extends TestCase
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $role = $folder->roles()->save(new FolderRole(['name' => $this->faker->word]));
+        $role = $this->createRole(folder: $folder);
 
         $this->tokenStore->store(
             $id = $this->faker->uuid,
@@ -727,12 +731,21 @@ class AcceptFolderInviteTest extends TestCase
         $this->assertEquals($notificationData->data, [
             'N-type' => 'CollaboratorAddedToFolder',
             'version' => '1.0.0',
-            'new_collaborator_id' => $invitee->id,
-            'folder_id'           => $folder->id,
-            'collaborator_id'     => $collaborator->id,
-            'folder_name'         => $folder->name->value,
-            'collaborator_full_name' => $collaborator->full_name->value,
-            'new_collaborator_full_name' => $invitee->full_name->value
+            'folder'          => [
+                'id'        => $folder->id,
+                'public_id' => $folder->public_id->value,
+                'name'      => $folder->name->value
+            ],
+            'collaborator' => [
+                'id'        => $collaborator->id,
+                'full_name' => $collaborator->full_name->value,
+                'public_id' => $collaborator->public_id->value
+            ],
+            'new_collaborator' => [
+                'id'        => $invitee->id,
+                'full_name' => $invitee->full_name->value,
+                'public_id' => $invitee->public_id->value
+            ],
         ]);
     }
 

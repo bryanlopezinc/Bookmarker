@@ -42,6 +42,8 @@ final class Handler
             new CannotRemoveFolderOwnerConstraint($data),
             new CollaboratorToBeRemovedMustBeACollaboratorConstraint($data),
             new RemoveCollaborator($data),
+            new RemoveCollaboratorFromMutedCollaboratorsList(),
+            new RevokeCollaboratorRoles(),
             new NotifyFolderOwner($data),
             new NotifyCollaborator(),
             new CollaboratorMetricsRecorder(CollaboratorMetricType::COLLABORATORS_REMOVED, $data->authUser->id)

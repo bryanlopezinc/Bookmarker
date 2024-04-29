@@ -11,7 +11,7 @@ use App\Enums\CollaboratorMetricType;
  * @property int                    $id
  * @property int                    $count
  * @property int                    $collaborator_id
- * @property \Carbon\Carbon         $create_ay
+ * @property \Carbon\Carbon         $created_at
  * @property CollaboratorMetricType $metrics_type
  * @property int                    $folder_id
  */

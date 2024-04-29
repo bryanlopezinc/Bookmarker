@@ -11,6 +11,7 @@ use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Models\FolderCollaboratorPermission;
 use App\Models\User;
+use App\Services\Folder\MuteCollaboratorService;
 use App\UAC;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -90,14 +91,82 @@ class RemoveCollaboratorTest extends TestCase
         $collaboratorIds = $folder->collaborators->pluck('id');
 
         $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
+            'folder_id' => $folder->id,
             'user_id'   => $collaborator->id,
-            'folder_id' => $folder->id
         ]);
 
         $this->assertNotContains($collaborator->id, $collaboratorIds);
         $this->assertNotContains($collaborator->id, $folder->bannedUsers->pluck('id'));
         $this->assertContains($otherCollaborator->id, $collaboratorIds);
         $this->assertNoMetricsRecorded($folderOwner->id, $folder->id, CollaboratorMetricType::COLLABORATORS_REMOVED);
+    }
+
+    #[Test]
+    public function willRemoveCollaboratorFromMutedCollaboratorsList(): void
+    {
+        [$currentUser, $mutedCollaborator, $otherMutedCollaborator] = UserFactory::times(3)->create();
+
+        /** @var MuteCollaboratorService */
+        $muteCollaboratorService = app(MuteCollaboratorService::class);
+
+        [$folder, $currentUserSecondFolderWhereCollaboratorIsMuted] = FolderFactory::times(2)->for($currentUser)->create();
+
+        $otherFolderWhereCollaboratorIsMuted = FolderFactory::new()->create();
+
+        $this->CreateCollaborationRecord($mutedCollaborator, $folder);
+
+        $muteCollaboratorService->mute($folder->id, [$mutedCollaborator->id, $otherMutedCollaborator->id], $currentUser->id);
+        $muteCollaboratorService->mute($currentUserSecondFolderWhereCollaboratorIsMuted->id, $mutedCollaborator->id, $currentUser->id);
+        $muteCollaboratorService->mute($otherFolderWhereCollaboratorIsMuted->id, $mutedCollaborator->id, $otherFolderWhereCollaboratorIsMuted->user_id);
+
+
+        $this->loginUser($currentUser);
+        $this->deleteCollaboratorResponse([
+            'collaborator_id' => $mutedCollaborator->public_id->present(),
+            'folder_id'       => $folder->public_id->present()
+        ])->assertOk();
+
+        $this->assertEquals($folder->mutedCollaborators->sole()->user_id, $otherMutedCollaborator->id);
+        $this->assertTrue($currentUserSecondFolderWhereCollaboratorIsMuted->mutedCollaborators->isNotEmpty());
+        $this->assertTrue($otherFolderWhereCollaboratorIsMuted->mutedCollaborators->isNotEmpty());
+    }
+
+    #[Test]
+    public function willRevokeCollaboratorRoles(): void
+    {
+        /** @var User */
+        [$currentUser, $collaborator, $otherCollaboratorWithSameRoleAsCollaborator] = UserFactory::times(3)->create();
+
+        [$folder, $currentUserSecondFolderWhereCollaboratorHasRole] = FolderFactory::times(2)->for($currentUser)->create();
+
+        $otherFolderWhereCollaboratorHasRole = FolderFactory::new()->create();
+
+        $this->CreateCollaborationRecord($collaborator, $folder);
+        $this->CreateCollaborationRecord($otherCollaboratorWithSameRoleAsCollaborator, $folder);
+        $this->CreateCollaborationRecord($collaborator, $otherFolderWhereCollaboratorHasRole);
+        $this->CreateCollaborationRecord($collaborator, $currentUserSecondFolderWhereCollaboratorHasRole);
+
+        $this->attachRoleToUser($collaborator, $role = $this->createRole(folder: $folder));
+        $this->attachRoleToUser($collaborator, $this->createRole(folder: $folder));
+        $this->attachRoleToUser($otherCollaboratorWithSameRoleAsCollaborator, $role);
+        $this->attachRoleToUser($collaborator, $this->createRole(folder: $otherFolderWhereCollaboratorHasRole));
+        $this->attachRoleToUser($collaborator, $this->createRole(folder: $currentUserSecondFolderWhereCollaboratorHasRole));
+
+        $this->loginUser($currentUser);
+        $this->deleteCollaboratorResponse([
+            'collaborator_id' => $collaborator->public_id->present(),
+            'folder_id'       => $folder->public_id->present()
+        ])->assertOk();
+
+        $folderIdsWhereCollaboratorHasRoles = $collaborator->roles->pluck('folder_id')->all();
+
+        $this->assertCount(2, $folderIdsWhereCollaboratorHasRoles);
+        $this->assertCount(1, $otherCollaboratorWithSameRoleAsCollaborator->roles);
+
+        $this->assertEqualsCanonicalizing(
+            $folderIdsWhereCollaboratorHasRoles,
+            [$otherFolderWhereCollaboratorHasRole->id, $currentUserSecondFolderWhereCollaboratorHasRole->id]
+        );
     }
 
     #[Test]

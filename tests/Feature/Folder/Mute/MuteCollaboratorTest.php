@@ -72,8 +72,9 @@ class MuteCollaboratorTest extends TestCase
         $this->muteCollaboratorResponse(['folder_id' => $folder->public_id->present(), 'collaborator_id' => $collaborator->public_id->present()])->assertCreated();
 
         /** @var MutedCollaborator */
-        $record = MutedCollaborator::query()->where(['folder_id' => $folder->id, 'user_id' => $collaborator->id])->sole();
+        $record = $folder->mutedCollaborators->sole();
 
+        $this->assertEquals($collaborator->id, $record->user_id);
         $this->assertNull($record->muted_until);
         $this->assertNotNull($record->muted_at);
     }
@@ -100,7 +101,7 @@ class MuteCollaboratorTest extends TestCase
         $this->muteCollaboratorResponse(['mute_until' => 1, ...$query])->assertCreated();
 
         /** @var MutedCollaborator */
-        $record = MutedCollaborator::query()->where(['folder_id' => $folder->id, 'user_id' => $collaborator->id])->sole();
+        $record = $folder->mutedCollaborators->sole();
 
         $this->assertEquals(1, $record->muted_at->diffInHours($record->muted_until));
     }
@@ -124,7 +125,7 @@ class MuteCollaboratorTest extends TestCase
         });
 
         /** @var MutedCollaborator */
-        $record = MutedCollaborator::query()->where(['folder_id' => $folder->id, 'user_id' => $collaborator->id])->sole();
+        $record = $folder->mutedCollaborators->sole();
 
         $this->assertEquals(1, $record->muted_at->diffInHours($record->muted_until));
     }

@@ -29,7 +29,7 @@ final class Handler
     {
         return [
             new Constraints\FolderExistConstraint(),
-            new Constraints\CanCreateOrModifyRoleConstraint($data->authUser),
+            new Constraints\MustHaveRoleAccessConstraint($data->authUser),
             new Constraints\UniqueRoleNameConstraint($data->name),
             new UniqueRoleConstraint(UAC::fromRequest($data->permissions)),
             new CreateFolderRole($data)

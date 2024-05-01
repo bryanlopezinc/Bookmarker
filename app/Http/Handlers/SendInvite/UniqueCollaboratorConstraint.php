@@ -6,7 +6,7 @@ namespace App\Http\Handlers\SendInvite;
 
 use App\Exceptions\HttpException;
 use App\Models\Folder;
-use App\Models\FolderCollaborator;
+use App\Models\Scopes\UserIsACollaboratorScope;
 use App\Models\User;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
@@ -21,11 +21,11 @@ final class UniqueCollaboratorConstraint implements Scope
 
     public function apply(Builder|EloquentBuilder $builder, Model $model): void
     {
-        $builder->addSelect([
-            'inviteeIsAlreadyAMember' => FolderCollaborator::select('id')
-                ->whereColumn('folder_id', 'folders.id')
-                ->where('folders_collaborators.collaborator_id', $this->invitee->id)
-        ]);
+        if( ! $this->invitee->exists) {
+            return;
+        }
+
+        $builder->tap(new UserIsACollaboratorScope($this->invitee->id, 'inviteeIsAlreadyAMember'));
     }
 
     public function __invoke(Folder $folder): void

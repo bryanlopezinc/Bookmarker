@@ -20,6 +20,10 @@ final class CannotSendInviteToABannedCollaboratorConstraint implements Scope
 
     public function apply(Builder $builder, Model $model): void
     {
+        if ( ! $this->invitee->exists) {
+            return;
+        }
+
         $builder
             ->withCasts(['inviteeIsBanned' => 'boolean'])
             ->addSelect([

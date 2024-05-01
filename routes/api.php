@@ -95,6 +95,9 @@ Route::middleware([
         Route::delete('/{folder_id}/roles/{role_id}', F\Roles\DeleteRoleController::class)->name('deleteFolderRole');
         Route::post('/{folder_id}/roles/{role_id}/permissions', F\Roles\AddPermissionToRoleController::class)->name('AddPermissionToRole');
         Route::delete('/{folder_id}/roles/{role_id}/permissions', F\Roles\DeleteRolePermissionController::class)->name('RemoveRolePermission');
+
+        Route::post('/{folder_id}/collaborators/{collaborator_id}/roles', F\Roles\AssignRoleToCollaboratorController::class)->middleware(StringToArray::keys('roles'))->name('assignRoleToCollaborator');
+        Route::delete('/{folder_id}/collaborators/{collaborator_id}/roles', F\Roles\RevokeCollaboratorRoleController::class)->middleware(StringToArray::keys('roles'))->name('revokeCollaboratorRole');
     });
 
     Route::get('email/verify/{id}/{hash}', A\VerifyEmailController::class)->middleware('signed')->name('verification.verify');

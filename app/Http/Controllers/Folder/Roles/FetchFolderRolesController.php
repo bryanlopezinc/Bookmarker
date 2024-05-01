@@ -38,12 +38,10 @@ final class FetchFolderRolesController
 
         $requestHandlersQueue = new RequestHandlersQueue([
             new Constraints\FolderExistConstraint(),
-            new Constraints\CanCreateOrModifyRoleConstraint(User::fromRequest($request)),
+            new Constraints\MustHaveRoleAccessConstraint(User::fromRequest($request)),
         ]);
 
         $requestHandlersQueue->scope($query);
-
-        $folder = $query->firstOrNew();
 
         $requestHandlersQueue->handle($folder = $query->firstOrNew());
 

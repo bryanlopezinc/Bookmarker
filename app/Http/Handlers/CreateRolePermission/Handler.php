@@ -37,7 +37,7 @@ final class Handler
         return [
             new Constraints\FolderExistConstraint(),
             new Constraints\RoleExistsConstraint(),
-            new Constraints\CanCreateOrModifyRoleConstraint($data->authUser),
+            new Constraints\MustHaveRoleAccessConstraint($data->authUser),
             new UniqueRoleConstraint($data->permission),
             new Constraints\UniqueRolePermissions($data->permission),
             new CreateRolePermission($data->permission)

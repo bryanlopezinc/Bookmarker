@@ -21,7 +21,7 @@ abstract class PublicIdRule implements ValidationRule
         try {
             $this->make($value);
         } catch (ResourceNotFoundExceptionInterface) {
-            $fail(sprintf('The %s attribute is invalid', $attribute));
+            $fail("The {$attribute} attribute is invalid");
         }
     }
 }

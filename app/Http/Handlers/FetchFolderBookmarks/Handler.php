@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Handlers\FetchFolderBookmarks;
 
 use App\Models\Folder;
-use Illuminate\Database\Eloquent\Scope;
 use App\DataTransferObjects\FetchFolderBookmarksRequestData as Data;
 use App\Http\Handlers\Constraints;
 use App\DataTransferObjects\FolderBookmark;
@@ -27,11 +26,8 @@ final class Handler
 
         $getFolderBookmarks = new GetFolderBookmarks($data);
 
-        foreach ([$getFolderBookmarks, ...$requestHandlersQueue] as $handler) {
-            if ($handler instanceof Scope) {
-                $handler->apply($query, $query->getModel());
-            }
-        }
+        $requestHandlersQueue->scope($query);
+        $getFolderBookmarks->apply($query, $query->getModel());
 
         $requestHandlersQueue->handle($folder = $query->firstOrNew());
 
@@ -42,9 +38,10 @@ final class Handler
     {
         return [
             new Constraints\FolderExistConstraint(),
-            new FolderPasswordConstraint($data),
-            new VisibilityConstraint($data),
-            new Constraints\MustBeACollaboratorConstraint($data->authUser)
+            new FolderPasswordConstraint(
+                $data,
+                [new VisibilityConstraint($data, [new Constraints\MustBeACollaboratorConstraint($data->authUser)])]
+            ),
         ];
     }
 }

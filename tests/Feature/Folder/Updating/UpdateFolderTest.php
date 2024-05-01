@@ -170,17 +170,17 @@ class UpdateFolderTest extends TestCase
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
 
-        $folder = FolderFactory::new()->for($folderOwner)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create(['name' => 'foo']);
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER_NAME);
 
         $this->loginUser($collaborator);
-        $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->public_id->present()])->assertOk();
+        $this->updateFolderResponse(['name' => 'bar', 'folder_id' => $folder->public_id->present()])->assertOk();
 
         $this->assertFolderCollaboratorMetric($collaborator->id, $folder->id, $type = CollaboratorMetricType::UPDATES);
         $this->assertFolderCollaboratorMetricsSummary($collaborator->id, $folder->id, $type);
 
-        $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->public_id->present()])->assertOk();
+        $this->updateFolderResponse(['name' => 'baz', 'folder_id' => $folder->public_id->present()])->assertOk();
         $this->assertFolderCollaboratorMetricsSummary($collaborator->id, $folder->id, $type, 2);
     }
 

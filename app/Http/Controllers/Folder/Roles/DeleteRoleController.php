@@ -37,7 +37,7 @@ final class DeleteRoleController
         $requestHandlersQueue = new RequestHandlersQueue([
             new Constraints\FolderExistConstraint(),
             new Constraints\RoleExistsConstraint(),
-            new Constraints\CanCreateOrModifyRoleConstraint(User::fromRequest($request)),
+            new Constraints\MustHaveRoleAccessConstraint(User::fromRequest($request)),
         ]);
 
         $requestHandlersQueue->scope($query);

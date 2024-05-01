@@ -55,33 +55,39 @@ final class RequestHandlersQueue implements IteratorAggregate
 
     public function handle(mixed $args): void
     {
-        foreach ($this as $handler) {
-            if( ! is_callable($handler)) {
-                continue;
-            }
+        $this->callRecursive($args, $this->requestHandlersQueue);
+    }
+
+    private function callRecursive(mixed $args, array $handlers): void
+    {
+        foreach ($handlers as $handler) {
+            $handler = is_callable($handler) ? $handler : fn () => null;
 
             $handler($args);
 
-            if(property_exists($handler, 'stopRequestHandling') && $handler->stopRequestHandling) {
-                break;
+            if ($handler instanceof HandlerInterface) {
+                $this->callRecursive($args, $handler->getHandlers());
             }
         }
     }
 
     /**
-     * Apply the given scope to each handler and execute the given callback on each handler.
-     *
-     * @param callable(THandler): void $callback
+     * Apply the given scope to each handler.
      */
-    public function scope(Builder $builder, callable $callback = null): void
+    public function scope(Builder $query): void
     {
-        $callback ??= fn () => null;
+        $this->scopeRecursive($query, $this->requestHandlersQueue);
+    }
 
-        foreach ($this as $handler) {
-            $callback($handler);
-
+    private function scopeRecursive(Builder $query, array $handlers): void
+    {
+        foreach ($handlers as $handler) {
             if ($handler instanceof Scope) {
-                $handler->apply($builder, $builder->getModel());
+                $handler->apply($query, $query->getModel());
+            }
+
+            if ($handler instanceof HandlerInterface) {
+                $this->scopeRecursive($query, $handler->getHandlers());
             }
         }
     }

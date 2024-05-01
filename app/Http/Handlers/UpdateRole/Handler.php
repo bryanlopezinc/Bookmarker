@@ -38,7 +38,7 @@ final class Handler
     {
         return [
             new Constraints\FolderExistConstraint(),
-            new Constraints\CanCreateOrModifyRoleConstraint($user),
+            new Constraints\MustHaveRoleAccessConstraint($user),
             new Constraints\RoleExistsConstraint(),
             new Constraints\UniqueRoleNameConstraint($role),
             new UpdateFolderRole($role)

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Traits;
 
 use App\Collections\BookmarkPublicIdsCollection;
+use App\Collections\RolesPublicIdsCollection;
 use App\Contracts\IdGeneratorInterface;
 use App\ValueObjects\PublicId\BookmarkPublicId;
 use App\ValueObjects\PublicId\FolderPublicId;
@@ -32,18 +33,21 @@ trait GeneratesId
 
     protected function generateBookmarkIds(int $times = 1): BookmarkPublicIdsCollection
     {
-        $ids = Collection::times($times, fn () => $this->generateBookmarkId());
-
-        if ($times === 1) {
-            return $ids->sole();
-        }
-
-        return BookmarkPublicIdsCollection::fromObjects($ids);
+        return BookmarkPublicIdsCollection::fromObjects(
+            Collection::times($times, fn () => $this->generateBookmarkId())
+        );
     }
 
     protected function generateRoleId(): RolePublicId
     {
         return new RolePublicId($this->generator()->generate());
+    }
+
+    protected function generateRoleIds(int $times = 1): RolesPublicIdsCollection
+    {
+        return RolesPublicIdsCollection::fromObjects(
+            Collection::times($times, fn () => $this->generateRoleId())
+        );
     }
 
     protected function generateUserId(): UserPublicId

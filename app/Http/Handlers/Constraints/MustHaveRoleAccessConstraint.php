@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class CanCreateOrModifyRoleConstraint implements Scope
+final class MustHaveRoleAccessConstraint implements Scope
 {
     private readonly MustBeACollaboratorConstraint $mustBeACollaboratorConstraint;
     private readonly User $authUser;
@@ -42,7 +42,7 @@ final class CanCreateOrModifyRoleConstraint implements Scope
 
         $constraint($folder);
 
-        if ($this->mustBeACollaboratorConstraint->userIsACollaborator($folder)) {
+        if ($constraint->userIsACollaborator($folder)) {
             throw new PermissionDeniedException();
         }
     }

@@ -6,6 +6,7 @@ namespace App\Http\Handlers\FetchFolderBookmarks;
 
 use App\DataTransferObjects\FetchFolderBookmarksRequestData as Data;
 use App\Exceptions\HttpException;
+use App\Http\Handlers\HandlerInterface;
 use App\Models\Folder;
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Database\Eloquent\Builder;
@@ -13,21 +14,33 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Http\Response;
 
-final class FolderPasswordConstraint implements Scope
+final class FolderPasswordConstraint implements Scope, HandlerInterface
 {
     private readonly Data $data;
     private readonly Hasher $hasher;
-    public bool $stopRequestHandling = false;
+    private array $next;
 
-    public function __construct(Data $data, Hasher $hasher = null)
+    public function __construct(Data $data, array $next, Hasher $hasher = null)
     {
         $this->data = $data;
         $this->hasher = $hasher ??= app(Hasher::class);
+        $this->next = $next;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function apply(Builder $builder, Model $model)
     {
         $builder->addSelect(['visibility', 'password', 'user_id']);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getHandlers(): array
+    {
+        return $this->next;
     }
 
     public function __invoke(Folder $folder): void
@@ -52,6 +65,6 @@ final class FolderPasswordConstraint implements Scope
             );
         }
 
-        $this->stopRequestHandling = true;
+        $this->next = [];
     }
 }

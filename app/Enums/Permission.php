@@ -13,6 +13,7 @@ enum Permission: string
     case UPDATE_FOLDER_DESCRIPTION = 'UPDATE_FOLDER_DESCRIPTION';
     case UPDATE_FOLDER_THUMBNAIL   = 'UPDATE_FOLDER_ICON';
     case REMOVE_USER               = 'REMOVE_USER';
+    case SUSPEND_USER              = 'SUSPEND_USER';
 
     /**
      * @return array<Permission>

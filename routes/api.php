@@ -73,7 +73,6 @@ Route::middleware([
         Route::delete('/{folder_id}/bookmarks', F\RemoveBookmarksFromFolderController::class)->middleware(StringToArray::keys('bookmarks'))->name('removeBookmarksFromFolder');
         Route::post('/{folder_id}/bookmarks/hide', F\HideFolderBookmarksController::class)->middleware(StringToArray::keys('bookmarks'))->name('hideFolderBookmarks');
 
-        Route::patch('{folder_id}/features', [F\UpdateFolderController::class, 'updateAction'])->name('updateFolderCollaboratorActions');
         Route::get('/{folder_id}/collaborators', F\FetchFolderCollaboratorsController::class)->middleware(StringToArray::keys('permissions'))->name('fetchFolderCollaborators');
         Route::delete('/{folder_id}/collaborators/{collaborator_id}', F\RemoveCollaboratorController::class)->name('deleteFolderCollaborator');
         Route::delete('/{folder_id}/collaborators/{collaborator_id}/permissions', F\RevokeFolderCollaboratorPermissionsController::class)->middleware([StringToArray::keys('permissions')])->name('revokePermissions');
@@ -98,6 +97,13 @@ Route::middleware([
 
         Route::post('/{folder_id}/collaborators/{collaborator_id}/roles', F\Roles\AssignRoleToCollaboratorController::class)->middleware(StringToArray::keys('roles'))->name('assignRoleToCollaborator');
         Route::delete('/{folder_id}/collaborators/{collaborator_id}/roles', F\Roles\RevokeCollaboratorRoleController::class)->middleware(StringToArray::keys('roles'))->name('revokeCollaboratorRole');
+
+        Route::post('/{folder_id}/features/{feature}/enable', F\ToggleFeature\EnableFolderFeatureController::class)->name('enableFolderFeature');
+        Route::delete('/{folder_id}/features/{feature}/disable', F\ToggleFeature\DisableFolderFeatureController::class)->name('disableFolderFeature');
+
+        Route::post('/{folder_id}/collaborators/{collaborator_id}/suspend', F\Suspension\SuspendCollaboratorController::class)->name('suspendCollaborator');
+        Route::delete('/{folder_id}/collaborators/{collaborator_id}/suspend', F\Suspension\ReInstateSuspendedCollaboratorController::class)->name('reInstateSuspendCollaborator');
+        Route::get('/{folder_id}/collaborators/suspend', F\Suspension\FetchSuspendedCollaboratorsController::class)->name('fetchSuspendCollaborators');
     });
 
     Route::get('email/verify/{id}/{hash}', A\VerifyEmailController::class)->middleware('signed')->name('verification.verify');

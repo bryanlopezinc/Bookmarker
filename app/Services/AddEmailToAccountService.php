@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Cache\EmailVerificationCodeRepository as PendingVerifications;
+use App\Repositories\EmailVerificationCodeRepository as PendingVerifications;
 use App\Exceptions\HttpException;
 use App\Mail\TwoFACodeMail;
 use App\Repositories\UserRepository;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Cache;
+namespace App\DataTransferObjects;
 
 use App\ValueObjects\TwoFACode;
 

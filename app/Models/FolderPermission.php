@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Exception;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -24,4 +25,11 @@ final class FolderPermission extends Model
      * {@inheritdoc}
      */
     protected $guarded = [];
+
+    public static function booted(): void
+    {
+        self::deleting(function (self $model) {
+            throw new Exception('Deleting of permission type is not allowed.');
+        });
+    }
 }

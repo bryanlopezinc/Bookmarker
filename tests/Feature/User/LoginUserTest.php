@@ -15,7 +15,7 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
 use Laravel\Passport\Client;
-use App\Cache\User2FACodeRepository;
+use App\Repositories\User2FACodeRepository;
 use App\ValueObjects\TwoFACode;
 use App\ValueObjects\PublicId\UserPublicId;
 

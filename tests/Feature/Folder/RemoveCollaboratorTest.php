@@ -9,6 +9,8 @@ use App\Collections\UserPublicIdsCollection;
 use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
+use App\Http\Handlers\SuspendCollaborator\SuspendCollaborator;
+use App\Models\Folder;
 use App\Models\FolderCollaboratorPermission;
 use App\Models\User;
 use App\Services\Folder\MuteCollaboratorService;
@@ -88,7 +90,7 @@ class RemoveCollaboratorTest extends TestCase
 
         Notification::assertNothingSentTo($folderOwner);
 
-        $collaboratorIds = $folder->collaborators->pluck('id');
+        $collaboratorIds = $folder->collaborators->pluck('collaborator_id');
 
         $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
             'folder_id' => $folder->id,
@@ -170,6 +172,35 @@ class RemoveCollaboratorTest extends TestCase
     }
 
     #[Test]
+    public function willRemoveCollaboratorFromSuspendedCollaboratorsList(): void
+    {
+        /** @var User */
+        [$currentUser, $suspendedCollaborator, $otherSuspendedCollaborator] = UserFactory::times(3)->create();
+
+        /** @var Folder */
+        $folder = FolderFactory::new()->for($currentUser)->create();
+
+        $otherFolderWhereCollaboratorIsSuspended = FolderFactory::new()->create();
+
+        SuspendCollaborator::suspend($suspendedCollaborator, $folder);
+        SuspendCollaborator::suspend($suspendedCollaborator, $otherFolderWhereCollaboratorIsSuspended);
+        SuspendCollaborator::suspend($otherSuspendedCollaborator, $folder);
+
+        $this->CreateCollaborationRecord($suspendedCollaborator, $folder);
+        $this->CreateCollaborationRecord($otherSuspendedCollaborator, $folder);
+        $this->CreateCollaborationRecord($suspendedCollaborator, $otherFolderWhereCollaboratorIsSuspended);
+
+        $this->loginUser($currentUser);
+        $this->deleteCollaboratorResponse([
+            'collaborator_id' => $suspendedCollaborator->public_id->present(),
+            'folder_id'       => $folder->public_id->present()
+        ])->assertOk();
+
+        $this->assertEquals($folder->suspendedCollaborators->sole()->collaborator_id, $otherSuspendedCollaborator->id);
+        $this->assertTrue($otherFolderWhereCollaboratorIsSuspended->suspendedCollaborators->isNotEmpty());
+    }
+
+    #[Test]
     public function collaboratorWithPermissionOrRoleCanRemoveCollaborator(): void
     {
         [$collaborator, $collaboratorWithRole] = UserFactory::times(2)->create();
@@ -192,14 +223,14 @@ class RemoveCollaboratorTest extends TestCase
 
         $this->assertFolderCollaboratorMetric($collaborator->id, $folder->id, $type = CollaboratorMetricType::COLLABORATORS_REMOVED);
         $this->assertFolderCollaboratorMetricsSummary($collaborator->id, $folder->id, $type);
-        $this->assertNotContains($collaboratorsToBeKickedOut[0]->id, $folder->collaborators->pluck('id'));
+        $this->assertNotContains($collaboratorsToBeKickedOut[0]->id, $folder->collaborators->pluck('collaborator_id'));
 
         $this->deleteCollaboratorResponse(['collaborator_id' => $collaboratorsToBeKickedOutPublicIds[1], 'folder_id' => $folderPublicId])->assertOk();
         $this->assertFolderCollaboratorMetricsSummary($collaborator->id, $folder->id, $type, 2);
 
         $this->loginUser($collaboratorWithRole);
         $this->deleteCollaboratorResponse(['collaborator_id' => $collaboratorsToBeKickedOutPublicIds[2], 'folder_id' => $folderPublicId])->assertOk();
-        $this->assertNotContains($collaboratorsToBeKickedOut[0]->id, $folder->refresh()->collaborators->pluck('id'));
+        $this->assertNotContains($collaboratorsToBeKickedOut[0]->id, $folder->refresh()->collaborators->pluck('collaborator_id'));
     }
 
     public function testBanCollaborator(): void
@@ -300,7 +331,7 @@ class RemoveCollaboratorTest extends TestCase
             ->assertForbidden()
             ->assertJsonFragment($expectation);
 
-        $this->assertEquals($collaborator->id, $folder->collaborators->sole()->id);
+        $this->assertEquals($collaborator->id, $folder->collaborators->sole()->collaborator_id);
     }
 
     #[Test]
@@ -333,7 +364,7 @@ class RemoveCollaboratorTest extends TestCase
             ->assertForbidden()
             ->assertJsonFragment(['message' => 'PermissionDenied']);
 
-        $this->assertEquals([$collaborator->id, $collaboratorToBeKickedOut->id], $folder->collaborators->pluck('id')->all());
+        $this->assertEquals([$collaborator->id, $collaboratorToBeKickedOut->id], $folder->collaborators->pluck('collaborator_id')->all());
     }
 
     #[Test]
@@ -365,7 +396,7 @@ class RemoveCollaboratorTest extends TestCase
             ->assertJsonFragment(['message' => 'FolderFeatureDisAbled']);
 
         $this->assertCount(2, $folder->collaborators);
-        $this->assertContains($collaboratorsToBeKickedOut[1]->id, $folder->collaborators->pluck('id'));
+        $this->assertContains($collaboratorsToBeKickedOut[1]->id, $folder->collaborators->pluck('collaborator_id'));
     }
 
     #[Test]

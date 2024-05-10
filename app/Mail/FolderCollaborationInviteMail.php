@@ -7,6 +7,7 @@ namespace App\Mail;
 use App\Models\Folder;
 use App\Models\User;
 use App\Utils\UrlPlaceholders;
+use App\ValueObjects\InviteId;
 use App\ValueObjects\Url;
 use Illuminate\Support\Str;
 use Illuminate\Mail\Mailable;
@@ -14,7 +15,7 @@ use Exception;
 
 final class FolderCollaborationInviteMail extends Mailable
 {
-    public function __construct(private User $inviter, private Folder $folder, private string $token)
+    public function __construct(private User $inviter, private Folder $folder, private InviteId $inviteId)
     {
     }
 
@@ -39,7 +40,7 @@ final class FolderCollaborationInviteMail extends Mailable
         }
 
         return Str::of($url)
-            ->replace(':invite_hash', $this->token)
+            ->replace(':invite_hash', $this->inviteId->value)
             ->toString();
     }
 }

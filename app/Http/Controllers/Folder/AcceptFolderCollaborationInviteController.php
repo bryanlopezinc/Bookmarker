@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Folder;
 
-use App\Contracts\AcceptFolderInviteRequestHandlerInterface as HandlerInterface;
+use App\Http\Handlers\AcceptInvite\HandlerInterface;
+use App\ValueObjects\InviteId;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -15,7 +16,7 @@ final class AcceptFolderCollaborationInviteController
     {
         $inviteId = $request->validate(['invite_hash' => ['required', 'uuid']])['invite_hash'];
 
-        $handler->handle($inviteId);
+        $handler->handle(new InviteId($inviteId));
 
         return new JsonResponse(status: Response::HTTP_CREATED);
     }

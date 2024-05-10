@@ -11,6 +11,7 @@ use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Http\Handlers\Constraints;
 use App\Http\Handlers\RequestHandlersQueue;
+use App\Http\Handlers\SuspendCollaborator\SuspendedCollaboratorFinder;
 use App\Models\Scopes\WherePublicIdScope;
 use App\ValueObjects\PublicId\FolderPublicId;
 
@@ -38,11 +39,13 @@ final class Handler
         return [
             new Constraints\FolderExistConstraint(),
             new RateLimitConstraint($data),
+            $suspendedCollaboratorRepository = new SuspendedCollaboratorFinder($data->authUser),
             new Constraints\MustBeACollaboratorConstraint($data->authUser),
             new Constraints\PermissionConstraint($data->authUser, Permission::INVITE_USER),
             new Constraints\FolderVisibilityConstraint(),
             new CollaboratorCannotSendInviteWithPermissionsOrRolesConstraint($data),
             new Constraints\FeatureMustBeEnabledConstraint($data->authUser, Feature::SEND_INVITES),
+            new Constraints\MustNotBeSuspendedConstraint($suspendedCollaboratorRepository),
             new InviteeExistConstraint($invitee),
             new Constraints\CollaboratorsLimitConstraint(),
             new Constraints\UserDefinedFolderCollaboratorsLimitConstraint(),

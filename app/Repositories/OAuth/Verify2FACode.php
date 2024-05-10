@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories\OAuth;
 
-use App\Cache\User2FACodeRepository;
+use App\Repositories\User2FACodeRepository;
 use App\Enums\TwoFaMode;
 use App\Models\User;
 use League\OAuth2\Server\Entities\ClientEntityInterface;

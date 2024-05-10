@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\AcceptInvite;
 
-use App\Cache\FolderInviteDataRepository;
+use App\Repositories\FolderInviteDataRepository;
 use App\Models\Folder;
 use App\Http\Handlers\Constraints;
-use App\Contracts\AcceptFolderInviteRequestHandlerInterface;
 use App\DataTransferObjects\FolderInviteData;
 use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Http\Handlers\CollaboratorMetricsRecorder;
 use App\Http\Handlers\RequestHandlersQueue;
+use App\ValueObjects\InviteId;
 
-final class Handler implements AcceptFolderInviteRequestHandlerInterface
+final class Handler implements HandlerInterface
 {
     private readonly FolderInviteDataRepository $folderInviteDataRepository;
 
@@ -23,7 +23,7 @@ final class Handler implements AcceptFolderInviteRequestHandlerInterface
         $this->folderInviteDataRepository = $inviteTokensStore ?: app(FolderInviteDataRepository::class);
     }
 
-    public function handle(string $inviteId): void
+    public function handle(InviteId $inviteId): void
     {
         $invitationData = $this->folderInviteDataRepository->get($inviteId);
 

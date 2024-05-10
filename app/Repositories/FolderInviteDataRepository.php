@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Cache;
+namespace App\Repositories;
 
 use App\DataTransferObjects\FolderInviteData;
 use App\UAC;
+use App\ValueObjects\InviteId;
 use Illuminate\Contracts\Cache\Repository;
 use OutOfBoundsException;
 
@@ -15,7 +16,7 @@ final class FolderInviteDataRepository
     {
     }
 
-    public function store(string $uuid, FolderInviteData $data): void
+    public function store(InviteId $inviteId, FolderInviteData $data): void
     {
         $data = [
             'inviterId'   => $data->inviterId,
@@ -25,23 +26,23 @@ final class FolderInviteDataRepository
             'roles'       => $data->roles
         ];
 
-        $this->repository->put($uuid, $data, $this->ttl);
+        $this->repository->put($inviteId->value, $data, $this->ttl);
     }
 
-    public function has(string $inviteId): bool
+    public function has(InviteId $inviteId): bool
     {
-        return $this->repository->has($inviteId);
+        return $this->repository->has($inviteId->value);
     }
 
     /**
      * @throws OutOfBoundsException
      */
-    public function get(string $inviteId): FolderInviteData
+    public function get(InviteId $inviteId): FolderInviteData
     {
-        $payload = $this->repository->get($inviteId, []);
+        $payload = $this->repository->get($inviteId->value, []);
 
         if (empty($payload)) {
-            throw new OutOfBoundsException("The invitation Id {$inviteId} does not exists."); // @codeCoverageIgnore
+            throw new OutOfBoundsException("The invitation Id {$inviteId->value} does not exists."); // @codeCoverageIgnore
         }
 
         $payload['permissions'] = new UAC($payload['permissions']);

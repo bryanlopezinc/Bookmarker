@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature\Folder;
 
 use App\Actions\ToggleFolderFeature;
-use App\Cache\FolderInviteDataRepository;
+use App\Repositories\FolderInviteDataRepository;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Enums\{Feature, Permission};
+use App\Http\Handlers\SuspendCollaborator\SuspendCollaborator;
 use Tests\TestCase;
 use Illuminate\Support\Str;
 use App\Models\SecondaryEmail;
@@ -20,6 +21,7 @@ use Illuminate\Foundation\Testing\WithFaker;
 use App\Models\BannedCollaborator;
 use App\Models\Folder;
 use App\UAC;
+use App\ValueObjects\InviteId;
 use Database\Factories\EmailFactory;
 use Illuminate\Support\Arr;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -162,7 +164,7 @@ class SendInviteTest extends TestCase
             return true;
         });
 
-        $invitationData = $this->invitesRepository->get($inviteToken);
+        $invitationData = $this->invitesRepository->get(new InviteId($inviteToken));
 
         $this->assertEquals($invitee->id, $invitationData->inviteeId);
         $this->assertEquals($folder->id, $invitationData->folderId);
@@ -240,7 +242,60 @@ class SendInviteTest extends TestCase
 
     private function assertInvitationDataNotSaved(string $inviteId): void
     {
-        $this->assertFalse($this->invitesRepository->has($inviteId));
+        $this->assertFalse($this->invitesRepository->has(new InviteId($inviteId)));
+    }
+
+    #[Test]
+    public function suspendedCollaboratorCannotSendInvite(): void
+    {
+        $inviteToken = $this->faker->uuid;
+        Str::createUuidsUsing(fn () => $inviteToken);
+
+        [$folderOwner, $invitee, $suspendedCollaborator] = UserFactory::times(3)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->CreateCollaborationRecord($suspendedCollaborator, $folder, Permission::INVITE_USER);
+        SuspendCollaborator::suspend($suspendedCollaborator, $folder);
+
+        $this->loginUser($suspendedCollaborator);
+        $this->sendInviteResponse([
+            'email'     => $invitee->email,
+            'folder_id' => $folder->public_id->present(),
+        ])->assertForbidden()->assertJsonFragment(['message' => 'CollaboratorSuspended']);
+
+        $this->assertInvitationDataNotSaved($inviteToken);
+    }
+
+    #[Test]
+    public function suspendedCollaboratorCanSendInviteWhenSuspensionDurationIsPast(): void
+    {
+        $inviteToken = $this->faker->uuid;
+        Str::createUuidsUsing(fn () => $inviteToken);
+
+        [$invitee, $suspendedCollaborator] = UserFactory::times(2)->create();
+
+        $folder = FolderFactory::new()->create();
+
+        $this->CreateCollaborationRecord($suspendedCollaborator, $folder, Permission::INVITE_USER);
+        SuspendCollaborator::suspend($suspendedCollaborator, $folder, suspensionDurationInHours: 1);
+
+        $this->loginUser($suspendedCollaborator);
+        $this->travel(57)->minutes(function () use ($folder, $invitee) {
+            $this->sendInviteResponse([
+                'email'     => $invitee->email,
+                'folder_id' => $folder->public_id->present(),
+            ])->assertForbidden()->assertJsonFragment(['message' => 'CollaboratorSuspended']);
+        });
+
+        $this->travel(62)->minutes(function () use ($folder, $invitee) {
+            $this->sendInviteResponse([
+                'email'     => $invitee->email,
+                'folder_id' => $folder->public_id->present(),
+            ])->assertOk();
+        });
+
+        $this->assertTrue($folder->suspendedCollaborators->isEmpty());
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotExists(): void
@@ -572,7 +627,7 @@ class SendInviteTest extends TestCase
 
         $this->sendInviteResponse($parameters)->assertOk();
 
-        $invitationData = $this->invitesRepository->get($inviteToken);
+        $invitationData = $this->invitesRepository->get(new InviteId($inviteToken));
 
         $this->assertEquals([], $invitationData->roles);
 
@@ -593,6 +648,7 @@ class SendInviteTest extends TestCase
             'Update folder name'        => [['updateFolderName']],
             'Update folder description' => [['updateFolderDescription']],
             'Update folder thumbnail'   => [['updateFolderThumbnail']],
+            'Suspend User'              => [['suspendUser']],
             'Many'                      => [['addBookmarks', 'updateFolderName', 'removeUser']]
         ];
     }
@@ -617,7 +673,7 @@ class SendInviteTest extends TestCase
             'roles'     => implode(',', $roleNames = [$firstRoleName, $secondRoleName])
         ])->assertOk();
 
-        $invitationData = $this->invitesRepository->get($inviteToken);
+        $invitationData = $this->invitesRepository->get(new InviteId($inviteToken));
 
         $this->assertEquals($roleNames, $invitationData->roles);
         $this->assertEquals([], $invitationData->permissions->toArray());
@@ -644,7 +700,7 @@ class SendInviteTest extends TestCase
             'permissions' => 'addBookmarks'
         ])->assertOk();
 
-        $invitationData = $this->invitesRepository->get($inviteToken);
+        $invitationData = $this->invitesRepository->get(new InviteId($inviteToken));
 
         $this->assertEquals($roleNames, $invitationData->roles);
         $this->assertEquals([Permission::ADD_BOOKMARKS->value], $invitationData->permissions->toArray());

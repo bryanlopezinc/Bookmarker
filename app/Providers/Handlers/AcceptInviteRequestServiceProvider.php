@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Providers\Handlers;
 
 use App\Http\Handlers\AcceptInvite\Handler;
-use App\Contracts\AcceptFolderInviteRequestHandlerInterface as HandlerInterface;
 use App\Http\Handlers\AcceptInvite\CheckForExpiredToken;
+use App\Http\Handlers\AcceptInvite\HandlerInterface;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Contracts\Support\DeferrableProvider;

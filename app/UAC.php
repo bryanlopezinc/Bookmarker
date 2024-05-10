@@ -92,6 +92,7 @@ final class UAC implements Countable, Arrayable, IteratorAggregate
             'updateFolderDescription' => Permission::UPDATE_FOLDER_DESCRIPTION->value,
             'updateFolderThumbnail'   => Permission::UPDATE_FOLDER_THUMBNAIL->value,
             'removeUser'              => Permission::REMOVE_USER->value,
+            'suspendUser'             => Permission::SUSPEND_USER->value
         ];
 
         assert(count($ids) === count(Permission::cases()));

@@ -13,7 +13,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
-use App\Cache\EmailVerificationCodeRepository as PendingVerifications;
+use App\Repositories\EmailVerificationCodeRepository as PendingVerifications;
 
 class AddEmailTest extends TestCase
 {

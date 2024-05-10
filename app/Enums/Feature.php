@@ -14,6 +14,7 @@ enum Feature: string
     case UPDATE_FOLDER_ICON        = 'UPDATE_FOLDER_ICON';
     case JOIN_FOLDER               = 'JOIN_FOLDER';
     case REMOVE_USER               = 'REMOVE_USER';
+    case SUSPEND_USER              = 'SUSPEND_USER';
 
     public static function publicIdentifiers(): array
     {
@@ -25,11 +26,24 @@ enum Feature: string
             self::UPDATE_FOLDER_NAME->value        => 'updateFolderName',
             self::UPDATE_FOLDER_DESCRIPTION->value => 'updateFolderDescription',
             self::UPDATE_FOLDER_ICON->value        => 'updateFolderIcon',
-            self::JOIN_FOLDER->value               => 'joinFolder'
+            self::JOIN_FOLDER->value               => 'joinFolder',
+            self::SUSPEND_USER->value              => 'suspendUser'
         ];
 
         assert(count($ids) === count(self::cases()));
 
         return $ids;
+    }
+
+    public static function fromPublicId(string $value): static
+    {
+        return self::from(
+            array_flip(self::publicIdentifiers())[$value]
+        );
+    }
+
+    public function present(): string
+    {
+        return self::publicIdentifiers()[$this->value];
     }
 }

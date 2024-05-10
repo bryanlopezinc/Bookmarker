@@ -10,6 +10,7 @@ use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
+use App\Http\Handlers\SuspendCollaborator\SuspendCollaborator;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
 use App\Services\Folder\MuteCollaboratorService;
@@ -206,6 +207,53 @@ class AddBookmarksToFolderTest extends TestCase
             'bookmarks' => $collaboratorBookmark->public_id->present(),
             'folder'    => $folder->public_id->present(),
         ])->assertForbidden()->assertJsonFragment(['message' => 'PermissionDenied']);
+    }
+
+    #[Test]
+    public function willReturnForbiddenWhenCollaboratorIsSuspended(): void
+    {
+        [$folderOwner, $suspendedCollaborator] = UserFactory::new()->count(2)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+        $collaboratorBookmark = BookmarkFactory::new()->for($suspendedCollaborator)->create();
+
+        $this->CreateCollaborationRecord($suspendedCollaborator, $folder, Permission::ADD_BOOKMARKS);
+        SuspendCollaborator::suspend($suspendedCollaborator, $folder);
+
+        $this->loginUser($suspendedCollaborator);
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => $collaboratorBookmark->public_id->present(),
+            'folder'    => $folder->public_id->present(),
+        ])->assertForbidden()->assertJsonFragment(['message' => 'CollaboratorSuspended']);
+    }
+
+    #[Test]
+    public function suspendedCollaboratorCanAddBookmarksToFolderWhenSuspensionDurationIsPast(): void
+    {
+        $this->loginUser($suspendedCollaborator = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->create();
+        $collaboratorBookmark = BookmarkFactory::new()->for($suspendedCollaborator)->create();
+
+        $this->CreateCollaborationRecord($suspendedCollaborator, $folder, Permission::ADD_BOOKMARKS);
+
+        SuspendCollaborator::suspend($suspendedCollaborator, $folder, suspensionDurationInHours: 1);
+
+        $this->travel(57)->minutes(function () use ($folder, $collaboratorBookmark) {
+            $this->addBookmarksToFolderResponse([
+                'bookmarks' => $collaboratorBookmark->public_id->present(),
+                'folder'    => $folder->public_id->present(),
+            ])->assertForbidden()->assertJsonFragment(['message' => 'CollaboratorSuspended']);
+        });
+
+        $this->travel(62)->minutes(function () use ($folder, $collaboratorBookmark) {
+            $this->addBookmarksToFolderResponse([
+                'bookmarks' => $collaboratorBookmark->public_id->present(),
+                'folder'    => $folder->public_id->present(),
+            ])->assertCreated();
+        });
+
+        $this->assertTrue($folder->suspendedCollaborators->isEmpty());
     }
 
     #[Test]

@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Handlers\SendInvite;
 
 use App\Models\Folder;
-use Illuminate\Support\Str;
-use App\Cache\FolderInviteDataRepository;
+use App\Repositories\FolderInviteDataRepository;
 use App\DataTransferObjects\FolderInviteData;
 use App\DataTransferObjects\SendInviteRequestData;
 use App\Mail\FolderCollaborationInviteMail as InvitationMail;
 use App\Models\User;
+use App\ValueObjects\InviteId;
 use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -52,12 +52,12 @@ final class SendInvitationToInvitee implements Scope
         );
 
         $this->repository->store(
-            $token = (string) Str::uuid(),
+            $inviteId = InviteId::generate(),
             $invitationData
         );
 
         $this->mailer
             ->to($this->data->inviteeEmail)
-            ->later(5, new InvitationMail($this->data->authUser, $folder, $token));
+            ->later(5, new InvitationMail($this->data->authUser, $folder, $inviteId));
     }
 }

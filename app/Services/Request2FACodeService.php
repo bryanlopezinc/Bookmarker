@@ -7,7 +7,7 @@ namespace App\Services;
 use App\Models\User;
 use App\Exceptions\InvalidUsernameException;
 use App\Repositories\UserRepository;
-use App\Cache\User2FACodeRepository;
+use App\Repositories\User2FACodeRepository;
 use App\Exceptions\UserNotFoundException;
 use App\Http\Requests\Request2FACodeRequest as Request;
 use App\Mail\TwoFACodeMail;

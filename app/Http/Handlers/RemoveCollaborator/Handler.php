@@ -12,6 +12,7 @@ use App\Enums\Permission;
 use App\Http\Handlers\Constraints;
 use App\Http\Handlers\CollaboratorMetricsRecorder;
 use App\Http\Handlers\RequestHandlersQueue;
+use App\Http\Handlers\SuspendCollaborator\SuspendedCollaboratorFinder;
 use App\Models\Scopes\WherePublicIdScope;
 use App\Models\User;
 
@@ -35,6 +36,7 @@ final class Handler
     {
         return [
             new Constraints\FolderExistConstraint(),
+            $suspendedCollaboratorRepository = new SuspendedCollaboratorFinder(),
             new Constraints\MustBeACollaboratorConstraint($data->authUser),
             new Constraints\PermissionConstraint($data->authUser, Permission::REMOVE_USER),
             new Constraints\FeatureMustBeEnabledConstraint($data->authUser, Feature::REMOVE_USER),
@@ -43,6 +45,7 @@ final class Handler
             new CollaboratorToBeRemovedMustBeACollaboratorConstraint($data),
             new RemoveCollaborator($data),
             new RemoveCollaboratorFromMutedCollaboratorsList(),
+            new RemoveCollaboratorFromSuspendedCollaboratorsList($suspendedCollaboratorRepository),
             new RevokeCollaboratorRoles(),
             new NotifyFolderOwner($data),
             new NotifyCollaborator(),

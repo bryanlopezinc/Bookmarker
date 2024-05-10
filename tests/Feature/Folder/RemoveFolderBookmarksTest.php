@@ -11,6 +11,7 @@ use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
+use App\Http\Handlers\SuspendCollaborator\SuspendCollaborator;
 use App\Services\Folder\MuteCollaboratorService;
 use App\UAC;
 use Database\Factories\BookmarkFactory;
@@ -236,6 +237,60 @@ class RemoveFolderBookmarksTest extends TestCase
         ])->assertForbidden()->assertJsonFragment(['message' => 'PermissionDenied']);
 
         $this->assertCount(3, $folder->bookmarks);
+    }
+
+    #[Test]
+    public function willReturnForbiddenWhenCollaboratorIsSuspended(): void
+    {
+        [$folderOwner, $suspendedCollaborator] = UserFactory::new()->count(2)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+        $bookmarks = BookmarkFactory::times(3)->create();
+        $bookmarksPublicIds = BookmarkPublicIdsCollection::fromObjects($bookmarks)->present();
+
+        $this->addBookmarksToFolder($bookmarks->pluck('id')->all(), $folder->id);
+        $this->CreateCollaborationRecord($suspendedCollaborator, $folder, Permission::DELETE_BOOKMARKS);
+
+        SuspendCollaborator::suspend($suspendedCollaborator, $folder);
+
+        $this->loginUser($suspendedCollaborator);
+        $this->removeFolderBookmarksResponse([
+            'bookmarks' => $bookmarksPublicIds->all(),
+            'folder'    => $folder->public_id->present(),
+        ])->assertForbidden()->assertJsonFragment(['message' => 'CollaboratorSuspended']);
+
+        $this->assertCount(3, $folder->bookmarks);
+    }
+
+    #[Test]
+    public function suspendedCollaboratorCanAddBookmarksToFolderWhenSuspensionDurationIsPast(): void
+    {
+        $this->loginUser($suspendedCollaborator = UserFactory::new()->create());
+
+        $folder = FolderFactory::new()->create();
+        $bookmarks = BookmarkFactory::times(3)->create();
+        $bookmarksPublicIds = BookmarkPublicIdsCollection::fromObjects($bookmarks)->present();
+
+        $this->addBookmarksToFolder($bookmarks->pluck('id')->all(), $folder->id);
+        $this->CreateCollaborationRecord($suspendedCollaborator, $folder, Permission::DELETE_BOOKMARKS);
+
+        SuspendCollaborator::suspend($suspendedCollaborator, $folder, suspensionDurationInHours: 1);
+
+        $this->travel(57)->minutes(function () use ($folder, $bookmarksPublicIds) {
+            $this->removeFolderBookmarksResponse([
+                'bookmarks' => $bookmarksPublicIds->all(),
+                'folder'    => $folder->public_id->present(),
+            ])->assertForbidden()->assertJsonFragment(['message' => 'CollaboratorSuspended']);
+        });
+
+        $this->travel(62)->minutes(function () use ($folder, $bookmarksPublicIds) {
+            $this->removeFolderBookmarksResponse([
+                'bookmarks' => $bookmarksPublicIds->all(),
+                'folder'    => $folder->public_id->present(),
+            ])->assertOk();
+        });
+
+        $this->assertTrue($folder->suspendedCollaborators->isEmpty());
     }
 
     public function testWillReturnNotFoundResponseWhenBookmarksDoesNotExistsInFolder(): void

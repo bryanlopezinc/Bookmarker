@@ -228,7 +228,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             $collaboratorPermissions->has(UAC::fromRequest($permission)->toCollection()->sole())
         );
 
-        $this->assertCount(6, $collaboratorPermissions);
+        $this->assertCount(7, $collaboratorPermissions);
     }
 
     public static function revokeFolderPermissionData(): array
@@ -241,6 +241,7 @@ class RevokeCollaboratorPermissionsTest extends TestCase
             'Update folder name'        => ['updateFolderName'],
             'Update folder description' => ['updateFolderDescription'],
             'Update folder thumbnail'   => ['updateFolderThumbnail'],
+            'Suspend User'              => ['suspendUser']
         ];
     }
 

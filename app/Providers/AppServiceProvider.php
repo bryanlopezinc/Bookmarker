@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Cache\User2FACodeRepository;
+use App\Repositories\User2FACodeRepository;
 use App\Repositories\OAuth\EnsureEmailHasBeenVerified;
 use App\Repositories\OAuth\Verify2FACode;
 use Illuminate\Contracts\Hashing\Hasher;

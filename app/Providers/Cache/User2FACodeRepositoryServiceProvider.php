@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers\Cache;
 
-use App\Cache\User2FACodeRepository;
+use App\Repositories\User2FACodeRepository;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 

@@ -25,13 +25,13 @@ class NotificationsTest extends TestCase
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
 
-        $folder = FolderFactory::new()->for($folderOwner)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create(['name' => 'foo', 'description' => 'foo bar folder']);
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER_NAME);
 
         $this->loginUser($collaborator);
         $this->updateFolderResponse([
-            'name'      => $newName = $this->faker->word,
+            'name'      => $newName = 'bar',
             'folder_id' => $folder->public_id->present(),
         ])->assertOk();
 
@@ -68,7 +68,7 @@ class NotificationsTest extends TestCase
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
 
-        $folder = FolderFactory::new()->for($folderOwner)->create();
+        $folder = FolderFactory::new()->for($folderOwner)->create(['name' => 'foo', 'description' => 'foo bar folder']);
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER_DESCRIPTION);
 
@@ -154,14 +154,14 @@ class NotificationsTest extends TestCase
     public function testWillNotSendNotificationWhenUpdateWasPerformedByFolderOwner(): void
     {
         $user = UserFactory::new()->create();
-        $folder = FolderFactory::new()->for($user)->create();
+        $folder = FolderFactory::new()->for($user)->create(['name' => 'foo', 'description' => 'foo bar folder']);
 
         Notification::fake();
 
         $this->loginUser($user);
         $this->updateFolderResponse([
-            'name'        => $this->faker->word,
-            'description' => $this->faker->sentence,
+            'name'        => 'bar',
+            'description' => 'baz',
             'folder_id'   => $folder->public_id->present()
         ])->assertOk();
 
@@ -175,7 +175,7 @@ class NotificationsTest extends TestCase
         $folder = FolderFactory::new()
             ->for($folderOwner)
             ->settings(FolderSettingsBuilder::new()->disableNotifications())
-            ->create();
+            ->create(['name' => 'foo', 'description' => 'foo bar folder']);
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::updateFolderTypes());
 
@@ -183,9 +183,9 @@ class NotificationsTest extends TestCase
 
         $this->loginUser($collaborator);
         $this->updateFolderResponse([
-            'name' => $this->faker->word,
-            'description' => $this->faker->sentence,
-            'folder_id' => $folder->public_id->present(),
+            'name'        => 'bar',
+            'description' => 'baz',
+            'folder_id'   => $folder->public_id->present(),
         ])->assertOk();
 
         Notification::assertNothingSent();
@@ -198,7 +198,7 @@ class NotificationsTest extends TestCase
         $folder = FolderFactory::new()
             ->for($folderOwner)
             ->settings(FolderSettingsBuilder::new()->disableFolderUpdatedNotification())
-            ->create();
+            ->create(['name' => 'foo', 'description' => 'foo bar folder']);
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::updateFolderTypes());
 
@@ -206,9 +206,9 @@ class NotificationsTest extends TestCase
 
         $this->loginUser($collaborator);
         $this->updateFolderResponse([
-            'name' => $this->faker->word,
-            'description' => $this->faker->sentence,
-            'folder_id' => $folder->public_id->present()
+            'name'        => 'bar',
+            'description' => 'baz',
+            'folder_id'   => $folder->public_id->present()
         ])->assertOk();
 
         Notification::assertNothingSent();

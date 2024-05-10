@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Cache;
+namespace App\Repositories;
 
 use App\ValueObjects\TwoFACode;
 use Illuminate\Contracts\Cache\Repository;

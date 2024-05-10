@@ -14,6 +14,7 @@ use App\Enums\Permission;
 use App\Http\Handlers\Constraints;
 use App\Http\Handlers\CollaboratorMetricsRecorder;
 use App\Http\Handlers\RequestHandlersQueue;
+use App\Http\Handlers\SuspendCollaborator\SuspendedCollaboratorFinder;
 use App\Models\Scopes\WherePublicIdScope;
 use App\ValueObjects\PublicId\FolderPublicId;
 use Illuminate\Support\Collection;
@@ -43,9 +44,11 @@ final class Handler
 
         return [
             new Constraints\FolderExistConstraint(),
+            $suspendedCollaboratorRepository = new SuspendedCollaboratorFinder($data->authUser),
             new Constraints\MustBeACollaboratorConstraint($data->authUser),
             new Constraints\PermissionConstraint($data->authUser, Permission::ADD_BOOKMARKS),
             new Constraints\FeatureMustBeEnabledConstraint($data->authUser, Feature::ADD_BOOKMARKS),
+            new Constraints\MustNotBeSuspendedConstraint($suspendedCollaboratorRepository),
             new MaxFolderBookmarksConstraint($data),
             new UserOwnsBookmarksConstraint($data, $bookmarks->all()),
             new BookmarksExistsConstraint($data, $bookmarks->all()),

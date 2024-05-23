@@ -15,6 +15,7 @@ trait TestsFolderSettings
             [['version' => '1.0.0'], ['The version value is invalid.']],
             [['activities.enabled' => 'foo'], ['The activities.enabled field must be true or false.']],
             [['activities.visibility' => 'foo'], ['The selected activities.visibility is invalid.']],
+            [['activities.bookmarks_removed.enabled' => 'foo'], ['The activities.bookmarks_removed.enabled field must be true or false.']],
             [['max_collaborators_limit' => '1001'], ['The max_collaborators_limit must not be greater than 1000.']],
             [['max_bookmarks_limit' => '201'], ['The max_bookmarks_limit must not be greater than 200.']],
             [['accept_invite_constraints' => 'foo'], ['The accept_invite_constraints must be an array.']],

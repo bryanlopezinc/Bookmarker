@@ -13,6 +13,7 @@ use Error;
 /**
  * @method Settings\Activities\LogActivities                       logActivities()
  * @method Settings\Activities\ActivitiesVisibility                activitiesVisibility()
+ * @method Settings\Activities\LogBookmarksRemovedActivity         logBookmarksRemovedActivity()
  * @method Settings\Version                                        version()
  * @method Settings\Notifications\Notifications                    notifications()
  * @method Settings\AcceptInviteConstraints                        acceptInviteConstraints()
@@ -35,6 +36,7 @@ final class FolderSettings
         'version'                                => Settings\Version::class,
         'activities.enabled'                     => Settings\Activities\LogActivities::class,
         'activities.visibility'                  => Settings\Activities\ActivitiesVisibility::class,
+        'activities.bookmarks_removed.enabled'   => Settings\Activities\LogBookmarksRemovedActivity::class,
         'notifications.enabled'                   => Settings\Notifications\Notifications::class,
         'accept_invite_constraints'              => Settings\AcceptInviteConstraints::class,
         'max_bookmarks_limit'                    => Settings\MaxBookmarksLimit::class,
@@ -107,7 +109,7 @@ final class FolderSettings
 
     private function getDynamicMethodName(string $class): string
     {
-        return Str::camel(class_basename($class));
+        return Str::lcfirst(class_basename($class));
     }
 
     private function buildMethodClassMap(): void

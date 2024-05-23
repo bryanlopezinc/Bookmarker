@@ -22,6 +22,10 @@ final class LogActivity
 
     public function __invoke(Folder $folder): void
     {
+        if ($folder->settings->logBookmarksRemovedActivity()->isDisabled()) {
+            return;
+        }
+
         $attributes = [
             'folderId'  => $folder->id,
             'bookmarks' => collect($this->folderBookmarks)->map->getAttributes(),

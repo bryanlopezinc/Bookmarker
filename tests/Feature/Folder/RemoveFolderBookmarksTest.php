@@ -721,4 +721,34 @@ class RemoveFolderBookmarksTest extends TestCase
 
         $this->assertCount(0, $folder->activities);
     }
+
+    #[Test]
+    public function willNotLogActivityWhenBookmarksRemovedActivityIsDisabled(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::times(2)->create();
+
+        $bookmarks = BookmarkFactory::times(2)->for($folderOwner)->create();
+
+        $folder = FolderFactory::new()
+            ->for($folderOwner)
+            ->settings(FolderSettingsBuilder::new()->enableBookmarkRemovedActivities(false))
+            ->create();
+
+        $this->addBookmarksToFolder($bookmarks->pluck('id')->all(), $folder->id);
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::DELETE_BOOKMARKS);
+
+        $this->loginUser($collaborator);
+        $this->removeFolderBookmarksResponse([
+            'bookmarks' => $bookmarks[0]->public_id->present(),
+            'folder' => $folder->public_id->present()
+        ])->assertOk();
+
+        $this->loginUser($folderOwner);
+        $this->removeFolderBookmarksResponse([
+            'bookmarks' => $bookmarks[1]->public_id->present(),
+            'folder' => $folder->public_id->present()
+        ])->assertOk();
+
+        $this->assertCount(0, $folder->activities);
+    }
 }

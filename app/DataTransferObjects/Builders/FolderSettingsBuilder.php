@@ -10,8 +10,7 @@ use App\Enums\CollaboratorExitNotificationMode;
 use App\Enums\FolderActivitiesVisibility;
 use App\FolderSettings\FolderSettings;
 use App\FolderSettings\Settings\AcceptInviteConstraints;
-use App\FolderSettings\Settings\Activities\ActivitiesVisibility;
-use App\FolderSettings\Settings\Activities\LogActivities;
+use App\FolderSettings\Settings\Activities;
 use App\FolderSettings\Settings\MaxBookmarksLimit;
 use App\FolderSettings\Settings\MaxCollaboratorsLimit;
 use App\FolderSettings\Settings\Notifications\BookmarksRemovedNotification;
@@ -177,14 +176,21 @@ final class FolderSettingsBuilder
 
     public function enableActivities(bool $enable = true): self
     {
-        $this->attributes[] = new LogActivities($enable);
+        $this->attributes[] = new Activities\LogActivities($enable);
 
         return $this;
     }
 
     public function activitiesVisibility(FolderActivitiesVisibility $visibility = FolderActivitiesVisibility::PUBLIC): self
     {
-        $this->attributes[] = new ActivitiesVisibility($visibility);
+        $this->attributes[] = new Activities\ActivitiesVisibility($visibility);
+
+        return $this;
+    }
+
+    public function enableBookmarkRemovedActivities(bool $enable = true): self
+    {
+        $this->attributes[] = new Activities\LogBookmarksRemovedActivity($enable);
 
         return $this;
     }

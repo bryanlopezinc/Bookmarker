@@ -25,8 +25,8 @@ final class AddEmailToAccountController
             ]
         ]);
 
-        $service(User::fromRequest($request)->id, $request->input('email'));
+        $service(User::fromRequest($request), $request->input('email'));
 
-        return response()->json();
+        return new JsonResponse();
     }
 }

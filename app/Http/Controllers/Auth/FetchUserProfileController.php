@@ -6,14 +6,13 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use App\Repositories\UserRepository;
 use Illuminate\Http\Request;
 
 final class FetchUserProfileController
 {
-    public function __invoke(Request $request, UserRepository $repository): UserResource
+    public function __invoke(Request $request): UserResource
     {
-        $user = $repository->findByID(User::fromRequest($request)->id);
+        $user = User::fromRequest($request)->loadCount(['bookmarks', 'folders', 'favorites']);
 
         return new UserResource($user);
     }

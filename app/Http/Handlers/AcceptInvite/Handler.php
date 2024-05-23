@@ -11,6 +11,7 @@ use App\DataTransferObjects\FolderInviteData;
 use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Http\Handlers\CollaboratorMetricsRecorder;
+use App\Http\Handlers\ConditionallyLogActivity;
 use App\Http\Handlers\RequestHandlersQueue;
 use App\ValueObjects\InviteId;
 
@@ -41,9 +42,10 @@ final class Handler implements HandlerInterface
     private function getConfiguredHandlers(FolderInviteData $payload): array
     {
         return [
+            $userRepository = new UserRepository($payload),
             new Constraints\FolderExistConstraint(),
             new HasNotAlreadyAcceptedInviteValidator($payload),
-            new InviterAndInviteeExistsValidator($payload),
+            new InviterAndInviteeExistsValidator($userRepository),
             new Constraints\FolderVisibilityConstraint(),
             new Constraints\CollaboratorsLimitConstraint(),
             new Constraints\UserDefinedFolderCollaboratorsLimitConstraint(),
@@ -51,8 +53,9 @@ final class Handler implements HandlerInterface
             new InviterMustStillHaveRequiredPermissionConstraint($payload),
             new Constraints\FeatureMustBeEnabledConstraint(null, Feature::JOIN_FOLDER),
             new CreateNewCollaborator($payload),
-            new SendNewCollaboratorNotification($payload),
-            new CollaboratorMetricsRecorder(CollaboratorMetricType::COLLABORATORS_ADDED, $payload->inviterId)
+            new SendNewCollaboratorNotification($payload, $userRepository),
+            new CollaboratorMetricsRecorder(CollaboratorMetricType::COLLABORATORS_ADDED, $payload->inviterId),
+            new ConditionallyLogActivity(new LogActivity($userRepository))
         ];
     }
 }

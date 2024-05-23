@@ -42,7 +42,7 @@ final class UAC implements Countable, Arrayable, IteratorAggregate
             }
 
             if ($permission instanceof Permission) {
-                $permission = $permission->value;
+                return $permission->value;
             }
 
             return Permission::from($permission)->value;
@@ -90,7 +90,7 @@ final class UAC implements Countable, Arrayable, IteratorAggregate
             'inviteUsers'             => Permission::INVITE_USER->value,
             'updateFolderName'        => Permission::UPDATE_FOLDER_NAME->value,
             'updateFolderDescription' => Permission::UPDATE_FOLDER_DESCRIPTION->value,
-            'updateFolderThumbnail'   => Permission::UPDATE_FOLDER_THUMBNAIL->value,
+            'updateFolderIcon'        => Permission::UPDATE_FOLDER_ICON->value,
             'removeUser'              => Permission::REMOVE_USER->value,
             'suspendUser'             => Permission::SUSPEND_USER->value
         ];
@@ -119,6 +119,15 @@ final class UAC implements Countable, Arrayable, IteratorAggregate
     public function toCollection(): Collection
     {
         return $this->permissions;
+    }
+
+    public function except(Permission|array $permissions): UAC
+    {
+        $permissions = $this->resolvePermissions(Arr::wrap($permissions));
+
+        return new UAC(
+            $this->toCollection()->diff($permissions)->all()
+        );
     }
 
     /**

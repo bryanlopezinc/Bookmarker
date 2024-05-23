@@ -27,27 +27,23 @@ class YouHaveBeenKickedOutNotificationTest extends TestCase
         $folder->update(['name' => 'tech problems']);
         $collaborator->notify($notification);
 
-        $expectedDateTime = $collaborator->notifications()->sole(['created_at'])->created_at;
-
         $this->loginUser($collaborator);
         $this->fetchNotificationsResponse()
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.type', 'YouHaveBeenKickedOutNotification')
             ->assertJsonPath('data.0.attributes.id', fn (string $id) => Str::isUuid($id))
-            ->assertJsonPath('data.0.attributes.folder_exists', true)
-            ->assertJsonPath('data.0.attributes.notified_on', fn (string $dateTime) => $dateTime === (string) $expectedDateTime)
-            ->assertJsonPath('data.0.attributes.folder_id', $folder->public_id->present())
-            ->assertJsonPath('data.0.attributes.message', "You were removed from Tech Problems folder.")
+            ->assertJsonPath('data.0.attributes.folder.exists', true)
+            ->assertJsonPath('data.0.attributes.folder.id', $folder->public_id->present())
+            ->assertJsonPath('data.0.attributes.message', 'You were removed from Tech Problems folder')
             ->assertJsonStructure([
                 'data' => [
                     '*' => [
-                        "type",
-                        "attributes" => [
-                            "id",
-                            "folder_exists",
+                        'type',
+                        'attributes' => [
+                            'id',
+                            'folder' => ['id', 'exists'],
                             'notified_on',
-                            "folder_id",
                             'message',
                         ]
                     ]
@@ -71,7 +67,7 @@ class YouHaveBeenKickedOutNotificationTest extends TestCase
         $this->loginUser($collaborator);
         $this->fetchNotificationsResponse()
             ->assertOk()
-            ->assertJsonPath('data.0.attributes.folder_exists', false)
-            ->assertJsonPath('data.0.attributes.message', "You were removed from {$folder->name->present()} folder.");
+            ->assertJsonPath('data.0.attributes.folder.exists', false)
+            ->assertJsonPath('data.0.attributes.message', "You were removed from {$folder->name->present()} folder");
     }
 }

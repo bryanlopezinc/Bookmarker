@@ -7,9 +7,11 @@ namespace Tests\Feature\Folder;
 use App\Actions\ToggleFolderFeature;
 use App\Collections\BookmarkPublicIdsCollection as PublicIds;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\Enums\ActivityType;
 use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
+use App\DataTransferObjects\Activities\NewFolderBookmarksActivityLogData;
 use App\Http\Handlers\SuspendCollaborator\SuspendCollaborator;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
@@ -131,11 +133,17 @@ class AddBookmarksToFolderTest extends TestCase
             'folder'    => $folder->public_id->present(),
         ])->assertCreated();
 
+        /** @var \App\Models\FolderActivity */
+        $activity = $folder->activities->sole();
+
         $this->assertEquals($folder->bookmarks->sole()->id, $bookmark->id);
 
         //Assert the folder updated_at column was updated
         $this->assertTrue($folder->refresh()->updated_at->isToday());
         $this->assertNoMetricsRecorded($user->id, $folder->id, CollaboratorMetricType::BOOKMARKS_ADDED);
+
+        $this->assertEquals($activity->type, ActivityType::NEW_BOOKMARKS);
+        $this->assertEquals($activity->data, (new NewFolderBookmarksActivityLogData(collect([$bookmark]), $user))->toArray());
     }
 
     #[Test]
@@ -186,16 +194,39 @@ class AddBookmarksToFolderTest extends TestCase
         $this->assertFolderCollaboratorMetricsSummary($collaborator->id, $folder->id, $type, 4);
     }
 
+    #[Test]
+    public function willNotLogActivityForPrivateFolder(): void
+    {
+        $user = UserFactory::new()->create();
+        $factory = FolderFactory::new()->for($user);
+
+        $passwordProtectedFolder = $factory->passwordProtected()->create();
+        $privateFolder = $factory->private()->create();
+
+        $bookmark = BookmarkFactory::new()->for($user)->create();
+
+        $this->loginUser($user);
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => $bookmark->public_id->present(),
+            'folder'    => $passwordProtectedFolder->public_id->present(),
+        ])->assertCreated();
+
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => $bookmark->public_id->present(),
+            'folder'    => $privateFolder->public_id->present(),
+        ])->assertCreated();
+
+        $this->assertTrue($privateFolder->activities->isEmpty());
+        $this->assertTrue($passwordProtectedFolder->activities->isEmpty());
+    }
+
     public function testWillReturnForbiddenWhenCollaboratorDoesNotHaveAddBookmarksPermissionOrRole(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
         $collaboratorBookmark = BookmarkFactory::new()->for($collaborator)->create();
 
-        $permissions = UAC::all()
-            ->toCollection()
-            ->reject(Permission::ADD_BOOKMARKS->value)
-            ->all();
+        $permissions = UAC::all()->except(Permission::ADD_BOOKMARKS) ->toArray();
 
         $this->CreateCollaborationRecord($collaborator, $folder, $permissions);
 
@@ -207,6 +238,8 @@ class AddBookmarksToFolderTest extends TestCase
             'bookmarks' => $collaboratorBookmark->public_id->present(),
             'folder'    => $folder->public_id->present(),
         ])->assertForbidden()->assertJsonFragment(['message' => 'PermissionDenied']);
+
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     #[Test]
@@ -225,6 +258,8 @@ class AddBookmarksToFolderTest extends TestCase
             'bookmarks' => $collaboratorBookmark->public_id->present(),
             'folder'    => $folder->public_id->present(),
         ])->assertForbidden()->assertJsonFragment(['message' => 'CollaboratorSuspended']);
+
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     #[Test]
@@ -273,6 +308,8 @@ class AddBookmarksToFolderTest extends TestCase
             'bookmarks' => $collaboratorBookmark->public_id->present(),
             'folder'    => $folder->public_id->present(),
         ])->assertForbidden()->assertJsonFragment(['message' => 'PermissionDenied']);
+
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     public function testWillReturnForbiddenWhenFolderHas_200_Bookmarks(): void
@@ -302,6 +339,8 @@ class AddBookmarksToFolderTest extends TestCase
             'bookmarks' => BookmarkFactory::new()->for($collaborator)->create()->public_id->present(),
             'folder'    => $folder->public_id->present(),
         ])->assertForbidden()->assertJsonFragment(['message' => 'FolderBookmarksLimitReached']);
+
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     #[Test]
@@ -331,6 +370,8 @@ class AddBookmarksToFolderTest extends TestCase
             'bookmarks' => BookmarkFactory::new()->for($collaborator)->create()->public_id->present(),
             'folder'    => $folder->public_id->present(),
         ])->assertForbidden()->assertJsonFragment(['message' => 'FolderBookmarksLimitReached']);
+
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     public function testWillCheckBookmarksHealth(): void
@@ -387,6 +428,7 @@ class AddBookmarksToFolderTest extends TestCase
         ])->assertStatus(400)->assertJsonFragment(['message' => 'CollaboratorCannotMakeBookmarksHidden']);
 
         $this->assertEmpty($folder->bookmarks);
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     public function testWillReturnConflictWhenFolderContainsBookmark(): void
@@ -401,15 +443,18 @@ class AddBookmarksToFolderTest extends TestCase
             'folder'    => $folder->public_id->present(),
         ])->assertCreated();
 
+        $this->refreshApplication();
+        $this->loginUser($user);
         $this->addBookmarksToFolderResponse([
             'bookmarks' => $bookmark->public_id->present(),
             'folder'    => $folder->public_id->present(),
         ])->assertStatus(Response::HTTP_CONFLICT)->assertJsonFragment(['message' => 'FolderContainsBookmarks']);
 
         $this->assertCount(1, $folder->bookmarks);
+        $this->assertCount(1, $folder->activities);
     }
 
-    public function testWillReturnNotFoundWhenFolderDoesNotBelongTOUserAndUserDoesNotHavePermission(): void
+    public function testWillReturnNotFoundWhenFolderDoesNotBelongToUserAndUserDoesNotHavePermission(): void
     {
         $this->loginUser($user = UserFactory::new()->create());
 
@@ -423,6 +468,8 @@ class AddBookmarksToFolderTest extends TestCase
         ])->assertNotFound()->assertJsonFragment(['message' => 'FolderNotFound']);
 
         $this->assertEmpty($otherUsersFolder->bookmarks);
+
+        $this->assertTrue($otherUsersFolder->activities->isEmpty());
     }
 
     public function testWillReturnNotFoundWhenBookmarkDoesNotBelongToUser(): void
@@ -439,6 +486,7 @@ class AddBookmarksToFolderTest extends TestCase
         ])->assertNotFound()->assertJsonFragment(['message' => 'BookmarkNotFound']);
 
         $this->assertEmpty($folder->bookmarks);
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     public function testWillReturnNotFoundWhenBookmarkDoesNotExists(): void
@@ -455,6 +503,7 @@ class AddBookmarksToFolderTest extends TestCase
         ])->assertNotFound()->assertJsonFragment(['message' => "BookmarkNotFound"]);
 
         $this->assertEmpty($folder->bookmarks);
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotExists(): void
@@ -486,6 +535,7 @@ class AddBookmarksToFolderTest extends TestCase
         ])->assertNotFound()->assertJsonFragment(['message' => "FolderNotFound"]);
 
         $this->assertEmpty($folder->bookmarks);
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     public function testWillNotSendNotificationWhenBookmarksWereAddedByFolderOwner(): void
@@ -522,14 +572,20 @@ class AddBookmarksToFolderTest extends TestCase
             'folder'    => $folder->public_id->present(),
         ])->assertCreated();
 
-        $notificationData = $folderOwner->notifications()->first(['data', 'type']);
+        /** @var \App\Models\DatabaseNotification */
+        $notification = $folderOwner->notifications()->first(['data', 'type']);
 
-        $this->assertEquals('BookmarksAddedToFolder', $notificationData->type);
-        $this->assertEquals($notificationData->data, [
-            'N-type' => 'BookmarksAddedToFolder',
-            'version' => '1.0.0',
-            'bookmark_ids' => [$bookmark->id],
-            'folder'          => [
+        $this->assertEquals(5, $notification->type->value);
+        $this->assertEquals($notification->data, [
+            'version'   => '1.0.0',
+            'bookmarks' => [
+                [
+                    'id' => $bookmark->id,
+                    'url' => $bookmark->url,
+                    'public_id' => $bookmark->public_id->value
+                ]
+            ],
+            'folder'        => [
                 'id'        => $folder->id,
                 'public_id' => $folder->public_id->value,
                 'name'      => $folder->name->value
@@ -537,7 +593,8 @@ class AddBookmarksToFolderTest extends TestCase
             'collaborator' => [
                 'id'        => $collaborator->id,
                 'full_name' => $collaborator->full_name->value,
-                'public_id' => $collaborator->public_id->value
+                'public_id' => $collaborator->public_id->value,
+                'profile_image_path' => null
             ],
         ]);
     }
@@ -658,6 +715,7 @@ class AddBookmarksToFolderTest extends TestCase
 
         $updateCollaboratorActionService->disable($folder->id, Feature::ADD_BOOKMARKS);
 
+        $this->refreshApplication();
         $this->loginUser($folderOwner);
         $this->addBookmarksToFolderResponse($query = [
             'bookmarks' => $folderOwnerBookmark->public_id->present(),
@@ -665,15 +723,50 @@ class AddBookmarksToFolderTest extends TestCase
         ])->assertCreated();
 
         //when user is not a collaborator
+        $this->refreshApplication();
         $this->loginUser(UserFactory::new()->create());
         $this->addBookmarksToFolderResponse($query)
             ->assertNotFound();
 
+        $this->refreshApplication();
         $this->loginUser($collaborator);
         $this->addBookmarksToFolderResponse([
             'bookmarks' => (string) $collaboratorBookmarkIds[1],
             'folder'    => $folder->public_id->present(),
         ])->assertForbidden()
             ->assertJsonFragment(['message' => 'FolderFeatureDisAbled']);
+
+        $this->assertCount(2, $folder->activities);
+    }
+
+    #[Test]
+    public function willNotLogActivityWhenActivityLoggingIsDisabled(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+
+        $collaboratorBookmark = BookmarkFactory::new()->for($collaborator)->create();
+        $bookmark = BookmarkFactory::new()->for($folderOwner)->create();
+
+        $folder = FolderFactory::new()
+            ->for($folderOwner)
+            ->settings(FolderSettingsBuilder::new()->enableActivities(false))
+            ->create();
+
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
+
+        $this->loginUser($collaborator);
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => $collaboratorBookmark->public_id->present(),
+            'folder' => $folder->public_id->present(),
+        ])->assertCreated();
+
+        $this->refreshApplication();
+        $this->loginUser($folderOwner);
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => $bookmark->public_id->present(),
+            'folder' => $folder->public_id->present(),
+        ])->assertCreated();
+
+        $this->assertCount(0, $folder->activities);
     }
 }

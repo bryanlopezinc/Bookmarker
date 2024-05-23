@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\ReInstateSuspendedCollaborator;
 
+use App\Http\Handlers\ConditionallyLogActivity;
 use App\Models\Folder;
 use App\Http\Handlers\Constraints;
 use App\Http\Handlers\RequestHandlersQueue;
@@ -44,7 +45,8 @@ final class Handler
             new CollaboratorExistsConstraint(),
             new AffectedUserMustBeACollaboratorConstraint(),
             new MustBeSuspendedConstraint($finder),
-            new ReInstateSuspendedCollaborator($finder)
+            new ReInstateSuspendedCollaborator($finder),
+            new ConditionallyLogActivity(new LogActivity($finder, $authUser))
         ];
     }
 }

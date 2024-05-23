@@ -8,6 +8,7 @@ use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Http\Handlers\CollaboratorMetricsRecorder;
+use App\Http\Handlers\ConditionallyLogActivity;
 use App\Models\Folder;
 use App\Http\Handlers\Constraints;
 use App\Http\Handlers\RequestHandlersQueue;
@@ -50,7 +51,8 @@ final class Handler
             new AffectedUserMustBeACollaboratorConstraint(),
             new CannotSuspendCollaboratorMoreThanOnceConstraint($finder),
             new SuspendCollaborator($suspensionPeriodInHours, $finder, $authUser),
-            new CollaboratorMetricsRecorder(CollaboratorMetricType::SUSPENDED_COLLABORATORS, $authUser->id)
+            new CollaboratorMetricsRecorder(CollaboratorMetricType::SUSPENDED_COLLABORATORS, $authUser->id),
+            new ConditionallyLogActivity(new LogActivity($authUser, $suspensionPeriodInHours))
         ];
     }
 }

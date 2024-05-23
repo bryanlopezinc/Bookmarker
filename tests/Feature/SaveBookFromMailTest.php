@@ -6,7 +6,6 @@ namespace Tests\Feature;
 
 use App\Mail\EmailNotRegisteredMail;
 use App\Mail\EmailNotVerifiedMail;
-use App\Models\Bookmark;
 use App\Models\SecondaryEmail;
 use Tests\TestCase;
 use Illuminate\Support\Str;
@@ -53,7 +52,7 @@ class SaveBookFromMailTest extends TestCase
 
         $this->createBookmarkResponse($data)->assertOk();
 
-        $this->assertDatabaseHas(Bookmark::class, ['user_id' => $user->id]);
+        $this->assertCount(1, $user->bookmarks);
     }
 
     public function testSaveBookmarkFromSecondaryEmail(): void
@@ -75,7 +74,7 @@ class SaveBookFromMailTest extends TestCase
 
         $this->createBookmarkResponse($data)->assertOk();
 
-        $this->assertDatabaseHas(Bookmark::class, ['user_id' => $user->id]);
+        $this->assertCount(1, $user->bookmarks);
     }
 
     public function testCannotSaveBookmarkFromUnregisteredEmail(): void
@@ -102,6 +101,7 @@ class SaveBookFromMailTest extends TestCase
         $user = UserFactory::new()->create();
 
         $data = json_decode(associative: true, json: file_get_contents(base_path('tests/stubs/SendGrid/mail.json')));
+
         $data['email'] = Str::of(file_get_contents(base_path('tests/stubs/SendGrid/email.log')))
             ->replace(':sender', $user->email)
             ->replace('{url}', $this->faker->sentence)
@@ -110,7 +110,7 @@ class SaveBookFromMailTest extends TestCase
 
         $this->createBookmarkResponse($data)->assertOk();
 
-        $this->assertDatabaseMissing(Bookmark::class, ['user_id' => $user->id]);
+        $this->assertCount(0, $user->bookmarks);
     }
 
     public function testMustVerifyPrimaryEmail(): void
@@ -130,6 +130,6 @@ class SaveBookFromMailTest extends TestCase
         $this->createBookmarkResponse($data)->assertOk();
 
         Mail::assertQueued(EmailNotVerifiedMail::class);
-        $this->assertDatabaseMissing(Bookmark::class, ['user_id' => $user->id]);
+        $this->assertCount(0, $user->bookmarks);
     }
 }

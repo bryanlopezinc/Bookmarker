@@ -51,8 +51,8 @@ final class UpdateBookmarkWithHttpResponse implements ShouldQueue
 
         $bookmark->resolved_url = $data->resolvedUrl->toString();
 
-        if ($data->thumbnailUrl !== false) {
-            $bookmark->preview_image_url = $data->thumbnailUrl->toString();
+        if ($data->iconUrl !== false) {
+            $bookmark->preview_image_url = $data->iconUrl->toString();
         }
 
         if ($data->canonicalUrl !== false) {

@@ -9,7 +9,7 @@ use App\Enums\FolderVisibility;
 use App\ValueObjects\FolderName;
 use App\ValueObjects\PublicId\FolderPublicId;
 use Illuminate\Database\Eloquent\Model;
-use App\ValueObjects\FolderSettings;
+use App\FolderSettings\FolderSettings;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -30,6 +30,7 @@ use Illuminate\Database\Eloquent\Collection;
  * @property \Carbon\Carbon                    $created_at
  * @property \Carbon\Carbon                    $updated_at
  * @property Collection<FolderRole>            $roles
+ * @property Collection<FolderActivity>        $activities
  * @property Collection<FolderCollaborator>    $collaborators
  * @property User                              $user
  * @property Collection<SuspendedCollaborator> $suspendedCollaborators
@@ -75,9 +76,17 @@ final class Folder extends Model implements HasPublicIdInterface
 
     protected function settings(): Attribute
     {
+        $set = function ($value) {
+            if ($value instanceof FolderSettings) {
+                return $value->toJson();
+            }
+
+            return (new FolderSettings($value))->toJson();
+        };
+
         return new Attribute(
-            get: fn (?string $json) => FolderSettings::make($json),
-            set: fn ($value) => FolderSettings::make($value)->toJson()
+            get: fn (?string $json) => new FolderSettings(json_decode($json ?? '{}', true, JSON_THROW_ON_ERROR)),
+            set: $set
         );
     }
 
@@ -94,6 +103,11 @@ final class Folder extends Model implements HasPublicIdInterface
         $whereExists = User::query()->whereColumn('id', 'collaborator_id');
 
         return $this->hasMany(FolderCollaborator::class, 'folder_id', 'id')->whereExists($whereExists);
+    }
+
+    public function activities(): HasMany
+    {
+        return $this->hasMany(FolderActivity::class, 'folder_id', 'id');
     }
 
     public function bannedUsers(): HasManyThrough
@@ -145,5 +159,23 @@ final class Folder extends Model implements HasPublicIdInterface
     public function mutedCollaborators(): HasMany
     {
         return $this->hasMany(MutedCollaborator::class, 'folder_id', 'id');
+    }
+
+    public function activityLogContextVariables(): array
+    {
+        return [
+            'id'        => $this->id,
+            'public_id' => $this->public_id->value,
+            'name'      => $this->name->value
+        ];
+    }
+
+    public function getNameOr(Folder $potentiallyOutedFolderRecord): FolderName
+    {
+        if ($this->exists) {
+            return $this->name;
+        }
+
+        return $potentiallyOutedFolderRecord->name;
     }
 }

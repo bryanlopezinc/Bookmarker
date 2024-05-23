@@ -224,7 +224,7 @@ class FetchFolderBookmarksTest extends TestCase
             'Invite users'              => [[Permission::INVITE_USER]],
             'Update folder name'        => [[Permission::UPDATE_FOLDER_NAME]],
             'Update folder description' => [[Permission::UPDATE_FOLDER_DESCRIPTION]],
-            'Update folder thumbnail'   => [[Permission::UPDATE_FOLDER_THUMBNAIL]],
+            'Update folder icon'        => [[Permission::UPDATE_FOLDER_ICON]],
         ];
     }
 

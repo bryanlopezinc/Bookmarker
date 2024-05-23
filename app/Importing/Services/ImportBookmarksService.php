@@ -19,8 +19,10 @@ use App\Models\User;
 
 final class ImportBookmarksService
 {
-    public function __construct(private readonly Filesystem $filesystem, private readonly IdGeneratorInterface $idGenerator)
-    {
+    public function __construct(
+        private readonly Filesystem $filesystem,
+        private readonly IdGeneratorInterface $idGenerator
+    ) {
     }
 
     public function fromRequest(ImportBookmarkRequest $request): void

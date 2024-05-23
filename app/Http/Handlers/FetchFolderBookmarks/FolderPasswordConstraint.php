@@ -6,7 +6,7 @@ namespace App\Http\Handlers\FetchFolderBookmarks;
 
 use App\DataTransferObjects\FetchFolderBookmarksRequestData as Data;
 use App\Exceptions\HttpException;
-use App\Http\Handlers\HandlerInterface;
+use App\Http\Handlers\HasHandlersInterface;
 use App\Models\Folder;
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Http\Response;
 
-final class FolderPasswordConstraint implements Scope, HandlerInterface
+final class FolderPasswordConstraint implements Scope, HasHandlersInterface
 {
     private readonly Data $data;
     private readonly Hasher $hasher;

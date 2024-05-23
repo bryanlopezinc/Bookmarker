@@ -28,7 +28,7 @@ final class SuspendedCollaboratorFinder implements Scope
 
         $builder->addSelect([
             'suspensionData' => Model::query()
-                ->select(DB::raw("JSON_OBJECT('id', id, 'suspended_at', suspended_at, 'duration_in_hours', duration_in_hours)"))
+                ->select(DB::raw("JSON_OBJECT('id', id, 'suspended_at', suspended_at, 'duration_in_hours', duration_in_hours, 'collaborator_id', collaborator_id)"))
                 ->whereColumn('folder_id', 'folders.id')
                 ->when(
                     value: $this->authUser->exists,

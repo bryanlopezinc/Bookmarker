@@ -13,6 +13,7 @@ use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Http\Handlers\Constraints;
 use App\Http\Handlers\CollaboratorMetricsRecorder;
+use App\Http\Handlers\ConditionallyLogActivity;
 use App\Http\Handlers\RequestHandlersQueue;
 use App\Http\Handlers\SuspendCollaborator\SuspendedCollaboratorFinder;
 use App\Models\Scopes\WherePublicIdScope;
@@ -29,9 +30,7 @@ final class Handler
             ->tap(new WherePublicIdScope(PublicIds::fromRequest($data->bookmarksPublicIds)->values()))
             ->get(['user_id', 'id', 'url', 'public_id']);
 
-        $requestHandlersQueue = new RequestHandlersQueue(
-            $this->getConfiguredHandlers($data, $bookmarks)
-        );
+        $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data, $bookmarks));
 
         $requestHandlersQueue->scope($query);
 
@@ -55,8 +54,9 @@ final class Handler
             new CollaboratorCannotMarkBookmarksAsHiddenConstraint($data),
             new UniqueFolderBookmarkConstraint($bookmarksIds),
             new CreateFolderBookmarks($bookmarks->all(), $data),
-            new SendBookmarksAddedToFolderNotification($data, $bookmarksIds),
+            new SendBookmarksAddedToFolderNotification($data, $bookmarks),
             new CheckBookmarksHealth($bookmarks->all()),
+            new ConditionallyLogActivity(new LogActivity($data, $bookmarks)),
             new CollaboratorMetricsRecorder(CollaboratorMetricType::BOOKMARKS_ADDED, $data->authUser->id, $bookmarks->count())
         ];
     }

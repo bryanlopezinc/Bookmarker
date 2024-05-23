@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Notifications;
 
-use App\DataTransferObjects\Notifications;
+use App\Enums\NotificationType as Type;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Importing\DataTransferObjects\ImportFailedNotificationData as ImportFailedNotification;
 use App\Importing\Http\Resources\ImportFailedNotificationResource;
-use RuntimeException;
+use App\Models\DatabaseNotification;
 
 final class NotificationResource extends JsonResource
 {
-    public function __construct(private object $notification)
+    public function __construct(private DatabaseNotification $notification)
     {
     }
 
@@ -21,19 +20,17 @@ final class NotificationResource extends JsonResource
      */
     public function toArray($request)
     {
-        /** @var mixed */
-        $notification = $this->notification;
-
-        return match ($type = $notification::class) {
-            Notifications\NewFolderBookmarksNotificationData::class => (new BookmarksAddedToFolderNotificationResource($notification))->toArray($request),
-            Notifications\CollaboratorExitNotificationData::class => (new CollaboratorExitNotificationResource($notification))->toArray($request),
-            Notifications\BookmarksRemovedFromFolderNotificationData::class => (new FolderBookmarksRemovedNotificationResource($notification))->toArray($request),
-            Notifications\FolderUpdatedNotificationData::class => (new FolderUpdatedNotificationResource($notification))->toArray($request),
-            Notifications\NewCollaboratorNotificationData::class => (new NewCollaboratorNotificationResource($notification))->toArray($request),
-            Notifications\YouHaveBeenKickedOutNotificationData::class => (new YouHaveBeenBootedOutNotificationResource($notification))->toArray($request),
-            Notifications\CollaboratorRemovedNotificationData::class => (new CollaboratorRemovedNotificationResource($notification))->toArray($request),
-            ImportFailedNotification::class => new ImportFailedNotificationResource($notification),
-            default => throw new RuntimeException("Invalid notification type {$type}")
+        return match ($this->notification->type) {
+            Type::BOOKMARKS_ADDED_TO_FOLDER     => new NewFolderBookmarksResource($this->notification),
+            Type::BOOKMARKS_REMOVED_FROM_FOLDER => new FolderBookmarksRemovedResource($this->notification),
+            Type::NEW_COLLABORATOR              => new NewCollaboratorResource($this->notification),
+            Type::COLLABORATOR_EXIT             => new CollaboratorExitResource($this->notification),
+            Type::COLLABORATOR_REMOVED          => new CollaboratorRemovedResource($this->notification),
+            Type::FOLDER_NAME_UPDATED           => new FolderNameChangedResource($this->notification),
+            Type::FOLDER_DESCRIPTION_UPDATED    => new FolderDescriptionChangedResource($this->notification),
+            Type::FOLDER_ICON_UPDATED           => new FolderIconChangedResource($this->notification),
+            Type::YOU_HAVE_BEEN_KICKED_OUT      => new YouHaveBeenBootedOutResource($this->notification),
+            default => new ImportFailedNotificationResource($this->notification),
         };
     }
 }

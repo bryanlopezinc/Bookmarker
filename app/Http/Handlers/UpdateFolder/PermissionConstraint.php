@@ -33,8 +33,8 @@ final class PermissionConstraint implements Scope
             ->when($request->isUpdatingDescription, function (Collection $permissions) {
                 return $permissions->add(Permission::UPDATE_FOLDER_DESCRIPTION);
             })
-            ->when($request->isUpdatingThumbnail, function (Collection $permissions) {
-                return $permissions->add(Permission::UPDATE_FOLDER_THUMBNAIL);
+            ->when($request->isUpdatingIcon, function (Collection $permissions) {
+                return $permissions->add(Permission::UPDATE_FOLDER_ICON);
             })
             ->all();
     }

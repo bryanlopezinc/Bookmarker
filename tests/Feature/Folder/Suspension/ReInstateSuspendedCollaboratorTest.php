@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder\Suspension;
 
+use App\Enums\ActivityType;
+use App\DataTransferObjects\Activities\SuspensionLiftedActivityLogData as ActivityLogData;
+use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Http\Handlers\SuspendCollaborator\SuspendCollaborator;
 use Tests\TestCase;
 use App\Models\User;
@@ -79,10 +82,16 @@ class ReInstateSuspendedCollaboratorTest extends TestCase
             'collaborator_id' => $suspendedCollaborator->public_id->present(),
         ])->assertSuccessful();
 
+        /** @var \App\Models\FolderActivity */
+        $activity = $folder->activities->sole();
+
         $this->assertEquals(
             $folder->suspendedCollaborators->sole()->collaborator_id,
             $otherSuspendedCollaborator->id
         );
+
+        $this->assertEquals($activity->type, ActivityType::SUSPENSION_LIFTED);
+        $this->assertEquals($activity->data, (new ActivityLogData($suspendedCollaborator, $currentUser))->toArray());
     }
 
     #[Test]
@@ -103,9 +112,13 @@ class ReInstateSuspendedCollaboratorTest extends TestCase
             'collaborator_id' => $suspendedCollaborator->public_id->present(),
         ])->assertSuccessful();
 
+        $this->refreshApplication();
+        $this->loginUser($currentUser);
         $this->reInstateSuspendCollaboratorResponse($query)
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'CollaboratorNotSuspended']);
+
+        $this->assertCount(1, $folder->activities);
     }
 
     #[Test]
@@ -125,6 +138,7 @@ class ReInstateSuspendedCollaboratorTest extends TestCase
             ->assertJsonFragment(['message' => 'FolderNotFound']);
 
         $this->assertEquals($folder->suspendedCollaborators->sole()->collaborator_id, $suspendedCollaborator->id);
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     #[Test]
@@ -151,6 +165,8 @@ class ReInstateSuspendedCollaboratorTest extends TestCase
         $this->reInstateSuspendCollaboratorResponse(['folder_id' => $folder->public_id->present(), 'collaborator_id' => $this->generateUserId()->present()])
             ->assertNotFound()
             ->assertExactJson(['message' => 'UserNotFound']);
+
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     #[Test]
@@ -170,6 +186,7 @@ class ReInstateSuspendedCollaboratorTest extends TestCase
             ->assertJsonFragment(['message' => 'UserNotACollaborator']);
 
         $this->assertEquals($otherFolder->suspendedCollaborators->sole()->collaborator_id, $suspendedCollaborator->id);
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     #[Test]
@@ -197,5 +214,30 @@ class ReInstateSuspendedCollaboratorTest extends TestCase
         ])->assertForbidden()->assertJsonFragment(['message' => 'PermissionDenied']);
 
         $this->assertEquals($folder->suspendedCollaborators->sole()->collaborator_id, $suspendedCollaborator->id);
+        $this->assertTrue($folder->activities->isEmpty());
+    }
+
+    #[Test]
+    public function willNotLogActivityWhenActivityLoggingIsDisabled(): void
+    {
+        /** @var User */
+        [$currentUser, $suspendedCollaborator] = UserFactory::times(2)->create();
+
+        $folder = FolderFactory::new()
+            ->for($currentUser)
+            ->settings(FolderSettingsBuilder::new()->enableActivities(false))
+            ->create();
+
+        $this->CreateCollaborationRecord($suspendedCollaborator, $folder);
+
+        SuspendCollaborator::suspend($suspendedCollaborator, $folder);
+
+        $this->loginUser($currentUser);
+        $this->reInstateSuspendCollaboratorResponse([
+            'folder_id'       => $folder->public_id->present(),
+            'collaborator_id' => $suspendedCollaborator->public_id->present(),
+        ])->assertSuccessful();
+
+        $this->assertCount(0, $folder->activities);
     }
 }

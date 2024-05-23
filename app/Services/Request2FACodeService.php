@@ -6,9 +6,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Exceptions\InvalidUsernameException;
-use App\Repositories\UserRepository;
 use App\Repositories\User2FACodeRepository;
-use App\Exceptions\UserNotFoundException;
 use App\Http\Requests\Request2FACodeRequest as Request;
 use App\Mail\TwoFACodeMail;
 use App\ValueObjects\{TwoFACode, Username};
@@ -23,8 +21,7 @@ final class Request2FACodeService
 {
     public function __construct(
         private readonly User2FACodeRepository $user2FACodeRepository,
-        private readonly UserRepository $userRepository,
-        private Hasher $hasher
+        private readonly Hasher $hasher
     ) {
     }
 
@@ -32,10 +29,14 @@ final class Request2FACodeService
     {
         $user = $this->getUser($request);
 
+        if ( ! $user->exists) {
+            $this->throwInvalidCredentialsException();
+        }
+
         $rateLimiterKey = "2FARequests:{$user->id}";
 
         if ( ! $this->hasher->check($request->input('password'), $user->password)) {
-            throw $this->invalidCredentialsException();
+            $this->throwInvalidCredentialsException();
         }
 
         $twoFACodeSent = RateLimiter::attempt(
@@ -58,20 +59,20 @@ final class Request2FACodeService
 
     private function getUser(Request $request): User
     {
-        $attributes = ['id', 'password', 'email'];
+        $query = User::query()->select(['id', 'password', 'email']);
 
         try {
-            return $this->userRepository->findByUsername((new Username($request->input('username')))->value, $attributes);
+            $username = new Username($request->input('username'));
+
+            return $query->where('username', $username->value)->firstOrNew();
         } catch (InvalidUsernameException) {
-            return $this->userRepository->findByEmail($request->validated('username'), $attributes);
-        } catch (UserNotFoundException) {
-            throw $this->invalidCredentialsException();
+            return $query->where('email', $request->validated('username'))->firstOrNew();
         }
     }
 
-    private function invalidCredentialsException(): HttpResponseException
+    private function throwInvalidCredentialsException(): void
     {
-        return new HttpResponseException(
+        throw new HttpResponseException(
             response()->json(
                 ['message' => 'InvalidCredentials'],
                 Response::HTTP_UNAUTHORIZED

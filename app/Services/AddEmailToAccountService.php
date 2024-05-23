@@ -7,37 +7,35 @@ namespace App\Services;
 use App\Repositories\EmailVerificationCodeRepository as PendingVerifications;
 use App\Exceptions\HttpException;
 use App\Mail\TwoFACodeMail;
-use App\Repositories\UserRepository;
+use App\Models\User;
 use App\ValueObjects\TwoFACode;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Mail;
 
 final class AddEmailToAccountService
 {
-    public function __construct(
-        private UserRepository $userRepository,
-        private PendingVerifications $pendingVerifications
-    ) {
+    public function __construct(private PendingVerifications $pendingVerifications)
+    {
     }
 
-    public function __invoke(int $authUserId, string $secondaryEmail): void
+    public function __invoke(User $authUser, string $secondaryEmail): void
     {
-        $this->ensureHasNotReachedMaxEmailLimit($authUserId);
+        $this->ensureHasNotReachedMaxEmailLimit($authUser);
 
-        $this->ensureHasNoPendingVerification($authUserId);
+        $this->ensureHasNoPendingVerification($authUser->id);
 
         $verificationCode = TwoFACode::generate();
 
-        $this->pendingVerifications->put($authUserId, $secondaryEmail, $verificationCode);
+        $this->pendingVerifications->put($authUser->id, $secondaryEmail, $verificationCode);
 
         Mail::to($secondaryEmail)->queue(new TwoFACodeMail($verificationCode));
     }
 
-    private function ensureHasNotReachedMaxEmailLimit(int $authUserId): void
+    private function ensureHasNotReachedMaxEmailLimit(User $authUser): void
     {
-        $userSecondaryEmails = $this->userRepository->getUserSecondaryEmails($authUserId);
+        $authUser->loadCount(['secondaryEmails']);
 
-        if (count($userSecondaryEmails) === 3) {
+        if ($authUser->secondary_emails_count === 3) {
             throw HttpException::forbidden(['message' => 'MaxEmailsLimitReached']);
         }
     }

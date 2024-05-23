@@ -13,11 +13,13 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\Traits\CreatesCollaboration;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\UploadedFile;
+use Tests\Traits\ClearFoldersIconsStorage;
 
 class DisabledFeatureTest extends TestCase
 {
     use CreatesCollaboration;
     use WithFaker;
+    use ClearFoldersIconsStorage;
 
     #[Test]
     public function whenUpdateFolderNameFeatureIsDisabled(): void
@@ -36,6 +38,7 @@ class DisabledFeatureTest extends TestCase
         $this->updateFolderResponse(['name' => $this->faker->word, 'folder_id' => $folder->public_id->present()])
             ->assertForbidden()
             ->assertJsonFragment(['message' => 'FolderFeatureDisAbled']);
+        $this->assertTrue($folder->activities->isEmpty());
 
         $this->updateFolderResponse(['description' => 'foo', 'folder_id' => $folder->public_id->present()])->assertOk();
 
@@ -88,14 +91,14 @@ class DisabledFeatureTest extends TestCase
         $this->updateFolderResponse(['name' => 'baz', 'folder_id' => $folder->public_id->present()])->assertOk();
         $this->updateFolderResponse(['description' => 'foo baz', 'folder_id' => $folder->public_id->present()])->assertOk();
 
-        $this->updateFolderResponse(['thumbnail' => UploadedFile::fake()->image('folderIcon.jpg')->size(2000), 'folder_id' => $folder->public_id->present()])
+        $this->updateFolderResponse(['icon' => UploadedFile::fake()->image('folderIcon.jpg')->size(2000), 'folder_id' => $folder->public_id->present()])
             ->assertForbidden()
             ->assertJsonFragment($errorMessage = ['message' => 'FolderFeatureDisAbled']);
 
-        $this->updateFolderResponse(['thumbnail' => null, 'folder_id' => $folder->public_id->present()])->assertForbidden()->assertJsonFragment($errorMessage);
+        $this->updateFolderResponse(['icon' => null, 'folder_id' => $folder->public_id->present()])->assertForbidden()->assertJsonFragment($errorMessage);
 
         $this->loginUser($folderOwner);
-        $this->updateFolderResponse(['thumbnail' => UploadedFile::fake()->image('folderIcon.jpg')->size(2000), 'folder_id' => $folder->public_id->present()])->assertOk();
+        $this->updateFolderResponse(['icon' => UploadedFile::fake()->image('folderIcon.jpg')->size(2000), 'folder_id' => $folder->public_id->present()])->assertOk();
         $this->updateFolderResponse(['description' => 'barFoo', 'folder_id' => $folder->public_id->present()])->assertOk();
         $this->updateFolderResponse(['name' => 'fooAndBar', 'folder_id' => $folder->public_id->present()])->assertOk();
     }

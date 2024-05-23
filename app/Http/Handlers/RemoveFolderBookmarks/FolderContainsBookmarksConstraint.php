@@ -6,12 +6,12 @@ namespace App\Http\Handlers\RemoveFolderBookmarks;
 
 use App\DataTransferObjects\RemoveFolderBookmarksRequestData as Data;
 use App\Exceptions\HttpException;
-use App\Models\FolderBookmark;
+use App\Models\Bookmark;
 
 final class FolderContainsBookmarksConstraint
 {
     /**
-     * @param array<FolderBookmark> $folderBookmarks
+     * @param array<Bookmark> $folderBookmarks
      */
     public function __construct(private readonly Data $data, private readonly array $folderBookmarks)
     {

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
+use App\DataTransferObjects\Activities\CollaboratorExitActivityLogData;
+use App\DataTransferObjects\Notifications\CollaboratorExitNotificationData;
 use App\Enums\NotificationType;
 use App\Models\Folder;
 use App\Models\User;
@@ -14,9 +16,8 @@ use Illuminate\Bus\Queueable;
 final class CollaboratorExitNotification extends Notification implements ShouldQueue
 {
     use Queueable;
-    use FormatDatabaseNotification;
 
-    public function __construct(private Folder $folder, private User $collaboratorThatLeft)
+    public function __construct(private Folder $folder, private User $collaborator)
     {
         $this->afterCommit();
     }
@@ -37,22 +38,12 @@ final class CollaboratorExitNotification extends Notification implements ShouldQ
      */
     public function toDatabase($notifiable): array
     {
-        return $this->formatNotificationData([
-            'N-type'          => $this->databaseType(),
-            'folder'          => [
-                'id'        => $this->folder->id,
-                'public_id' => $this->folder->public_id->value,
-                'name'      => $this->folder->name->value
-            ],
-            'collaborator' => [
-                'id'        => $this->collaboratorThatLeft->id,
-                'full_name' => $this->collaboratorThatLeft->full_name->value,
-                'public_id' => $this->collaboratorThatLeft->public_id->value
-            ]
-        ]);
+        $notification = new CollaboratorExitNotificationData($this->folder, new CollaboratorExitActivityLogData($this->collaborator));
+
+        return $notification->toArray();
     }
 
-    public function databaseType(): string
+    public function databaseType(): int
     {
         return NotificationType::COLLABORATOR_EXIT->value;
     }

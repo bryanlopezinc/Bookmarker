@@ -7,7 +7,7 @@ namespace App\Http\Controllers\Auth;
 use App\Contracts\IdGeneratorInterface;
 use App\Enums\TwoFaMode;
 use App\Events\RegisteredEvent;
-use App\Filesystem\ProfileImageFileSystem;
+use App\Filesystem\ProfileImagesFilesystem;
 use App\Http\Requests\CreateUserRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Models\User;
@@ -19,7 +19,7 @@ final class UserController
 {
     public function __construct(
         private readonly Hasher $hasher,
-        private readonly ProfileImageFileSystem $filesystem,
+        private readonly ProfileImagesFilesystem $filesystem,
         private readonly IdGeneratorInterface $idGenerator
     ) {
     }

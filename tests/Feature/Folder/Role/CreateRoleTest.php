@@ -145,7 +145,7 @@ class CreateRoleTest extends TestCase
             'Remove Collaborator'       => [['removeUser']],
             'Update folder name'        => [['updateFolderName']],
             'Update folder description' => [['updateFolderDescription']],
-            'Update folder thumbnail'   => [['updateFolderThumbnail']],
+            'Update folder Icon'        => [['updateFolderIcon']],
             'Suspend User'              => [['suspendUser']]
         ];
     }

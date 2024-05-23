@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\RemoveFolderBookmarks;
 
-use App\Models\FolderBookmark;
+use App\Models\Bookmark;
 use App\Models\Folder;
-use Illuminate\Database\Eloquent\Collection;
+use App\Models\FolderBookmark;
+use Illuminate\Support\Arr;
 
 final class DeleteFolderBookmarks
 {
     /**
-     * @param array<FolderBookmark> $folderBookmarks
+     * @param array<Bookmark> $folderBookmarks
      */
     public function __construct(private readonly array $folderBookmarks)
     {
@@ -19,7 +20,10 @@ final class DeleteFolderBookmarks
 
     public function __invoke(Folder $folder): void
     {
-        $deleted = (new Collection($this->folderBookmarks))->toQuery()->delete();
+        $deleted = FolderBookmark::query()
+            ->where('folder_id', $folder->id)
+            ->whereIn('bookmark_id', Arr::pluck($this->folderBookmarks, 'id'))
+            ->delete();
 
         if ($deleted > 0) {
             $folder->updated_at = now();

@@ -44,7 +44,7 @@ final class DefaultClient implements HttpClientInterface
         return BookmarkMetaData::fromArray([
             'title'        => $this->dOMReader->getPageTitle(),
             'description'  => $this->dOMReader->getPageDescription(),
-            'thumbnailUrl' => $this->dOMReader->getPreviewImageUrl(),
+            'iconUrl'      => $this->dOMReader->getPreviewImageUrl(),
             'hostSiteName' => $this->dOMReader->getSiteName(),
             'canonicalUrl' => $this->dOMReader->getCanonicalUrl(),
             'resolvedUrl'  => $resolvedUrl
@@ -80,7 +80,7 @@ final class DefaultClient implements HttpClientInterface
         return BookmarkMetaData::fromArray([
             'title'        => false,
             'description'  => false,
-            'thumbnailUrl' => false,
+            'iconUrl'      => false,
             'hostSiteName' => false,
             'canonicalUrl' => false,
             'resolvedUrl'  => new Url($bookmark->url)

@@ -7,11 +7,13 @@ namespace Tests\Feature\Folder\Updating;
 use App\Models\Folder;
 use App\Enums\Permission;
 use Database\Factories\UserFactory;
-use App\ValueObjects\FolderSettings;
+use App\FolderSettings\FolderSettings;
 use Database\Factories\FolderFactory;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Traits\CreatesCollaboration;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use Illuminate\Support\Arr;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Feature\Folder\Concerns\TestsFolderSettings;
 
 class UpdateSettingsTest extends TestCase
@@ -20,18 +22,16 @@ class UpdateSettingsTest extends TestCase
     use TestsFolderSettings;
 
     #[Test]
-    public function willReturnUnprocessableWhenFolderSettingsIsInValid(): void
+    #[DataProvider('invalidSettingsData')]
+    public function willReturnUnprocessableWhenFolderSettingsIsInValid(array $settings, array $errors): void
     {
         $this->loginUser($user = UserFactory::new()->create());
 
         $folder = FolderFactory::new()->for($user)->create();
 
-        $this->assertWillReturnUnprocessableWhenFolderSettingsIsInValid(
-            ['folder_id' => $folder->id],
-            function (array $parameters) {
-                return $this->updateFolderResponse($parameters);
-            }
-        );
+        $this->updateFolderResponse(['folder_id' => $folder->id, 'settings' => Arr::undot($settings)])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['settings' => $errors]);
     }
 
     #[Test]
@@ -52,8 +52,9 @@ class UpdateSettingsTest extends TestCase
         /** @var FolderSettings */
         $updatedFolderSettings = Folder::query()->whereKey($folder->id)->sole(['settings'])->settings;
 
-        $this->assertEquals(450, $updatedFolderSettings->maxCollaboratorsLimit);
-        $this->assertTrue($updatedFolderSettings->newCollaboratorNotificationIsDisabled);
+        $this->assertEquals(450, $updatedFolderSettings->maxCollaboratorsLimit()->value());
+        $this->assertTrue($updatedFolderSettings->newCollaboratorNotification()->isDisabled());
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     #[Test]
@@ -70,6 +71,6 @@ class UpdateSettingsTest extends TestCase
         $this->updateFolderResponse([
             'folder_id' => $folder->public_id->present(),
             'settings'  => ['notifications' => ['new_collaborator' => ['enabled' => 0]]]
-        ])->assertForbidden()->assertJsonFragment($error = ['message' => 'CannotUpdateFolderAttribute']);
+        ])->assertForbidden()->assertJsonFragment(['message' => 'CannotUpdateFolderAttribute']);
     }
 }

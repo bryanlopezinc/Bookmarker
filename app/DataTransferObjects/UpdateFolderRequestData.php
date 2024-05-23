@@ -24,8 +24,8 @@ final class UpdateFolderRequestData
     public readonly bool $isUpdatingDescription;
     public readonly array $settings;
     public readonly bool $isUpdatingSettings;
-    public readonly ?UploadedFile $thumbnail;
-    public readonly bool $isUpdatingThumbnail;
+    public readonly ?UploadedFile $icon;
+    public readonly bool $isUpdatingIcon;
 
     private function __construct(array $data)
     {
@@ -52,8 +52,8 @@ final class UpdateFolderRequestData
             'isUpdatingDescription'    => $request->has('description'),
             'settings'                 => $request->input('settings', $missingValuePlaceHolder),
             'isUpdatingSettings'       => $request->has('settings'),
-            'thumbnail'                => $request->file('thumbnail'),
-            'isUpdatingThumbnail'      => $request->has('thumbnail')
+            'icon'                     => $request->file('icon'),
+            'isUpdatingIcon'           => $request->has('icon')
         ];
 
         return new self(array_filter($data, fn ($value) => ! $value instanceof MissingValue));

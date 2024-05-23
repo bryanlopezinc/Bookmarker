@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Folder\Suspension;
 
 use App\Enums\Permission;
-use App\Filesystem\ProfileImageFileSystem;
+use App\Filesystem\ProfileImagesFilesystem;
 use App\Http\Handlers\SuspendCollaborator\SuspendCollaborator;
 use Tests\TestCase;
 use App\Models\User;
@@ -69,7 +69,7 @@ class FetchSuspendedCollaboratorsTest extends TestCase
         [$folderOwner, $suspendedCollaborator] = UserFactory::times(2)->hasProfileImage()->create();
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
-        $filesystem = new ProfileImageFileSystem();
+        $filesystem = new ProfileImagesFilesystem();
 
         $this->CreateCollaborationRecord($suspendedCollaborator, $folder);
 

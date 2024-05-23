@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
-use App\Filesystem\ProfileImageFileSystem;
+use App\Filesystem\ProfileImagesFilesystem;
 use App\Models\User;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -30,7 +30,7 @@ final class UserResource extends JsonResource
                 'favorites_count'    => $this->user->favorites_count,
                 'folders_count'      => $this->user->folders_count,
                 'has_verified_email' => $this->user->email_verified_at !== null,
-                'profile_image_url'  => (new ProfileImageFileSystem())->publicUrl($this->user->profile_image_path)
+                'profile_image_url'  => (new ProfileImagesFilesystem())->publicUrl($this->user->profile_image_path)
             ]
         ];
     }

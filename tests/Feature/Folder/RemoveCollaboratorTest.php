@@ -6,9 +6,12 @@ namespace Tests\Feature\Folder;
 
 use App\Actions\ToggleFolderFeature;
 use App\Collections\UserPublicIdsCollection;
+use App\Enums\ActivityType;
 use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
+use App\DataTransferObjects\Activities\CollaboratorRemovedActivityLogData as ActivityLogData;
+use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Http\Handlers\SuspendCollaborator\SuspendCollaborator;
 use App\Models\Folder;
 use App\Models\FolderCollaboratorPermission;
@@ -92,6 +95,9 @@ class RemoveCollaboratorTest extends TestCase
 
         $collaboratorIds = $folder->collaborators->pluck('collaborator_id');
 
+        /** @var \App\Models\FolderActivity */
+        $activity = $folder->activities->sole();
+
         $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
             'folder_id' => $folder->id,
             'user_id'   => $collaborator->id,
@@ -101,6 +107,8 @@ class RemoveCollaboratorTest extends TestCase
         $this->assertNotContains($collaborator->id, $folder->bannedUsers->pluck('id'));
         $this->assertContains($otherCollaborator->id, $collaboratorIds);
         $this->assertNoMetricsRecorded($folderOwner->id, $folder->id, CollaboratorMetricType::COLLABORATORS_REMOVED);
+        $this->assertEquals($activity->type, ActivityType::COLLABORATOR_REMOVED);
+        $this->assertEquals($activity->data, (new ActivityLogData($collaborator, $folderOwner))->toArray());
     }
 
     #[Test]
@@ -281,11 +289,15 @@ class RemoveCollaboratorTest extends TestCase
     {
         $this->loginUser(UserFactory::new()->create());
 
+        $folder = FolderFactory::new()->create();
+
         $this->deleteCollaboratorResponse([
             'collaborator_id' => UserFactory::new()->create()->public_id->present(),
-            'folder_id'       => FolderFactory::new()->create()->public_id->present()
+            'folder_id'       => $folder->public_id->present()
         ])->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
+
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     #[Test]
@@ -299,6 +311,8 @@ class RemoveCollaboratorTest extends TestCase
             'folder_id'      => $folder->public_id->present()
         ])->assertNotFound()
             ->assertJsonFragment(['message' => 'UserNotACollaborator']);
+
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     public function testWillReturnNotFoundWhenUserDoesNotExists(): void
@@ -311,6 +325,8 @@ class RemoveCollaboratorTest extends TestCase
             'folder_id'       => $folder->public_id->present()
         ])->assertNotFound()
             ->assertJsonFragment(['message' => 'UserNotACollaborator']);
+
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     public function testWillReturnForbiddenWhenUserIsRemovingSelf(): void
@@ -332,6 +348,7 @@ class RemoveCollaboratorTest extends TestCase
             ->assertJsonFragment($expectation);
 
         $this->assertEquals($collaborator->id, $folder->collaborators->sole()->collaborator_id);
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     #[Test]
@@ -347,6 +364,8 @@ class RemoveCollaboratorTest extends TestCase
         $this->deleteCollaboratorResponse(['collaborator_id' => $folderOwner->public_id->present(), 'folder_id' => $folder->public_id->present()])
             ->assertForbidden()
             ->assertJsonFragment(['message' => 'CannotRemoveFolderOwner']);
+
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     #[Test]
@@ -356,7 +375,7 @@ class RemoveCollaboratorTest extends TestCase
 
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        $this->CreateCollaborationRecord($collaborator, $folder, UAC::all()->toCollection()->reject(Permission::REMOVE_USER->value)->all());
+        $this->CreateCollaborationRecord($collaborator, $folder, UAC::all()->except(Permission::REMOVE_USER)->toArray());
         $this->CreateCollaborationRecord($collaboratorToBeKickedOut, $folder);
 
         $this->loginUser($collaborator);
@@ -365,6 +384,7 @@ class RemoveCollaboratorTest extends TestCase
             ->assertJsonFragment(['message' => 'PermissionDenied']);
 
         $this->assertEquals([$collaborator->id, $collaboratorToBeKickedOut->id], $folder->collaborators->pluck('collaborator_id')->all());
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     #[Test]
@@ -390,12 +410,15 @@ class RemoveCollaboratorTest extends TestCase
         $this->loginUser($collaborator);
         $this->deleteCollaboratorResponse(['collaborator_id' => $collaboratorsToBeKickedOutPublicIds[0], 'folder_id' => $folder->public_id->present()])->assertOk();
 
+        $this->refreshApplication();
+        $this->loginUser($collaborator);
         $updateCollaboratorActionService->disable($folder->id, Feature::REMOVE_USER);
         $this->deleteCollaboratorResponse(['collaborator_id' => $collaboratorsToBeKickedOutPublicIds[1], 'folder_id' => $folder->public_id->present()])
             ->assertForbidden()
             ->assertJsonFragment(['message' => 'FolderFeatureDisAbled']);
 
         $this->assertCount(2, $folder->collaborators);
+        $this->assertCount(1, $folder->activities);
         $this->assertContains($collaboratorsToBeKickedOut[1]->id, $folder->collaborators->pluck('collaborator_id'));
     }
 
@@ -414,15 +437,16 @@ class RemoveCollaboratorTest extends TestCase
             'folder_id'       => $folder->public_id->present()
         ])->assertOk();
 
-        $notificationData = $collaborator->notifications()->sole(['data', 'type']);
-        $this->assertEquals('YouHaveBeenKickedOut', $notificationData->type);
-        $this->assertEquals($notificationData->data, [
-            'N-type'      => 'YouHaveBeenKickedOut',
-            'version'     => '1.0.0',
+        /** @var \App\Models\DatabaseNotification */
+        $notification = $collaborator->notifications()->sole(['data', 'type']);
+
+        $this->assertEquals(7, $notification->type->value);
+        $this->assertEquals($notification->data, [
+            'version'  => '1.0.0',
             'folder'   => [
                 'id'   => $folder->id,
                 'name' => $folder->name->value,
-                'public_id' => $folder->public_id->value
+                'public_id' => $folder->public_id->value,
             ],
         ]);
     }
@@ -458,25 +482,56 @@ class RemoveCollaboratorTest extends TestCase
             ])->assertOk();
         });
 
-        $notificationsData = $folderOwner->notifications()->get(['data'])->pluck('data')->toArray();
+        $notifications = $folderOwner->notifications()->get(['data'])->pluck('data')->toArray();
 
-        $json = AssertableJson::fromArray($notificationsData);
+        $json = AssertableJson::fromArray($notifications);
 
-        $this->assertCount(2, $notificationsData);
-        $json->where('0.was_banned', true)
-            ->where('1.was_banned', false)
-            ->where('0.collaborator.id', $collaboratorsKickedOut[1]->id)
-            ->where('0.collaborator.public_id', $collaboratorsKickedOut[1]->public_id->value)
-            ->where('0.collaborator.name', $collaboratorsKickedOut[1]->full_name->value)
+        $this->assertCount(2, $notifications);
+        $json->where('0.banned', true)
+            ->where('1.banned', false)
+            ->where('0.collaborator_removed.id', $collaboratorsKickedOut[1]->id)
+            ->where('0.collaborator_removed.public_id', $collaboratorsKickedOut[1]->public_id->value)
+            ->where('0.collaborator_removed.full_name', $collaboratorsKickedOut[1]->full_name->value)
             ->each(function (AssertableJson $json) use ($folder, $collaborator) {
                 $json->where('version', '1.0.0')
-                    ->where('N-type', 'CollaboratorRemoved')
                     ->where('folder.id', $folder->id)
                     ->where('folder.name', $folder->name->value)
-                    ->where('removed_by.id', $collaborator->id)
-                    ->where('removed_by.public_id', $collaborator->public_id->value)
-                    ->where('removed_by.name', $collaborator->full_name->value)
+                    ->where('collaborator.id', $collaborator->id)
+                    ->where('collaborator.public_id', $collaborator->public_id->value)
+                    ->where('collaborator.full_name', $collaborator->full_name->value)
                     ->etc();
             });
+    }
+
+    #[Test]
+    public function willNotLogActivityWhenActivityLoggingIsDisabled(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::times(2)->create();
+
+        $folder = FolderFactory::new()
+            ->for($folderOwner)
+            ->settings(FolderSettingsBuilder::new()->enableActivities(false))
+            ->create();
+
+        $collaborators = UserFactory::times(2)->create()->each(function ($collaborator) use ($folder) {
+            $this->CreateCollaborationRecord($collaborator, $folder);
+        });
+
+        $this->CreateCollaborationRecord($collaborator, $folder, UAC::all()->toArray());
+
+        $this->loginUser($folderOwner);
+        $this->deleteCollaboratorResponse([
+            'collaborator_id' => $collaborators[0]->public_id->present(),
+            'folder_id'       => $folder->public_id->present()
+        ])->assertOk();
+
+        $this->refreshApplication();
+        $this->loginUser($collaborator);
+        $this->deleteCollaboratorResponse([
+            'collaborator_id' => $collaborators[1]->public_id->present(),
+            'folder_id'       => $folder->public_id->present()
+        ])->assertOk();
+
+        $this->assertCount(0, $folder->activities);
     }
 }

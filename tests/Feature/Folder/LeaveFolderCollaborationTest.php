@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder;
 
+use App\DataTransferObjects\Activities\CollaboratorExitActivityLogData;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\Enums\ActivityType;
 use App\Models\FolderCollaboratorPermission;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -13,7 +15,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 use App\Enums\Permission;
-use App\Models\FolderCollaborator;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Traits\CreatesCollaboration;
 use Tests\Traits\GeneratesId;
 
@@ -62,15 +64,17 @@ class LeaveFolderCollaborationTest extends TestCase
         $this->loginUser($collaborator);
         $this->leaveFolderCollaborationResponse(['folder_id' => $folder->public_id->present()])->assertOk();
 
+        /** @var \App\Models\FolderActivity */
+        $activity = $folder->activities->sole();
+
         $this->assertDatabaseMissing(FolderCollaboratorPermission::class, [
+            'folder_id' => $folder->id,
             'user_id'   => $collaborator->id,
-            'folder_id' => $folder->id
         ]);
 
-        $this->assertDatabaseMissing(FolderCollaborator::class, [
-            'collaborator_id' => $collaborator->id,
-            'folder_id' => $folder->id
-        ]);
+        $this->assertTrue($folder->collaborators->isEmpty());
+        $this->assertEquals($activity->type, ActivityType::COLLABORATOR_EXIT);
+        $this->assertEquals($activity->data, (new CollaboratorExitActivityLogData($collaborator))->toArray());
     }
 
     public function testWillReturnNotFoundWhenUserIsNotACollaborator(): void
@@ -109,13 +113,13 @@ class LeaveFolderCollaborationTest extends TestCase
         $this->loginUser($collaborator);
         $this->leaveFolderCollaborationResponse(['folder_id' => $folder->public_id->present()])->assertOk();
 
+        /** @var \App\Models\DatabaseNotification */
         $notificationData = $folderOwner->notifications()->sole(['data', 'type']);
 
-        $this->assertEquals('CollaboratorExitedFolder', $notificationData->type);
+        $this->assertEquals(9, $notificationData->type->value);
         $this->assertEquals($notificationData->data, [
-            'N-type'  => 'CollaboratorExitedFolder',
             'version' => '1.0.0',
-            'folder'          => [
+            'folder'  => [
                 'id'        => $folder->id,
                 'public_id' => $folder->public_id->value,
                 'name'      => $folder->name->value
@@ -123,7 +127,8 @@ class LeaveFolderCollaborationTest extends TestCase
             'collaborator' => [
                 'id'        => $collaborator->id,
                 'full_name' => $collaborator->full_name->value,
-                'public_id' => $collaborator->public_id->value
+                'public_id' => $collaborator->public_id->value,
+                'profile_image_path' => null
             ]
         ]);
     }
@@ -241,5 +246,23 @@ class LeaveFolderCollaborationTest extends TestCase
         $this->leaveFolderCollaborationResponse(['folder_id' => $folder->public_id->present()])->assertOk();
 
         Notification::assertSentTimes(\App\Notifications\CollaboratorExitNotification::class, 1);
+    }
+
+    #[Test]
+    public function willNotLogActivityWhenActivityLoggingIsDisabled(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+
+        $folder = FolderFactory::new()
+            ->for($folderOwner)
+            ->settings(FolderSettingsBuilder::new()->enableActivities(false))
+            ->create();
+
+        $this->CreateCollaborationRecord($collaborator, $folder);
+
+        $this->loginUser($collaborator);
+        $this->leaveFolderCollaborationResponse(['folder_id' => $folder->public_id->present()])->assertOk();
+
+        $this->assertCount(0, $folder->activities);
     }
 }

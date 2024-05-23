@@ -17,7 +17,7 @@ final class CreateFolderData
         public string $visibility,
         public readonly array $settings,
         public readonly ?string $password,
-        public readonly ?UploadedFile $thumbnail
+        public readonly ?UploadedFile $icon
     ) {
     }
 
@@ -30,7 +30,7 @@ final class CreateFolderData
             'visibility'  => $request->validated('visibility', 'public'),
             'settings'    => $request->validated('settings', []),
             'password'    => $request->validated('folder_password'),
-            'thumbnail'   => $request->file('thumbnail')
+            'icon'        => $request->file('icon')
         ]);
     }
 
@@ -43,7 +43,7 @@ final class CreateFolderData
             'visibility'  => $data['visibility'],
             'settings'    => $data['settings'],
             'password'    => $data['password'],
-            'thumbnail'   => $data['thumbnail']
+            'icon'        => $data['icon']
         ]);
     }
 

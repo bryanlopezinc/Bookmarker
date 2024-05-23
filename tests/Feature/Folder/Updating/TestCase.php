@@ -37,7 +37,9 @@ abstract class TestCase extends BaseTestCase
         $updated = Folder::query()->find($original->id);
 
         $updated->offsetUnset('updated_at');
+        $updated->offsetUnset('activities');
         $original->offsetUnset('updated_at');
+        $original->offsetUnset('activities');
 
         $originalToArray = $original->toArray();
         $updatedToArray = $updated->toArray();

@@ -528,10 +528,7 @@ class SendInviteTest extends TestCase
         [$folderOwner, $collaborator, $invitee] = UserFactory::new()->count(3)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        $permissions = UAC::all()
-            ->toCollection()
-            ->reject(Permission::INVITE_USER->value)
-            ->all();
+        $permissions = UAC::all()->except(Permission::INVITE_USER)->toArray();
 
         $this->CreateCollaborationRecord($collaborator, $folder, $permissions);
         $this->attachRoleToUser($collaborator, $this->createRole(folder: $folder, permissions: Permission::ADD_BOOKMARKS));
@@ -647,7 +644,7 @@ class SendInviteTest extends TestCase
             'Remove Collaborator'       => [['removeUser']],
             'Update folder name'        => [['updateFolderName']],
             'Update folder description' => [['updateFolderDescription']],
-            'Update folder thumbnail'   => [['updateFolderThumbnail']],
+            'Update folder Icon'        => [['updateFolderIcon']],
             'Suspend User'              => [['suspendUser']],
             'Many'                      => [['addBookmarks', 'updateFolderName', 'removeUser']]
         ];

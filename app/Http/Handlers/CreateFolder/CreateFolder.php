@@ -7,18 +7,18 @@ namespace App\Http\Handlers\CreateFolder;
 use App\Contracts\IdGeneratorInterface;
 use App\DataTransferObjects\CreateFolderData;
 use App\Enums\FolderVisibility;
-use App\Filesystem\FolderThumbnailFileSystem;
+use App\Filesystem\FoldersIconsFilesystem;
+use App\FolderSettings\FolderSettings;
 use App\Models\Folder;
-use App\ValueObjects\FolderSettings;
 
-final class CreateFolder implements HandlerInterface
+final class CreateFolder
 {
-    private readonly FolderThumbnailFileSystem $filesystem;
+    private readonly FoldersIconsFilesystem $filesystem;
     private readonly IdGeneratorInterface $IdGenerator;
 
-    public function __construct(FolderThumbnailFileSystem $filesystem = null, IdGeneratorInterface $IdGenerator = null)
+    public function __construct(FoldersIconsFilesystem $filesystem = null, IdGeneratorInterface $IdGenerator = null)
     {
-        $this->filesystem = $filesystem ?: new FolderThumbnailFileSystem();
+        $this->filesystem = $filesystem ?: new FoldersIconsFilesystem();
         $this->IdGenerator = $IdGenerator ??= app(IdGeneratorInterface::class);
     }
 
@@ -26,8 +26,8 @@ final class CreateFolder implements HandlerInterface
     {
         $iconPath = null;
 
-        if ($data->thumbnail !== null) {
-            $iconPath = $this->filesystem->store($data->thumbnail);
+        if ($data->icon !== null) {
+            $iconPath = $this->filesystem->store($data->icon);
         }
 
         Folder::create([

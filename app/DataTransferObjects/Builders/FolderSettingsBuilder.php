@@ -4,13 +4,30 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects\Builders;
 
-use App\Enums\CollaboratorExitNotificationMode;
-use App\ValueObjects\FolderSettings;
+use App\FolderSettings\SettingInterface;
 use App\Enums\NewCollaboratorNotificationMode;
-use Illuminate\Support\Arr;
+use App\Enums\CollaboratorExitNotificationMode;
+use App\Enums\FolderActivitiesVisibility;
+use App\FolderSettings\FolderSettings;
+use App\FolderSettings\Settings\AcceptInviteConstraints;
+use App\FolderSettings\Settings\Activities\ActivitiesVisibility;
+use App\FolderSettings\Settings\Activities\LogActivities;
+use App\FolderSettings\Settings\MaxBookmarksLimit;
+use App\FolderSettings\Settings\MaxCollaboratorsLimit;
+use App\FolderSettings\Settings\Notifications\BookmarksRemovedNotification;
+use App\FolderSettings\Settings\Notifications\CollaboratorExitNotification;
+use App\FolderSettings\Settings\Notifications\CollaboratorExitNotificationMode as CollaboratorExitNotificationModeSetting;
+use App\FolderSettings\Settings\Notifications\FolderUpdatedNotification;
+use App\FolderSettings\Settings\Notifications\NewBookmarksNotification;
+use App\FolderSettings\Settings\Notifications\NewCollaboratorNotification;
+use App\FolderSettings\Settings\Notifications\NewCollaboratorNotificationMode as NewCollaboratorNotificationModeSetting;
+use App\FolderSettings\Settings\Notifications\Notifications;
 
 final class FolderSettingsBuilder
 {
+    /**
+     * @var array<SettingInterface>
+     */
     private array $attributes = [];
 
     public function __construct(array $attributes = [])
@@ -20,7 +37,7 @@ final class FolderSettingsBuilder
 
     public function build(): FolderSettings
     {
-        return new FolderSettings($this->attributes);
+        return FolderSettings::fromKeys($this->attributes);
     }
 
     public static function new(array $attributes = []): FolderSettingsBuilder
@@ -30,21 +47,21 @@ final class FolderSettingsBuilder
 
     public function setMaxCollaboratorsLimit(int $limit): self
     {
-        Arr::set($this->attributes, 'max_collaborators_limit', $limit);
+        $this->attributes[] = new MaxCollaboratorsLimit($limit);
 
         return $this;
     }
 
     public function setMaxBookmarksLimit(int $limit): self
     {
-        Arr::set($this->attributes, 'max_bookmarks_limit', $limit);
+        $this->attributes[] = new MaxBookmarksLimit($limit);
 
         return $this;
     }
 
     public function enableNotifications(bool $enable = true): self
     {
-        Arr::set($this->attributes, 'notifications.enabled', $enable);
+        $this->attributes[] = new Notifications($enable);
 
         return $this;
     }
@@ -56,7 +73,7 @@ final class FolderSettingsBuilder
 
     public function enableFolderUpdatedNotification(bool $enable = true): self
     {
-        Arr::set($this->attributes, 'notifications.folder_updated.enabled', $enable);
+        $this->attributes[] = new FolderUpdatedNotification($enable);
 
         return $this;
     }
@@ -68,7 +85,7 @@ final class FolderSettingsBuilder
 
     public function enableNewBookmarksNotification(bool $enable = true): self
     {
-        Arr::set($this->attributes, 'notifications.new_bookmarks.enabled', $enable);
+        $this->attributes[] = new NewBookmarksNotification($enable);
 
         return $this;
     }
@@ -78,9 +95,9 @@ final class FolderSettingsBuilder
         return $this->enableNewBookmarksNotification(false);
     }
 
-    public function enableBookmarksRemovedNotification(bool $notify = true): self
+    public function enableBookmarksRemovedNotification(bool $enable = true): self
     {
-        Arr::set($this->attributes, 'notifications.bookmarks_removed.enabled', $notify);
+        $this->attributes[] = new BookmarksRemovedNotification($enable);
 
         return $this;
     }
@@ -92,7 +109,7 @@ final class FolderSettingsBuilder
 
     public function enableNewCollaboratorNotification(bool $enable = true): self
     {
-        Arr::set($this->attributes, 'notifications.new_collaborator.enabled', $enable);
+        $this->attributes[] = new NewCollaboratorNotification($enable);
 
         return $this;
     }
@@ -106,14 +123,14 @@ final class FolderSettingsBuilder
     {
         $mode = $enable ? NewCollaboratorNotificationMode::INVITED_BY_ME : NewCollaboratorNotificationMode::ALL;
 
-        Arr::set($this->attributes, 'notifications.new_collaborator.mode', $mode->value);
+        $this->attributes[] = new NewCollaboratorNotificationModeSetting($mode->value);
 
         return $this;
     }
 
     public function enableCollaboratorExitNotification(bool $enable = true): self
     {
-        Arr::set($this->attributes, 'notifications.collaborator_exit.enabled', $enable);
+        $this->attributes[] = new CollaboratorExitNotification($enable);
 
         return $this;
     }
@@ -127,29 +144,47 @@ final class FolderSettingsBuilder
     {
         $mode = $enable ? CollaboratorExitNotificationMode::HAS_WRITE_PERMISSION : CollaboratorExitNotificationMode::ALL;
 
-        Arr::set($this->attributes, 'notifications.collaborator_exit.mode', $mode->value);
+        $this->attributes[] = new CollaboratorExitNotificationModeSetting($mode->value);
 
         return $this;
     }
 
     public function enableCannotAcceptInviteIfInviterIsNotAnActiveCollaborator(): self
     {
-        $acceptInviteConstraints = Arr::pull($this->attributes, 'accept_invite_constraints', []);
+        $acceptInviteConstraints = collect($this->attributes)
+            ->filter(fn ($value) => $value instanceof AcceptInviteConstraints)
+            ->first(default: new AcceptInviteConstraints())
+            ->value()
+            ->all();
 
-        $acceptInviteConstraints[] = 'InviterMustBeAnActiveCollaborator';
-
-        Arr::set($this->attributes, 'accept_invite_constraints', $acceptInviteConstraints);
+        $this->attributes[] = new AcceptInviteConstraints(array_merge($acceptInviteConstraints, ['InviterMustBeAnActiveCollaborator']));
 
         return $this;
     }
 
     public function enableCannotAcceptInviteIfInviterNoLongerHasRequiredPermission(): self
     {
-        $acceptInviteConstraints = Arr::pull($this->attributes, 'accept_invite_constraints', []);
+        $acceptInviteConstraints = collect($this->attributes)
+            ->filter(fn ($value) => $value instanceof AcceptInviteConstraints)
+            ->first(default: new AcceptInviteConstraints())
+            ->value()
+            ->all();
 
-        $acceptInviteConstraints[] = 'InviterMustHaveRequiredPermission';
+        $this->attributes[] = new AcceptInviteConstraints(array_merge($acceptInviteConstraints, ['InviterMustHaveRequiredPermission']));
 
-        Arr::set($this->attributes, 'accept_invite_constraints', $acceptInviteConstraints);
+        return $this;
+    }
+
+    public function enableActivities(bool $enable = true): self
+    {
+        $this->attributes[] = new LogActivities($enable);
+
+        return $this;
+    }
+
+    public function activitiesVisibility(FolderActivitiesVisibility $visibility = FolderActivitiesVisibility::PUBLIC): self
+    {
+        $this->attributes[] = new ActivitiesVisibility($visibility);
 
         return $this;
     }

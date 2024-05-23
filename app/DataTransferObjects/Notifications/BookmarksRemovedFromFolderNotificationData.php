@@ -4,29 +4,36 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects\Notifications;
 
+use App\DataTransferObjects\Activities\FolderBookmarksRemovedActivityLogData as ActivityLogData;
+use App\DataTransferObjects\Activities\FolderBookmarksRemovedActivityLogData;
 use App\Models\Folder;
-use App\Models\User;
-use App\Models\Bookmark;
-use App\ValueObjects\FolderName;
-use App\ValueObjects\PublicId\FolderPublicId;
-use App\ValueObjects\FullName;
-use App\ValueObjects\PublicId\UserPublicId;
+use Illuminate\Contracts\Support\Arrayable;
 
-final class BookmarksRemovedFromFolderNotificationData
+final class BookmarksRemovedFromFolderNotificationData implements Arrayable
 {
-    /**
-     * @param array<Bookmark> $bookmarks
-     */
     public function __construct(
-        public readonly ?Folder $folder,
-        public readonly ?User $collaborator,
-        public readonly FullName $collaboratorFullName,
-        public readonly UserPublicId $collaboratorId,
-        public readonly FolderPublicId $folderId,
-        public readonly FolderName $folderName,
-        public readonly array $bookmarks,
-        public readonly string $id,
-        public readonly string $notifiedOn
+        public readonly Folder $folder,
+        public readonly FolderBookmarksRemovedActivityLogData $activityLog
     ) {
+    }
+
+    public static function fromArray(array $data): self
+    {
+        $folder = new Folder($data['folder']);
+
+        $folder->exists = true;
+
+        return new BookmarksRemovedFromFolderNotificationData($folder, ActivityLogData::fromArray($data));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function toArray()
+    {
+        return array_replace($this->activityLog->toArray(), [
+            'version' => '1.0.0',
+            'folder'  => $this->folder->activityLogContextVariables()
+        ]);
     }
 }

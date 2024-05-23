@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
+use App\DataTransferObjects\Activities\CollaboratorRemovedActivityLogData;
+use App\DataTransferObjects\Notifications\CollaboratorRemovedNotificationData;
 use App\Enums\NotificationType;
 use App\Models\Folder;
 use App\Models\User;
@@ -13,7 +15,6 @@ use Illuminate\Bus\Queueable;
 final class CollaboratorRemovedNotification extends Notification
 {
     use Queueable;
-    use FormatDatabaseNotification;
 
     public function __construct(
         private Folder $folder,
@@ -40,28 +41,16 @@ final class CollaboratorRemovedNotification extends Notification
      */
     public function toDatabase($notifiable): array
     {
-        return $this->formatNotificationData([
-            'N-type'       => $this->databaseType(),
-            'folder'       => [
-                'id' => $this->folder->id,
-                'public_id' => $this->folder->public_id->value,
-                'name' => $this->folder->name->value,
-            ],
-            'collaborator' => [
-                'id' => $this->collaborator->id,
-                'name' => $this->collaborator->full_name->value,
-                'public_id' => $this->collaborator->public_id->value,
-            ],
-            'removed_by'   => [
-                'id' => $this->removedBy->id,
-                'name' => $this->removedBy->full_name->value,
-                'public_id' => $this->removedBy->public_id->value,
-            ],
-            'was_banned'   => $this->wasBanned
-        ]);
+        $notification = new CollaboratorRemovedNotificationData(
+            $this->folder,
+            $this->wasBanned,
+            new CollaboratorRemovedActivityLogData($this->collaborator, $this->removedBy)
+        );
+
+        return $notification->toArray();
     }
 
-    public function databaseType(): string
+    public function databaseType(): int
     {
         return NotificationType::COLLABORATOR_REMOVED->value;
     }

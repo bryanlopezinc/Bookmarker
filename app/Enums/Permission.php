@@ -11,7 +11,7 @@ enum Permission: string
     case INVITE_USER               = 'INVITE_USER';
     case UPDATE_FOLDER_NAME        = 'UPDATE_FOLDER_NAME';
     case UPDATE_FOLDER_DESCRIPTION = 'UPDATE_FOLDER_DESCRIPTION';
-    case UPDATE_FOLDER_THUMBNAIL   = 'UPDATE_FOLDER_ICON';
+    case UPDATE_FOLDER_ICON        = 'UPDATE_FOLDER_ICON';
     case REMOVE_USER               = 'REMOVE_USER';
     case SUSPEND_USER              = 'SUSPEND_USER';
 
@@ -23,7 +23,7 @@ enum Permission: string
         return [
             self::UPDATE_FOLDER_DESCRIPTION,
             self::UPDATE_FOLDER_NAME,
-            self::UPDATE_FOLDER_THUMBNAIL
+            self::UPDATE_FOLDER_ICON
         ];
     }
 }

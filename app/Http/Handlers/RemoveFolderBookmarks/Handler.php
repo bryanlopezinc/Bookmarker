@@ -15,6 +15,7 @@ use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Http\Handlers\CollaboratorMetricsRecorder;
+use App\Http\Handlers\ConditionallyLogActivity;
 use App\Http\Handlers\SuspendCollaborator\SuspendedCollaboratorFinder;
 use App\Models\Scopes\WherePublicIdScope;
 use App\ValueObjects\PublicId\FolderPublicId;
@@ -27,10 +28,13 @@ final class Handler
 
         $query = Folder::query()->select(['id'])->tap(new WherePublicIdScope($folderId));
 
-        $folderBookmarks = FolderBookmark::query()
-            ->where('folder_id', Folder::select('id')->tap(new WherePublicIdScope($folderId)))
-            ->whereIn('bookmark_id', Bookmark::select('id')->tap(new WherePublicIdScope($bookmarksPublicIds)))
-            ->whereExists(Bookmark::whereRaw('id = folders_bookmarks.bookmark_id'))
+        $whereIn = FolderBookmark::query()
+            ->select('bookmark_id')
+            ->where('folder_id', Folder::select('id')->tap(new WherePublicIdScope($folderId)));
+
+        $folderBookmarks = Bookmark::select(['id', 'url', 'public_id'])
+            ->tap(new WherePublicIdScope($bookmarksPublicIds))
+            ->whereIn('id', $whereIn)
             ->get();
 
         $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data, $folderBookmarks->all()));
@@ -52,7 +56,8 @@ final class Handler
             new FolderContainsBookmarksConstraint($data, $folderBookmarks),
             new DeleteFolderBookmarks($folderBookmarks),
             new SendBookmarksRemovedFromFolderNotificationNotification($data, $folderBookmarks),
-            new CollaboratorMetricsRecorder(CollaboratorMetricType::BOOKMARKS_DELETED, $data->authUser->id, count($folderBookmarks))
+            new CollaboratorMetricsRecorder(CollaboratorMetricType::BOOKMARKS_DELETED, $data->authUser->id, count($folderBookmarks)),
+            new ConditionallyLogActivity(new LogActivity($folderBookmarks, $data->authUser))
         ];
     }
 }

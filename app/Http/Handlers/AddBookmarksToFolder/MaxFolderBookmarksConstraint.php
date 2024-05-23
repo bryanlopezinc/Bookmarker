@@ -30,7 +30,7 @@ final class MaxFolderBookmarksConstraint implements Scope
     {
         $storage = new FolderStorage($folder->bookmarks_count);
 
-        if ( ! $storage->canContain($this->data->bookmarksPublicIds) || $folder->settings->maxBookmarksLimit >= $storage->total) {
+        if ( ! $storage->canContain($this->data->bookmarksPublicIds) || $folder->settings->maxBookmarksLimit()->value() >= $storage->total) {
             throw HttpException::forbidden([
                 'message' => 'FolderBookmarksLimitReached',
                 'info'    => 'Folder has reached its max bookmarks limit.'

@@ -14,10 +14,11 @@ use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use App\DataTransferObjects\AddBookmarksToFolderRequestData as Data;
+use Illuminate\Support\Collection;
 
 final class SendBookmarksAddedToFolderNotification implements Scope
 {
-    public function __construct(private readonly Data $data, private readonly array $bookmarkIds)
+    public function __construct(private readonly Data $data, private readonly Collection $bookmarks)
     {
     }
 
@@ -30,22 +31,27 @@ final class SendBookmarksAddedToFolderNotification implements Scope
     {
         $settings = $folder->settings;
         $folderBelongsToAuthUser = $this->data->authUser->id === $folder->user_id;
-        [$authUser, $bookmarkIds] = [$this->data->authUser, $this->bookmarkIds];
+        $authUser = $this->data->authUser;
+        $bookmarks = $this->bookmarks;
 
         $shouldNotSendNotification =
-            $folderBelongsToAuthUser                     ||
-            $settings->notificationsAreDisabled           ||
-            $settings->newBookmarksNotificationIsDisabled ||
+            $folderBelongsToAuthUser                           ||
+            $settings->notifications()->isDisabled()            ||
+            $settings->newBookmarksNotification()->isDisabled() ||
             $folder->collaboratorIsMuted;
 
         if ($shouldNotSendNotification) {
             return;
         }
 
-        $pendingDispatch = dispatch(static function () use ($folder, $authUser, $bookmarkIds) {
+        $pendingDispatch = dispatch(static function () use ($folder, $authUser, $bookmarks) {
             NotificationSender::send(
                 new User(['id' => $folder->user_id]),
-                new Notification($bookmarkIds, $folder, $authUser)
+                new Notification(
+                    $bookmarks->all(),
+                    $folder,
+                    $authUser
+                )
             );
         });
 

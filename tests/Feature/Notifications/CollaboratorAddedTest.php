@@ -29,37 +29,40 @@ class CollaboratorAddedTest extends TestCase
 
         $folder->update(['name' => 'gotham problems']);
 
-        $expectedDateTime = $folderOwner->notifications()->sole(['created_at'])->created_at;
-
         $this->loginUser($folderOwner);
         $this->fetchNotificationsResponse()
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonCount(9, 'data.0.attributes')
+            ->assertJsonCount(6, 'data.0.attributes')
             ->assertJsonPath('data.0.type', 'CollaboratorAddedToFolderNotification')
-            ->assertJsonPath('data.0.attributes.collaborator_exists', true)
+            ->assertJsonPath('data.0.attributes.collaborator.exists', true)
             ->assertJsonPath('data.0.attributes.message', 'Bruce Wayne added The Joker to Gotham Problems folder.')
             ->assertJsonPath('data.0.attributes.id', fn (string $id) => Str::isUuid($id))
-            ->assertJsonPath('data.0.attributes.folder_exists', true)
-            ->assertJsonPath('data.0.attributes.new_collaborator_exists', true)
-            ->assertJsonPath('data.0.attributes.notified_on', fn (string $dateTime) => $dateTime === (string) $expectedDateTime)
-            ->assertJsonPath('data.0.attributes.collaborator_id', $collaborator->public_id->present())
-            ->assertJsonPath('data.0.attributes.folder_id', $folder->public_id->present())
-            ->assertJsonPath('data.0.attributes.new_collaborator_id', $newCollaborator->public_id->present())
+            ->assertJsonPath('data.0.attributes.folder.exists', true)
+            ->assertJsonPath('data.0.attributes.new_collaborator.exists', true)
+            ->assertJsonPath('data.0.attributes.collaborator.id', $collaborator->public_id->present())
+            ->assertJsonPath('data.0.attributes.folder.id', $folder->public_id->present())
+            ->assertJsonPath('data.0.attributes.new_collaborator.id', $newCollaborator->public_id->present())
             ->assertJsonStructure([
                 'data' => [
                     '*' => [
                         'type',
                         'attributes' => [
                             'id',
-                            'collaborator_exists',
-                            'folder_exists',
-                            'new_collaborator_exists',
                             'message',
                             'notified_on',
-                            'collaborator_id',
-                            'folder_id',
-                            'new_collaborator_id',
+                            'collaborator' => [
+                                'id',
+                                'exists'
+                            ],
+                            'new_collaborator' => [
+                                'id',
+                                'exists'
+                            ],
+                            'folder' => [
+                                'id',
+                                'exists',
+                            ],
                         ]
                     ]
                 ]
@@ -81,7 +84,7 @@ class CollaboratorAddedTest extends TestCase
         $this->loginUser($folderOwner);
         $this->fetchNotificationsResponse()
             ->assertOk()
-            ->assertJsonPath('data.0.attributes.collaborator_exists', false)
+            ->assertJsonPath('data.0.attributes.collaborator.exists', false)
             ->assertJsonPath('data.0.attributes.message', "{$collaborator->full_name->present()} added {$newCollaborator->full_name->present()} to {$folder->name->present()} folder.");
     }
 
@@ -100,6 +103,6 @@ class CollaboratorAddedTest extends TestCase
         $this->loginUser($folderOwner);
         $this->fetchNotificationsResponse()
             ->assertOk()
-            ->assertJsonPath('data.0.attributes.folder_exists', false);
+            ->assertJsonPath('data.0.attributes.folder.exists', false);
     }
 }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder\Mute;
 
-use App\Filesystem\ProfileImageFileSystem;
+use App\Filesystem\ProfileImagesFilesystem;
 use App\Models\Folder;
 use App\Models\User;
 use App\Services\Folder\MuteCollaboratorService;
@@ -87,7 +87,7 @@ class FetchMutedCollaboratorsTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(3, 'data.0.attributes')
             ->assertJsonPath('data.0.attributes.id', $collaborator->public_id->present())
-            ->assertJsonPath('data.0.attributes.profile_image_url', (new ProfileImageFileSystem())->publicUrl($collaborator->profile_image_path))
+            ->assertJsonPath('data.0.attributes.profile_image_url', (new ProfileImagesFilesystem())->publicUrl($collaborator->profile_image_path))
             ->assertJsonPath('data.0.attributes.name', "{$collaborator->first_name} {$collaborator->last_name}")
             ->assertJsonPath('data.0.type', 'mutedCollaborator')
             ->assertJsonStructure([

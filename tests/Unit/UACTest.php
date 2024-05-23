@@ -77,6 +77,18 @@ class UACTest extends TestCase
     }
 
     #[Test]
+    public function exceptMethod(): void
+    {
+        $uac = new UAC([]);
+        $this->assertFalse($uac->isNotEmpty());
+
+        $uac = new UAC([Permission::ADD_BOOKMARKS, Permission::DELETE_BOOKMARKS]);
+        $uac = $uac->except(Permission::DELETE_BOOKMARKS);
+
+        $this->assertEquals([Permission::ADD_BOOKMARKS->value], $uac->toArray());
+    }
+
+    #[Test]
     public function fromRequestMethod(): void
     {
         $uac = UAC::fromRequest(new Request(['permissions' => ['*']]), 'permissions');

@@ -104,6 +104,8 @@ Route::middleware([
         Route::post('/{folder_id}/collaborators/{collaborator_id}/suspend', F\Suspension\SuspendCollaboratorController::class)->name('suspendCollaborator');
         Route::delete('/{folder_id}/collaborators/{collaborator_id}/suspend', F\Suspension\ReInstateSuspendedCollaboratorController::class)->name('reInstateSuspendCollaborator');
         Route::get('/{folder_id}/collaborators/suspend', F\Suspension\FetchSuspendedCollaboratorsController::class)->name('fetchSuspendCollaborators');
+
+        Route::get('/{folder_id}/activities', F\FetchFolderActivitiesController::class)->name('fetchFolderActivities');
     });
 
     Route::get('email/verify/{id}/{hash}', A\VerifyEmailController::class)->middleware('signed')->name('verification.verify');

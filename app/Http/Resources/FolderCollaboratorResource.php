@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\DataTransferObjects\FolderCollaborator;
-use App\Filesystem\ProfileImageFileSystem;
+use App\Filesystem\ProfileImagesFilesystem;
 use App\Models\User;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -20,7 +20,7 @@ final class FolderCollaboratorResource extends JsonResource
      */
     public function toArray($request)
     {
-        $filesystem = new ProfileImageFileSystem();
+        $filesystem = new ProfileImagesFilesystem();
 
         $inviterExists = $this->collaborator->wasInvitedBy !== null;
 

@@ -22,26 +22,20 @@ final class RequestHandlersQueue implements IteratorAggregate
     private readonly array $requestHandlersQueue;
 
     /**
-     * The Application instance.
-     */
-    private readonly Application $app;
-
-    /**
      * @param array<class-string<THandler>|THandler> $handlers
      */
     public function __construct(array $handlers, Application $app = null)
     {
-        $this->app = $app ?: app();
-        $this->requestHandlersQueue = $this->getHandlersInstances($handlers);
+        $this->requestHandlersQueue = $this->getHandlersInstances($handlers, $app ?: app());
     }
 
     /**
      * @return array<THandler>
      */
-    private function getHandlersInstances(array $handlers): array
+    private function getHandlersInstances(array $handlers, Application $app): array
     {
-        return array_map(function (string|object $handlerClass) {
-            return is_object($handlerClass) ? $handlerClass : $this->app->make($handlerClass);
+        return array_map(function (string|object $handlerClass) use ($app) {
+            return is_object($handlerClass) ? $handlerClass : $app->make($handlerClass);
         }, $handlers);
     }
 
@@ -65,7 +59,7 @@ final class RequestHandlersQueue implements IteratorAggregate
 
             $handler($args);
 
-            if ($handler instanceof HandlerInterface) {
+            if ($handler instanceof HasHandlersInterface) {
                 $this->callRecursive($args, $handler->getHandlers());
             }
         }
@@ -86,7 +80,7 @@ final class RequestHandlersQueue implements IteratorAggregate
                 $handler->apply($query, $query->getModel());
             }
 
-            if ($handler instanceof HandlerInterface) {
+            if ($handler instanceof HasHandlersInterface) {
                 $this->scopeRecursive($query, $handler->getHandlers());
             }
         }

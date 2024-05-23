@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\User;
 
 use App\Enums\TwoFaMode;
-use App\Filesystem\ProfileImageFileSystem;
+use App\Filesystem\ProfileImagesFilesystem;
 use App\Models\SecondaryEmail;
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
@@ -22,10 +22,12 @@ use Laravel\Passport\Database\Factories\ClientFactory;
 use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\ClearUsersProfileImagesStorage;
 
 class CreateUserTest extends TestCase
 {
     use WithFaker;
+    use ClearUsersProfileImagesStorage;
 
     private static string $verificationUrl;
     private static User $createdUser;
@@ -206,7 +208,7 @@ class CreateUserTest extends TestCase
     #[Test]
     public function createWithProfileImage(): void
     {
-        $filesystem = new ProfileImageFileSystem();
+        $filesystem = new ProfileImagesFilesystem();
 
         Passport::actingAsClient($client = ClientFactory::new()->asPasswordClient()->create());
 

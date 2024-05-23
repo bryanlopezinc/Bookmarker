@@ -12,14 +12,13 @@ use App\Notifications\BookmarksRemovedFromFolderNotification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Notification;
-use App\Models\FolderBookmark;
+use App\Models\Bookmark;
 
 final class SendBookmarksRemovedFromFolderNotificationNotification implements Scope
 {
     /**
-     * @param array<FolderBookmark> $folderBookmarks
+     * @param array<Bookmark> $folderBookmarks
      */
     public function __construct(private readonly Data $data, private readonly array $folderBookmarks)
     {
@@ -38,24 +37,26 @@ final class SendBookmarksRemovedFromFolderNotificationNotification implements Sc
 
         $folderBelongsToAuthUser = $this->data->authUser->id === $folder->user_id;
 
-        [$authUser, $bookmarkIds] = [
+        [$authUser, $bookmarks] = [
             $this->data->authUser,
-            Arr::pluck($this->folderBookmarks, 'bookmark_id')
+            collect($this->folderBookmarks)->map->getAttributes()
         ];
 
         if (
-            $folderBelongsToAuthUser                                ||
-            $folderSettings->notificationsAreDisabled                ||
-            $folderSettings->bookmarksRemovedNotificationIsDisabled  ||
+            $folderBelongsToAuthUser                                      ||
+            $folderSettings->notifications()->isDisabled()                 ||
+            $folderSettings->bookmarksRemovedNotification()->isDisabled()  ||
             $folder->collaboratorIsMuted
         ) {
             return;
         }
 
-        $pendingDispatch = dispatch(static function () use ($folder, $authUser, $bookmarkIds) {
+        $pendingDispatch = dispatch(static function () use ($folder, $authUser, $bookmarks) {
+            $bookmarks = collect($bookmarks)->mapInto(Bookmark::class)->all();
+
             Notification::send(
                 new User(['id' => $folder->user_id]),
-                new BookmarksRemovedFromFolderNotification($bookmarkIds, $folder, $authUser)
+                new BookmarksRemovedFromFolderNotification($bookmarks, $folder, $authUser)
             );
         });
 

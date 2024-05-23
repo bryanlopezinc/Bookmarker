@@ -14,18 +14,20 @@ use Tests\Traits\CreatesCollaboration;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
+use Tests\Traits\ClearFoldersIconsStorage;
 
 class NotificationsTest extends TestCase
 {
     use CreatesCollaboration;
     use WithFaker;
+    use ClearFoldersIconsStorage;
 
     #[Test]
     public function willNotifyFolderOwnerWhenCollaboratorUpdatesFolderName(): void
     {
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
 
-        $folder = FolderFactory::new()->for($folderOwner)->create(['name' => 'foo', 'description' => 'foo bar folder']);
+        $folder = FolderFactory::new()->for($folderOwner)->create(['name' => 'foo']);
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER_NAME);
 
@@ -36,19 +38,17 @@ class NotificationsTest extends TestCase
         ])->assertOk();
 
         $folder->refresh();
+
+        /** @var \App\Models\DatabaseNotification */
         $notificationData = $folderOwner->notifications()->sole(['data', 'type']);
 
-        $this->assertEquals('FolderUpdated', $notificationData->type);
+        $this->assertEquals(2, $notificationData->type->value);
 
         $expected = [
-            'N-type'          => 'FolderUpdated',
-            'version'         => '1.0.0',
-            'modified'         => 'name',
-            'changes'         => [
-                'from' => $folder->name->value,
-                'to'   => $newName,
-            ],
-            'folder'          => [
+            'version' => '1.0.0',
+            'from'    => $folder->name->value,
+            'to'      => $newName,
+            'folder'  => [
                 'id'        => $folder->id,
                 'public_id' => $folder->public_id->value,
                 'name'      => $folder->name->value
@@ -56,7 +56,8 @@ class NotificationsTest extends TestCase
             'collaborator' => [
                 'id'        => $collaborator->id,
                 'full_name' => $collaborator->full_name->value,
-                'public_id' => $collaborator->public_id->value
+                'public_id' => $collaborator->public_id->value,
+                'profile_image_path' => null
             ]
         ];
 
@@ -79,19 +80,17 @@ class NotificationsTest extends TestCase
         ])->assertOk();
 
         $folder->refresh();
+
+        /** @var \App\Models\DatabaseNotification */
         $notificationData = $folderOwner->notifications()->sole(['data', 'type']);
 
-        $this->assertEquals('FolderUpdated', $notificationData->type);
+        $this->assertEquals(4, $notificationData->type->value);
 
         $expected = [
-            'N-type'          => 'FolderUpdated',
             'version'         => '1.0.0',
-            'modified'         => 'description',
-            'changes'         => [
-                'from' => $folder->description,
-                'to'   => $newDescription,
-            ],
-            'folder'          => [
+            'old_description' => $folder->description,
+            'new_description' => $newDescription,
+            'folder'  => [
                 'id'        => $folder->id,
                 'public_id' => $folder->public_id->value,
                 'name'      => $folder->name->value
@@ -99,7 +98,8 @@ class NotificationsTest extends TestCase
             'collaborator' => [
                 'id'        => $collaborator->id,
                 'full_name' => $collaborator->full_name->value,
-                'public_id' => $collaborator->public_id->value
+                'public_id' => $collaborator->public_id->value,
+                'profile_image_path' => null
             ]
         ];
 
@@ -107,7 +107,7 @@ class NotificationsTest extends TestCase
     }
 
     #[Test]
-    public function willNotifyFolderOwnerWhenCollaboratorUpdatesFolderThumbnail(): void
+    public function willNotifyFolderOwnerWhenCollaboratorUpdatesFolderIcon(): void
     {
         $newIconPath = Str::random(40);
 
@@ -116,27 +116,24 @@ class NotificationsTest extends TestCase
         [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
         $folder = FolderFactory::new()->for($folderOwner)->create();
 
-        $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER_THUMBNAIL);
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::UPDATE_FOLDER_ICON);
 
         $this->loginUser($collaborator);
         $this->updateFolderResponse([
-            'thumbnail' => UploadedFile::fake()->image('folderIcon.jpg')->size(2000),
+            'icon' => UploadedFile::fake()->image('folderIcon.jpg')->size(2000),
             'folder_id' => $folder->public_id->present(),
         ])->assertOk();
 
         $folder->refresh();
+
+        /** @var \App\Models\DatabaseNotification */
         $notificationData = $folderOwner->notifications()->sole(['data', 'type']);
 
-        $this->assertEquals('FolderUpdated', $notificationData->type);
+        $this->assertEquals(3, $notificationData->type->value);
 
         $expected = [
-            'N-type'          => 'FolderUpdated',
-            'version'         => '1.0.0',
-            'modified'         => 'icon_path',
-            'changes'         => [
-                'to' => "{$newIconPath}.jpg",
-            ],
-            'folder'          => [
+            'version' => '1.0.0',
+            'folder'  => [
                 'id'        => $folder->id,
                 'public_id' => $folder->public_id->value,
                 'name'      => $folder->name->value
@@ -144,7 +141,8 @@ class NotificationsTest extends TestCase
             'collaborator' => [
                 'id'        => $collaborator->id,
                 'full_name' => $collaborator->full_name->value,
-                'public_id' => $collaborator->public_id->value
+                'public_id' => $collaborator->public_id->value,
+                'profile_image_path' => null
             ]
         ];
 

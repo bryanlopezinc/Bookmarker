@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+$env = env('APP_ENV', 'production');
+
 return [
 
     /*
@@ -55,33 +57,36 @@ return [
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
         ],
 
-        'imports' => [
-            'driver'     => 'local',
-            'root'       => storage_path('app/imports'),
-            'visibility' => 'private',
-            'throw'      => true,
-        ],
-
-        'profileImages' => match (env('APP_ENV', 'production')) {
+        'imports' => match ($env) {
             'local', 'testing' => [
                 'driver'     => 'local',
-                'root'       => storage_path('app/profileImages'),
-                'visibility' => 'public',
+                'root'       => storage_path("app/imports/{$env}"),
+                'visibility' => 'private',
                 'throw'      => true,
-                'url'        => env('APP_URL') . '/storage/profileImages',
             ],
-            default => throw new \Exception("A storage configuration has not be set for profile images")
+            default => throw new \Exception("A storage configuration has not be set for imports for [{$env}] environment")
         },
 
-        'folderThumbnails' => match (env('APP_ENV', 'production')) {
+        'profileImages' => match ($env) {
             'local', 'testing' => [
                 'driver'     => 'local',
-                'root'       => storage_path('app/folderThumbnails'),
+                'root'       => storage_path("app/users/avatars/{$env}"),
                 'visibility' => 'public',
                 'throw'      => true,
-                'url'        => env('APP_URL') . '/storage/folderThumbnails',
+                'url'        => env('APP_URL') . "/storage/avatars/{$env}",
             ],
-            default => throw new \Exception("A storage configuration has not be set for folder Thumbnails")
+            default => throw new \Exception("A storage configuration has not be set for profile images for [{$env}] environment")
+        },
+
+        'foldersIcons' => match ($env) {
+            'local', 'testing' => [
+                'driver'     => 'local',
+                'root'       => storage_path("app/folders/icons/{$env}"),
+                'visibility' => 'public',
+                'throw'      => true,
+                'url'        => env('APP_URL') . "/storage/folders/icons/{$env}",
+            ],
+            default => throw new \Exception("A storage configuration has not be set for folder icons for [{$env}] environment")
         },
     ],
 

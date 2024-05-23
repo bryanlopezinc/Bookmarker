@@ -10,7 +10,6 @@ use App\Exceptions\InvalidUsernameException;
 use App\Http\Requests\LoginUserRequest;
 use App\Http\Resources\AccessTokenResource;
 use App\ValueObjects\IpAddress;
-use App\Repositories\UserRepository;
 use App\ValueObjects\Username;
 use Laravel\Passport\Http\Controllers\AccessTokenController;
 use Psr\Http\Message\ServerRequestInterface;
@@ -19,12 +18,11 @@ final class LoginController extends AccessTokenController
 {
     public function __invoke(
         ServerRequestInterface $serverRequest,
-        UserRepository $repository,
         LoginUserRequest $request
     ): AccessTokenResource {
         $token = $this->issueToken($serverRequest)->content();
 
-        $user = $this->getUser($request, $repository);
+        $user = $this->getUser($request);
 
         event(new LoginEvent(
             $user,
@@ -35,14 +33,16 @@ final class LoginController extends AccessTokenController
         return new AccessTokenResource($user, $token);
     }
 
-    private function getUser(LoginUserRequest $request, UserRepository $repository): User
+    private function getUser(LoginUserRequest $request): User
     {
-        try {
-            new Username($request->validated('username'));
+        $query = User::query()->withCount(['bookmarks', 'favorites', 'folders']);
 
-            return $repository->findByUsername($request->validated('username'));
+        try {
+            $username = new Username($request->validated('username'));
+
+            return $query->where('username', $username->value)->firstOrNew();
         } catch (InvalidUsernameException) {
-            return $repository->findByEmail($request->validated('username'));
+            return $query->where('email', $request->validated('username'))->firstOrNew();
         }
     }
 }

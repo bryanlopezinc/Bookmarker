@@ -34,15 +34,12 @@ final class RevokeCollaboratorRoles implements Scope
             return;
         }
 
-        $data = [
-            'folderId'       => $result->id,
-            'collaboratorId' => $result->collaboratorId
-        ];
+        $collaboratorId = $result->collaboratorId;
 
-        dispatch(function () use ($data) {
+        dispatch(function () use ($collaboratorId, $result) {
             FolderCollaboratorRole::query()
-                ->where('collaborator_id', $data['collaboratorId'])
-                ->whereIn('role_id', FolderRole::select(['id'])->where('folder_id', $data['folderId']))
+                ->where('collaborator_id', $collaboratorId)
+                ->whereIn('role_id', FolderRole::select(['id'])->where('folder_id', $result->id))
                 ->delete();
         })->afterResponse();
     }

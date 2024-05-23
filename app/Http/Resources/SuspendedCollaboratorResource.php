@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
-use App\Filesystem\ProfileImageFileSystem;
+use App\Filesystem\ProfileImagesFilesystem;
 use App\Models\SuspendedCollaborator;
 use App\Models\User;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -14,14 +14,14 @@ final class SuspendedCollaboratorResource extends JsonResource
     private readonly SuspendedCollaborator $record;
     private readonly User $collaborator;
     private readonly User $suspendedBy;
-    private readonly ProfileImageFileSystem $filesystem;
+    private readonly ProfileImagesFilesystem $filesystem;
 
     public function __construct(SuspendedCollaborator $record)
     {
         $this->record = $record;
         $this->collaborator = $record->collaborator;
         $this->suspendedBy = $record->suspendedByUser;
-        $this->filesystem =  new ProfileImageFileSystem();
+        $this->filesystem =  new ProfileImagesFilesystem();
     }
 
     /**

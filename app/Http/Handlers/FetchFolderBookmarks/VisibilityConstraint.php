@@ -6,13 +6,13 @@ namespace App\Http\Handlers\FetchFolderBookmarks;
 
 use App\DataTransferObjects\FetchFolderBookmarksRequestData as Data;
 use App\Exceptions\FolderNotFoundException;
-use App\Http\Handlers\HandlerInterface;
+use App\Http\Handlers\HasHandlersInterface;
 use App\Models\Folder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class VisibilityConstraint implements Scope, HandlerInterface
+final class VisibilityConstraint implements Scope, HasHandlersInterface
 {
     public function __construct(private readonly Data $data, private array $next)
     {

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\User;
 
-use App\Filesystem\ProfileImageFileSystem;
+use App\Filesystem\ProfileImagesFilesystem;
 use App\Repositories\FavoriteRepository;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
@@ -45,7 +45,7 @@ class FetchAuthUserProfileTest extends TestCase
                 $json->where('data.attributes.favorites_count', 0);
                 $json->where('data.attributes.folders_count', 0);
                 $json->where('data.attributes.has_verified_email', true);
-                $json->where('data.attributes.profile_image_url', (new ProfileImageFileSystem())->publicUrl($user->profile_image_path));
+                $json->where('data.attributes.profile_image_url', (new ProfileImagesFilesystem())->publicUrl($user->profile_image_path));
                 $json->etc();
             })
             ->assertJsonStructure([

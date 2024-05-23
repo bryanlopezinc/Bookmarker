@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder;
 
-use App\Filesystem\ProfileImageFileSystem;
+use App\Filesystem\ProfileImagesFilesystem;
 use App\Models\BannedCollaborator;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -68,7 +68,7 @@ class FetchFolderBannedUsersTest extends TestCase
             ->assertJsonCount(3, 'data.0.attributes')
             ->assertJsonPath('data.0.attributes.id', $collaborator->public_id->present())
             ->assertJsonPath('data.0.attributes.name', $collaborator->full_name->present())
-            ->assertJsonPath('data.0.attributes.profile_image_url', (new ProfileImageFileSystem())->publicUrl($collaborator->profile_image_path))
+            ->assertJsonPath('data.0.attributes.profile_image_url', (new ProfileImagesFilesystem())->publicUrl($collaborator->profile_image_path))
             ->assertJsonStructure([
                 'data' => [
                     '*' => [

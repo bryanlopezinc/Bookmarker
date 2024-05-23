@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Importing\Http\Resources;
 
-use App\Importing\DataTransferObjects\ImportFailedNotificationData;
 use App\Importing\Enums\ImportBookmarksStatus;
+use App\Models\DatabaseNotification;
 use App\ValueObjects\PublicId\ImportPublicId;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 final class ImportFailedNotificationResource extends JsonResource
 {
-    public function __construct(private ImportFailedNotificationData $notification)
+    public function __construct(private DatabaseNotification $notification)
     {
     }
 
@@ -20,19 +20,16 @@ final class ImportFailedNotificationResource extends JsonResource
      */
     public function toArray($request)
     {
-        $data = $this->notification->notification->data;
-
-        /** @var \Carbon\Carbon */
-        $notifiedOn = $this->notification->notification->created_at;
+        $data = $this->notification->data;
 
         return [
             'type' => 'ImportFailedNotification',
             'attributes' => [
-                'id'         => $this->notification->notification->id,
+                'id'         => $this->notification->id,
                 'import_id'  => (new ImportPublicId($data['public_id']))->present(),
                 'reason'     => ImportBookmarksStatus::from($data['reason'])->reason(),
                 'message'    => ImportBookmarksStatus::from($data['reason'])->toNotificationMessage(),
-                'notified_on' => $notifiedOn->toDateTimeString(),
+                'notified_on' => $this->notification->created_at,
             ]
         ];
     }

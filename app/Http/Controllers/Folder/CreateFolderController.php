@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Folder;
 
 use App\DataTransferObjects\CreateFolderData;
-use App\Http\Handlers\CreateFolder\HandlerInterface;
+use App\Http\Handlers\CreateFolder\CreateFolder;
 use App\Http\Requests\CreateOrUpdateFolderRequest as Request;
 use Illuminate\Http\JsonResponse;
 
 final class CreateFolderController
 {
-    public function __invoke(Request $request, HandlerInterface $service): JsonResponse
+    public function __invoke(Request $request, CreateFolder $service): JsonResponse
     {
         $service->create(CreateFolderData::fromRequest($request));
 

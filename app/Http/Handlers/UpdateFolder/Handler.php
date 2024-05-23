@@ -9,6 +9,7 @@ use App\Http\Handlers\Constraints;
 use App\DataTransferObjects\UpdateFolderRequestData;
 use App\Enums\CollaboratorMetricType;
 use App\Http\Handlers\CollaboratorMetricsRecorder;
+use App\Http\Handlers\ConditionallyLogActivity;
 use App\Http\Handlers\RequestHandlersQueue;
 use App\Http\Handlers\SuspendCollaborator\SuspendedCollaboratorFinder;
 use App\Models\Scopes\WherePublicIdScope;
@@ -41,6 +42,7 @@ final class Handler
             new PasswordCheckConstraint($data),
             new CanUpdateOnlyProtectedFolderPasswordConstraint($data),
             new UpdateFolder($data, new SendFolderUpdatedNotification($data)),
+            new ConditionallyLogActivity(new LogActivity($data)),
             new CollaboratorMetricsRecorder(CollaboratorMetricType::UPDATES, $data->authUser->id)
         ];
     }

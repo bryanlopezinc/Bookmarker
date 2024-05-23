@@ -20,7 +20,7 @@ final class UserDefinedFolderCollaboratorsLimitConstraint implements Scope
 
     public function __invoke(Folder $folder): void
     {
-        $maxCollaboratorsLimitDefinedByFolderOwner = $folder->settings->maxCollaboratorsLimit;
+        $maxCollaboratorsLimitDefinedByFolderOwner = $folder->settings->maxCollaboratorsLimit()->value();
 
         if ($maxCollaboratorsLimitDefinedByFolderOwner === -1) {
             return;

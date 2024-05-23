@@ -107,4 +107,13 @@ final class Bookmark extends Model implements HasPublicIdInterface
     {
         return $this->belongsTo(Source::class, 'source_id', 'id');
     }
+
+    public function activityLogContextVariables(): array
+    {
+        return [
+            'id'        => $this->id,
+            'public_id' => $this->public_id->value,
+            'url'       => $this->url
+        ];
+    }
 }

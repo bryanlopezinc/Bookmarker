@@ -6,7 +6,7 @@ namespace Tests\Feature\Folder;
 
 use App\Collections\UserPublicIdsCollection;
 use App\Enums\Permission;
-use App\Filesystem\ProfileImageFileSystem;
+use App\Filesystem\ProfileImagesFilesystem;
 use App\Models\User;
 use App\UAC;
 use Database\Factories\FolderFactory;
@@ -100,7 +100,7 @@ class FetchFolderCollaboratorsTest extends TestCase
             ->assertJsonCount(5, 'data.0.attributes')
             ->assertJsonCount(8, 'data.0.attributes.permissions')
             ->assertJsonCount(2, 'data.0.attributes.added_by')
-            ->assertJsonPath('data.0.attributes.profile_image_url', (new ProfileImageFileSystem())->publicUrl($collaborator->profile_image_path))
+            ->assertJsonPath('data.0.attributes.profile_image_url', (new ProfileImagesFilesystem())->publicUrl($collaborator->profile_image_path))
             ->assertJsonPath('data.0.attributes.added_by.exists', true)
             ->assertJsonPath('data.0.attributes.added_by.is_auth_user', true)
             ->assertJsonPath('data.0.type', 'folderCollaborator')
@@ -142,7 +142,7 @@ class FetchFolderCollaboratorsTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(3, 'data.0.attributes.added_by')
             ->assertJsonCount(3, 'data.0.attributes.added_by.user')
-            ->assertJsonPath('data.0.attributes.added_by.user.profile_image_url', (new ProfileImageFileSystem())->publicUrl($collaborator->profile_image_path))
+            ->assertJsonPath('data.0.attributes.added_by.user.profile_image_url', (new ProfileImagesFilesystem())->publicUrl($collaborator->profile_image_path))
             ->assertJsonPath('data.0.attributes.added_by.exists', true)
             ->assertJsonPath('data.0.attributes.added_by.is_auth_user', false)
             ->assertJsonPath('data.0.attributes.added_by.user.id', $collaborator->public_id->present())

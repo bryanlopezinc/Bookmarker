@@ -11,6 +11,7 @@ use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Http\Handlers\Constraints;
 use App\Http\Handlers\CollaboratorMetricsRecorder;
+use App\Http\Handlers\ConditionallyLogActivity;
 use App\Http\Handlers\RequestHandlersQueue;
 use App\Http\Handlers\SuspendCollaborator\SuspendedCollaboratorFinder;
 use App\Models\Scopes\WherePublicIdScope;
@@ -49,7 +50,8 @@ final class Handler
             new RevokeCollaboratorRoles(),
             new NotifyFolderOwner($data),
             new NotifyCollaborator(),
-            new CollaboratorMetricsRecorder(CollaboratorMetricType::COLLABORATORS_REMOVED, $data->authUser->id)
+            new CollaboratorMetricsRecorder(CollaboratorMetricType::COLLABORATORS_REMOVED, $data->authUser->id),
+            new ConditionallyLogActivity(new LogActivity($data->authUser))
         ];
     }
 }

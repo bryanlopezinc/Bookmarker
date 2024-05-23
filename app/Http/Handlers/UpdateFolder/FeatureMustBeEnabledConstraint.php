@@ -49,7 +49,7 @@ final class FeatureMustBeEnabledConstraint implements Scope
     {
         return $this->data->isUpdatingDescription ||
             $this->data->isUpdatingName           ||
-            $this->data->isUpdatingThumbnail;
+            $this->data->isUpdatingIcon;
     }
 
     public function __invoke(Folder $folder): void
@@ -77,7 +77,7 @@ final class FeatureMustBeEnabledConstraint implements Scope
             throw $exception;
         }
 
-        if ($isDisabled(Feature::UPDATE_FOLDER_ICON) && $this->data->isUpdatingThumbnail) {
+        if ($isDisabled(Feature::UPDATE_FOLDER_ICON) && $this->data->isUpdatingIcon) {
             throw $exception;
         }
     }

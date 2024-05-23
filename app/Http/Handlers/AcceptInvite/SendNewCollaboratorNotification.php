@@ -14,11 +14,14 @@ use App\Models\User;
 use App\Notifications\NewCollaboratorNotification as Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
+use App\Enums\NewCollaboratorNotificationMode as Mode;
 
 final class SendNewCollaboratorNotification implements Scope
 {
-    public function __construct(private readonly FolderInviteData $invitationData)
-    {
+    public function __construct(
+        private readonly FolderInviteData $invitationData,
+        private readonly UserRepository $repository
+    ) {
     }
 
     public function apply(Builder|EloquentBuilder $builder, Model $model): void
@@ -30,32 +33,34 @@ final class SendNewCollaboratorNotification implements Scope
 
     public function __invoke(Folder $folder): void
     {
-        [$inviter, $invitee] = [$folder->inviter, $folder->invitee];
+        [$inviter, $invitee] = [$this->repository->inviter(), $this->repository->invitee()];
 
-        $wasInvitedByFolderOwner = $folder->user_id === $inviter['id'];
+        $wasInvitedByFolderOwner = $folder->user_id === $inviter->id;
 
         $settings = $folder->settings;
+
+        $mode = $settings->newCollaboratorNotificationMode()->value();
 
         if ($folder->collaboratorIsMuted) {
             return;
         }
 
-        if ($settings->notificationsAreDisabled || $settings->newCollaboratorNotificationIsDisabled) {
+        if ($settings->notifications()->isDisabled() || $settings->newCollaboratorNotification()->isDisabled()) {
             return;
         }
 
-        if ( ! $wasInvitedByFolderOwner && $settings->newCollaboratorNotificationMode->notifyWhenCollaboratorWasInvitedByMe()) {
+        if ( ! $wasInvitedByFolderOwner && $mode === Mode::INVITED_BY_ME) {
             return;
         }
 
-        if ($wasInvitedByFolderOwner && ! $settings->newCollaboratorNotificationMode->notifyWhenCollaboratorWasInvitedByMe()) {
+        if ($wasInvitedByFolderOwner && $mode !== Mode::INVITED_BY_ME) {
             return;
         }
 
         $pendingDispatch = dispatch(static function () use ($folder, $inviter, $invitee) {
             NotificationSender::send(
                 new User(['id' => $folder->user_id]),
-                new Notification(new User($invitee), $folder, new User($inviter))
+                new Notification($invitee, $folder, $inviter)
             );
         });
 

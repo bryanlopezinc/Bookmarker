@@ -31,7 +31,7 @@ final class InviterMustStillHaveRequiredPermissionConstraint implements Scope
 
     public function __invoke(Folder $folder): void
     {
-        $folderConstraints = $folder->settings->acceptInviteConstraints;
+        $folderConstraints = $folder->settings->acceptInviteConstraints()->value();
 
         $constraint = $this->permissionConstraint;
 

@@ -8,14 +8,15 @@ use App\Exceptions\MalformedURLException;
 use App\Exceptions\UserNotFoundException;
 use App\Mail\EmailNotRegisteredMail;
 use App\Mail\EmailNotVerifiedMail;
+use App\Models\SecondaryEmail;
+use App\Models\User;
 use App\Utils\MailParser;
-use App\Repositories\UserRepository;
 use App\ValueObjects\Url;
 use Illuminate\Support\Facades\Mail;
 
 final class CreateBookmarkFromMailMessageService
 {
-    public function __construct(private UserRepository $userRepository, private CreateBookmarkService $service)
+    public function __construct(private CreateBookmarkService $service)
     {
     }
 
@@ -29,19 +30,22 @@ final class CreateBookmarkFromMailMessageService
             return;
         }
 
-        try {
-            $user = $this->userRepository->findByEmailOrSecondaryEmail(
-                $email,
-                ['id', 'email_verified_at']
-            );
-        } catch (UserNotFoundException $e) {
+        /** @var User */
+        $user = User::query()
+            ->select(['id', 'email_verified_at'])
+            ->where('users.email', $email)
+            ->orWhere('id', SecondaryEmail::select('user_id')->where('email', $email))
+            ->firstOrNew();
+
+        if ( ! $user->exists) {
             Mail::to($email)->queue(new EmailNotRegisteredMail());
 
-            throw $e;
+            throw new UserNotFoundException();
         }
 
         if ( ! $user->email_verified_at) {
             Mail::to($email)->queue(new EmailNotVerifiedMail());
+
             return;
         }
 

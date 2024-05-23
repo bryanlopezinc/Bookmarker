@@ -8,9 +8,11 @@ use App\Actions\ToggleFolderFeature;
 use App\Repositories\FolderInviteDataRepository;
 use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\DataTransferObjects\FolderInviteData;
+use App\Enums\ActivityType;
 use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
+use App\DataTransferObjects\Activities\InviteAcceptedActivityLogData as ActivityLogData;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -119,8 +121,6 @@ class AcceptFolderInviteTest extends TestCase
                 $folderOwner->id,
                 $invitee->id,
                 $folder->id,
-                new UAC([Permission::ADD_BOOKMARKS]),
-                []
             )
         );
 
@@ -211,6 +211,7 @@ class AcceptFolderInviteTest extends TestCase
             ]);
 
         $this->assertTrue($folder->collaborators->isEmpty());
+        $this->assertTrue($folder->activities->isEmpty());
 
         Notification::assertNothingSent();
     }
@@ -238,6 +239,7 @@ class AcceptFolderInviteTest extends TestCase
             ->assertJsonFragment(['message' => 'FolderIsMarkedAsPrivate',]);
 
         $this->assertTrue($folder->collaborators->isEmpty());
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     #[Test]
@@ -246,6 +248,7 @@ class AcceptFolderInviteTest extends TestCase
     {
         Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
 
+        /** @var \App\Models\User */
         [$user, $invitee] = UserFactory::new()->count(2)->create();
 
         $folder = FolderFactory::new()->for($user)->create();
@@ -264,10 +267,16 @@ class AcceptFolderInviteTest extends TestCase
 
         $savedPermissions = (new CollaboratorPermissionsRepository())->all($invitee->id, $folder->id);
 
+        /** @var \App\Models\FolderActivity */
+        $activity = $folder->activities->sole();
+
         $this->assertEqualsCanonicalizing(
             $permissions->toArray(),
             $savedPermissions->toArray(),
         );
+
+        $this->assertEquals($activity->type, ActivityType::NEW_COLLABORATOR);
+        $this->assertEquals($activity->data, (new ActivityLogData($user, $invitee))->toArray());
     }
 
     public static function acceptInviteData(): array
@@ -280,7 +289,7 @@ class AcceptFolderInviteTest extends TestCase
             'Invite users'              => [[Permission::INVITE_USER]],
             'Update folder name'        => [[Permission::UPDATE_FOLDER_NAME]],
             'Update folder description' => [[Permission::UPDATE_FOLDER_DESCRIPTION]],
-            'Update folder thumbnail'   => [[Permission::UPDATE_FOLDER_THUMBNAIL]],
+            'Update folder icon'        => [[Permission::UPDATE_FOLDER_ICON]],
             'Add and Remove bookmarks'  => [[Permission::DELETE_BOOKMARKS, Permission::ADD_BOOKMARKS]]
         ];
     }
@@ -348,6 +357,8 @@ class AcceptFolderInviteTest extends TestCase
                 'message' => 'InvitationAlreadyAccepted',
                 'info' => 'The invitation has already been accepted.'
             ]);
+
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     public function testWillReturnNotFoundWhenFolderHasBeenDeleted(): void
@@ -408,6 +419,7 @@ class AcceptFolderInviteTest extends TestCase
             ->assertJsonFragment(['message' => 'InvitationNotFoundOrExpired']);
 
         $this->assertTrue($folder->collaborators->isEmpty());
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     public function testWillReturnNotFoundWhenInviterHasDeletedAccount(): void
@@ -434,6 +446,7 @@ class AcceptFolderInviteTest extends TestCase
             ->assertJsonFragment(['message' => 'InvitationNotFoundOrExpired']);
 
         $this->assertTrue($folder->collaborators->isEmpty());
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     #[Test]
@@ -466,6 +479,7 @@ class AcceptFolderInviteTest extends TestCase
             ]);
 
         $this->assertTrue($folder->collaborators->isEmpty());
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     #[Test]
@@ -501,6 +515,7 @@ class AcceptFolderInviteTest extends TestCase
             ]);
 
         $this->assertCount(13, $folder->collaborators);
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     #[Test]
@@ -544,6 +559,7 @@ class AcceptFolderInviteTest extends TestCase
         $soleCollaborator = $folder->collaborators->sole();
 
         $this->assertEquals($soleCollaborator->collaborator_id, $invitee->id);
+        $this->assertCount(1, $folder->activities);
     }
 
     #[Test]
@@ -582,6 +598,7 @@ class AcceptFolderInviteTest extends TestCase
         $soleCollaborator = $folder->collaborators->sole();
 
         $this->assertEquals($soleCollaborator->collaborator_id, $collaborator->id);
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     #[Test]
@@ -627,6 +644,8 @@ class AcceptFolderInviteTest extends TestCase
             $folder->collaborators->pluck('collaborator_id')->all(),
             [$collaborator->id, $invitee->id]
         );
+
+        $this->assertCount(1, $folder->activities);
     }
 
     #[Test]
@@ -669,6 +688,7 @@ class AcceptFolderInviteTest extends TestCase
             ->assertJsonFragment($expectedError);
 
         $this->assertTrue($folder->collaborators->isEmpty());
+        $this->assertTrue($folder->activities->isEmpty());
     }
 
     public function testWillNotNotifyFolderOwnerWhenInvitationWasSentByFolderOwner(): void
@@ -715,26 +735,28 @@ class AcceptFolderInviteTest extends TestCase
 
         $this->acceptInviteResponse(['invite_hash' => $id->value])->assertCreated();
 
-        $notificationData = $folderOwner->notifications()->sole(['data', 'type']);
+        /** @var \App\Models\DatabaseNotification */
+        $notification = $folderOwner->notifications()->sole(['data', 'type']);
 
-        $this->assertEquals('CollaboratorAddedToFolder', $notificationData->type);
-        $this->assertEquals($notificationData->data, [
-            'N-type' => 'CollaboratorAddedToFolder',
+        $this->assertEquals(10, $notification->type->value);
+        $this->assertEquals($notification->data, [
             'version' => '1.0.0',
             'folder'          => [
                 'id'        => $folder->id,
                 'public_id' => $folder->public_id->value,
-                'name'      => $folder->name->value
+                'name'      => $folder->name->value,
             ],
-            'collaborator' => [
+            'inviter' => [
                 'id'        => $collaborator->id,
                 'full_name' => $collaborator->full_name->value,
-                'public_id' => $collaborator->public_id->value
+                'public_id' => $collaborator->public_id->value,
+                'profile_image_path' => null
             ],
-            'new_collaborator' => [
+            'invitee' => [
                 'id'        => $invitee->id,
                 'full_name' => $invitee->full_name->value,
-                'public_id' => $invitee->public_id->value
+                'public_id' => $invitee->public_id->value,
+                'profile_image_path' => null
             ],
         ]);
     }
@@ -908,5 +930,45 @@ class AcceptFolderInviteTest extends TestCase
 
             Notification::assertCount(1);
         });
+    }
+
+    #[Test]
+    public function willNotLogActivityWhenActivityLoggingIsDisabled(): void
+    {
+        Passport::actingAsClient(ClientFactory::new()->asPasswordClient()->create());
+
+        [$collaborator, $folderOwner] = UserFactory::new()->count(2)->create();
+
+        $invitees = UserFactory::times(2)->create();
+
+        $folder = FolderFactory::new()
+            ->for($folderOwner)
+            ->settings(FolderSettingsBuilder::new()->enableActivities(false))
+            ->create();
+
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);
+
+        $this->tokenStore->store(
+            $invitationId = InviteId::generate(),
+            new FolderInviteData(
+                $collaborator->id,
+                $invitees[0]->id,
+                $folder->id
+            )
+        );
+
+        $this->tokenStore->store(
+            $secondInvitationId = InviteId::generate(),
+            new FolderInviteData(
+                $collaborator->id,
+                $invitees[1]->id,
+                $folder->id
+            )
+        );
+
+        $this->acceptInviteResponse(['invite_hash' => $invitationId->value])->assertCreated();
+        $this->acceptInviteResponse(['invite_hash' => $secondInvitationId->value])->assertCreated();
+
+        $this->assertCount(0, $folder->activities);
     }
 }

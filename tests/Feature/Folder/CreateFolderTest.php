@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder;
 
-use App\DataTransferObjects\Builders\FolderSettingsBuilder as Builder;
-use App\Filesystem\FolderThumbnailFileSystem;
-use App\Http\Requests\CreateOrUpdateFolderRequest;
-use App\ValueObjects\FolderSettings as FS;
+use App\Filesystem\FoldersIconsFilesystem;
+use App\FolderSettings\FolderSettings;
 use App\Models\Folder;
-use App\ValueObjects\FolderSettings;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Arr;
@@ -17,25 +14,15 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Closure;
 use Illuminate\Http\UploadedFile;
-use Tests\Feature\Folder\Concerns\InteractsWithValues;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Traits\ClearFoldersIconsStorage;
 
 class CreateFolderTest extends TestCase
 {
     use WithFaker;
     use Concerns\TestsFolderSettings;
-    use InteractsWithValues;
-
-    protected function shouldBeInteractedWith(): array
-    {
-        return collect((new CreateOrUpdateFolderRequest())->rules())
-            ->reject(fn ($value, string $key) => str_starts_with($key, 'settings.'))
-            ->merge(Arr::dot(FolderSettings::default()))
-            ->keys()
-            ->reject('version')
-            ->all();
-    }
+    use ClearFoldersIconsStorage;
 
     protected function createFolderResponse(array $data = []): TestResponse
     {
@@ -68,29 +55,29 @@ class CreateFolderTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['description' => 'The description must not be greater than 150 characters.']);
 
-        $this->createFolderResponse(['thumbnail' => UploadedFile::fake()->create('photo.jpg', 2001)])
+        $this->createFolderResponse(['icon' => UploadedFile::fake()->create('photo.jpg', 2001)])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['thumbnail' => 'The thumbnail must not be greater than 2000 kilobytes.']);
+            ->assertJsonValidationErrors(['icon' => 'The icon must not be greater than 2000 kilobytes.']);
 
-        $this->createFolderResponse(['thumbnail' => UploadedFile::fake()->create('photo.html', 1000)])
+        $this->createFolderResponse(['icon' => UploadedFile::fake()->create('photo.html', 1000)])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['thumbnail' => 'The thumbnail must be an image.']);
+            ->assertJsonValidationErrors(['icon' => 'The icon must be an image.']);
     }
 
     public function testCreateFolder(): void
     {
-        $filesystem = new FolderThumbnailFileSystem();
+        $filesystem = new FoldersIconsFilesystem();
 
         $this->loginUser($user = UserFactory::new()->create());
 
         $this->createFolderResponse([
             'name'         => $name = $this->faker->word,
             'description'  => $description = $this->faker->sentence,
-            'thumbnail'    => UploadedFile::fake()->image('folderIcon.jpg')->size(2000)
+            'icon'         => UploadedFile::fake()->image('folderIcon.jpg')->size(2000)
         ])->assertCreated();
 
         /** @var Folder */
-        $folder = Folder::query()->where('user_id', $user->id)->sole();
+        $folder = $user->folders->sole();
 
         $this->assertEquals($name, $folder->name->value);
         $this->assertEquals($description, $folder->description);
@@ -98,7 +85,6 @@ class CreateFolderTest extends TestCase
         $this->assertEmpty($folder->settings->toArray());
         $this->assertTrue($filesystem->exists($folder->icon_path));
         $this->assertNotEquals($folder->public_id->value, $folder->public_id->present());
-        $this->setInteracted(['thumbnail']);
     }
 
     public function testCreateFolderWithoutDescription(): void
@@ -107,7 +93,8 @@ class CreateFolderTest extends TestCase
 
         $this->createFolderResponse(['name' => $this->faker->word])->assertCreated();
 
-        $folder = Folder::query()->where('user_id', $user->id)->sole();
+        /** @var Folder */
+        $folder = $user->folders->sole();
 
         $this->assertNull($folder->description);
     }
@@ -118,7 +105,8 @@ class CreateFolderTest extends TestCase
 
         $this->createFolderResponse(['name' => $this->faker->word, 'visibility' => 'public'])->assertCreated();
 
-        $folder = Folder::where('user_id', $user->id)->first();
+        /** @var Folder */
+        $folder = $user->folders->sole();
 
         $this->assertTrue($folder->visibility->isPublic());
     }
@@ -130,7 +118,8 @@ class CreateFolderTest extends TestCase
 
         $this->createFolderResponse(['name' => $this->faker->word, 'visibility' => 'collaborators'])->assertCreated();
 
-        $folder = Folder::where('user_id', $user->id)->first();
+        /** @var Folder */
+        $folder = $user->folders->sole();
 
         $this->assertTrue($folder->visibility->isVisibleToCollaboratorsOnly());
     }
@@ -142,7 +131,8 @@ class CreateFolderTest extends TestCase
         $this->createFolderResponse(['name' => $this->faker->word, 'visibility' => 'private'])
             ->assertCreated();
 
-        $folder = Folder::where('user_id', $user->id)->first();
+        /** @var Folder */
+        $folder = $user->folders->sole();
 
         $this->assertTrue($folder->visibility->isPrivate());
     }
@@ -162,144 +152,77 @@ class CreateFolderTest extends TestCase
             'folder_password' => 'password',
         ])->assertCreated();
 
-        $folder = Folder::where('user_id', $user->id)->sole();
+        /** @var Folder */
+        $folder = $user->folders->sole();
 
         $this->assertTrue($folder->visibility->isPasswordProtected());
         $this->assertTrue(Hash::check('password', $folder->password));
     }
 
-    public function testCreateFolderWithSettings(): void
+    #[Test]
+    #[DataProvider('createFolderWithSettingsDataProvider')]
+    public function createFolderWithSettings(array $settings): void
     {
-        $this->assertCreateWithSettings(['max_collaborators_limit' => '500'], function (FS $s) {
-            $this->assertEquals(Builder::new()->setMaxCollaboratorsLimit(500)->build(), $s);
-        });
+        $user = UserFactory::new()->create();
 
-        $this->assertCreateWithSettings(['max_bookmarks_limit' => '110'], function (FS $s) {
-            $this->assertEquals(Builder::new()->setMaxBookmarksLimit(110)->build(), $s);
-        });
+        $this->loginUser($user);
+        $this->createFolderResponse(['name' => $this->faker->word, 'settings' => Arr::undot($settings)])->assertCreated();
 
-        $this->assertCreateWithSettings(['accept_invite_constraints' => ['InviterMustHaveRequiredPermission']], function (FS $s) {
-            $this->assertEquals(Builder::new()->enableCannotAcceptInviteIfInviterNoLongerHasRequiredPermission()->build(), $s);
-        });
+        /** @var Folder */
+        $folder = $user->folders->sole();
 
-        $this->assertCreateWithSettings(['notifications.enabled' => false], function (FS $s) {
-            $this->assertEquals(Builder::new()->disableNotifications()->build(), $s);
-        });
-
-        $this->assertCreateWithSettings(['notifications.enabled' => 0], function (FS $s) {
-            $this->assertEquals(Builder::new()->disableNotifications()->build(), $s);
-        });
-
-        $this->assertCreateWithSettings(['notifications.enabled' => '0'], function (FS $s) {
-            $this->assertEquals(Builder::new()->disableNotifications()->build(), $s);
-        });
-
-        $this->assertCreateWithSettings(['notifications.enabled' => true], function (FS $s) {
-            return $s->notificationsAreEnabled;
-        });
-
-        $this->assertCreateWithSettings(['notifications.enabled' => 1], function (FS $s) {
-            return $s->notificationsAreEnabled;
-        });
-
-        $this->assertCreateWithSettings(['notifications.enabled' => '1'], function (FS $s) {
-            return $s->notificationsAreEnabled;
-        });
-
-        $this->assertCreateWithSettings(['notifications.new_collaborator.enabled' => false], function (FS $s) {
-            $this->assertEquals(Builder::new()->disableNewCollaboratorNotification()->build(), $s);
-        });
-
-        $this->assertCreateWithSettings(['notifications.new_collaborator.enabled' => true], function (FS $s) {
-            return $s->newCollaboratorNotificationIsEnabled;
-        });
-
-        $this->assertCreateWithSettings(['notifications.folder_updated.enabled' => false], function (FS $s) {
-            $this->assertEquals(Builder::new()->disableFolderUpdatedNotification()->build(), $s);
-        });
-
-        $this->assertCreateWithSettings(['notifications.folder_updated.enabled' => true], function (FS $s) {
-            return $s->folderUpdatedNotificationIsEnabled;
-        });
-
-        $this->assertCreateWithSettings(['notifications.new_bookmarks.enabled' => false], function (FS $s) {
-            $this->assertEquals(Builder::new()->disableNewBookmarksNotification()->build(), $s);
-        });
-
-        $this->assertCreateWithSettings(['notifications.new_bookmarks.enabled' => true], function (FS $s) {
-            return $s->newBookmarksNotificationIsEnabled;
-        });
-
-        $this->assertCreateWithSettings(['notifications.bookmarks_removed.enabled' => false], function (FS $s) {
-            $this->assertEquals(Builder::new()->disableBookmarksRemovedNotification()->build(), $s);
-        });
-
-        $this->assertCreateWithSettings(['notifications.bookmarks_removed.enabled' => true], function (FS $s) {
-            return $s->bookmarksRemovedNotificationIsEnabled;
-        });
-
-        $this->assertCreateWithSettings(['notifications.collaborator_exit.enabled' => false], function (FS $s) {
-            $this->assertEquals(Builder::new()->disableCollaboratorExitNotification()->build(), $s);
-        });
-
-        $this->assertCreateWithSettings(['notifications.collaborator_exit.enabled' => true], function (FS $s) {
-            return $s->collaboratorExitNotificationIsEnabled;
-        });
-
-        $this->assertCreateWithSettings(['notifications.new_collaborator.mode' => '*'], function (FS $s) {
-            return ! $s->newCollaboratorNotificationMode->notifyWhenCollaboratorWasInvitedByMe();
-        });
-
-        $this->assertCreateWithSettings(['notifications.new_collaborator.mode' => 'invitedByMe'], function (FS $s) {
-            $this->assertEquals(Builder::new()->enableOnlyCollaboratorsInvitedByMeNotification()->build(), $s);
-        });
-
-        $this->assertCreateWithSettings(['notifications.collaborator_exit.mode' => '*'], function (FS $s) {
-            return ! $s->collaboratorExitNotificationMode->notifyWhenCollaboratorHasWritePermission();
-        });
-
-        $this->assertCreateWithSettings(['notifications.collaborator_exit.mode' => 'hasWritePermission'], function (FS $s) {
-            $this->assertEquals(Builder::new()->enableOnlyCollaboratorWithWritePermissionNotification()->build(), $s);
-        });
-
-        $this->assertCreateWithSettings(
-            [
-                'notifications.new_collaborator.enabled'  => false,
-                'notifications.folder_updated.enabled'    => false,
-                'notifications.collaborator_exit.enabled' => false
-            ],
-            function (FS $s) {
-                return $s->newCollaboratorNotificationIsDisabled &&
-                    $s->folderUpdatedNotificationIsDisabled &&
-                    $s->collaboratorExitNotificationIsDisabled;
-            }
+        $this->assertEquals(
+            $folder->settings->toArray(),
+            (new FolderSettings($settings))->toArray()
         );
     }
 
-    private function assertCreateWithSettings(array $settings, Closure $assertion): void
+    public static function createFolderWithSettingsDataProvider(): array
     {
-        $this->loginUser($user = UserFactory::new()->create());
+        return [
+            'max collaborators limit'                                => [['max_collaborators_limit' => '500']],
+            'max_bookmarks_limit'                                    => [['max_bookmarks_limit' => '150']],
+            'accept invite constraints'                              => [['accept_invite_constraints' => ['InviterMustHaveRequiredPermission']]],
+            'enable notification: bool value'                         => [['notifications.enabled' => false]],
+            'enable notification: string value'                       => [['notifications.enabled' => '0']],
+            'enable notification: int value'                          => [['notifications.enabled' => 0]],
+            'new collaborator notification: bool value'               => [['notifications.new_collaborator.enabled' => false]],
+            'new collaborator notification: string value'             => [['notifications.new_collaborator.enabled' => '0']],
+            'new collaborator notification: int value'                => [['notifications.new_collaborator.enabled' => 0]],
+            'new bookmarks notification: bool value'                  => [['notifications.new_collaborator.enabled' => false]],
+            'new bookmarks notification: string value'                => [['notifications.new_collaborator.enabled' => '0']],
+            'new bookmarks notification: int value'                   => [['notifications.new_collaborator.enabled' => 0]],
+            'bookmarks removed notification: bool value'              => [['notifications.bookmarks_removed.enabled' => false]],
+            'bookmarks removed notification: string value'            => [['notifications.bookmarks_removed.enabled' => '0']],
+            'bookmarks removed notification: int value'               => [['notifications.bookmarks_removed.enabled' => 0]],
+            'collaborator exit notification: bool value'              => [['notifications.collaborator_exit.enabled' => false]],
+            'collaborator exit notification: string value'            => [['notifications.collaborator_exit.enabled' => '0']],
+            'collaborator exit notification: int value'               => [['notifications.collaborator_exit.enabled' => 0]],
+            'new collaborator notification mode: all'                 => [['notifications.new_collaborator.mode' => '*']],
+            'new collaborator notification mode: invitedByMe'         => [['notifications.new_collaborator.mode' => 'invitedByMe']],
+            'collaborator exit notification mode: all'                => [['notifications.collaborator_exit.mode' => '*']],
+            'collaborator exit notification mode: hasWritePermission' => [['notifications.collaborator_exit.mode' => 'hasWritePermission']],
+            'many'                                                   => [
+                [
+                    'notifications.new_collaborator.enabled' => 0,
+                    'notifications.collaborator_exit.enabled' => 0,
+                    'notifications.folder_updated.enabled' => '0',
+                    'notifications.new_bookmarks.enabled' => 1,
+                    'activities.enabled' => '0'
+                ],
+            ]
 
-        $this->createFolderResponse(['name' => $this->faker->word, 'settings' => Arr::undot($settings)])->assertCreated();
-
-        $folderSettings = Folder::query()->where('user_id', $user->id)->sole()->settings;
-
-        if ($condition = $assertion($folderSettings) ?: true) {
-            $this->assertTrue($condition);
-        }
-
-        $this->setInteracted($settings);
+        ];
     }
 
-    public function testWillReturnUnprocessableWhenFolderSettingsIsInValid(): void
+    #[Test]
+    #[DataProvider('invalidSettingsData')]
+    public function willReturnUnprocessableWhenFolderSettingsIsInValid(array $settings, array $errors): void
     {
         $this->loginUser(UserFactory::new()->create());
 
-        $this->assertWillReturnUnprocessableWhenFolderSettingsIsInValid(
-            ['name' => $this->faker->name],
-            function (array $parameters) {
-                return $this->createFolderResponse($parameters);
-            }
-        );
+        $this->createFolderResponse(['name' => $this->faker->word, 'settings' => Arr::undot($settings)])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['settings' => $errors]);
     }
 }

@@ -137,7 +137,7 @@ class LoginUserTest extends TestCase
             })
             ->assertJson(function (AssertableJson $json) {
                 $json->where('data.token.expires_in', function (int $expiresAt) {
-                    $this->assertLessThanOrEqual(1, now()->diffInHours(now()->addSeconds($expiresAt)));
+                    $this->assertLessThanOrEqual(720, now()->diffInHours(now()->addSeconds($expiresAt)));
 
                     return true;
                 });
@@ -240,7 +240,6 @@ class LoginUserTest extends TestCase
     public function testWillReturnBadRequestWhenVerificationCodeHasBeenUsed(): void
     {
         $user = UserFactory::new()->with2FA()->create();
-        $email = $user->email;
 
         Http::fake([
             'ip-api.com/*' => Http::response('{
@@ -252,7 +251,7 @@ class LoginUserTest extends TestCase
         $code = (string)$this->get2FACode($user->id);
 
         $this->loginUserResponse($params = [
-            'username'      => $email,
+            'username'      => $user->email,
             'password'      => 'password',
             'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,

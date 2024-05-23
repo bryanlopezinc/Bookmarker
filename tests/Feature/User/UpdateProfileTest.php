@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\User;
 
 use App\Enums\TwoFaMode;
-use App\Filesystem\ProfileImageFileSystem;
+use App\Filesystem\ProfileImagesFilesystem;
 use App\Models\User;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -14,10 +14,12 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\ClearUsersProfileImagesStorage;
 
 class UpdateProfileTest extends TestCase
 {
     use WithFaker;
+    use ClearUsersProfileImagesStorage;
 
     protected function updateProfileResponse(array $parameters = []): TestResponse
     {
@@ -133,7 +135,7 @@ class UpdateProfileTest extends TestCase
     #[Test]
     public function updateProfileImage(): void
     {
-        $filesystem = new ProfileImageFileSystem();
+        $filesystem = new ProfileImagesFilesystem();
         $OtherUserProfileImage = $filesystem->store(UploadedFile::fake()->image('myPicture.jpg'));
 
         $this->loginUser($user = UserFactory::new()->create());

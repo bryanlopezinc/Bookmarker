@@ -140,7 +140,7 @@ class AddPermissionToRoleTest extends TestCase
             'Remove Collaborator'       => ['removeUser'],
             'Update folder name'        => ['updateFolderName'],
             'Update folder description' => ['updateFolderDescription'],
-            'Update folder thumbnail'   => ['updateFolderThumbnail'],
+            'Update folder icon'        => ['updateFolderIcon'],
             'Suspend User'              => ['suspendUser']
         ];
     }

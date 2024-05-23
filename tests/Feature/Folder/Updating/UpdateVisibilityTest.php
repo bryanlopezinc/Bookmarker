@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder\Updating;
 
+use App\Enums\ActivityType;
 use App\Enums\FolderVisibility;
 use App\Enums\Permission;
 use Database\Factories\UserFactory;
@@ -45,6 +46,12 @@ class UpdateVisibilityTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['password' => 'The Password field is required for this action.']);
 
+        $this->updateFolderResponse([
+            'visibility' => 'public',
+            'folder_id'  => $passwordProtectedFolder->public_id->present(),
+            'password'   => 'password'
+        ])->assertOk();
+
         $privateFolder = FolderFactory::new()->for($user)->private()->create();
         $this->updateFolderResponse(['folder_id' => $privateFolderId = $privateFolder->public_id->present(), 'visibility' => 'public'])
             ->assertUnprocessable()
@@ -62,14 +69,28 @@ class UpdateVisibilityTest extends TestCase
             'password'   => 'password'
         ])->assertOk();
 
+        $this->assertUpdated($privateFolder, ['visibility' => FolderVisibility::PUBLIC->value]);
+        $this->assertUpdated($passwordProtectedFolder, ['visibility' => FolderVisibility::PUBLIC->value, 'password' => null]);
+
+        $this->assertTrue($privateFolder->activities->isEmpty());
+        $this->assertTrue($publicFolder->activities->isEmpty());
+        $this->assertTrue($passwordProtectedFolder->activities->isEmpty());
+    }
+
+    #[Test]
+    public function willLogActivityWhenVisibilityIsChangedFromCollaboratorsToPublic(): void
+    {
+        $this->loginUser($user = UserFactory::new()->create());
+
+        $folderVisibleToCollaboratorsOnly = FolderFactory::new()->for($user)->visibleToCollaboratorsOnly()->create();
         $this->updateFolderResponse([
+            'folder_id'  => $folderVisibleToCollaboratorsOnly->public_id->present(),
             'visibility' => 'public',
-            'folder_id'  => $passwordProtectedFolder->public_id->present(),
             'password'   => 'password'
         ])->assertOk();
 
-        $this->assertUpdated($privateFolder, ['visibility' => FolderVisibility::PUBLIC->value]);
-        $this->assertUpdated($passwordProtectedFolder, ['visibility' => FolderVisibility::PUBLIC->value, 'password' => null]);
+        $this->assertCount(1, $folderVisibleToCollaboratorsOnly->activities);
+        $this->assertEquals(ActivityType::FOLDER_VISIBILITY_CHANGED_TO_PUBLIC, $folderVisibleToCollaboratorsOnly->activities->sole()->type);
     }
 
     #[Test]
@@ -101,6 +122,11 @@ class UpdateVisibilityTest extends TestCase
         $this->updateFolderResponse(['visibility' => 'private', 'folder_id' => $folderThatHasCollaborators->public_id->present()])
             ->assertForbidden()
             ->assertJsonFragment(['message' => 'CannotMakeFolderWithCollaboratorsPrivate']);
+
+        $this->assertTrue($privateFolder->activities->isEmpty());
+        $this->assertTrue($publicFolder->activities->isEmpty());
+        $this->assertTrue($folderThatHasCollaborators->activities->isEmpty());
+        $this->assertTrue($passwordProtectedFolder->activities->isEmpty());
     }
 
     #[Test]
@@ -114,6 +140,7 @@ class UpdateVisibilityTest extends TestCase
             'folder_id'  => $folderVisibleToCollaboratorsOnly->public_id->present(),
         ])->assertNoContent();
         $this->assertUpdated($folderVisibleToCollaboratorsOnly, ['visibility' => FolderVisibility::COLLABORATORS->value]);
+        $this->assertTrue($folderVisibleToCollaboratorsOnly->activities->isEmpty());
 
         $publicFolder = FolderFactory::new()->for($user)->create();
         $this->updateFolderResponse([
@@ -122,10 +149,35 @@ class UpdateVisibilityTest extends TestCase
         ])->assertOk();
         $this->assertUpdated($publicFolder, ['visibility' => FolderVisibility::COLLABORATORS->value]);
 
+        $privateFolder = FolderFactory::new()->for($user)->private()->create();
+        $this->updateFolderResponse([
+            'visibility' => 'collaborators',
+            'folder_id'  => $privateFolder->public_id->present(),
+        ])->assertOk();
+        $this->assertUpdated($privateFolder, ['visibility' => FolderVisibility::COLLABORATORS->value]);
+        $this->assertTrue($privateFolder->activities->isEmpty());
+
         $passwordProtectedFolder = FolderFactory::new()->for($user)->passwordProtected()->create();
         $this->updateFolderResponse(['folder_id' => $passwordProtectedFolder->public_id->present(), 'visibility' => 'collaborators'])
             ->assertOk();
         $this->assertUpdated($passwordProtectedFolder, ['visibility' => FolderVisibility::COLLABORATORS->value, 'password' => null]);
+        $this->assertTrue($passwordProtectedFolder->activities->isEmpty());
+    }
+
+    #[Test]
+    public function willLogActivityWhenVisibilityIsChangedFromPublicToCollaborators(): void
+    {
+        $this->loginUser($user = UserFactory::new()->create());
+
+        $publicFolder = FolderFactory::new()->for($user)->create();
+        $this->updateFolderResponse([
+            'visibility' => 'collaborators',
+            'folder_id'  => $publicFolder->public_id->present(),
+        ])->assertOk();
+
+        $this->assertUpdated($publicFolder, ['visibility' => FolderVisibility::COLLABORATORS->value]);
+        $this->assertCount(1, $publicFolder->activities);
+        $this->assertEquals(ActivityType::FOLDER_VISIBILITY_CHANGED_TO_COLLABORATORS_ONLY, $publicFolder->activities->sole()->type);
     }
 
     #[Test]
@@ -158,6 +210,10 @@ class UpdateVisibilityTest extends TestCase
         $this->updateFolderResponse(['folder_id' => $folderThatHasCollaborators->public_id->present(), ...$query])
             ->assertForbidden()
             ->assertJsonFragment(['message' => 'CannotMakeFolderWithCollaboratorsPrivate']);
+
+        $this->assertTrue($publicFolder->activities->isEmpty());
+        $this->assertTrue($folderThatHasCollaborators->activities->isEmpty());
+        $this->assertTrue($passwordProtectedFolder->activities->isEmpty());
     }
 
     #[Test]
@@ -195,5 +251,7 @@ class UpdateVisibilityTest extends TestCase
 
         $this->assertEquals($folderVisibleToCollaboratorsOnly, $folderVisibleToCollaboratorsOnly->refresh());
         $this->assertEquals($publicFolder, $publicFolder->refresh());
+        $this->assertTrue($folderVisibleToCollaboratorsOnly->activities->isEmpty());
+        $this->assertTrue($publicFolder->activities->isEmpty());
     }
 }

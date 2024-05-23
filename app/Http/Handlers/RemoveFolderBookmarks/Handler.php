@@ -7,7 +7,6 @@ namespace App\Http\Handlers\RemoveFolderBookmarks;
 use App\Collections\BookmarkPublicIdsCollection;
 use App\Models\Folder;
 use App\Models\Bookmark;
-use App\Models\FolderBookmark;
 use App\Http\Handlers\Constraints;
 use App\Http\Handlers\RequestHandlersQueue;
 use App\DataTransferObjects\RemoveFolderBookmarksRequestData as Data;
@@ -28,13 +27,10 @@ final class Handler
 
         $query = Folder::query()->select(['id'])->tap(new WherePublicIdScope($folderId));
 
-        $whereIn = FolderBookmark::query()
-            ->select('bookmark_id')
-            ->where('folder_id', Folder::select('id')->tap(new WherePublicIdScope($folderId)));
-
-        $folderBookmarks = Bookmark::select(['id', 'url', 'public_id'])
+        $folderBookmarks = Bookmark::select(['bookmarks.id', 'url', 'public_id', 'visibility'])
+            ->join('folders_bookmarks', 'bookmark_id', '=', 'bookmarks.id')
             ->tap(new WherePublicIdScope($bookmarksPublicIds))
-            ->whereIn('id', $whereIn)
+            ->where('folder_id', Folder::select('id')->tap(new WherePublicIdScope($folderId)))
             ->get();
 
         $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data, $folderBookmarks->all()));
@@ -54,6 +50,7 @@ final class Handler
             new Constraints\FeatureMustBeEnabledConstraint($data->authUser, Feature::DELETE_BOOKMARKS),
             new Constraints\MustNotBeSuspendedConstraint($suspendedCollaboratorRepository),
             new FolderContainsBookmarksConstraint($data, $folderBookmarks),
+            new CannotDeleteHiddenBookmarksConstraint($folderBookmarks, $data->authUser),
             new DeleteFolderBookmarks($folderBookmarks),
             new SendBookmarksRemovedFromFolderNotificationNotification($data, $folderBookmarks),
             new CollaboratorMetricsRecorder(CollaboratorMetricType::BOOKMARKS_DELETED, $data->authUser->id, count($folderBookmarks)),

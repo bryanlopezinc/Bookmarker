@@ -191,6 +191,32 @@ class RemoveFolderBookmarksTest extends TestCase
         $this->assertCount(0, $folder->bookmarks);
     }
 
+    #[Test]
+    public function whenBookmarkIsHidden(): void
+    {
+        [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
+
+        $bookmarks = BookmarkFactory::times(2)->for($folderOwner)->create();
+        $bookmarksPublicIds = BookmarkPublicIdsCollection::fromObjects($bookmarks)->present();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $this->addBookmarksToFolder($bookmarks->pluck('id')->all(), $folder->id, [$bookmarks[0]->id]);
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::DELETE_BOOKMARKS);
+
+        $this->loginUser($collaborator);
+        $this->removeFolderBookmarksResponse($query = [
+            'bookmarks' => $bookmarksPublicIds->all(),
+            'folder' => $folder->public_id->present()
+        ])->assertNotFound()
+            ->assertJsonFragment(['message' => 'BookmarkNotFound']);
+
+        $this->assertCount(2, $folder->bookmarks);
+
+        $this->loginUser($folderOwner);
+        $this->removeFolderBookmarksResponse($query)->assertOk();
+    }
+
     public function testWillReturnForbiddenWhenCollaboratorDoesNotHaveRemoveBookmarksPermissionOrRole(): void
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
@@ -364,13 +390,13 @@ class RemoveFolderBookmarksTest extends TestCase
         $this->assertCount(2, $folder->bookmarks);
     }
 
-    private function addBookmarksToFolder(int|array $bookmarkIDs, int $folderID): void
+    private function addBookmarksToFolder(int|array $bookmarkIDs, int $folderID, array $hidden = []): void
     {
         $service = new CreateFolderBookmarks();
 
         $this->assertNotEmpty($bookmarkIDs);
 
-        $service->create($folderID, $bookmarkIDs);
+        $service->create($folderID, $bookmarkIDs, $hidden);
     }
 
     public function testWillReturnNotFoundWhenFolderDoesNotExists(): void

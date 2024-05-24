@@ -81,10 +81,15 @@ final class FolderSettings
         return new self($instance->getArrayableValues($keys));
     }
 
+    /**
+     * @param array<SettingInterface> $settings
+     */
     private function getArrayableValues(array $settings): array
     {
         return collect($settings)
-            ->flatMap(fn (SettingInterface $setting) => $setting->toArray())
+            ->map(fn (SettingInterface $setting) => $this->dot($setting->toArray()))
+            ->collapse()
+            ->undot()
             ->all();
     }
 

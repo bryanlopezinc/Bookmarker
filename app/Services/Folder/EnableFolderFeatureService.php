@@ -39,7 +39,7 @@ final class EnableFolderFeatureService
             throw HttpException::forbidden(['message' => 'PermissionDenied']);
         }
 
-        if ($folder->user_id !== $authUser->id) {
+        if ( ! $folder->wasCreatedBy($authUser)) {
             throw new FolderNotFoundException();
         }
 

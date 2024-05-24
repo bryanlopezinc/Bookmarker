@@ -35,15 +35,13 @@ final class SendBookmarksRemovedFromFolderNotificationNotification implements Sc
     {
         $folderSettings = $folder->settings;
 
-        $folderBelongsToAuthUser = $this->data->authUser->id === $folder->user_id;
-
         [$authUser, $bookmarks] = [
             $this->data->authUser,
             collect($this->folderBookmarks)->map->getAttributes()
         ];
 
         if (
-            $folderBelongsToAuthUser                                      ||
+            $folder->wasCreatedBy($this->data->authUser)                  ||
             $folderSettings->notifications()->isDisabled()                 ||
             $folderSettings->bookmarksRemovedNotification()->isDisabled()  ||
             $folder->collaboratorIsMuted

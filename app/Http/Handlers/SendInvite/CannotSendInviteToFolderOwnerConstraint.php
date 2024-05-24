@@ -16,7 +16,7 @@ final class CannotSendInviteToFolderOwnerConstraint
 
     public function __invoke(Folder $folder): void
     {
-        $isSendingInviteToFolderOwner = $folder->user_id === $this->invitee->id;
+        $isSendingInviteToFolderOwner = $folder->wasCreatedBy($this->invitee);
 
         if ($isSendingInviteToFolderOwner) {
             throw HttpException::conflict([

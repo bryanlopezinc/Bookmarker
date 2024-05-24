@@ -54,11 +54,6 @@ abstract class AbstractSetting implements SettingInterface
         }
     }
 
-    final protected function isSet(): bool
-    {
-        return ! $this->value instanceof NoValue;
-    }
-
     /**
      * @inheritdoc
      */

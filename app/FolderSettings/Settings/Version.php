@@ -6,12 +6,16 @@ namespace App\FolderSettings\Settings;
 
 final class Version extends AbstractSetting
 {
+    /**
+     * @param string $version
+     */
+    public function __construct($version = '1.0.0')
+    {
+        parent::__construct($version);
+    }
+
     public function value(): string
     {
-        if ( ! $this->isSet()) {
-            return '1.0.0';
-        }
-
         return $this->value;
     }
 

@@ -35,7 +35,7 @@ final class FolderMustBelongToUserConstraint implements Scope
             throw new PermissionDeniedException();
         }
 
-        if ($folder->user_id !== $this->authUser->id) {
+        if ( ! $folder->wasCreatedBy($this->authUser)) {
             throw new FolderNotFoundException();
         }
     }

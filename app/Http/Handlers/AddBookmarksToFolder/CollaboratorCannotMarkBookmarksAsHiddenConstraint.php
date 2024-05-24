@@ -17,9 +17,7 @@ final class CollaboratorCannotMarkBookmarksAsHiddenConstraint
 
     public function __invoke(Folder $folder): void
     {
-        $folderBelongsToAuthUser = $folder->user_id === $this->data->authUser->id;
-
-        if (empty($this->data->makeHidden) || $folderBelongsToAuthUser) {
+        if (empty($this->data->makeHidden) || $folder->wasCreatedBy($this->data->authUser)) {
             return;
         }
 

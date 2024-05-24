@@ -35,9 +35,7 @@ final class FeatureMustBeEnabledConstraint implements Scope
 
     public function __invoke(Folder $folder): void
     {
-        $folderBelongsToAuthUser = $folder->user_id === $this->authUser?->id;
-
-        if ($folderBelongsToAuthUser) {
+        if ($this->authUser?->exists && $folder->wasCreatedBy($this->authUser)) {
             return;
         }
 

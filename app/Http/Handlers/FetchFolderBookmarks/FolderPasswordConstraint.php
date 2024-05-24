@@ -45,7 +45,7 @@ final class FolderPasswordConstraint implements Scope, HasHandlersInterface
 
     public function __invoke(Folder $folder): void
     {
-        $folderBelongsToAuthUser = $this->data->authUser->exists && $folder->user_id === $this->data->authUser->id;
+        $folderBelongsToAuthUser = $this->data->authUser->exists && $folder->wasCreatedBy($this->data->authUser);
 
         if ( ! $folder->visibility->isPasswordProtected() || $folderBelongsToAuthUser) {
             return;

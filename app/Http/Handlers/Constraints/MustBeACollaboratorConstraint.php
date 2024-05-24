@@ -36,7 +36,7 @@ final class MustBeACollaboratorConstraint implements Scope
             return;
         }
 
-        if ($folder->user_id === $this->user->id) {
+        if ($folder->wasCreatedBy($this->user)) {
             return;
         }
 

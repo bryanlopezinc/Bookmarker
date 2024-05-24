@@ -178,4 +178,15 @@ final class Folder extends Model implements HasPublicIdInterface
 
         return $potentiallyOutedFolderRecord->name;
     }
+
+    public function wasCreatedBy(int|User $user): bool
+    {
+        if (is_int($user)) {
+            $user = new User(['id' => $user]);
+
+            $user->exists = true;
+        }
+
+        return $this->user_id === $user->id;
+    }
 }

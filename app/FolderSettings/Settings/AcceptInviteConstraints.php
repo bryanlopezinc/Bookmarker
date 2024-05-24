@@ -9,12 +9,16 @@ use App\FolderSettings\AcceptInviteConstraints as Constraints;
 
 final class AcceptInviteConstraints extends AbstractSetting
 {
+    /**
+     * @param array<string> $constraints
+     */
+    public function __construct($constraints = [])
+    {
+        parent::__construct($constraints);
+    }
+
     public function value(): Constraints
     {
-        if ( ! $this->isSet()) {
-            return new Constraints([]);
-        }
-
         return new Constraints($this->value);
     }
 

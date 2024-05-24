@@ -38,7 +38,7 @@ final class SendFolderUpdatedNotification implements Scope
 
     public function __invoke(Folder $folder): void
     {
-        $wasUpdatedByFolderOwner = $folder->user_id === $this->data->authUser->id;
+        $wasUpdatedByFolderOwner = $folder->wasCreatedBy($this->data->authUser);
 
         $settings = $folder->settings;
         $changes = $this->changes;

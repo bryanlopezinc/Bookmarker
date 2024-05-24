@@ -35,7 +35,7 @@ final class SendNewCollaboratorNotification implements Scope
     {
         [$inviter, $invitee] = [$this->repository->inviter(), $this->repository->invitee()];
 
-        $wasInvitedByFolderOwner = $folder->user_id === $inviter->id;
+        $wasInvitedByFolderOwner = $folder->wasCreatedBy($inviter->id);
 
         $settings = $folder->settings;
 

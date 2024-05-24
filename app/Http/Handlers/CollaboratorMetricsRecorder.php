@@ -42,9 +42,7 @@ final class CollaboratorMetricsRecorder implements Scope
     {
         $incrementByAmount = $this->count;
 
-        $folderBelongsToCollaborator = $this->collaboratorId === $folder->user_id;
-
-        if ($folderBelongsToCollaborator) {
+        if ($folder->wasCreatedBy($this->collaboratorId)) {
             return;
         }
 

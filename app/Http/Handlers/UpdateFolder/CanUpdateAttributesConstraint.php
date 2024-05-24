@@ -16,9 +16,7 @@ final class CanUpdateAttributesConstraint
 
     public function __invoke(Folder $folder): void
     {
-        $folderBelongsToAuthUser = $folder->user_id === $this->data->authUser->id;
-
-        if ($folderBelongsToAuthUser) {
+        if ($folder->wasCreatedBy($this->data->authUser)) {
             return;
         }
 

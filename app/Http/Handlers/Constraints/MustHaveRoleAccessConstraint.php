@@ -32,11 +32,9 @@ final class MustHaveRoleAccessConstraint implements Scope
 
     public function __invoke(Folder $folder): void
     {
-        $folderBelongsToAuthUser = $folder->user_id === $this->authUser->id;
-
         $constraint = $this->mustBeACollaboratorConstraint;
 
-        if ($folderBelongsToAuthUser) {
+        if ($folder->wasCreatedBy($this->authUser)) {
             return;
         }
 

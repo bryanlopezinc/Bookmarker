@@ -23,7 +23,7 @@ final class GetFolderBookmarks
     public function handle(?int $authUserId, Folder $folder, PaginationData $pagination): Paginator
     {
         $isLoggedIn = $authUserId !== null;
-        $folderBelongsToAuthUser = $folder->user_id !== $authUserId;
+        $folderBelongsToAuthUser =  $isLoggedIn && ! $folder->wasCreatedBy($authUserId);
         $fetchOnlyPublicBookmarks = ! $isLoggedIn || $folderBelongsToAuthUser;
 
         $shouldNotIncludeMutedCollaboratorsBookmarks = ($folder->visibility->isPublic() ||

@@ -21,9 +21,7 @@ final class CannotDeleteHiddenBookmarksConstraint
 
     public function __invoke(Folder $folder): void
     {
-        $folderBelongsToAuthUser = $folder->user_id === $this->authUser->id;
-
-        if ($folderBelongsToAuthUser) {
+        if ($folder->wasCreatedBy($this->authUser)) {
             return;
         }
 

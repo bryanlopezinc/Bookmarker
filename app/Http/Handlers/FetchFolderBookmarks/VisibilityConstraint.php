@@ -38,7 +38,7 @@ final class VisibilityConstraint implements Scope, HasHandlersInterface
     {
         $isLoggedIn = $this->data->authUser->exists;
 
-        $folderBelongsToAuthUser = $isLoggedIn && $folder->user_id === $this->data->authUser->id;
+        $folderBelongsToAuthUser = $isLoggedIn && $folder->wasCreatedBy($this->data->authUser);
 
         if ($folder->visibility->isPublic() || $folderBelongsToAuthUser) {
             $this->next = [];

@@ -10,13 +10,17 @@ use Illuminate\Validation\Rule;
 
 final class ActivitiesVisibility extends AbstractSetting
 {
+    /**
+     * @param Visibility $visibility
+     */
+    public function __construct($visibility = Visibility::PUBLIC)
+    {
+        parent::__construct($visibility);
+    }
+
     public function value(): Visibility
     {
-        if ( ! $this->isSet()) {
-            return Visibility::PUBLIC;
-        }
-
-        if($this->value instanceof Visibility) {
+        if ($this->value instanceof Visibility) {
             return $this->value;
         }
 
@@ -43,8 +47,8 @@ final class ActivitiesVisibility extends AbstractSetting
         return [
             Rule::when(
                 condition: is_string($this->value),
-                rules:['string', Rule::in(Visibility::publicIdentifiers())],
-                defaultRules:[Rule::enum(Visibility::class)]
+                rules: ['string', Rule::in(Visibility::publicIdentifiers())],
+                defaultRules: [Rule::enum(Visibility::class)]
             ),
         ];
     }

@@ -47,9 +47,7 @@ final class FetchFolderActivitiesService
 
     private function ensureFolderIsVisibilityToUser(User $user, Folder $folder): void
     {
-        $folderBelongsToAuthUser = $folder->user_id === $user->id;
-
-        if ($folder->visibility->isPublic() || $folderBelongsToAuthUser) {
+        if ($folder->visibility->isPublic() || $folder->wasCreatedBy($user)) {
             return;
         }
 
@@ -64,11 +62,9 @@ final class FetchFolderActivitiesService
 
     private function ensureUserCanViewActivities(User $user, Folder $folder): void
     {
-        $folderBelongsToAuthUser = $folder->user_id === $user->id;
-
         $activitiesVisibility = $folder->settings->activitiesVisibility()->value();
 
-        if ($activitiesVisibility->isPublic() || $folderBelongsToAuthUser) {
+        if ($activitiesVisibility->isPublic() || $folder->wasCreatedBy($user)) {
             return;
         }
 

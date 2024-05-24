@@ -10,7 +10,8 @@ use App\FolderSettings\FolderSettings;
 use App\FolderSettings\Settings\MaxBookmarksLimit;
 use App\FolderSettings\Settings\MaxCollaboratorsLimit;
 use App\FolderSettings\Settings\Notifications\Notifications;
-use Illuminate\Testing\AssertableJsonString;
+use Illuminate\Support\Arr;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -55,6 +56,29 @@ class FolderSettingsTest extends TestCase
 
         $this->assertFalse($this->isValid(['activities' => ['visibility' => 99]], 'The selected activities.visibility is invalid.'));
         $this->assertFalse($this->isValid(['activities' => ['visibility' => 'foo']], 'The selected activities.visibility is invalid.'));
+    }
+
+    #[Test]
+    #[DataProvider('cannotBeBullData')]
+    public function cannotBeBull(string $key): void
+    {
+        $settings = [];
+
+        Arr::set($settings, $key, null);
+
+        $this->assertFalse($this->isValid($settings));
+    }
+
+    public static function cannotBeBullData(): array
+    {
+        return [
+            ['version'],
+            ['max_collaborators_limit'],
+            ['max_bookmarks_limit'],
+            ['activities.visibility'],
+            ['accept_invite_constraints'],
+            ['notifications.enabled'],
+        ];
     }
 
     #[Test]
@@ -161,7 +185,11 @@ class FolderSettingsTest extends TestCase
             return true;
         } catch (InvalidFolderSettingException $e) {
             if ($message) {
-                $this->assertContains($message, $e->errorMessages);
+                $this->assertContains(
+                    $message,
+                    $e->errorMessages,
+                    sprintf('array contains %s', json_encode($e->errorMessages, JSON_PRETTY_PRINT))
+                );
             }
 
             return false;
@@ -178,17 +206,37 @@ class FolderSettingsTest extends TestCase
     #[Test]
     public function toArray(): void
     {
-        $settings = $this->make(['notifications' => ['enabled' => false]])->toArray();
-        $this->assertEquals($settings, ['version' => '1.0.0', 'notifications' => ['enabled' => false]]);
-        $this->assertEquals(3, count($settings, COUNT_RECURSIVE));
+        $values = $this->all();
+
+        $this->assertEquals($this->make($values)->toArray(), $values);
+    }
+
+    private function all(): array
+    {
+        return Arr::undot([
+            'version' => '1.0.0',
+            'notifications.enabled'    => false,
+            'activities.visibility'   => FolderActivitiesVisibility::PRIVATE->value,
+            'notifications.enabled'    => false,
+            'max_bookmarks_limit'     => 50,
+            'max_collaborators_limit' => 30,
+            'activities.bookmarks_removed.enabled'   => true,
+            'notifications.bookmarks_removed.enabled' => true,
+            'notifications.collaborator_exit.enabled' => false,
+            'notifications.collaborator_exit.mode'    => 'hasWritePermission',
+            'notifications.folder_updated.enabled'    => true,
+            'notifications.new_bookmarks.enabled'     => false,
+            'notifications.new_collaborator.enabled'  => true,
+            'notifications.new_collaborator.mode'     => '*',
+            'accept_invite_constraints' => ['InviterMustBeAnActiveCollaborator', 'InviterMustHaveRequiredPermission']
+        ]);
     }
 
     #[Test]
     public function toJson(): void
     {
-        $settings = new FolderSettings(['notifications' => ['enabled' => false]]);
-        $json = new AssertableJsonString($settings->toJson());
+        $values = $this->all();
 
-        $json->assertExact(['version' => '1.0.0', 'notifications' => ['enabled' => false]]);
+        $this->assertEquals($this->make($values)->toJson(), json_encode($values));
     }
 }

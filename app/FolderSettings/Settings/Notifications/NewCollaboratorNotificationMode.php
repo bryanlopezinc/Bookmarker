@@ -9,10 +9,18 @@ use App\Enums\NewCollaboratorNotificationMode as Mode;
 
 final class NewCollaboratorNotificationMode extends AbstractSetting
 {
+    /**
+     * @param string $mode
+     */
+    public function __construct($mode = Mode::ALL->value)
+    {
+        parent::__construct($mode);
+    }
+
     public function value(): Mode
     {
-        if ( ! $this->isSet()) {
-            return Mode::ALL;
+        if ($this->value instanceof Mode) {
+            return $this->value;
         }
 
         return Mode::from($this->value);

@@ -57,15 +57,13 @@ final class FeatureMustBeEnabledConstraint implements Scope
         /** @var \Illuminate\Support\Collection */
         $disabledFeatures = $folder->updateAbleAttributesThatAreDisabled ?? collect();
 
-        $folderBelongsToAuthUser = $folder->user_id === $this->data->authUser->id;
-
         $exception = new FolderFeatureDisabledException();
 
         $isDisabled = function (Feature $feature) use ($disabledFeatures): bool {
             return $disabledFeatures->contains($feature->value);
         };
 
-        if ($folderBelongsToAuthUser || $disabledFeatures->isEmpty()) {
+        if ($folder->wasCreatedBy($this->data->authUser) || $disabledFeatures->isEmpty()) {
             return;
         }
 

@@ -22,7 +22,7 @@ final class CannotSuspendFolderOwnerConstraint implements Scope
 
     public function __invoke(Folder $folder): void
     {
-        if ($folder->user_id === $folder->collaboratorId) {
+        if ($folder->wasCreatedBy($folder->collaboratorId)) {
             throw HttpException::forbidden(['message' => 'CannotSuspendFolderOwner']);
         }
     }

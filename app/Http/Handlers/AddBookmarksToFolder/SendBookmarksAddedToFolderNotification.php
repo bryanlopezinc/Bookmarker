@@ -30,12 +30,11 @@ final class SendBookmarksAddedToFolderNotification implements Scope
     public function __invoke(Folder $folder): void
     {
         $settings = $folder->settings;
-        $folderBelongsToAuthUser = $this->data->authUser->id === $folder->user_id;
         $authUser = $this->data->authUser;
         $bookmarks = $this->bookmarks;
 
         $shouldNotSendNotification =
-            $folderBelongsToAuthUser                           ||
+            $folder->wasCreatedBy($authUser)                   ||
             $settings->notifications()->isDisabled()            ||
             $settings->newBookmarksNotification()->isDisabled() ||
             $folder->collaboratorIsMuted;

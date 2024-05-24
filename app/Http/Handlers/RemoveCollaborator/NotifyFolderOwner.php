@@ -45,9 +45,7 @@ final class NotifyFolderOwner implements Scope
     {
         $notificationData = $this->prepareNotificationDataForClosureSerialization($folder);
 
-        $collaboratorWasRemovedByFolderOwner = $this->data->authUser->id === $folder->user_id;
-
-        if ($collaboratorWasRemovedByFolderOwner) {
+        if ($folder->wasCreatedBy($this->data->authUser)) {
             return;
         }
 

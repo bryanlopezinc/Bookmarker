@@ -11,6 +11,14 @@ final class LogBookmarksRemovedActivity extends AbstractSetting
 {
     use HasBooleanValue;
 
+    /**
+     * @param bool $enable
+     */
+    public function __construct($enable = true)
+    {
+        parent::__construct($enable);
+    }
+
     public function isDisabled(): bool
     {
         return ! $this->value();
@@ -26,10 +34,6 @@ final class LogBookmarksRemovedActivity extends AbstractSetting
 
     public function value(): bool
     {
-        if ( ! $this->isSet()) {
-            return true;
-        }
-
         return $this->normalize($this->value);
     }
 }

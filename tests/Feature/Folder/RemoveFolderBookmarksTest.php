@@ -8,11 +8,14 @@ use App\Actions\CreateFolderBookmarks;
 use App\Actions\ToggleFolderFeature;
 use App\Collections\BookmarkPublicIdsCollection;
 use App\DataTransferObjects\Activities\FolderBookmarksRemovedActivityLogData;
-use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Enums\ActivityType;
 use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
+use App\FolderSettings\Settings\Activities\LogActivities;
+use App\FolderSettings\Settings\Activities\LogBookmarksRemovedActivity;
+use App\FolderSettings\Settings\Notifications\BookmarksRemovedNotification;
+use App\FolderSettings\Settings\Notifications\Notifications;
 use App\Http\Handlers\SuspendCollaborator\SuspendCollaborator;
 use App\Models\Bookmark;
 use App\Services\Folder\MuteCollaboratorService;
@@ -508,7 +511,7 @@ class RemoveFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->disableNotifications())
+            ->settings(new Notifications(false))
             ->create();
 
         $this->loginUser($folderOwner);
@@ -537,7 +540,7 @@ class RemoveFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->disableBookmarksRemovedNotification())
+            ->settings(new BookmarksRemovedNotification(false))
             ->create();
 
         $this->loginUser($folderOwner);
@@ -701,7 +704,7 @@ class RemoveFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->enableActivities(false))
+            ->settings(new LogActivities(false))
             ->create();
 
         $this->addBookmarksToFolder($bookmarks->pluck('id')->all(), $folder->id);
@@ -731,7 +734,7 @@ class RemoveFolderBookmarksTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->enableBookmarkRemovedActivities(false))
+            ->settings(new LogBookmarksRemovedActivity(false))
             ->create();
 
         $this->addBookmarksToFolder($bookmarks->pluck('id')->all(), $folder->id);

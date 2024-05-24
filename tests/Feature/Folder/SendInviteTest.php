@@ -6,8 +6,8 @@ namespace Tests\Feature\Folder;
 
 use App\Actions\ToggleFolderFeature;
 use App\Repositories\FolderInviteDataRepository;
-use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Enums\{Feature, Permission};
+use App\FolderSettings\Settings\MaxCollaboratorsLimit;
 use App\Http\Handlers\SuspendCollaborator\SuspendCollaborator;
 use Tests\TestCase;
 use Illuminate\Support\Str;
@@ -444,7 +444,7 @@ class SendInviteTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->setMaxCollaboratorsLimit(10))
+            ->settings(new MaxCollaboratorsLimit(10))
             ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);

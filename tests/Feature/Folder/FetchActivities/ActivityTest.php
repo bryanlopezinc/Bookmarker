@@ -8,8 +8,8 @@ use App\Actions\CreateFolderActivity;
 use App\Enums\ActivityType as Type;
 use App\DataTransferObjects\Activities\FolderIconChangedActivityLogData;
 use App\DataTransferObjects\Activities\FolderNameChangedActivityLogData;
-use App\DataTransferObjects\Builders\FolderSettingsBuilder as SettingsBuilder;
 use App\Enums\FolderActivitiesVisibility as Visibility;
+use App\FolderSettings\Settings\Activities\ActivitiesVisibility;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use PHPUnit\Framework\Attributes\Test;
@@ -52,7 +52,7 @@ class ActivityTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(SettingsBuilder::new()->activitiesVisibility(Visibility::PUBLIC))
+            ->settings(new ActivitiesVisibility(Visibility::PUBLIC))
             ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder);
@@ -74,7 +74,7 @@ class ActivityTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(SettingsBuilder::new()->activitiesVisibility(Visibility::PRIVATE))
+            ->settings(new ActivitiesVisibility(Visibility::PRIVATE))
             ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder);
@@ -100,7 +100,7 @@ class ActivityTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(SettingsBuilder::new()->activitiesVisibility(Visibility::COLLABORATORS))
+            ->settings(new ActivitiesVisibility(Visibility::COLLABORATORS))
             ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder);
@@ -149,7 +149,7 @@ class ActivityTest extends TestCase
         [$folderOwner, $user] = UserFactory::times(2)->create();
 
         $factory = FolderFactory::new()->for($folderOwner);
-        $setting = SettingsBuilder::new()->activitiesVisibility(Visibility::PUBLIC);
+        $setting = new ActivitiesVisibility(Visibility::PUBLIC);
 
         $privateFolder = $factory->private()->create();
         $passwordProtectedFolder = $factory->passwordProtected()->create();
@@ -185,7 +185,7 @@ class ActivityTest extends TestCase
     {
         [$folderOwner, $user] = UserFactory::times(2)->create();
 
-        $setting = SettingsBuilder::new()->activitiesVisibility(Visibility::PUBLIC);
+        $setting = new ActivitiesVisibility(Visibility::PUBLIC);
 
         $folder = FolderFactory::new()
             ->for($folderOwner)

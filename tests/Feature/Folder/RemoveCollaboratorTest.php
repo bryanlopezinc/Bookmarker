@@ -11,7 +11,7 @@ use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
 use App\DataTransferObjects\Activities\CollaboratorRemovedActivityLogData as ActivityLogData;
-use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\FolderSettings\Settings\Activities\LogActivities;
 use App\Http\Handlers\SuspendCollaborator\SuspendCollaborator;
 use App\Models\Folder;
 use App\Models\FolderCollaboratorPermission;
@@ -510,7 +510,7 @@ class RemoveCollaboratorTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->enableActivities(false))
+            ->settings(new LogActivities(false))
             ->create();
 
         $collaborators = UserFactory::times(2)->create()->each(function ($collaborator) use ($folder) {

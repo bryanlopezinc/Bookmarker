@@ -6,13 +6,20 @@ namespace Tests\Feature\Folder;
 
 use App\Actions\ToggleFolderFeature;
 use App\Repositories\FolderInviteDataRepository;
-use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\DataTransferObjects\FolderInviteData;
 use App\Enums\ActivityType;
 use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
 use App\DataTransferObjects\Activities\InviteAcceptedActivityLogData as ActivityLogData;
+use App\Enums\NewCollaboratorNotificationMode as Mode;
+use App\FolderSettings\FolderSettings;
+use App\FolderSettings\Settings\AcceptInviteConstraints;
+use App\FolderSettings\Settings\Activities\LogActivities;
+use App\FolderSettings\Settings\MaxCollaboratorsLimit;
+use App\FolderSettings\Settings\Notifications\NewCollaboratorNotification;
+use App\FolderSettings\Settings\Notifications\NewCollaboratorNotificationMode;
+use App\FolderSettings\Settings\Notifications\Notifications;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -491,7 +498,7 @@ class AcceptFolderInviteTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($user)
-            ->settings(FolderSettingsBuilder::new()->setMaxCollaboratorsLimit(12))
+            ->settings(new MaxCollaboratorsLimit(12))
             ->create();
 
         for ($i = 0; $i < 13; $i++) {
@@ -548,7 +555,7 @@ class AcceptFolderInviteTest extends TestCase
         // can accept new collaborators when inviter is not an active collaborator by default.
         $this->acceptInviteResponse(['invite_hash' => $id->value])->assertCreated();
 
-        $folder->settings = FolderSettingsBuilder::new()->enableCannotAcceptInviteIfInviterIsNotAnActiveCollaborator()->build();
+        $folder->settings = FolderSettings::fromKeys([new AcceptInviteConstraints(['InviterMustBeAnActiveCollaborator'])]);
         $folder->save();
 
         $this->acceptInviteResponse(['invite_hash' => $otherInviteeInviteHash->value])
@@ -585,7 +592,7 @@ class AcceptFolderInviteTest extends TestCase
             )
         );
 
-        $folder->settings = FolderSettingsBuilder::new()->enableCannotAcceptInviteIfInviterNoLongerHasRequiredPermission()->build();
+        $folder->settings = FolderSettings::fromKeys([new AcceptInviteConstraints(['InviterMustHaveRequiredPermission'])]);
         $folder->save();
 
         $role->delete();
@@ -633,7 +640,7 @@ class AcceptFolderInviteTest extends TestCase
         // can accept new collaborators when inviter permissions is revoked by default.
         $this->acceptInviteResponse(['invite_hash' => $id->value])->assertCreated();
 
-        $folder->settings = FolderSettingsBuilder::new()->enableCannotAcceptInviteIfInviterNoLongerHasRequiredPermission()->build();
+        $folder->settings = FolderSettings::fromKeys([new AcceptInviteConstraints(['InviterMustHaveRequiredPermission'])]);
         $folder->save();
 
         $this->acceptInviteResponse(['invite_hash' => $otherInviteeInviteHash->value])
@@ -768,7 +775,7 @@ class AcceptFolderInviteTest extends TestCase
         [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
 
         $folder = FolderFactory::new()
-            ->settings(FolderSettingsBuilder::new()->disableNotifications())
+            ->settings(new Notifications(false))
             ->create();
 
         Notification::fake();
@@ -793,9 +800,10 @@ class AcceptFolderInviteTest extends TestCase
 
         [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
 
-        $settings = FolderSettingsBuilder::new()
-            ->disableNewCollaboratorNotification()
-            ->enableOnlyCollaboratorsInvitedByMeNotification();
+        $settings = [
+            new NewCollaboratorNotification(false),
+            new NewCollaboratorNotificationMode(Mode::INVITED_BY_ME->value)
+        ];
 
         $folder = FolderFactory::new()->settings($settings)->create();
 
@@ -824,7 +832,7 @@ class AcceptFolderInviteTest extends TestCase
         [$collaborator, $invitee] = UserFactory::new()->count(2)->create();
 
         $folder = FolderFactory::new()
-            ->settings(FolderSettingsBuilder::new()->enableOnlyCollaboratorsInvitedByMeNotification())
+            ->settings(new NewCollaboratorNotificationMode(Mode::INVITED_BY_ME->value))
             ->create();
 
         $this->tokenStore->store(
@@ -851,7 +859,7 @@ class AcceptFolderInviteTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->enableOnlyCollaboratorsInvitedByMeNotification())
+            ->settings(new NewCollaboratorNotificationMode(Mode::INVITED_BY_ME->value))
             ->create();
 
         $this->tokenStore->store(
@@ -943,7 +951,7 @@ class AcceptFolderInviteTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->enableActivities(false))
+            ->settings(new LogActivities(false))
             ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::INVITE_USER);

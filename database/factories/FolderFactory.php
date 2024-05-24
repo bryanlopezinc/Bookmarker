@@ -9,7 +9,9 @@ use App\Models\Folder;
 use Illuminate\Support\Str;
 use App\Enums\FolderVisibility;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\FolderSettings\FolderSettings;
+use App\FolderSettings\SettingInterface;
+use Illuminate\Support\Arr;
 
 /**
  * @extends Factory<Folder>
@@ -63,8 +65,11 @@ final class FolderFactory extends Factory
         ]);
     }
 
-    public function settings(FolderSettingsBuilder $settings): self
+    /**
+     * @param array<SettingInterface>|SettingInterface $settings settings
+     */
+    public function settings(array|SettingInterface $settings): self
     {
-        return $this->state(['settings' => $settings->build()]);
+        return $this->state(['settings' => FolderSettings::fromKeys(Arr::wrap($settings))]);
     }
 }

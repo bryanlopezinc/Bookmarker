@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Enums\CollaboratorMetricType;
 use App\DataTransferObjects\Activities\DescriptionChangedActivityLogData;
 use App\DataTransferObjects\Activities\FolderNameChangedActivityLogData;
-use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\FolderSettings\Settings\Activities\LogActivities;
 use Database\Factories\FolderFactory;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Traits\CreatesCollaboration;
@@ -396,7 +396,7 @@ class UpdateFolderTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->enableActivities(false))
+            ->settings(new LogActivities(false))
             ->create(['name' => 'foo', 'description' => 'bar']);
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::updateFolderTypes());

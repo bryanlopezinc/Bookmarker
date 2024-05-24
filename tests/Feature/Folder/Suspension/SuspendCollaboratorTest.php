@@ -10,7 +10,7 @@ use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
 use App\DataTransferObjects\Activities\CollaboratorSuspendedActivityLogData as ActivityLogData;
-use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\FolderSettings\Settings\Activities\LogActivities;
 use App\Models\SuspendedCollaborator;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -441,7 +441,7 @@ class SuspendCollaboratorTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->enableActivities(false))
+            ->settings(new LogActivities(false))
             ->create();
 
         $suspendedCollaborators = UserFactory::times(2)->create()->each(function ($collaborator) use ($folder) {

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Folder\Updating;
 
 use App\DataTransferObjects\Activities\FolderIconChangedActivityLogData;
-use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Enums\ActivityType;
 use App\Enums\CollaboratorMetricType;
 use App\Enums\Permission;
@@ -17,6 +16,7 @@ use Database\Factories\FolderFactory;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Traits\CreatesCollaboration;
 use App\Filesystem\FoldersIconsFilesystem;
+use App\FolderSettings\Settings\Activities\LogActivities;
 use Tests\Feature\Folder\Concerns\AssertFolderCollaboratorMetrics;
 use Tests\Traits\ClearFoldersIconsStorage;
 use Tests\Traits\GeneratesId;
@@ -173,7 +173,7 @@ class UpdateIconTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->enableActivities(false))
+            ->settings(new LogActivities(false))
             ->create(['name' => 'foo', 'description' => 'bar']);
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::updateFolderTypes());

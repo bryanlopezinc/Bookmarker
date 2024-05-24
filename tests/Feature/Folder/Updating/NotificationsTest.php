@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder\Updating;
 
-use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Enums\Permission;
+use App\FolderSettings\Settings\Notifications\FolderUpdatedNotification;
+use App\FolderSettings\Settings\Notifications\Notifications;
 use Illuminate\Support\Str;
 use Database\Factories\UserFactory;
 use Database\Factories\FolderFactory;
@@ -172,7 +173,7 @@ class NotificationsTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->disableNotifications())
+            ->settings(new Notifications(false))
             ->create(['name' => 'foo', 'description' => 'foo bar folder']);
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::updateFolderTypes());
@@ -195,7 +196,7 @@ class NotificationsTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->disableFolderUpdatedNotification())
+            ->settings(new FolderUpdatedNotification(false))
             ->create(['name' => 'foo', 'description' => 'foo bar folder']);
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::updateFolderTypes());

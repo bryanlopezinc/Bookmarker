@@ -6,7 +6,7 @@ namespace Tests\Feature\Folder\Suspension;
 
 use App\Enums\ActivityType;
 use App\DataTransferObjects\Activities\SuspensionLiftedActivityLogData as ActivityLogData;
-use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\FolderSettings\Settings\Activities\LogActivities;
 use App\Http\Handlers\SuspendCollaborator\SuspendCollaborator;
 use Tests\TestCase;
 use App\Models\User;
@@ -225,7 +225,7 @@ class ReInstateSuspendedCollaboratorTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($currentUser)
-            ->settings(FolderSettingsBuilder::new()->enableActivities(false))
+            ->settings(new LogActivities(false))
             ->create();
 
         $this->CreateCollaborationRecord($suspendedCollaborator, $folder);

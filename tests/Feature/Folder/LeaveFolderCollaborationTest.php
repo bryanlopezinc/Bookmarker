@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\Folder;
 
 use App\DataTransferObjects\Activities\CollaboratorExitActivityLogData;
-use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Enums\ActivityType;
+use App\Enums\CollaboratorExitNotificationMode as Mode;
 use App\Models\FolderCollaboratorPermission;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -15,6 +15,10 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 use App\Enums\Permission;
+use App\FolderSettings\Settings\Activities\LogActivities;
+use App\FolderSettings\Settings\Notifications\CollaboratorExitNotification;
+use App\FolderSettings\Settings\Notifications\CollaboratorExitNotificationMode;
+use App\FolderSettings\Settings\Notifications\Notifications;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Traits\CreatesCollaboration;
 use Tests\Traits\GeneratesId;
@@ -139,7 +143,7 @@ class LeaveFolderCollaborationTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->disableNotifications())
+            ->settings(new Notifications(false))
             ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder);
@@ -158,7 +162,7 @@ class LeaveFolderCollaborationTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->disableNotifications())
+            ->settings(new Notifications(false))
             ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
@@ -175,9 +179,10 @@ class LeaveFolderCollaborationTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::new()->count(2)->create();
 
-        $settings = FolderSettingsBuilder::new()
-            ->disableCollaboratorExitNotification()
-            ->enableOnlyCollaboratorWithWritePermissionNotification();
+        $settings = [
+            new CollaboratorExitNotification(false),
+            new CollaboratorExitNotificationMode(Mode::HAS_WRITE_PERMISSION->value)
+        ];
 
         $folder = FolderFactory::new()->for($folderOwner)->settings($settings)->create();
 
@@ -197,7 +202,7 @@ class LeaveFolderCollaborationTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->disableCollaboratorExitNotification())
+            ->settings(new CollaboratorExitNotification(false))
             ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
@@ -216,7 +221,7 @@ class LeaveFolderCollaborationTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->enableOnlyCollaboratorWithWritePermissionNotification())
+            ->settings(new CollaboratorExitNotificationMode(Mode::HAS_WRITE_PERMISSION->value))
             ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder);
@@ -235,7 +240,7 @@ class LeaveFolderCollaborationTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->enableOnlyCollaboratorWithWritePermissionNotification())
+            ->settings(new CollaboratorExitNotificationMode(Mode::HAS_WRITE_PERMISSION->value))
             ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::DELETE_BOOKMARKS);
@@ -255,7 +260,7 @@ class LeaveFolderCollaborationTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->enableActivities(false))
+            ->settings(new LogActivities(false))
             ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder);

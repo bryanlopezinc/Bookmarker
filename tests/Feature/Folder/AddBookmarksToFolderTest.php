@@ -6,12 +6,15 @@ namespace Tests\Feature\Folder;
 
 use App\Actions\ToggleFolderFeature;
 use App\Collections\BookmarkPublicIdsCollection as PublicIds;
-use App\DataTransferObjects\Builders\FolderSettingsBuilder;
 use App\Enums\ActivityType;
 use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
 use App\DataTransferObjects\Activities\NewFolderBookmarksActivityLogData;
+use App\FolderSettings\Settings\Activities\LogActivities;
+use App\FolderSettings\Settings\MaxBookmarksLimit;
+use App\FolderSettings\Settings\Notifications\NewBookmarksNotification;
+use App\FolderSettings\Settings\Notifications\Notifications;
 use App\Http\Handlers\SuspendCollaborator\SuspendCollaborator;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
@@ -350,7 +353,7 @@ class AddBookmarksToFolderTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->setMaxBookmarksLimit(100))
+            ->settings(new MaxBookmarksLimit(100))
             ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
@@ -606,7 +609,7 @@ class AddBookmarksToFolderTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->disableNotifications())
+            ->settings(new Notifications(false))
             ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
@@ -629,7 +632,7 @@ class AddBookmarksToFolderTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->disableNewBookmarksNotification())
+            ->settings(new NewBookmarksNotification(false))
             ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
@@ -749,7 +752,7 @@ class AddBookmarksToFolderTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($folderOwner)
-            ->settings(FolderSettingsBuilder::new()->enableActivities(false))
+            ->settings(new LogActivities(false))
             ->create();
 
         $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);

@@ -11,7 +11,7 @@ use App\FolderSettings\FolderSettings;
 use Database\Factories\FolderFactory;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Traits\CreatesCollaboration;
-use App\DataTransferObjects\Builders\FolderSettingsBuilder;
+use App\FolderSettings\Settings\MaxCollaboratorsLimit;
 use Illuminate\Support\Arr;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Feature\Folder\Concerns\TestsFolderSettings;
@@ -41,7 +41,7 @@ class UpdateSettingsTest extends TestCase
 
         $folder = FolderFactory::new()
             ->for($user)
-            ->settings(FolderSettingsBuilder::new()->setMaxCollaboratorsLimit(450))
+            ->settings(new MaxCollaboratorsLimit(450))
             ->create();
 
         $this->updateFolderResponse([

@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 use Stringable;
 use Webmozart\Assert\Assert;
 
-final class FolderName implements Stringable
+final class FolderName
 {
     public function __construct(public readonly string $value)
     {
@@ -19,10 +19,5 @@ final class FolderName implements Stringable
     public function present(): string
     {
         return Str::headline($this->value);
-    }
-
-    public function __toString(): string
-    {
-        return $this->value;
     }
 }

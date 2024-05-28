@@ -23,10 +23,6 @@ final class Url
             throw MalformedURLException::invalidFormat($url);
         }
 
-        if ($parts === false) {
-            throw MalformedURLException::invalidFormat($url);
-        }
-
         $this->parts = $parts;
         $this->url = $url;
     }

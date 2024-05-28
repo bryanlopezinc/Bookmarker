@@ -14,10 +14,6 @@ abstract class AbstractSetting implements SettingInterface
 {
     public function __construct(protected readonly mixed $value = new NoValue())
     {
-        if ($value instanceof NoValue) {
-            return;
-        }
-
         $this->validate($value);
     }
 

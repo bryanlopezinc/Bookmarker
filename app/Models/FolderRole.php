@@ -62,11 +62,6 @@ final class FolderRole extends Model
         );
     }
 
-    public function folder(): BelongsTo
-    {
-        return $this->belongsTo(Folder::class, 'folder_id', 'id', );
-    }
-
     public function accessControls(): UAC
     {
         return new UAC($this->permissions->all());

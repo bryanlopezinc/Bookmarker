@@ -26,9 +26,9 @@ final class ImportBookmarks implements ShouldQueue
 
     public function handle(): void
     {
-        $user = User::query()->whereKey($this->importData->userId())->first();
+        $user = User::query()->whereKey($this->importData->userId())->firstOrNew();
 
-        if ( ! $user) {
+        if ( ! $user->exists) {
             return;
         }
 

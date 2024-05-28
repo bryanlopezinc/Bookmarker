@@ -10,19 +10,15 @@ use App\Enums\CollaboratorExitNotificationMode as Mode;
 final class CollaboratorExitNotificationMode extends AbstractSetting
 {
     /**
-     * @param string $mode
+     * @param string|null $mode
      */
-    public function __construct($mode = Mode::ALL->value)
+    public function __construct($mode = null)
     {
-        parent::__construct($mode);
+        parent::__construct($mode ?? Mode::ALL->value);
     }
 
     public function value(): Mode
     {
-        if ($this->value instanceof Mode) {
-            return $this->value;
-        }
-
         return Mode::from($this->value);
     }
 

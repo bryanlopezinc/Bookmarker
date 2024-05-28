@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 
 final class MustBeACollaboratorConstraint implements Scope
 {
-    public function __construct(private readonly User $user = new User())
+    public function __construct(private readonly User $user)
     {
     }
 
@@ -32,10 +32,6 @@ final class MustBeACollaboratorConstraint implements Scope
 
     public function __invoke(Folder $folder): void
     {
-        if ( ! $this->user->exists) {
-            return;
-        }
-
         if ($folder->wasCreatedBy($this->user)) {
             return;
         }

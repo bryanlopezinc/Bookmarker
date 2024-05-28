@@ -6,18 +6,25 @@ namespace App\Http\Handlers\Constraints;
 
 use App\Enums\Feature;
 use App\Exceptions\FolderFeatureDisabledException;
-use App\Models\Folder;
-use App\Models\FolderDisabledFeature;
-use App\Models\FolderFeature;
-use App\Models\User;
-use Illuminate\Database\Eloquent\Scope;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\{Folder, FolderDisabledFeature, FolderFeature, User};
+use Illuminate\Database\Eloquent\{Scope, Builder, Model};
+use Illuminate\Support\Arr;
+use Closure;
 
 final class FeatureMustBeEnabledConstraint implements Scope
 {
-    public function __construct(private readonly ?User $authUser, private readonly Feature $feature)
+    private readonly User $authUser;
+
+    /** @var string[] */
+    private readonly array $features;
+
+    /**
+     * @param Feature|array<Feature> $feature
+     */
+    public function __construct(?User $authUser, Feature|array $feature)
     {
+        $this->authUser = $authUser ?? new User();
+        $this->features = array_column(Arr::wrap($feature), 'value');
     }
 
     /**
@@ -25,21 +32,36 @@ final class FeatureMustBeEnabledConstraint implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
-        $builder->addSelect([
-            'featureIsDisabled' => FolderDisabledFeature::query()
-                ->selectRaw('1')
-                ->whereColumn('folder_id', 'folders.id')
-                ->whereIn('feature_id', FolderFeature::select('id')->where('name', $this->feature->value))
-        ]);
+        if ($this->features === []) {
+            return;
+        }
+
+        $builder
+            ->withCasts(['FolderDisabledFeatures' => 'collection'])
+            ->addSelect([
+                'FolderDisabledFeatures' => FolderFeature::query()
+                    ->selectRaw('JSON_ARRAYAGG(name)')
+                    ->whereIn(
+                        values: FolderDisabledFeature::select(['feature_id'])->whereColumn('folder_id', $model->getQualifiedKeyName()),
+                        column: 'id',
+                    )
+            ]);
     }
 
     public function __invoke(Folder $folder): void
     {
-        if ($this->authUser?->exists && $folder->wasCreatedBy($this->authUser)) {
+        /** @var Closure(): \Illuminate\Support\Collection */
+        $disabledFeatures = fn () => $folder->FolderDisabledFeatures ?? collect();
+
+        if ($this->features === []) {
             return;
         }
 
-        if ($folder->featureIsDisabled) {
+        if ($this->authUser->exists && $folder->wasCreatedBy($this->authUser)) {
+            return;
+        }
+
+        if ($disabledFeatures()->intersect($this->features)->isNotEmpty()) {
             throw new FolderFeatureDisabledException();
         }
     }

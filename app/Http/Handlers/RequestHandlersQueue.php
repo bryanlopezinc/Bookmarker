@@ -55,9 +55,9 @@ final class RequestHandlersQueue implements IteratorAggregate
     private function callRecursive(mixed $args, array $handlers): void
     {
         foreach ($handlers as $handler) {
-            $handler = is_callable($handler) ? $handler : fn () => null;
-
-            $handler($args);
+            if (is_callable($handler)) {
+                $handler($args);
+            }
 
             if ($handler instanceof HasHandlersInterface) {
                 $this->callRecursive($args, $handler->getHandlers());

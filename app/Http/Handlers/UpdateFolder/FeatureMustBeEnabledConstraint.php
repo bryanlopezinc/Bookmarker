@@ -6,77 +6,45 @@ namespace App\Http\Handlers\UpdateFolder;
 
 use App\DataTransferObjects\UpdateFolderRequestData;
 use App\Enums\Feature;
-use App\Exceptions\FolderFeatureDisabledException;
-use App\Models\Folder;
-use App\Models\FolderDisabledFeature;
-use App\Models\FolderFeature;
-use Illuminate\Database\Eloquent\Scope;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
+use App\Http\Handlers\Constraints\FeatureMustBeEnabledConstraint as Constraint;
+use App\Http\Handlers\HasHandlersInterface;
 
-final class FeatureMustBeEnabledConstraint implements Scope
+final class FeatureMustBeEnabledConstraint implements HasHandlersInterface
 {
-    public function __construct(private readonly UpdateFolderRequestData $data)
+    private readonly Constraint $constraint;
+
+    public function __construct(UpdateFolderRequestData $data)
     {
+        $this->constraint = new Constraint($data->authUser, $this->getFeatures($data));
+    }
+
+    /**
+     * @return array<Feature>
+     */
+    private function getFeatures(UpdateFolderRequestData $data): array
+    {
+        $features = [];
+
+        if ($data->isUpdatingName) {
+            $features[] = Feature::UPDATE_FOLDER_NAME;
+        }
+
+        if ($data->isUpdatingDescription) {
+            $features[] = Feature::UPDATE_FOLDER_DESCRIPTION;
+        }
+
+        if ($data->isUpdatingIcon) {
+            $features[] = Feature::UPDATE_FOLDER_ICON;
+        }
+
+        return $features;
     }
 
     /**
      * @inheritdoc
      */
-    public function apply(Builder $builder, Model $model): void
+    public function getHandlers(): array
     {
-        $builder->withCasts(['updateAbleAttributesThatAreDisabled' => 'collection']);
-
-        if ( ! $this->isUpdatingAttributeThatCanBeDisabledForUpdate()) {
-            $builder->addSelect(DB::raw("(SELECT '[]') as updateAbleAttributesThatAreDisabled"));
-
-            return;
-        }
-
-        $builder->addSelect([
-            'updateAbleAttributesThatAreDisabled' => FolderFeature::query()
-                ->selectRaw('JSON_ARRAYAGG(name)')
-                ->whereExists(
-                    FolderDisabledFeature::query()
-                        ->whereColumn('folder_id', 'folders.id')
-                        ->whereColumn('feature_id', 'folders_features_types.id')
-                ),
-        ]);
-    }
-
-    private function isUpdatingAttributeThatCanBeDisabledForUpdate(): bool
-    {
-        return $this->data->isUpdatingDescription ||
-            $this->data->isUpdatingName           ||
-            $this->data->isUpdatingIcon;
-    }
-
-    public function __invoke(Folder $folder): void
-    {
-        /** @var \Illuminate\Support\Collection */
-        $disabledFeatures = $folder->updateAbleAttributesThatAreDisabled ?? collect();
-
-        $exception = new FolderFeatureDisabledException();
-
-        $isDisabled = function (Feature $feature) use ($disabledFeatures): bool {
-            return $disabledFeatures->contains($feature->value);
-        };
-
-        if ($folder->wasCreatedBy($this->data->authUser) || $disabledFeatures->isEmpty()) {
-            return;
-        }
-
-        if ($isDisabled(Feature::UPDATE_FOLDER_NAME) && $this->data->isUpdatingName) {
-            throw $exception;
-        }
-
-        if ($isDisabled(Feature::UPDATE_FOLDER_DESCRIPTION) && $this->data->isUpdatingDescription) {
-            throw $exception;
-        }
-
-        if ($isDisabled(Feature::UPDATE_FOLDER_ICON) && $this->data->isUpdatingIcon) {
-            throw $exception;
-        }
+        return [$this->constraint];
     }
 }

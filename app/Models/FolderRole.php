@@ -7,7 +7,6 @@ namespace App\Models;
 use App\UAC;
 use App\ValueObjects\PublicId\RolePublicId;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 /**

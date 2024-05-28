@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Validator;
 
 abstract class AbstractSetting implements SettingInterface
 {
-    public function __construct(protected readonly mixed $value = new NoValue())
+    public function __construct(protected readonly mixed $value = null)
     {
         $this->validate($value);
     }

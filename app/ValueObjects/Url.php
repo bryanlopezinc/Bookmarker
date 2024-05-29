@@ -19,7 +19,7 @@ final class Url
         $url = (string) $url;
         $parts = parse_url($url);
 
-        if ( ! Str::isUrl($url, ['http', 'https'])) {
+        if ( ! Str::isUrl($url, ['http', 'https']) || ! $parts) {
             throw MalformedURLException::invalidFormat($url);
         }
 
@@ -44,6 +44,11 @@ final class Url
     public function getHost(): string
     {
         return $this->parts['host'] ?? '';
+    }
+
+    public function getDomain(): Domain
+    {
+        return new Domain($this->getHost());
     }
 
     public function getPath(): string

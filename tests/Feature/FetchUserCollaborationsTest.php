@@ -81,7 +81,7 @@ class FetchUserCollaborationsTest extends TestCase
             ->collect('data')
             ->each(function (array $data) {
                 (new AssertableJsonString($data))
-                    ->assertCount(8, 'attributes.permissions')
+                    ->assertCount(10, 'attributes.permissions')
                     ->assertStructure([
                         "type",
                         "attributes" => [

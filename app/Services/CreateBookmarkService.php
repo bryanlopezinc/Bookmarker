@@ -98,7 +98,7 @@ class CreateBookmarkService
         $this->dispatchEvents($bookmark);
     }
 
-    public function fromMail(Url $url, int $userId): void
+    public function fromMail(Url $url, int $userId): Bookmark
     {
         $hasher = new UrlHasher();
 
@@ -125,5 +125,7 @@ class CreateBookmarkService
         ]);
 
         $this->dispatchEvents($bookmark);
+
+        return $bookmark;
     }
 }

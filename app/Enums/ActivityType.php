@@ -18,4 +18,6 @@ enum ActivityType: int
     case NEW_COLLABORATOR                                = 10;
     case SUSPENSION_LIFTED                               = 11;
     case USER_SUSPENDED                                  = 12;
+    case DOMAIN_BLACKLISTED                              = 13;
+    case DOMAIN_WHITELISTED                              = 14;
 }

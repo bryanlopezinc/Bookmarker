@@ -19,6 +19,7 @@
         "mobiledetect/mobiledetectlib": "^2.8",
         "predis/predis": "^2.0",
         "spatie/url": "^2.1",
+        "utopia-php/domains": "^0.5.0",
         "zbateson/mail-mime-parser": "^2.2"
     },
     "require-dev": {

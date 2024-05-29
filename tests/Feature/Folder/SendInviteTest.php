@@ -646,6 +646,8 @@ class SendInviteTest extends TestCase
             'Update folder description' => [['updateFolderDescription']],
             'Update folder Icon'        => [['updateFolderIcon']],
             'Suspend User'              => [['suspendUser']],
+            'blacklist domain'          => [['blacklistDomain']],
+            'whitelist domain'          => [['whitelistDomain']],
             'Many'                      => [['addBookmarks', 'updateFolderName', 'removeUser']]
         ];
     }

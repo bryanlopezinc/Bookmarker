@@ -34,6 +34,7 @@ use Illuminate\Database\Eloquent\Collection;
  * @property Collection<FolderCollaborator>    $collaborators
  * @property User                              $user
  * @property Collection<SuspendedCollaborator> $suspendedCollaborators
+ * @property Collection<BlacklistedDomain>     $blacklistedDomains
  * @property Collection<User>                  $bannedUsers
  * @property Collection<MutedCollaborator>     $mutedCollaborators
  * @property Collection<Bookmark>              $bookmarks
@@ -137,6 +138,11 @@ final class Folder extends Model implements HasPublicIdInterface
     public function suspendedCollaborators(): HasMany
     {
         return $this->hasMany(SuspendedCollaborator::class, 'folder_id', 'id');
+    }
+
+    public function blacklistedDomains(): HasMany
+    {
+        return $this->hasMany(BlacklistedDomain::class, 'folder_id', 'id');
     }
 
     public function roles(): HasMany

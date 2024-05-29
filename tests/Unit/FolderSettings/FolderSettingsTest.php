@@ -32,7 +32,7 @@ class FolderSettingsTest extends TestCase
     public function empty(): void
     {
         $settings = $this->make([])->toArray();
-        
+
         $this->assertCount(0, $settings);
     }
 

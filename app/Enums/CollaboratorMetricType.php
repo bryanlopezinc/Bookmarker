@@ -12,4 +12,6 @@ enum CollaboratorMetricType: int
     case UPDATES                 = 5;
     case COLLABORATORS_REMOVED   = 6;
     case SUSPENDED_COLLABORATORS = 7;
+    case DOMAINS_BLACKLISTED     = 8;
+    case DOMAINS_WHITELISTED     = 9;
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder;
 
+use App\Actions\BlacklistDomain;
 use App\Actions\ToggleFolderFeature;
 use App\Collections\BookmarkPublicIdsCollection as PublicIds;
 use App\Enums\ActivityType;
@@ -18,8 +19,10 @@ use App\FolderSettings\Settings\Notifications\Notifications;
 use App\Http\Handlers\SuspendCollaborator\SuspendCollaborator;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
+use App\Services\CreateBookmarkService;
 use App\Services\Folder\MuteCollaboratorService;
 use App\UAC;
+use App\ValueObjects\Url;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -229,7 +232,7 @@ class AddBookmarksToFolderTest extends TestCase
         $folder = FolderFactory::new()->for($folderOwner)->create();
         $collaboratorBookmark = BookmarkFactory::new()->for($collaborator)->create();
 
-        $permissions = UAC::all()->except(Permission::ADD_BOOKMARKS) ->toArray();
+        $permissions = UAC::all()->except(Permission::ADD_BOOKMARKS)->toArray();
 
         $this->CreateCollaborationRecord($collaborator, $folder, $permissions);
 
@@ -243,6 +246,7 @@ class AddBookmarksToFolderTest extends TestCase
         ])->assertForbidden()->assertJsonFragment(['message' => 'PermissionDenied']);
 
         $this->assertTrue($folder->activities->isEmpty());
+        $this->assertTrue($folder->bookmarks->isEmpty());
     }
 
     #[Test]
@@ -263,6 +267,42 @@ class AddBookmarksToFolderTest extends TestCase
         ])->assertForbidden()->assertJsonFragment(['message' => 'CollaboratorSuspended']);
 
         $this->assertTrue($folder->activities->isEmpty());
+        $this->assertTrue($folder->bookmarks->isEmpty());
+    }
+
+    #[Test]
+    public function willReturnForbiddenWhenBookmarkDomainIsBlacklisted(): void
+    {
+        $service = new CreateBookmarkService();
+        $blacklistDomain = new BlacklistDomain();
+
+        [$folderOwner, $collaborator] = UserFactory::times(2)->create();
+
+        $folder = FolderFactory::new()->for($folderOwner)->create();
+
+        $folderOwnerBookmark = $service->fromMail($badUrl = new Url('https://some-nsfw-url.com/pictures/bad'), $folderOwner->id);
+        $collaboratorBookmark = $service->fromMail(new Url('https://blog.some-nsfw-url.com/videos/worse'), $collaborator->id);
+
+        $blacklistDomain->create($folder, $folderOwner, $badUrl);
+
+        $this->CreateCollaborationRecord($collaborator, $folder, Permission::ADD_BOOKMARKS);
+
+        $this->loginUser($collaborator);
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => $collaboratorBookmark->public_id->present(),
+            'folder'    => $folder->public_id->present(),
+        ])->assertForbidden()
+            ->assertJsonFragment(['message' => 'DomainBlackListed'])
+            ->assertJsonFragment(['info' => 'Could not add bookmark to folder because the domain [some-nsfw-url.com] is blacklisted.']);
+
+        $this->loginUser($folderOwner);
+        $this->addBookmarksToFolderResponse([
+            'bookmarks' => $folderOwnerBookmark->public_id->present(),
+            'folder'    => $folder->public_id->present(),
+        ])->assertForbidden()->assertJsonFragment(['message' => 'DomainBlackListed']);
+
+        $this->assertTrue($folder->activities->isEmpty());
+        $this->assertTrue($folder->bookmarks->isEmpty());
     }
 
     #[Test]

@@ -29,6 +29,7 @@ final class Resource extends JsonResource
             Type::DESCRIPTION_CHANGED  => new FolderDescriptionChangedActivityResource($this->folderActivity),
             TYPE::COLLABORATOR_EXIT    => new CollaboratorExitActivity($this->folderActivity),
             Type::BOOKMARKS_REMOVED    => new FolderBookmarksRemovedActivityResource($this->folderActivity),
+            Type::DOMAIN_BLACKLISTED   => new DomainBlacklistedActivityResource($this->folderActivity),
             Type::FOLDER_VISIBILITY_CHANGED_TO_COLLABORATORS_ONLY => new FolderVisibilityChangedToCollaboratorsOnlyResource($this->folderActivity),
             Type::FOLDER_VISIBILITY_CHANGED_TO_PUBLIC => new FolderVisibilityChangedToPublicResource($this->folderActivity),
             default                    => new NewCollaboratorActivityResource($this->folderActivity)

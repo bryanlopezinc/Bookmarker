@@ -14,6 +14,8 @@ enum Permission: string
     case UPDATE_FOLDER_ICON        = 'UPDATE_FOLDER_ICON';
     case REMOVE_USER               = 'REMOVE_USER';
     case SUSPEND_USER              = 'SUSPEND_USER';
+    case BLACKLIST_DOMAIN          = 'BLACKLIST_DOMAIN';
+    case WHITELIST_DOMAIN          = 'WHITELIST_DOMAIN';
 
     /**
      * @return array<Permission>

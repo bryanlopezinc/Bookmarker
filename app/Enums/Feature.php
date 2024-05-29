@@ -15,6 +15,8 @@ enum Feature: string
     case JOIN_FOLDER               = 'JOIN_FOLDER';
     case REMOVE_USER               = 'REMOVE_USER';
     case SUSPEND_USER              = 'SUSPEND_USER';
+    case BLACKLIST_DOMAIN          = 'BLACKLIST_DOMAIN';
+    case WHITELIST_DOMAIN          = 'WHITELIST_DOMAIN';
 
     public static function publicIdentifiers(): array
     {
@@ -27,7 +29,9 @@ enum Feature: string
             self::UPDATE_FOLDER_DESCRIPTION->value => 'updateFolderDescription',
             self::UPDATE_FOLDER_ICON->value        => 'updateFolderIcon',
             self::JOIN_FOLDER->value               => 'joinFolder',
-            self::SUSPEND_USER->value              => 'suspendUser'
+            self::SUSPEND_USER->value              => 'suspendUser',
+            self::BLACKLIST_DOMAIN->value          => 'blackListDomain',
+            self::WHITELIST_DOMAIN->value          => 'whiteListDomain',
         ];
 
         assert(count($ids) === count(self::cases()));

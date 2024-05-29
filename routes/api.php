@@ -73,6 +73,10 @@ Route::middleware([
         Route::delete('/{folder_id}/bookmarks', F\RemoveBookmarksFromFolderController::class)->middleware(StringToArray::keys('bookmarks'))->name('removeBookmarksFromFolder');
         Route::post('/{folder_id}/bookmarks/hide', F\HideFolderBookmarksController::class)->middleware(StringToArray::keys('bookmarks'))->name('hideFolderBookmarks');
 
+        Route::post('/{folder_id}/bookmarks/domains/blacklist', F\Blacklisting\BlacklistDomainController::class)->name('blacklistDomain');
+        Route::get('/{folder_id}/bookmarks/domains/blacklist', F\Blacklisting\FetchBlacklistedDomainsController::class)->name('fetchBlacklistedDomains');
+        Route::delete('/{folder_id}/bookmarks/domains/blacklist/{domain_id}', F\Blacklisting\WhitelistDomainController::class)->name('whitelistDomain');
+
         Route::get('/{folder_id}/collaborators', F\FetchFolderCollaboratorsController::class)->middleware(StringToArray::keys('permissions'))->name('fetchFolderCollaborators');
         Route::delete('/{folder_id}/collaborators/{collaborator_id}', F\RemoveCollaboratorController::class)->name('deleteFolderCollaborator');
         Route::delete('/{folder_id}/collaborators/{collaborator_id}/permissions', F\RevokeFolderCollaboratorPermissionsController::class)->middleware([StringToArray::keys('permissions')])->name('revokePermissions');

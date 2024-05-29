@@ -14,6 +14,8 @@ use Error;
  * @method Settings\Activities\LogActivities                       logActivities()
  * @method Settings\Activities\ActivitiesVisibility                activitiesVisibility()
  * @method Settings\Activities\LogBookmarksRemovedActivity         logBookmarksRemovedActivity()
+ * @method Settings\Activities\LogDomainBlacklistedActivity        logDomainBlacklistedActivity()
+ * @method Settings\Activities\LogDomainWhitelistedActivity        logDomainWhitelistedActivity()
  * @method Settings\Version                                        version()
  * @method Settings\Notifications\Notifications                    notifications()
  * @method Settings\AcceptInviteConstraints                        acceptInviteConstraints()
@@ -37,6 +39,8 @@ final class FolderSettings
         'activities.enabled'                     => Settings\Activities\LogActivities::class,
         'activities.visibility'                  => Settings\Activities\ActivitiesVisibility::class,
         'activities.bookmarks_removed.enabled'   => Settings\Activities\LogBookmarksRemovedActivity::class,
+        'activities.domain_blacklisted.enabled'  => Settings\Activities\LogDomainBlacklistedActivity::class,
+        'activities.domain_whitelisted.enabled'  => Settings\Activities\LogDomainWhitelistedActivity::class,
         'notifications.enabled'                   => Settings\Notifications\Notifications::class,
         'accept_invite_constraints'              => Settings\AcceptInviteConstraints::class,
         'max_bookmarks_limit'                    => Settings\MaxBookmarksLimit::class,
@@ -131,7 +135,7 @@ final class FolderSettings
     }
 
     /**
-     * Arr::dot() with a little tweaking to avoid dot numeric arrays
+     * Arr::dot() with a little tweaking to avoid dot'n numeric arrays
      *
      * @see \Illuminate\Support\Arr::dot()
      */

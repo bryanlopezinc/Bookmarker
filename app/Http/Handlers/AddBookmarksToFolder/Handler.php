@@ -52,6 +52,7 @@ final class Handler
             new UserOwnsBookmarksConstraint($data, $bookmarks->all()),
             new BookmarksExistsConstraint($data, $bookmarks->all()),
             new CollaboratorCannotMarkBookmarksAsHiddenConstraint($data),
+            new BookmarkMustNotBeFromABlacklistedDomainConstraint($bookmarks),
             new UniqueFolderBookmarkConstraint($bookmarksIds),
             new CreateFolderBookmarks($bookmarks->all(), $data),
             new SendBookmarksAddedToFolderNotification($data, $bookmarks),

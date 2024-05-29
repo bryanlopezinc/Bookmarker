@@ -13,6 +13,7 @@ use App\Enums\Feature;
 use App\Http\Handlers\CollaboratorMetricsRecorder;
 use App\Http\Handlers\ConditionallyLogActivity;
 use App\Http\Handlers\RequestHandlersQueue;
+use App\Models\User;
 use App\ValueObjects\InviteId;
 
 final class Handler implements HandlerInterface
@@ -51,7 +52,7 @@ final class Handler implements HandlerInterface
             new Constraints\UserDefinedFolderCollaboratorsLimitConstraint(),
             new InviterMustBeAnActiveCollaboratorConstraint($payload),
             new InviterMustStillHaveRequiredPermissionConstraint($payload),
-            new Constraints\FeatureMustBeEnabledConstraint(null, Feature::JOIN_FOLDER),
+            new Constraints\FeatureMustBeEnabledConstraint(new User(), Feature::JOIN_FOLDER),
             new CreateNewCollaborator($payload),
             new SendNewCollaboratorNotification($payload, $userRepository),
             new CollaboratorMetricsRecorder(CollaboratorMetricType::COLLABORATORS_ADDED, $payload->inviterId),

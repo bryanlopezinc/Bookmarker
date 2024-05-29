@@ -7,6 +7,7 @@ namespace Tests\Traits;
 use App\Collections\BookmarkPublicIdsCollection;
 use App\Collections\RolesPublicIdsCollection;
 use App\Contracts\IdGeneratorInterface;
+use App\ValueObjects\PublicId\BlacklistedDomainId;
 use App\ValueObjects\PublicId\BookmarkPublicId;
 use App\ValueObjects\PublicId\FolderPublicId;
 use App\ValueObjects\PublicId\ImportPublicId;
@@ -29,6 +30,11 @@ trait GeneratesId
     protected function generateBookmarkId(): BookmarkPublicId
     {
         return new BookmarkPublicId($this->generator()->generate());
+    }
+
+    protected function generateBlacklistedDomainId(): BlacklistedDomainId
+    {
+        return new BlacklistedDomainId($this->generator()->generate());
     }
 
     protected function generateBookmarkIds(int $times = 1): BookmarkPublicIdsCollection

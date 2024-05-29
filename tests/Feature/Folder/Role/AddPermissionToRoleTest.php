@@ -141,7 +141,9 @@ class AddPermissionToRoleTest extends TestCase
             'Update folder name'        => ['updateFolderName'],
             'Update folder description' => ['updateFolderDescription'],
             'Update folder icon'        => ['updateFolderIcon'],
-            'Suspend User'              => ['suspendUser']
+            'Suspend User'              => ['suspendUser'],
+            'blacklist domain'          => ['blacklistDomain'],
+            'whitelist domain'          => ['whitelistDomain'],
         ];
     }
 

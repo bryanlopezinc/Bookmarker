@@ -4,28 +4,27 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\CreateRolePermission;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Models\Folder;
 use App\Models\FolderPermission;
 use App\Models\FolderRolePermission;
 use Illuminate\Support\Facades\DB;
 
-final class CreateRolePermission implements FolderRequestHandlerInterface
+final class CreateRolePermission
 {
-    private readonly int $roleId;
+    private readonly string $roleIdName;
     private readonly string $permission;
 
-    public function __construct(int $roleId, string $permission)
+    public function __construct(string $permission, string $roleIdName = 'roleId')
     {
-        $this->roleId = $roleId;
+        $this->roleIdName = $roleIdName;
         $this->permission = $permission;
     }
 
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         /** @var \Illuminate\Database\Eloquent\Builder */
         $query = FolderPermission::query()
-            ->select(DB::raw($this->roleId), 'id')
+            ->select(DB::raw($folder->{$this->roleIdName}), 'id')
             ->where('name', $this->permission);
 
         FolderRolePermission::query()->insertUsing(['role_id', 'permission_id'], $query);

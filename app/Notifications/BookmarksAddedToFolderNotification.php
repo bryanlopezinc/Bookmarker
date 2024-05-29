@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
+use App\DataTransferObjects\Notifications\NewFolderBookmarksNotificationData;
 use App\Enums\NotificationType;
 use App\Models\Folder;
 use App\Models\User;
@@ -14,10 +15,9 @@ use Illuminate\Bus\Queueable;
 final class BookmarksAddedToFolderNotification extends Notification implements ShouldQueue
 {
     use Queueable;
-    use FormatDatabaseNotification;
 
     public function __construct(
-        private array $bookmarkIds,
+        private array $bookmarks,
         private Folder $folder,
         private User $user,
     ) {
@@ -40,17 +40,12 @@ final class BookmarksAddedToFolderNotification extends Notification implements S
      */
     public function toDatabase($notifiable): array
     {
-        return $this->formatNotificationData([
-            'N-type'          => $this->databaseType(),
-            'bookmark_ids'    => $this->bookmarkIds,
-            'folder_id'       => $this->folder->id,
-            'collaborator_id' => $this->user->id,
-            'full_name'       => $this->user->full_name->value,
-            'folder_name'     => $this->folder->name->value
-        ]);
+        $notification = new NewFolderBookmarksNotificationData($this->folder, $this->user, $this->bookmarks);
+
+        return $notification->toArray();
     }
 
-    public function databaseType(): string
+    public function databaseType(): int
     {
         return NotificationType::BOOKMARKS_ADDED_TO_FOLDER->value;
     }

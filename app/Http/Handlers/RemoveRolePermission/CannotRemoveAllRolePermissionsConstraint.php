@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\RemoveRolePermission;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
 use App\Models\FolderRolePermission;
@@ -13,13 +12,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Http\Response;
 
-final class CannotRemoveAllRolePermissionsConstraint implements FolderRequestHandlerInterface, Scope
+final class CannotRemoveAllRolePermissionsConstraint implements Scope
 {
-    private readonly int $roleId;
+    private readonly string $roleIdName;
 
-    public function __construct(int $roleId)
+    public function __construct(string $roleIdName = 'roleId')
     {
-        $this->roleId = $roleId;
+        $this->roleIdName = $roleIdName;
     }
 
     /**
@@ -30,14 +29,11 @@ final class CannotRemoveAllRolePermissionsConstraint implements FolderRequestHan
         $builder->addSelect([
             'currentPermissionsCount' => FolderRolePermission::query()
                 ->selectRaw('COUNT(*)')
-                ->where('role_id', $this->roleId)
+                ->whereColumn('role_id', $this->roleIdName)
         ]);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         if ($folder->currentPermissionsCount === 1) {
             throw new HttpException(

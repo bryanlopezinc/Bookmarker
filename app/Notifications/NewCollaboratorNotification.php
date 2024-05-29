@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
+use App\DataTransferObjects\Notifications\NewCollaboratorNotificationData;
 use App\Enums\NotificationType;
 use App\Models\Folder;
 use App\Models\User;
@@ -14,7 +15,6 @@ use Illuminate\Bus\Queueable;
 final class NewCollaboratorNotification extends Notification implements ShouldQueue
 {
     use Queueable;
-    use FormatDatabaseNotification;
 
     public function __construct(
         private User $newCollaborator,
@@ -40,18 +40,12 @@ final class NewCollaboratorNotification extends Notification implements ShouldQu
      */
     public function toDatabase($notifiable): array
     {
-        return $this->formatNotificationData([
-            'N-type'                 => $this->databaseType(),
-            'collaborator_id'        => $this->collaborator->id,
-            'collaborator_full_name' => $this->collaborator->full_name->value,
-            'folder_id'              => $this->folder->id,
-            'folder_name'            => $this->folder->name->value,
-            'new_collaborator_id'    => $this->newCollaborator->id,
-            'new_collaborator_full_name' => $this->newCollaborator->full_name->value
-        ]);
+        $notification = new NewCollaboratorNotificationData($this->collaborator, $this->folder, $this->newCollaborator);
+
+        return $notification->toArray();
     }
 
-    public function databaseType(): string
+    public function databaseType(): int
     {
         return NotificationType::NEW_COLLABORATOR->value;
     }

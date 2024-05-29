@@ -16,6 +16,7 @@ return new class () extends Migration {
     {
         Schema::create('bookmarks_sources', function (Blueprint $table) {
             $table->id();
+            $table->string('public_id', 18)->unique();
             $table->string('host')->unique();
             $table->string('name');
             $table->timestamp('name_updated_at')->nullable();

@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\SendInvite;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\SendInviteRequestData;
-use App\Models\Folder;
 use Illuminate\Cache\RateLimiter;
 
-final class HitRateLimit implements FolderRequestHandlerInterface
+final class HitRateLimit
 {
     private readonly RateLimiter $rateLimiter;
     private readonly SendInviteRequestData $data;
@@ -20,10 +18,7 @@ final class HitRateLimit implements FolderRequestHandlerInterface
         $this->data = $data;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(): void
     {
         $key = "invites:{$this->data->authUser->id}:{$this->data->inviteeEmail}";
 

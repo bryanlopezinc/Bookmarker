@@ -11,8 +11,10 @@ use App\PaginationData;
 use Illuminate\Pagination\Paginator;
 use App\Models\FolderCollaboratorPermission;
 use App\Models\FolderPermission;
+use App\Models\Scopes\WherePublicIdScope;
 use App\Models\User;
 use App\UAC;
+use App\ValueObjects\PublicId\UserPublicId;
 use Closure;
 
 final class FetchUserFoldersWhereContainsCollaboratorRepository
@@ -20,9 +22,18 @@ final class FetchUserFoldersWhereContainsCollaboratorRepository
     /**
      * @return Paginator<UserCollaboration>
      */
-    public function get(int $authUserId, int $collaboratorId, PaginationData $pagination): Paginator
+    public function get(int $authUserId, UserPublicId $collaboratorId, PaginationData $pagination): Paginator
     {
-        $query = Folder::onlyAttributes()
+        $collaborator = User::select('id')
+            ->tap(new WherePublicIdScope($collaboratorId))
+            ->firstOrNew();
+
+        if ( ! $collaborator->exists) {
+            return new Paginator([], $pagination->perPage());
+        }
+
+        $query = Folder::query()
+        ->withCount(['bookmarks', 'collaborators'])
             ->withCasts(['permissions' => 'json'])
             ->addSelect([
                 'permissions' => FolderPermission::query()
@@ -31,16 +42,15 @@ final class FetchUserFoldersWhereContainsCollaboratorRepository
                         'id',
                         FolderCollaboratorPermission::select('permission_id')
                             ->whereColumn('folder_id', 'folders.id')
-                            ->where('user_id', $collaboratorId)
+                            ->where('user_id', $collaborator->id)
                     ),
             ])
             ->where('user_id', $authUserId)
             ->whereExists(
                 FolderCollaborator::query()
-                    ->where('collaborator_id', $collaboratorId)
+                    ->where('collaborator_id', $collaborator->id)
                     ->whereColumn('folder_id', 'folders.id')
-            )
-            ->whereExists(User::select('id')->where('id', $collaboratorId));
+            );
 
         /** @var Paginator */
         $collaborations = $query->simplePaginate($pagination->perPage(), page: $pagination->page());

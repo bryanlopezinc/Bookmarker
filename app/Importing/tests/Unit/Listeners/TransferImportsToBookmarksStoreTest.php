@@ -26,12 +26,19 @@ class TransferImportsToBookmarksStoreTest extends TestCase
     #[Test]
     public function willNotTransferImportsWhenImportFailed(): void
     {
-        ImportHistoryFactory::times(3)->create(['import_id' => $importId = $this->faker->uuid]);
+        $import = ImportFactory::new()->create();
+
+        ImportHistoryFactory::times(3)->create(['import_id' => $importId = $import->id]);
+
         $serviceMock = $this->getMockBuilder(CreateBookmarkService::class)->getMock();
 
         $serviceMock->expects($this->never())->method('fromImport');
 
-        $listener = new TransferImportsToBookmarksStore(new ImportBookmarkRequestData($importId, ImportSource::CHROME, 33, []), $serviceMock);
+        $listener = new TransferImportsToBookmarksStore(
+            new ImportBookmarkRequestData($importId, ImportSource::CHROME, 33, [], '94e35144-3ab7-47c1-8109-aa1c81e590dd'),
+            $serviceMock
+        );
+
         $listener->importsEnded(ImportBookmarksOutcome::failed(ImportBookmarksStatus::FAILED_DUE_TO_SYSTEM_ERROR, new ImportStats(10, 2, 50, 2, 1)));
     }
 
@@ -39,9 +46,9 @@ class TransferImportsToBookmarksStoreTest extends TestCase
     public function willTransferImports(): void
     {
         $import = ImportFactory::new()->create();
-        $successfulImportHistory = ImportHistoryFactory::new()->create(['import_id' => $import->import_id]);
-        ImportHistoryFactory::new()->skipped()->create(['import_id' => $import->import_id]);
-        ImportHistoryFactory::new()->failed()->create(['import_id' => $import->import_id]);
+        $successfulImportHistory = ImportHistoryFactory::new()->create(['import_id' => $import->id]);
+        ImportHistoryFactory::new()->skipped()->create(['import_id' => $import->id]);
+        ImportHistoryFactory::new()->failed()->create(['import_id' => $import->id]);
 
         $serviceMock = $this->getMockBuilder(CreateBookmarkService::class)->getMock();
 
@@ -51,11 +58,15 @@ class TransferImportsToBookmarksStoreTest extends TestCase
                 $this->assertEquals($bookmark->url->toString(), $successfulImportHistory->url);
             });
 
-        $listener = new TransferImportsToBookmarksStore(new ImportBookmarkRequestData($import->import_id, ImportSource::CHROME, 33, []), $serviceMock);
+        $listener = new TransferImportsToBookmarksStore(
+            new ImportBookmarkRequestData($import->id, ImportSource::CHROME, 33, [], '94e35144-3ab7-47c1-8109-aa1c81e590dd'),
+            $serviceMock
+        );
+
         $listener->importsEnded(ImportBookmarksOutcome::success(new ImportStats(10, 2, 50, 2, 1)));
 
         $this->assertEquals(
-            Import::query()->where('import_id', $import->import_id)->sole()->status,
+            Import::query()->where('id', $import->id)->sole()->status,
             ImportBookmarksStatus::SUCCESS
         );
     }

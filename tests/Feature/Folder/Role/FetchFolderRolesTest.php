@@ -14,6 +14,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\Traits\CreatesCollaboration;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\Feature\AssertValidPaginationData;
+use Tests\Traits\GeneratesId;
 
 class FetchFolderRolesTest extends TestCase
 {
@@ -21,6 +22,7 @@ class FetchFolderRolesTest extends TestCase
     use CreatesCollaboration;
     use CreatesRole;
     use AssertValidPaginationData;
+    use GeneratesId;
 
     protected function fetchFolderRolesResponse(array $parameters = []): TestResponse
     {
@@ -48,25 +50,27 @@ class FetchFolderRolesTest extends TestCase
     {
         $this->loginUser(UserFactory::new()->make(['id' => 55]));
 
-        $this->fetchFolderRolesResponse(['folder_id' => 'baz'])->assertNotFound();
+        $this->fetchFolderRolesResponse(['folder_id' => 'baz'])
+            ->assertJsonFragment(['message' => 'FolderNotFound'])
+            ->assertNotFound();
 
-        $this->fetchFolderRolesResponse(['folder_id' => 3, 'name' => str_repeat('F', 65)])
+        $this->fetchFolderRolesResponse(['folder_id' => $id = $this->generateFolderId()->present(), 'name' => str_repeat('F', 65)])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
 
-        $this->fetchFolderRolesResponse(['permissions' => ['addBookmarks', 'addBookmarks'], 'folder_id' => 4])
+        $this->fetchFolderRolesResponse(['permissions' => ['addBookmarks', 'addBookmarks'], 'folder_id' => $id])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['permissions.0' => 'The permissions.0 field has a duplicate value.']);
 
-        $this->fetchFolderRolesResponse(['permissions' => ['*'], 'folder_id' => 4])
+        $this->fetchFolderRolesResponse(['permissions' => ['*'], 'folder_id' => $id])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['permissions' => 'The selected permissions is invalid.']);
 
-        $this->fetchFolderRolesResponse(['permissions' => ['addBookmarks', 'foo'], 'folder_id' => 4])
+        $this->fetchFolderRolesResponse(['permissions' => ['addBookmarks', 'foo'], 'folder_id' => $id])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['permissions' => 'The selected permissions is invalid.']);
 
-        $this->assertValidPaginationData($this, 'fetchFolderRoles', ['folder_id' => 4]);
+        $this->assertValidPaginationData($this, 'fetchFolderRoles', ['folder_id' => $id]);
     }
 
     #[Test]
@@ -81,12 +85,12 @@ class FetchFolderRolesTest extends TestCase
         $role = $this->createRole(folder: $folder, permissions: [Permission::ADD_BOOKMARKS]);
         $role->setAttribute('created_at', $createdAt = now()->subDay())->save();
 
-        $this->fetchFolderRolesResponse(['folder_id' => $folder->id])
+        $this->fetchFolderRolesResponse(['folder_id' => $folder->public_id->present()])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(5, 'data.0.attributes')
             ->assertJsonCount(1, 'data.0.attributes.permissions')
-            ->assertJsonPath('data.0.attributes.id', $role->id)
+            ->assertJsonPath('data.0.attributes.id', $role->public_id->present())
             ->assertJsonPath('data.0.attributes.name', $role->name)
             ->assertJsonPath('data.0.attributes.created_at', $createdAt->toDateTimeString())
             ->assertJsonPath('data.0.attributes.permissions', ['addBookmarks'])
@@ -116,7 +120,7 @@ class FetchFolderRolesTest extends TestCase
 
         $this->attachRoleToUser(UserFactory::new()->create(), $this->createRole(folder: $folder, permissions: [Permission::ADD_BOOKMARKS]));
 
-        $this->fetchFolderRolesResponse(['folder_id' => $folder->id])
+        $this->fetchFolderRolesResponse(['folder_id' => $folder->public_id->present()])
             ->assertOk()
             ->assertJsonPath('data.0.attributes.collaborators_count', 1);
     }
@@ -133,7 +137,7 @@ class FetchFolderRolesTest extends TestCase
 
         $user->delete();
 
-        $this->fetchFolderRolesResponse(['folder_id' => $folder->id])
+        $this->fetchFolderRolesResponse(['folder_id' => $folder->public_id->present()])
             ->assertOk()
             ->assertJsonCount(1, 'data');
     }
@@ -149,10 +153,10 @@ class FetchFolderRolesTest extends TestCase
         $this->createRole($role->name, permissions: [Permission::ADD_BOOKMARKS]);
         $this->createRole($role->name, $otherUserFolder, permissions: [Permission::ADD_BOOKMARKS]);
 
-        $this->fetchFolderRolesResponse(['folder_id' => $folder->id, 'name' => $role->name])
+        $this->fetchFolderRolesResponse(['folder_id' => $folder->public_id->present(), 'name' => $role->name])
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.attributes.id', $role->id);
+            ->assertJsonPath('data.0.attributes.id', $role->public_id->present());
     }
 
     #[Test]
@@ -169,25 +173,25 @@ class FetchFolderRolesTest extends TestCase
         $this->createRole($role->name, $userSecondFolder, permissions: [Permission::ADD_BOOKMARKS]);
         $this->createRole($role->name, $userThirdFolder, permissions: [Permission::INVITE_USER]);
 
-        $this->fetchFolderRolesResponse(['folder_id' => $folder->id, 'permissions' => ['addBookmarks']])
+        $this->fetchFolderRolesResponse(['folder_id' => $folder->public_id->present(), 'permissions' => ['addBookmarks']])
             ->assertOk()
             ->assertJsonCount(2, 'data')
             ->assertJsonCount(1, 'data.0.attributes.permissions')
             ->assertJsonCount(2, 'data.1.attributes.permissions')
-            ->assertJsonPath('data.0.attributes.id', $roleWithOnlyAddBookmarksPermission->id)
-            ->assertJsonPath('data.1.attributes.id', $role->id);
+            ->assertJsonPath('data.0.attributes.id', $roleWithOnlyAddBookmarksPermission->public_id->present())
+            ->assertJsonPath('data.1.attributes.id', $role->public_id->present());
 
-        $this->fetchFolderRolesResponse(['folder_id' => $folder->id, 'permissions' => ['inviteUsers']])
+        $this->fetchFolderRolesResponse(['folder_id' => $folder->public_id->present(), 'permissions' => ['inviteUsers']])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(2, 'data.0.attributes.permissions')
-            ->assertJsonPath('data.0.attributes.id', $role->id);
+            ->assertJsonPath('data.0.attributes.id', $role->public_id->present());
 
-        $this->fetchFolderRolesResponse(['folder_id' => $folder->id, 'permissions' => ['addBookmarks', 'inviteUsers']])
+        $this->fetchFolderRolesResponse(['folder_id' => $folder->public_id->present(), 'permissions' => ['addBookmarks', 'inviteUsers']])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(2, 'data.0.attributes.permissions')
-            ->assertJsonPath('data.0.attributes.id', $role->id);
+            ->assertJsonPath('data.0.attributes.id', $role->public_id->present());
     }
 
     #[Test]
@@ -198,7 +202,7 @@ class FetchFolderRolesTest extends TestCase
         $this->createRole(folder: $folder = FolderFactory::new()->create(), permissions: Permission::INVITE_USER);
 
         $this->loginUser($user);
-        $this->fetchFolderRolesResponse(['folder_id' => $folder->id])
+        $this->fetchFolderRolesResponse(['folder_id' => $folder->public_id->present()])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
     }
@@ -213,7 +217,7 @@ class FetchFolderRolesTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $folder);
 
         $this->loginUser($collaborator);
-        $this->fetchFolderRolesResponse(['folder_id' => $folder->id])
+        $this->fetchFolderRolesResponse(['folder_id' => $folder->public_id->present()])
             ->assertForbidden()
             ->assertJsonFragment(['message' => 'PermissionDenied']);
     }
@@ -224,7 +228,7 @@ class FetchFolderRolesTest extends TestCase
         $folder = FolderFactory::new()->create();
 
         $this->loginUser(UserFactory::new()->create());
-        $this->fetchFolderRolesResponse(['folder_id'  => $folder->id + 211])
+        $this->fetchFolderRolesResponse(['folder_id'  => $this->generateFolderId()->present()])
             ->assertNotFound()
             ->assertJsonFragment(['message' => 'FolderNotFound']);
     }

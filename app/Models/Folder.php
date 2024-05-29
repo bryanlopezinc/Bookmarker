@@ -4,37 +4,44 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Contracts\HasPublicIdInterface;
 use App\Enums\FolderVisibility;
 use App\ValueObjects\FolderName;
+use App\ValueObjects\PublicId\FolderPublicId;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
-use App\ValueObjects\FolderSettings;
+use App\FolderSettings\FolderSettings;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
- * @property        int                    $id
- * @property        string|null            $description
- * @property        int                    $bookmarks_count
- * @property        int                    $collaborators_count
- * @property        string|null            $password
- * @property        int                    $user_id
- * @property        FolderName             $name
- * @property        FolderSettings         $settings
- * @property        FolderVisibility       $visibility
- * @property        \Carbon\Carbon         $created_at
- * @property        \Carbon\Carbon         $updated_at
- * @property        Collection<FolderRole> $roles
- * @property        Collection<User>       $collaborators
- * @property        Collection<User>       $bannedUsers
- * @property        Collection<Bookmark>   $bookmarks
- * @method   static Builder|QueryBuilder   onlyAttributes(array $attributes = [])
+ * @property int                               $id
+ * @property FolderPublicId                    $public_id
+ * @property string|null                       $description
+ * @property int                               $bookmarks_count
+ * @property int                               $collaborators_count
+ * @property string|null                       $password
+ * @property int                               $user_id
+ * @property FolderName                        $name
+ * @property FolderSettings                    $settings
+ * @property FolderVisibility                  $visibility
+ * @property \Carbon\Carbon                    $created_at
+ * @property \Carbon\Carbon                    $updated_at
+ * @property Collection<FolderRole>            $roles
+ * @property Collection<FolderActivity>        $activities
+ * @property Collection<FolderCollaborator>    $collaborators
+ * @property User                              $user
+ * @property Collection<SuspendedCollaborator> $suspendedCollaborators
+ * @property Collection<BlacklistedDomain>     $blacklistedDomains
+ * @property Collection<User>                  $bannedUsers
+ * @property Collection<MutedCollaborator>     $mutedCollaborators
+ * @property Collection<Bookmark>              $bookmarks
+ * @property Collection<FolderFeature>         $disabledFeatureTypes
+ * @property string|null                       $icon_path
  */
-final class Folder extends Model
+final class Folder extends Model implements HasPublicIdInterface
 {
     /**
      * {@inheritdoc}
@@ -51,8 +58,17 @@ final class Folder extends Model
      */
     protected $casts = [
         'visibility' => FolderVisibility::class,
-        'password' => 'hashed',
+        'password'   => 'hashed',
+        'public_id'  => FolderPublicId::class
     ];
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getPublicIdentifier(): FolderPublicId
+    {
+        return $this->public_id;
+    }
 
     public function user(): BelongsTo
     {
@@ -61,9 +77,17 @@ final class Folder extends Model
 
     protected function settings(): Attribute
     {
+        $set = function ($value) {
+            if ($value instanceof FolderSettings) {
+                return $value->toJson();
+            }
+
+            return (new FolderSettings($value))->toJson();
+        };
+
         return new Attribute(
-            get: fn (?string $json) => FolderSettings::make($json),
-            set: fn ($value) => FolderSettings::make($value)->toJson()
+            get: fn (?string $json) => new FolderSettings(json_decode($json ?? '{}', true, JSON_THROW_ON_ERROR)),
+            set: $set
         );
     }
 
@@ -75,16 +99,16 @@ final class Folder extends Model
         );
     }
 
-    public function collaborators(): HasManyThrough
+    public function collaborators(): HasMany
     {
-        return $this->hasManyThrough(
-            User::class,
-            FolderCollaborator::class,
-            'folder_id',
-            'id',
-            'id',
-            'collaborator_id'
-        );
+        $whereExists = User::query()->whereColumn('id', 'collaborator_id');
+
+        return $this->hasMany(FolderCollaborator::class, 'folder_id', 'id')->whereExists($whereExists);
+    }
+
+    public function activities(): HasMany
+    {
+        return $this->hasMany(FolderActivity::class, 'folder_id', 'id');
     }
 
     public function bannedUsers(): HasManyThrough
@@ -97,6 +121,28 @@ final class Folder extends Model
             'id',
             'user_id'
         )->select(['users.id', 'full_name']);
+    }
+
+    public function disabledFeatureTypes(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            FolderFeature::class,
+            FolderDisabledFeature::class,
+            'folder_id',
+            'id',
+            'id',
+            'feature_id'
+        );
+    }
+
+    public function suspendedCollaborators(): HasMany
+    {
+        return $this->hasMany(SuspendedCollaborator::class, 'folder_id', 'id');
+    }
+
+    public function blacklistedDomains(): HasMany
+    {
+        return $this->hasMany(BlacklistedDomain::class, 'folder_id', 'id');
     }
 
     public function roles(): HasMany
@@ -116,17 +162,37 @@ final class Folder extends Model
         )->whereExists(Bookmark::whereRaw('id = folders_bookmarks.bookmark_id'));
     }
 
-    /**
-     * @param \Illuminate\Database\Eloquent\Builder $builder
-     *
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function scopeOnlyAttributes($builder, array $attributes = [])
+    public function mutedCollaborators(): HasMany
     {
-        if (empty($attributes)) {
-            $builder->addSelect('folders.*')->withCount(['bookmarks', 'collaborators']);
+        return $this->hasMany(MutedCollaborator::class, 'folder_id', 'id');
+    }
+
+    public function activityLogContextVariables(): array
+    {
+        return [
+            'id'        => $this->id,
+            'public_id' => $this->public_id->value,
+            'name'      => $this->name->value
+        ];
+    }
+
+    public function getNameOr(Folder $potentiallyOutedFolderRecord): FolderName
+    {
+        if ($this->exists) {
+            return $this->name;
         }
 
-        return $builder;
+        return $potentiallyOutedFolderRecord->name;
+    }
+
+    public function wasCreatedBy(int|User $user): bool
+    {
+        if (is_int($user)) {
+            $user = new User(['id' => $user]);
+
+            $user->exists = true;
+        }
+
+        return $this->user_id === $user->id;
     }
 }

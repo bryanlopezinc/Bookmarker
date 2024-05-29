@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Filesystem\ProfileImageFileSystem;
+use App\Filesystem\ProfileImagesFilesystem;
 use App\Http\Requests\UpdateProfileRequest;
 use Illuminate\Contracts\Hashing\Hasher;
 use App\Enums\TwoFaMode;
@@ -12,14 +12,13 @@ use App\Models\User;
 
 final class UpdateProfileService
 {
-    public function __construct(private Hasher $hasher, private ProfileImageFileSystem $filesystem)
+    public function __construct(private Hasher $hasher, private ProfileImagesFilesystem $filesystem)
     {
     }
 
     public function __invoke(UpdateProfileRequest $request): void
     {
-        /** @var User */
-        $user = auth()->user();
+        $user = User::fromRequest($request);
 
         $validated = $request->safe();
 

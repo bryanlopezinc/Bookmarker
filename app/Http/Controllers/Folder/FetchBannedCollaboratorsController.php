@@ -9,37 +9,43 @@ use App\Http\Resources\BannedCollaboratorResource;
 use App\Http\Resources\PaginatedResourceCollection as ResourceCollection;
 use App\Models\BannedCollaborator;
 use App\Models\Folder;
+use App\Models\Scopes\WherePublicIdScope;
 use App\Models\User;
 use App\PaginationData;
+use App\ValueObjects\PublicId\FolderPublicId;
 use Illuminate\Http\Request;
 
 final class FetchBannedCollaboratorsController
 {
-    public function __invoke(Request $request): ResourceCollection
+    public function __invoke(Request $request, string $folderId): ResourceCollection
     {
+        $folderId = FolderPublicId::fromRequest($folderId);
+
         $request->validate([
             'name' => ['sometimes', 'filled', 'string', 'max:10']
         ]);
 
         $request->validate(PaginationData::new()->asValidationRules());
 
-        /** @var Folder|null */
-        $folder = Folder::query()->find($request->route('folder_id'), ['user_id']);
+        $folder = Folder::query()
+            ->select(['user_id', 'id'])
+            ->tap(new WherePublicIdScope($folderId))
+            ->firstOrNew();
 
         $pagination = PaginationData::fromRequest($request);
 
-        if (is_null($folder)) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 
         $bannedUsers = User::query()
-            ->select(['id', 'full_name', 'profile_image_path'])
+            ->select(['public_id', 'full_name', 'profile_image_path'])
             ->when($request->has('name'), function ($query) use ($request) {
                 $query->where('full_name', 'like', "{$request->input('name')}%");
             })
-            ->whereIn('id', BannedCollaborator::select('user_id')->where('folder_id', $request->route('folder_id')))
+            ->whereIn('id', BannedCollaborator::select('user_id')->where('folder_id', $folder->id))
             ->simplePaginate($pagination->perPage(), [], page: $pagination->page());
 
         return new ResourceCollection($bannedUsers, BannedCollaboratorResource::class);

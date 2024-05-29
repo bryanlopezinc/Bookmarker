@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\User;
 
 use App\Enums\TwoFaMode;
-use App\Filesystem\ProfileImageFileSystem;
+use App\Filesystem\ProfileImagesFilesystem;
 use App\Models\SecondaryEmail;
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
@@ -22,17 +22,19 @@ use Laravel\Passport\Database\Factories\ClientFactory;
 use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\ClearUsersProfileImagesStorage;
 
 class CreateUserTest extends TestCase
 {
     use WithFaker;
+    use ClearUsersProfileImagesStorage;
 
     private static string $verificationUrl;
     private static User $createdUser;
 
-    protected function createUserResponse(array $parameters = []): TestResponse
+    protected function createUserResponse(array $parameters = [], array $headers = []): TestResponse
     {
-        return $this->postJson(route('createUser'), $parameters);
+        return $this->postJson(route('createUser'), $parameters, $headers);
     }
 
     public function testIsAccessibleViaPath(): void
@@ -134,23 +136,26 @@ class CreateUserTest extends TestCase
 
     public function testCreateUser(): void
     {
-        Passport::actingAsClient($client = ClientFactory::new()->asPasswordClient()->create());
-
         config(['settings.EMAIL_VERIFICATION_URL' => 'https://laravel.com/:id?hash=:hash&signature=:signature&expires=:expires&t=f']);
 
         Notification::fake();
 
+        $client = ClientFactory::new()->asPasswordClient()->create();
+
+        $accessToken = $this->postJson('v1/client/oauth/token', [
+            'client_id'     => $client->id,
+            'client_secret' => $client->secret,
+            'grant_type'    => 'client_credentials',
+        ])->assertOk()->json('access_token');
+
         $this->createUserResponse([
             'first_name'            => $firstName = $this->faker->firstName,
-            'last_name'             => $lastName =  $this->faker->lastName,
-            'username'              => $username = Str::random(Username::MAX_LENGTH - 2) . '_' . rand(0, 9),
-            'email'                 => $mail = $this->faker->safeEmail,
-            'password'              => $password = str::random(7) . rand(0, 9),
+            'last_name'            => $lastName =  $this->faker->lastName,
+            'username'             => $username = Str::random(Username::MAX_LENGTH - 2) . '_' . rand(0, 9),
+            'email'                => $mail = $this->faker->safeEmail,
+            'password'             => $password = str::random(7) . rand(0, 9),
             'password_confirmation' => $password,
-            'client_id'             => $client->id,
-            'client_secret'         => $client->secret,
-            'grant_type'            => 'password',
-        ])->assertCreated();
+        ], ['Authorization' => "Bearer {$accessToken}"])->assertCreated();
 
         /** @var User */
         $user = User::query()->where('email', $mail)->sole();
@@ -203,7 +208,7 @@ class CreateUserTest extends TestCase
     #[Test]
     public function createWithProfileImage(): void
     {
-        $filesystem = new ProfileImageFileSystem();
+        $filesystem = new ProfileImagesFilesystem();
 
         Passport::actingAsClient($client = ClientFactory::new()->asPasswordClient()->create());
 

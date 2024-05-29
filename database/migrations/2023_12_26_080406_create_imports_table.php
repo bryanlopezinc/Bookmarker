@@ -14,9 +14,9 @@ return new class () extends Migration {
     {
         Schema::create('imports', function (Blueprint $table) {
             $table->id();
-            $table->uuid('import_id')->unique();
+            $table->string('public_id', 18)->unique();
             $table->foreignId('user_id')->index();
-            $table->unique(['import_id', 'user_id']);
+            $table->unique(['public_id', 'user_id']);
             $table->tinyInteger('status')->index();
             $table->json('statistics');
             $table->timestamp('created_at');

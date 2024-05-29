@@ -8,11 +8,13 @@ use App\Exceptions\FolderNotFoundException;
 use App\Models\Bookmark;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
+use App\Models\Scopes\WherePublicIdScope;
+use App\ValueObjects\PublicId\FolderPublicId;
 use Illuminate\Database\Eloquent\Collection;
 
 final class DeleteFolderService
 {
-    public function delete(int $folderID): void
+    public function delete(FolderPublicId $folderID): void
     {
         $this->deleteFolder($folderID);
     }
@@ -20,16 +22,19 @@ final class DeleteFolderService
     /**
      * Delete a folder and all of its bookmarks
      */
-    public function deleteRecursive(int $folderID): void
+    public function deleteRecursive(FolderPublicId $folderID): void
     {
         $this->deleteFolder($folderID, true);
     }
 
-    private function deleteFolder(int $folderID, bool $recursive = false): void
+    private function deleteFolder(FolderPublicId $folderID, bool $recursive = false): void
     {
-        $folder = Folder::query()->find($folderID, ['id', 'user_id']);
+        $folder = Folder::query()
+            ->select(['id', 'user_id'])
+            ->tap(new WherePublicIdScope($folderID))
+            ->firstOrNew();
 
-        if (is_null($folder)) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
 

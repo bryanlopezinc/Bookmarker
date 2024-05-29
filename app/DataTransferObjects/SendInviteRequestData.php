@@ -20,11 +20,8 @@ final class SendInviteRequestData
 
     public static function fromRequest(Request $request): self
     {
-        /** @var User */
-        $authUser = $request->user();
-
         return new self(
-            $authUser,
+            User::fromRequest($request),
             $request->input('email'),
             UAC::fromRequest($request, 'permissions'),
             $request->input('roles', [])

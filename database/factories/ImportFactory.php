@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Contracts\IdGeneratorInterface;
 use App\Importing\DataTransferObjects\ImportStats;
 use App\Importing\Enums\ImportBookmarksStatus;
 use App\Importing\Models\Import;
@@ -23,9 +24,12 @@ final class ImportFactory extends Factory
      */
     public function definition()
     {
+        /** @var IdGeneratorInterface */
+        $generator = app(IdGeneratorInterface::class);
+
         return [
-            'import_id'   => $this->faker->uuid,
-            'user_id'     => $this->faker->randomDigitNotNull,
+            'public_id'   => $generator->generate(),
+            'user_id'     => UserFactory::new(),
             'status'      => ImportBookmarksStatus::PENDING,
             'statistics'  => new ImportStats(),
             'created_at'  => now()

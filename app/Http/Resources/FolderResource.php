@@ -25,7 +25,7 @@ final class FolderResource extends JsonResource
         return [
             'type'       => 'folder',
             'attributes' => [
-                'id'                  => $this->folder->id,
+                'id'                  => $this->folder->public_id->present(),
                 'name'                => $this->folder->name->present(),
                 'has_description'     => $this->folder->description !== null,
                 'description'         => $this->when($this->folder->description !== null, $this->folder->description),

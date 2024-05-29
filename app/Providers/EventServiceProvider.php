@@ -7,8 +7,10 @@ namespace App\Providers;
 use App\Events\LoginEvent;
 use App\Listeners\DeleteUnusedTags;
 use App\Listeners\Login\NotifyUserAboutNewLoginEventListener;
+use App\Listeners\SeedDatabaseAfterMigrations;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use App\Listeners\SendEmailVerificationNotification;
+use Illuminate\Database\Events\DatabaseRefreshed;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -22,6 +24,7 @@ class EventServiceProvider extends ServiceProvider
         \App\Events\RegisteredEvent::class => [SendEmailVerificationNotification::class],
         \App\Events\ResendEmailVerificationLinkRequested::class => [SendEmailVerificationNotification::class],
         \App\Events\TagsDetachedEvent::class => [DeleteUnusedTags::class],
+        DatabaseRefreshed::class => [SeedDatabaseAfterMigrations::class]
     ];
 
     /**

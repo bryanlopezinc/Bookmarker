@@ -4,32 +4,33 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\UpdateFolder;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\UpdateFolderRequestData;
 use App\Enums\FolderVisibility;
 use App\Exceptions\FolderNotModifiedAfterOperationException;
+use App\Filesystem\FoldersIconsFilesystem;
+use App\FolderSettings\FolderSettings;
+use App\Http\Handlers\HasHandlersInterface;
 use App\Models\Folder;
-use App\Utils\FolderSettingsNormalizer;
 use App\ValueObjects\FolderName;
-use App\ValueObjects\FolderSettings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
+use Illuminate\Support\Arr;
 
-final class UpdateFolder implements FolderRequestHandlerInterface, Scope
+final class UpdateFolder implements Scope, HasHandlersInterface
 {
     private readonly UpdateFolderRequestData $data;
-    private readonly FolderRequestHandlerInterface $notificationSender;
-    private readonly FolderSettingsNormalizer $normalizer;
+    private readonly FoldersIconsFilesystem $filesystem;
+    private readonly SendFolderUpdatedNotification $sendNotificationAction;
 
     public function __construct(
         UpdateFolderRequestData $data,
-        FolderRequestHandlerInterface $notificationSender,
-        FolderSettingsNormalizer $normalizer = null
+        SendFolderUpdatedNotification $sendNotificationAction,
+        FoldersIconsFilesystem $filesystem = null
     ) {
         $this->data = $data;
-        $this->notificationSender = $notificationSender;
-        $this->normalizer = $normalizer ??= new FolderSettingsNormalizer();
+        $this->sendNotificationAction = $sendNotificationAction;
+        $this->filesystem = $filesystem ??= new FoldersIconsFilesystem();
     }
 
     /**
@@ -37,54 +38,73 @@ final class UpdateFolder implements FolderRequestHandlerInterface, Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
-        $builder->addSelect(['name', 'description', 'settings']);
-
-        if ($this->notificationSender instanceof Scope) {
-            $this->notificationSender->apply($builder, $model);
-        }
+        $builder->addSelect(['name', 'description', 'settings', 'icon_path']);
     }
 
     /**
      * @inheritdoc
      */
-    public function handle(Folder $updatable): void
+    public function getHandlers(): array
     {
-        $folder = clone $updatable;
-        $newVisibility = FolderVisibility::fromRequest($this->data->visibility);
-        $newSettings =  $this->normalizer->fromRequest($this->data->settings);
+        return [$this->sendNotificationAction];
+    }
 
-        if ( ! is_null($newName = $this->data->name)) {
-            $folder->name = new FolderName($newName);
+    public function __invoke(Folder $original): void
+    {
+        $folder = clone $original;
+
+        $newVisibility = fn () => FolderVisibility::fromRequest($this->data->visibility);
+
+        if ($this->data->isUpdatingName) {
+            $folder->name = new FolderName($this->data->name);
         }
 
-        if ($this->data->hasDescription) {
+        if ($this->data->isUpdatingDescription) {
             $folder->description = $this->data->description;
         }
 
-        if ( ! empty($this->data->settings)) {
-            $folder->settings = new FolderSettings(array_replace_recursive($folder->settings->toArray(), $newSettings));
+        if ($this->data->isUpdatingSettings) {
+            $folder->settings = new FolderSettings(array_replace_recursive(
+                $folder->settings->toArray(),
+                $this->data->settings
+            ));
         }
 
-        if ( ! is_null($this->data->visibility)) {
-            if ($folder->visibility->isPasswordProtected() && ! $newVisibility->isPasswordProtected()) {
+        if ($this->data->isUpdatingVisibility) {
+            if ($folder->visibility->isPasswordProtected() && ! $newVisibility()->isPasswordProtected()) {
                 $folder->password = null;
             }
 
-            $folder->visibility = $newVisibility;
+            $folder->visibility = $newVisibility();
         }
 
-        if ( ! is_null($newFolderPassword = $this->data->folderPassword) || $newVisibility->isPasswordProtected()) {
-            $folder->password = $newFolderPassword;
+        if ($this->data->isUpdatingFolderPassword) {
+            $folder->password = $this->data->folderPassword;
+        }
+
+        if ($this->isUpdatingIcon($folder)) {
+            $folder->icon_path = $this->data->icon ? $this->filesystem->store($this->data->icon) : null;
+            $this->filesystem->delete($original->icon_path);
         }
 
         if ( ! $folder->isDirty()) {
             throw new FolderNotModifiedAfterOperationException();
         }
 
-        $updatedFolder = clone $folder;
-
         $folder->save();
 
-        $this->notificationSender->handle($updatedFolder);
+        $this->sendNotificationAction->setChanges(Arr::only(
+            $folder->getChanges(),
+            ['name', 'description', 'icon_path']
+        ));
+    }
+
+    private function isUpdatingIcon(Folder $folder): bool
+    {
+        if ($this->data->icon !== null) {
+            return true;
+        }
+
+        return $folder->icon_path !== null && $this->data->isUpdatingIcon;
     }
 }

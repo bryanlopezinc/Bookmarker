@@ -16,6 +16,7 @@ return new class () extends Migration {
     {
         Schema::create('bookmarks', function (Blueprint $table) {
             $table->id();
+            $table->string('public_id', 18)->unique();
             $table->string('title');
             $table->boolean('has_custom_title');
             $table->string('url');

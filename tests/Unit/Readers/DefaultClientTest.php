@@ -40,7 +40,7 @@ class DefaultClientTest extends TestCase
         $this->assertFalse($response->canonicalUrl);
         $this->assertFalse($response->description);
         $this->assertFalse($response->hostSiteName);
-        $this->assertFalse($response->thumbnailUrl);
+        $this->assertFalse($response->iconUrl);
         $this->assertFalse($response->title);
         $this->assertEquals($response->resolvedUrl->toString(), $url);
     }
@@ -104,7 +104,7 @@ class DefaultClientTest extends TestCase
         $this->assertFalse($response->canonicalUrl);
         $this->assertFalse($response->description);
         $this->assertFalse($response->hostSiteName);
-        $this->assertFalse($response->thumbnailUrl);
+        $this->assertFalse($response->iconUrl);
         $this->assertFalse($response->title);
         $this->assertEquals($response->resolvedUrl->toString(), $url);
     }
@@ -140,7 +140,7 @@ class DefaultClientTest extends TestCase
         $this->assertFalse($response->canonicalUrl);
         $this->assertFalse($response->description);
         $this->assertFalse($response->hostSiteName);
-        $this->assertFalse($response->thumbnailUrl);
+        $this->assertFalse($response->iconUrl);
         $this->assertFalse($response->title);
         $this->assertEquals($response->resolvedUrl->toString(), $url);
     }

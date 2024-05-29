@@ -17,11 +17,13 @@ return new class () extends Migration {
     {
         Schema::create('folders', function (Blueprint $table) {
             $table->id();
+            $table->string('public_id', 18)->unique();
             $table->unsignedTinyInteger('visibility')->index();
             $table->foreignId('user_id')->index();
             $table->string('description', 150)->nullable();
             $table->string('name', 50)->index();
             $table->json('settings');
+            $table->text('icon_path')->nullable();
             $table->string('password')->nullable();
             $table->timestamps();
             $table->index('updated_at');

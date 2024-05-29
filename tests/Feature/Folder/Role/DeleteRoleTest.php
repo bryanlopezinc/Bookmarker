@@ -16,12 +16,14 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\CreatesCollaboration;
 use Tests\Traits\CreatesRole;
+use Tests\Traits\GeneratesId;
 
 class DeleteRoleTest extends TestCase
 {
     use WithFaker;
     use CreatesCollaboration;
     use CreatesRole;
+    use GeneratesId;
 
     protected function deleteRoleResponse(array $parameters = []): TestResponse
     {
@@ -48,8 +50,17 @@ class DeleteRoleTest extends TestCase
     {
         $this->loginUser(UserFactory::new()->make(['id' => 55]));
 
-        $this->deleteRoleResponse(['folder_id' => 'baz', 'role_id' => 5])->assertNotFound();
-        $this->deleteRoleResponse(['folder_id' => 9, 'role_id' => 'foo'])->assertNotFound();
+        $this->deleteRoleResponse([
+            'folder_id' => 'baz',
+            'role_id'   => 5,
+        ])->assertNotFound()
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
+
+        $this->deleteRoleResponse([
+            'folder_id' => $this->generateFolderId()->present(),
+            'role_id'   => 5,
+        ])->assertNotFound()
+            ->assertJsonFragment(['message' => 'RoleNotFound']);
     }
 
     #[Test]
@@ -64,8 +75,8 @@ class DeleteRoleTest extends TestCase
         $role = $this->createRole(folder: $folder, permissions: [Permission::ADD_BOOKMARKS, Permission::DELETE_BOOKMARKS]);
 
         $this->deleteRoleResponse([
-            'folder_id'  => $folder->id,
-            'role_id'    => $role->id
+            'folder_id'  => $folder->public_id->present(),
+            'role_id'    => $role->public_id->present()
         ])->assertOk();
 
         $this->assertDatabaseMissing(FolderRole::class, ['id' => $role->id]);
@@ -82,9 +93,11 @@ class DeleteRoleTest extends TestCase
 
         $role = $this->createRole(folder: $folder, permissions: Permission::ADD_BOOKMARKS);
 
+        $role->delete();
+
         $this->deleteRoleResponse([
-            'folder_id'  => $folder->id,
-            'role_id'    => $role->id + 1
+            'folder_id'  => $folder->public_id->present(),
+            'role_id'    => $role->public_id->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'RoleNotFound']);
     }
 
@@ -99,13 +112,13 @@ class DeleteRoleTest extends TestCase
 
         $this->loginUser($user);
         $this->deleteRoleResponse([
-            'folder_id'  => FolderFactory::new()->for($user)->create()->id,
-            'role_id'    => $userFolderRole->id
+            'folder_id'  => FolderFactory::new()->for($user)->create()->public_id->present(),
+            'role_id'    => $userFolderRole->public_id->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'RoleNotFound']);
 
         $this->deleteRoleResponse([
-            'folder_id'  => $folder->id,
-            'role_id'    => $anotherUserFolderRole->id
+            'folder_id'  => $folder->public_id->present(),
+            'role_id'    => $anotherUserFolderRole->public_id->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'RoleNotFound']);
 
         $this->assertTrue($userFolderRole->refresh()->exists);
@@ -121,8 +134,8 @@ class DeleteRoleTest extends TestCase
 
         $this->loginUser($user);
         $this->deleteRoleResponse([
-            'folder_id' => $folder->id,
-            'role_id'   => $role->id
+            'folder_id' => $folder->public_id->present(),
+            'role_id'   => $role->public_id->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'FolderNotFound']);
 
         $this->assertTrue($role->refresh()->exists);
@@ -139,8 +152,8 @@ class DeleteRoleTest extends TestCase
 
         $this->loginUser($collaborator);
         $this->deleteRoleResponse([
-            'folder_id' => $folder->id,
-            'role_id'   => $role->id
+            'folder_id' => $folder->public_id->present(),
+            'role_id'   => $role->public_id->present()
         ])->assertForbidden()->assertJsonFragment(['message' => 'PermissionDenied']);
 
         $this->assertTrue($role->refresh()->exists);
@@ -149,12 +162,14 @@ class DeleteRoleTest extends TestCase
     #[Test]
     public function willReturnNotFoundWhenFolderDoesNotExists(): void
     {
-        $folder = FolderFactory::new()->create();
+        $role = $this->createRole();
+
+        $role->delete();
 
         $this->loginUser(UserFactory::new()->create());
         $this->deleteRoleResponse([
-            'role_id'    => 3,
-            'folder_id'  => $folder->id + 211
+            'role_id'    => $role->public_id->present(),
+            'folder_id'  => $this->generateFolderId()->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\AcceptInvite;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\FolderInviteData;
 use App\Enums\Permission;
 use App\Exceptions\HttpException;
@@ -16,7 +15,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class InviterMustStillHaveRequiredPermissionConstraint implements FolderRequestHandlerInterface, Scope
+final class InviterMustStillHaveRequiredPermissionConstraint implements Scope
 {
     private PermissionConstraint $permissionConstraint;
 
@@ -30,19 +29,18 @@ final class InviterMustStillHaveRequiredPermissionConstraint implements FolderRe
         $this->permissionConstraint->apply($builder, $model);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
-        $folderConstraints = $folder->settings->acceptInviteConstraints;
+        $folderConstraints = $folder->settings->acceptInviteConstraints()->value();
+
+        $constraint = $this->permissionConstraint;
 
         if ( ! $folderConstraints->inviterMustHaveRequiredPermission()) {
             return;
         }
 
         try {
-            $this->permissionConstraint->handle($folder);
+            $constraint($folder);
         } catch (PermissionDeniedException) {
             throw HttpException::forbidden([
                 'message' => 'InviterCanNoLongerSendInvites'

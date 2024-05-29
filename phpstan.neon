@@ -16,9 +16,7 @@ parameters:
         -
             message: '#Class .* has an uninitialized readonly property \$.*\. Assign it in the constructor\.#'
             paths:
-                -  'app/Readers/*'
-        -
-            message: '#Match expression does not handle remaining value: string#'
+                -  'app/*'
         -
             message: '#Unable to resolve the template type TKey in call to function collect#'
         -

@@ -7,6 +7,7 @@ namespace App\Importing\tests\Feature;
 use App\Importing\Repositories\ImportStatRepository;
 use App\Importing\Enums\ImportBookmarksStatus as Status;
 use App\Importing\DataTransferObjects\ImportStats;
+use App\Importing\Models\Import;
 use Database\Factories\ImportFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
@@ -37,14 +38,15 @@ class FetchUserImportsTest extends TestCase
     {
         $this->loginUser($user = UserFactory::new()->create());
 
+        /** @var Import[] */
         $imports = ImportFactory::times(3)->create(['user_id' => $user->id]);
 
         $this->fetchImportsResponse()
             ->assertOk()
             ->assertJsonCount(3, 'data')
-            ->assertJsonPath('data.0.attributes.id', $imports[2]->import_id)
-            ->assertJsonPath('data.1.attributes.id', $imports[1]->import_id)
-            ->assertJsonPath('data.2.attributes.id', $imports[0]->import_id)
+            ->assertJsonPath('data.0.attributes.id', $imports[2]->public_id->present())
+            ->assertJsonPath('data.1.attributes.id', $imports[1]->public_id->present())
+            ->assertJsonPath('data.2.attributes.id', $imports[0]->public_id->present())
             ->assertJsonStructure([
                 'data' => [
                     '*' => [
@@ -80,21 +82,21 @@ class FetchUserImportsTest extends TestCase
         $this->fetchImportsResponse(['filter' => 'failed'])
             ->assertOk()
             ->assertJsonCount(5, 'data')
-            ->assertJsonPath('data.0.attributes.id', $imports[6]->import_id)
-            ->assertJsonPath('data.1.attributes.id', $imports[5]->import_id)
-            ->assertJsonPath('data.2.attributes.id', $imports[4]->import_id)
-            ->assertJsonPath('data.3.attributes.id', $imports[3]->import_id)
-            ->assertJsonPath('data.4.attributes.id', $imports[2]->import_id);
+            ->assertJsonPath('data.0.attributes.id', $imports[6]->public_id->present())
+            ->assertJsonPath('data.1.attributes.id', $imports[5]->public_id->present())
+            ->assertJsonPath('data.2.attributes.id', $imports[4]->public_id->present())
+            ->assertJsonPath('data.3.attributes.id', $imports[3]->public_id->present())
+            ->assertJsonPath('data.4.attributes.id', $imports[2]->public_id->present());
 
         $this->fetchImportsResponse(['filter' => 'pending'])
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.attributes.id', $imports[0]->import_id);
+            ->assertJsonPath('data.0.attributes.id', $imports[0]->public_id->present());
 
         $this->fetchImportsResponse(['filter' => 'importing'])
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.attributes.id', $imports[1]->import_id);
+            ->assertJsonPath('data.0.attributes.id', $imports[1]->public_id->present());
     }
 
     #[Test]
@@ -110,7 +112,7 @@ class FetchUserImportsTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(4, 'data.0.attributes')
-            ->assertJsonPath('data.0.attributes.id', $import->import_id)
+            ->assertJsonPath('data.0.attributes.id', $import->public_id->present())
             ->assertJsonPath('data.0.attributes.status', 'success')
             ->assertJsonPath('data.0.attributes.stats', [
                 'imported'    => 100,
@@ -132,7 +134,7 @@ class FetchUserImportsTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(4, 'data.0.attributes')
-            ->assertJsonPath('data.0.attributes.id', $import->import_id)
+            ->assertJsonPath('data.0.attributes.id', $import->public_id->present())
             ->assertJsonPath('data.0.attributes.status', 'pending');
     }
 
@@ -149,7 +151,7 @@ class FetchUserImportsTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(5, 'data.0.attributes')
-            ->assertJsonPath('data.0.attributes.id', $import->import_id)
+            ->assertJsonPath('data.0.attributes.id', $import->public_id->present())
             ->assertJsonPath('data.0.attributes.status', 'failed')
             ->assertJsonPath('data.0.attributes.reason_for_failure', 'FailedDueToInvalidUrl')
             ->assertJsonPath('data.0.attributes.stats', [
@@ -171,13 +173,13 @@ class FetchUserImportsTest extends TestCase
 
         $import = ImportFactory::new()->importing()->create(['user_id' => $user->id]);
 
-        $cacheRepository->put($import->import_id, new ImportStats(100, 3, 104, 0, 1));
+        $cacheRepository->put($import->id, new ImportStats(100, 3, 104, 0, 1));
 
         $this->fetchImportsResponse()
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(4, 'data.0.attributes')
-            ->assertJsonPath('data.0.attributes.id', $import->import_id)
+            ->assertJsonPath('data.0.attributes.id', $import->public_id->present())
             ->assertJsonPath('data.0.attributes.status', 'importing')
             ->assertJsonPath('data.0.attributes.stats', [
                 'imported'    => 100,

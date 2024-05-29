@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\SendInvite;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\SendInviteRequestData;
-use App\Models\Folder;
 use Illuminate\Cache\RateLimiter;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 
-final class RateLimitConstraint implements FolderRequestHandlerInterface
+final class RateLimitConstraint
 {
     private readonly RateLimiter $rateLimiter;
     private readonly SendInviteRequestData $data;
@@ -35,12 +33,5 @@ final class RateLimitConstraint implements FolderRequestHandlerInterface
                 headers: ['resend-invite-after' => $this->rateLimiter->availableIn($key)]
             );
         }
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
-    {
     }
 }

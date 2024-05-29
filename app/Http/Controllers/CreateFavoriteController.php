@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Rules\ResourceIdRule;
+use App\Rules\PublicId\BookmarkPublicIdRule;
 use App\Services\CreateFavoriteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,7 +17,7 @@ final class CreateFavoriteController
 
         $request->validate([
             'bookmarks' => ['required', 'filled', join(':', ['max', $maxBookmarks])],
-            'bookmarks.*' => [new ResourceIdRule(), 'distinct:strict']
+            'bookmarks.*' => [new BookmarkPublicIdRule(), 'distinct:strict']
         ], ['max' => "cannot add more than {$maxBookmarks} bookmarks simultaneously"]);
 
         $service->create($request->input('bookmarks'), (int)auth()->id());

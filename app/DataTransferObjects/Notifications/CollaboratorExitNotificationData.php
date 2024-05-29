@@ -4,22 +4,35 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects\Notifications;
 
+use App\DataTransferObjects\Activities\CollaboratorExitActivityLogData;
 use App\Models\Folder;
-use App\Models\User;
-use App\ValueObjects\FolderName;
-use App\ValueObjects\FullName;
+use Illuminate\Contracts\Support\Arrayable;
 
-final class CollaboratorExitNotificationData
+final class CollaboratorExitNotificationData implements Arrayable
 {
     public function __construct(
-        public readonly ?User $collaborator,
-        public readonly ?Folder $folder,
-        public readonly int $folderId,
-        public readonly int $collaboratorId,
-        public readonly FolderName $folderName,
-        public readonly FullName $collaboratorFullName,
-        public readonly string $uuid,
-        public readonly string $notifiedOn
+        public readonly Folder $folder,
+        public readonly CollaboratorExitActivityLogData $activityLog,
     ) {
+    }
+
+    public static function fromArray(array $data): self
+    {
+        $folder = new Folder($data['folder']);
+
+        $folder->exists = true;
+
+        return new CollaboratorExitNotificationData($folder, CollaboratorExitActivityLogData::fromArray($data));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function toArray()
+    {
+        return array_replace($this->activityLog->toArray(), [
+            'version' => '1.0.0',
+            'folder'  => $this->folder->activityLogContextVariables()
+        ]);
     }
 }

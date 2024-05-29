@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Folder;
 
+use App\Collections\FolderPublicIdsCollection;
 use App\Enums\Permission;
 use Database\Factories\FolderFactory;
 use Database\Factories\UserFactory;
@@ -12,11 +13,13 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\AssertValidPaginationData;
 use Tests\TestCase;
 use Tests\Traits\CreatesCollaboration;
+use Tests\Traits\GeneratesId;
 
 class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
 {
     use AssertValidPaginationData;
     use CreatesCollaboration;
+    use GeneratesId;
 
     protected function whereHasCollaboratorsResponse(array $parameters = []): TestResponse
     {
@@ -39,20 +42,23 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
 
         $this->assertValidPaginationData($this, 'fetchUserFoldersWhereHasCollaborator', ['collaborator_id' => 4]);
 
-        $this->whereHasCollaboratorsResponse(['collaborator_id' => 'foo'])->assertNotFound();
-        $this->whereHasCollaboratorsResponse(['collaborator_id' => -23])->assertNotFound();
+        $this->whereHasCollaboratorsResponse(['collaborator_id' => 'foo'])
+            ->assertNotFound()
+            ->assertJsonFragment(['message' => 'UserNotFound']);
     }
 
     public function testWillFetchFolders(): void
     {
-        $users = UserFactory::times(2)->create();
+        [$folderOwner, $collaborator] = UserFactory::times(2)->create();
 
-        $folders = FolderFactory::times(2)->for($users[1])->create();
+        $folders = FolderFactory::times(2)->for($folderOwner)->create();
 
-        $this->CreateCollaborationRecord($users[0], $folders[0], [Permission::INVITE_USER, Permission::ADD_BOOKMARKS]);
+        $foldersPublicIds = FolderPublicIdsCollection::fromObjects($folders)->present();
 
-        $this->loginUser($users[1]);
-        $this->whereHasCollaboratorsResponse(['collaborator_id' => $users[0]->id])
+        $this->CreateCollaborationRecord($collaborator, $folders[0], [Permission::INVITE_USER, Permission::ADD_BOOKMARKS]);
+
+        $this->loginUser($folderOwner);
+        $this->whereHasCollaboratorsResponse(['collaborator_id' => $collaborator->public_id->present()])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(2, 'data.0.attributes.permissions')
@@ -63,7 +69,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
 
                 return true;
             })
-            ->assertJsonPath('data.0.attributes.id', $folders[0]->id)
+            ->assertJsonPath('data.0.attributes.id', $foldersPublicIds[0])
             ->assertJsonStructure([
                 'data' => [
                     '*' => [
@@ -93,14 +99,14 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
     #[Test]
     public function whenCollaboratorHasNoPermissions(): void
     {
-        $users = UserFactory::times(2)->create();
+        [$folderOwner, $collaborator] = UserFactory::times(2)->create();
 
-        $folders = FolderFactory::times(2)->for($users[1])->create();
+        $folders = FolderFactory::times(2)->for($folderOwner)->create();
 
-        $this->CreateCollaborationRecord($users[0], $folders[0]);
+        $this->CreateCollaborationRecord($collaborator, $folders[0]);
 
-        $this->loginUser($users[1]);
-        $this->whereHasCollaboratorsResponse(['collaborator_id' => $users[0]->id])
+        $this->loginUser($folderOwner);
+        $this->whereHasCollaboratorsResponse(['collaborator_id' => $collaborator->public_id->present()])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(0, 'data.0.attributes.permissions');
@@ -108,32 +114,25 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
 
     public function testWillReturnOnlyUserFolders(): void
     {
-        $users = UserFactory::times(3)->create();
+        [$folderOwner, $collaborator, $otherUser] = UserFactory::times(3)->create();
 
-        $collaborator = $users[0];
+        $folders = FolderFactory::times(2)->for($folderOwner)->create();
 
-        $folders = FolderFactory::times(2)
-            ->sequence(
-                ['user_id' => $users[1]->id],
-                ['user_id' => $users[2]->id]
-            )
-            ->create();
+        $foldersPublicIds = FolderPublicIdsCollection::fromObjects($folders)->present();
 
         $this->CreateCollaborationRecord($collaborator, $folders[0], Permission::ADD_BOOKMARKS);
-        $this->CreateCollaborationRecord($collaborator, $folders[1], Permission::ADD_BOOKMARKS);
+        $this->CreateCollaborationRecord($otherUser, $folders[1], Permission::ADD_BOOKMARKS);
 
-        $this->loginUser($users[1]);
-        $this->whereHasCollaboratorsResponse(['collaborator_id' => $collaborator->id])
+        $this->loginUser($folderOwner);
+        $this->whereHasCollaboratorsResponse(['collaborator_id' => $collaborator->public_id->present()])
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.attributes.id', $folders[0]->id);
+            ->assertJsonPath('data.0.attributes.id', $foldersPublicIds[0]);
     }
 
     public function testWillReturnEmptyDataSetWhenCollaboratorDoesNotExists(): void
     {
-        [$user, $collaborator] = UserFactory::times(2)->create();
-
-        $this->loginUser($user);
-        $this->whereHasCollaboratorsResponse(['collaborator_id' => $collaborator->id + 1])->assertJsonCount(0, 'data');
+        $this->loginUser(UserFactory::new()->create());
+        $this->whereHasCollaboratorsResponse(['collaborator_id' => $this->generateUserId()->present()])->assertJsonCount(0, 'data');
     }
 
     public function testWillReturnEmptyDataSetWhenCollaboratorIsNotACollaboratorInAnyUserFolders(): void
@@ -141,7 +140,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
         [$user, $collaborator] = UserFactory::times(2)->create();
 
         $this->loginUser($user);
-        $this->whereHasCollaboratorsResponse(['collaborator_id' => $collaborator->id])->assertJsonCount(0, 'data');
+        $this->whereHasCollaboratorsResponse(['collaborator_id' => $collaborator->public_id->present()])->assertJsonCount(0, 'data');
     }
 
     public function testWillReturnEmptyDataSetWhenCollaboratorHasDeletedAccount(): void
@@ -152,7 +151,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
         $this->CreateCollaborationRecord($collaborator, $userFolder, Permission::ADD_BOOKMARKS);
 
         $this->loginUser($user);
-        $this->whereHasCollaboratorsResponse($query = ['collaborator_id' => $collaborator->id])
+        $this->whereHasCollaboratorsResponse($query = ['collaborator_id' => $collaborator->public_id->present()])
             ->assertOk()
             ->assertJsonCount(1, 'data');
 
@@ -170,7 +169,7 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
 
         $this->loginUser($user);
         $this->whereHasCollaboratorsResponse([
-            'collaborator_id' => $collaborator->id,
+            'collaborator_id' => $collaborator->public_id->present(),
             'fields' => 'id,name,permissions'
         ])
             ->assertJsonCount(1, 'data')
@@ -192,19 +191,19 @@ class FetchUserFoldersWhereHasCollaboratorTest extends TestCase
     {
         $this->loginUser(UserFactory::new()->create());
 
-        $this->whereHasCollaboratorsResponse(['fields' => 'id,name,foo,1', 'collaborator_id' => 4])
+        $this->whereHasCollaboratorsResponse(['fields' => 'id,name,foo,1', 'collaborator_id' => $publicId = $this->generateUserId()->present()])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'fields' => ['The selected fields.2 is invalid.']
             ]);
 
-        $this->whereHasCollaboratorsResponse(['fields' => '1,2,3,4', 'collaborator_id' => 4])
+        $this->whereHasCollaboratorsResponse(['fields' => '1,2,3,4', 'collaborator_id' => $publicId])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'fields' => ['The selected fields.0 is invalid.']
             ]);
 
-        $this->whereHasCollaboratorsResponse(['fields' => 'id,name,description,description', 'collaborator_id' => 4])
+        $this->whereHasCollaboratorsResponse(['fields' => 'id,name,description,description', 'collaborator_id' => $publicId])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'fields' => [

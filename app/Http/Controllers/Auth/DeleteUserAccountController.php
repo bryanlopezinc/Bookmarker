@@ -14,8 +14,7 @@ final class DeleteUserAccountController
 {
     public function __invoke(Request $request, Hasher $hasher): JsonResponse
     {
-        /** @var User */
-        $authUser = auth('api')->user();
+        $authUser = User::fromRequest($request);
 
         $request->validate([
             'password' => ['string', 'required', 'filled']

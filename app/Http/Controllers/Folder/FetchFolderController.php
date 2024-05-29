@@ -7,24 +7,26 @@ namespace App\Http\Controllers\Folder;
 use App\Exceptions\FolderNotFoundException;
 use App\Http\Resources\FilterFolderResource;
 use App\Models\Folder;
+use App\Models\Scopes\WherePublicIdScope;
 use App\Rules\FolderFieldsRule;
-use App\Rules\ResourceIdRule;
+use App\ValueObjects\PublicId\FolderPublicId;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 final class FetchFolderController extends Controller
 {
-    public function __invoke(Request $request): FilterFolderResource
+    public function __invoke(Request $request, string $folderId): FilterFolderResource
     {
         $request->validate([
-            'id'     => ['required', new ResourceIdRule()],
             'fields' => ['sometimes', new FolderFieldsRule()]
         ]);
 
-        /** @var Folder|null */
-        $folder = Folder::query()->withCount(['collaborators', 'bookmarks'])->find($request->integer('id'));
+        $folder = Folder::query()
+            ->withCount(['collaborators', 'bookmarks'])
+            ->tap(new WherePublicIdScope(FolderPublicId::fromRequest($folderId)))
+            ->firstOrNew();
 
-        if (is_null($folder)) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
 

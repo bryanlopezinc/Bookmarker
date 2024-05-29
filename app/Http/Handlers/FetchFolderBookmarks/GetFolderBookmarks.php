@@ -36,7 +36,13 @@ final class GetFolderBookmarks implements Scope
      */
     public function handle(Folder $folder): Paginator
     {
-        return $this->action->handle($this->data->authUser?->id, $folder, $this->data->pagination)->tap(function (Paginator $paginator) {
+        $authUserId = null;
+
+        if ($this->data->authUser->exists) {
+            $authUserId = $this->data->authUser->id;
+        }
+
+        return $this->action->handle($authUserId, $folder, $this->data->pagination)->tap(function (Paginator $paginator) {
             $paginator->getCollection()
                 ->map(fn (FolderBookmark $folderBookmark) => $folderBookmark->bookmark)
                 ->tap(fn (Collection $bookmarks) => dispatch(new CheckBookmarksHealth($bookmarks)));

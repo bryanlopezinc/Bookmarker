@@ -16,7 +16,7 @@ return new class () extends Migration {
             $table->id();
             $table->string('url');
             $table->string('document_line_number');
-            $table->uuid('import_id')->index();
+            $table->foreignId('import_id')->index();
             $table->json('tags')->nullable();
             $table->smallInteger('status');
             $table->index(['import_id', 'status']);

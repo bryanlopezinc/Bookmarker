@@ -28,7 +28,7 @@ final class TestHttpClient implements HttpClientInterface
             'description'  => $faker->sentence,
             'title'        => $faker->sentence,
             'hostSiteName' => $url->getHost(),
-            'thumbnailUrl' => new Url($faker->imageUrl),
+            'iconUrl'      => new Url($faker->imageUrl),
             'canonicalUrl' => $url,
             'resolvedUrl'  => $url
         ]);

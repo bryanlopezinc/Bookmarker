@@ -23,7 +23,7 @@ final class ImportHistoryFactory extends Factory
     public function definition()
     {
         return [
-            'import_id'             => $this->faker->uuid,
+            'import_id'             => ImportFactory::new(),
             'url'                   => $this->faker->url,
             'document_line_number'  => $this->faker->randomDigitNotNull,
             'tags'                  => [],

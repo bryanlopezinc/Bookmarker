@@ -14,7 +14,7 @@ final class UpdatesImportStatus implements
     Contracts\ImportsStartedListenerInterface,
     Contracts\ImportsEndedListenerInterface
 {
-    private string $importId;
+    private int $importId;
 
     /**
      * {@inheritdoc}
@@ -23,12 +23,10 @@ final class UpdatesImportStatus implements
     {
         $this->importId = $data->importId();
 
-        Import::query()
-            ->where('import_id', $data->importId())
-            ->update(['status' => ImportBookmarksStatus::IMPORTING]);
+        Import::query()->whereKey($data->importId())->update(['status' => ImportBookmarksStatus::IMPORTING]);
     }
 
-    public function setImportId(string $importId): void
+    public function setImportId(int $importId): void
     {
         $this->importId =  $importId;
     }
@@ -39,11 +37,11 @@ final class UpdatesImportStatus implements
     public function importsEnded(ImportBookmarksOutcome $result): void
     {
         Import::query()
-            ->where('import_id', $this->importId)
+            ->whereKey($this->importId)
             ->sole()
             ->update([
-                'status'             => $result->status->isSuccessful() ? ImportBookmarksStatus::IMPORTING : $result->status->value,
-                'statistics'         => $result->statistics
+                'status'     => $result->status->isSuccessful() ? ImportBookmarksStatus::IMPORTING : $result->status->value,
+                'statistics' => $result->statistics
             ]);
     }
 }

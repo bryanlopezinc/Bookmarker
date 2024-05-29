@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Enums\CollaboratorMetricType as Type;
 use App\Models\Folder;
 use App\Models\FolderCollaboratorMetric;
@@ -16,7 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Arr;
 
-final class CollaboratorMetricsRecorder implements FolderRequestHandlerInterface, Scope
+final class CollaboratorMetricsRecorder implements Scope
 {
     private readonly Type $type;
     private readonly int $collaboratorId;
@@ -39,14 +38,13 @@ final class CollaboratorMetricsRecorder implements FolderRequestHandlerInterface
         $builder->addSelect(['user_id']);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         $incrementByAmount = $this->count;
 
-        $folderBelongsToCollaborator = $this->collaboratorId === $folder->user_id;
+        if ($folder->wasCreatedBy($this->collaboratorId)) {
+            return;
+        }
 
         $values = [
             'collaborator_id' => $this->collaboratorId,
@@ -54,10 +52,6 @@ final class CollaboratorMetricsRecorder implements FolderRequestHandlerInterface
             'metrics_type'    => $this->type->value,
             'count'           => $incrementByAmount
         ];
-
-        if ($folderBelongsToCollaborator) {
-            return;
-        }
 
         $pendingDispatch = dispatch(static function () use ($values, $incrementByAmount) {
             FolderCollaboratorMetric::query()->create($values);

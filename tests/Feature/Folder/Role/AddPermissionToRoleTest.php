@@ -12,11 +12,13 @@ use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\Folder\Concerns\InteractsWithValues;
 use Tests\TestCase;
 use Tests\Traits\CreatesCollaboration;
 use Tests\Traits\CreatesRole;
+use Tests\Traits\GeneratesId;
 
 class AddPermissionToRoleTest extends TestCase
 {
@@ -24,6 +26,7 @@ class AddPermissionToRoleTest extends TestCase
     use CreatesCollaboration;
     use CreatesRole;
     use InteractsWithValues;
+    use GeneratesId;
 
     protected function shouldBeInteractedWith(): mixed
     {
@@ -55,10 +58,21 @@ class AddPermissionToRoleTest extends TestCase
     {
         $this->loginUser(UserFactory::new()->make(['id' => 55]));
 
-        $routeParameters = ['folder_id' => $this->faker->randomDigitNotZero(), 'role_id' => $this->faker->randomDigitNotZero()];
+        $routeParameters = ['folder_id' => $this->generateFolderId()->present(), 'role_id' => $this->generateRoleId()->present()];
 
-        $this->addPermissionResponse(['folder_id' => 'baz', 'role_id' => 5])->assertNotFound();
-        $this->addPermissionResponse(['folder_id' => 9, 'role_id' => 'foo'])->assertNotFound();
+        $this->addPermissionResponse([
+            'folder_id' => 'baz',
+            'role_id' => 5,
+            'permission' => 'removeBookmarks',
+        ])->assertNotFound()
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
+
+        $this->addPermissionResponse([
+            'folder_id' => $this->generateFolderId()->present(),
+            'role_id'   => 5,
+            'permission' => 'removeBookmarks',
+        ])->assertNotFound()
+            ->assertJsonFragment(['message' => 'RoleNotFound']);
 
         $this->addPermissionResponse($routeParameters)
             ->assertUnprocessable()
@@ -82,8 +96,8 @@ class AddPermissionToRoleTest extends TestCase
 
         $this->addPermissionResponse([
             'permission' => 'removeBookmarks',
-            'folder_id'  => $folder->id,
-            'role_id'    => $role->id
+            'folder_id'  => $folder->public_id->present(),
+            'role_id'    => $role->public_id->present()
         ])->assertCreated();
 
         $permissions = $role->refresh()->accessControls();
@@ -93,16 +107,9 @@ class AddPermissionToRoleTest extends TestCase
         $this->assertTrue($permissions->has(Permission::DELETE_BOOKMARKS));
     }
 
-    public function testAddPermissions(): void
-    {
-        $this->assertWillAddPermission('inviteUsers');
-        $this->assertWillAddPermission('removeBookmarks');
-        $this->assertWillAddPermission('updateFolder');
-        $this->assertWillAddPermission('removeUser');
-        $this->assertWillAddPermission('addBookmarks');
-    }
-
-    public function assertWillAddPermission(string $permissions, Closure $expectation = null): void
+    #[Test]
+    #[DataProvider('addPermissionsData')]
+    public function addPermissions(string $permissions, Closure $expectation = null): void
     {
         $expectation = $expectation ??= fn () => null;
 
@@ -114,14 +121,30 @@ class AddPermissionToRoleTest extends TestCase
 
         $this->addPermissionResponse([
             'permission' => $permissions,
-            'folder_id'  => $folder->id,
-            'role_id'    => $role->id
+            'folder_id'  => $folder->public_id->present(),
+            'role_id'    => $role->public_id->present()
         ])->assertCreated();
 
         $this->assertEqualsCanonicalizing(
             $role->refresh()->permissions->pluck('name')->all(),
             UAC::fromRequest(explode(',', $permissions))->toArray()
         );
+    }
+
+    public static function addPermissionsData(): array
+    {
+        return  [
+            'Add bookmarks'             => ['addBookmarks'],
+            'Remove bookmarks'          => ['removeBookmarks'],
+            'Invite users'              => ['inviteUsers'],
+            'Remove Collaborator'       => ['removeUser'],
+            'Update folder name'        => ['updateFolderName'],
+            'Update folder description' => ['updateFolderDescription'],
+            'Update folder icon'        => ['updateFolderIcon'],
+            'Suspend User'              => ['suspendUser'],
+            'blacklist domain'          => ['blacklistDomain'],
+            'whitelist domain'          => ['whitelistDomain'],
+        ];
     }
 
     #[Test]
@@ -134,8 +157,8 @@ class AddPermissionToRoleTest extends TestCase
 
         $this->addPermissionResponse([
             'permission' => 'addBookmarks',
-            'folder_id'  => $folder->id,
-            'role_id'    => $role->id
+            'folder_id'  => $folder->public_id->present(),
+            'role_id'    => $role->public_id->present()
         ])->assertConflict()->assertJsonFragment(['message' => 'PermissionAlreadyAttachedToRole']);
 
         $this->assertCount(1, $role->permissions);
@@ -159,8 +182,8 @@ class AddPermissionToRoleTest extends TestCase
 
         $this->addPermissionResponse([
             'permission' => 'inviteUsers',
-            'folder_id'  => $folder->id,
-            'role_id'    => $role->id
+            'folder_id'  => $folder->public_id->present(),
+            'role_id'    => $role->public_id->present()
         ])->assertConflict()->assertJsonFragment(['message' => 'DuplicateRole']);
 
         $this->assertCount(1, $role->permissions);
@@ -180,10 +203,12 @@ class AddPermissionToRoleTest extends TestCase
 
         $role = $this->createRole(folder: $folder, permissions: Permission::ADD_BOOKMARKS);
 
+        $role->delete();
+
         $this->addPermissionResponse([
             'permission' => 'addBookmarks',
-            'folder_id'  => $folder->id,
-            'role_id'    => $role->id + 1
+            'folder_id'  => $folder->public_id->present(),
+            'role_id'    => $role->public_id->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'RoleNotFound']);
     }
 
@@ -199,14 +224,14 @@ class AddPermissionToRoleTest extends TestCase
         $this->loginUser($user);
         $this->addPermissionResponse([
             'permission' => 'addBookmarks',
-            'folder_id'  => FolderFactory::new()->for($user)->create()->id,
-            'role_id'    => $userFolderRole->id
+            'folder_id'  => FolderFactory::new()->for($user)->create()->public_id->present(),
+            'role_id'    => $userFolderRole->public_id->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'RoleNotFound']);
 
         $this->addPermissionResponse([
             'permission' => 'addBookmarks',
-            'folder_id'  => $folder->id,
-            'role_id'    => $anotherUserFolderRole->id
+            'folder_id'  => $folder->public_id->present(),
+            'role_id'    => $anotherUserFolderRole->public_id->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'RoleNotFound']);
 
         $this->assertEquals(
@@ -230,8 +255,8 @@ class AddPermissionToRoleTest extends TestCase
         $this->loginUser($user);
         $this->addPermissionResponse([
             'permission' => 'addBookmarks',
-            'folder_id' => $folder->id,
-            'role_id'   => $role->id
+            'folder_id' => $folder->public_id->present(),
+            'role_id'   => $role->public_id->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'FolderNotFound']);
 
         $this->assertEquals(
@@ -252,8 +277,8 @@ class AddPermissionToRoleTest extends TestCase
         $this->loginUser($collaborator);
         $this->addPermissionResponse([
             'permission' => 'addBookmarks',
-            'folder_id' => $folder->id,
-            'role_id'   => $role->id
+            'folder_id' => $folder->public_id->present(),
+            'role_id'   => $role->public_id->present()
         ])->assertForbidden()->assertJsonFragment(['message' => 'PermissionDenied']);
 
         $this->assertEquals(
@@ -265,13 +290,11 @@ class AddPermissionToRoleTest extends TestCase
     #[Test]
     public function willReturnNotFoundWhenFolderDoesNotExists(): void
     {
-        $folder = FolderFactory::new()->create();
-
         $this->loginUser(UserFactory::new()->create());
         $this->addPermissionResponse([
-            'role_id'    => 3,
+            'role_id'    => $this->createRole()->public_id->present(),
             'permission' => 'addBookmarks',
-            'folder_id'  => $folder->id + 211
+            'folder_id'  => $this->generateFolderId()->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'FolderNotFound']);
     }
 }

@@ -7,11 +7,16 @@ namespace App\Services;
 use App\Models\Bookmark as Model;
 use App\Models\Favorite;
 use App\PaginationData;
-use App\ValueObjects\UserId;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\Paginator;
 use App\Http\Requests\FetchUserBookmarksRequest as Request;
 use App\Models\BookmarkHealth;
+use App\Models\Scopes\HasDuplicatesScope;
+use App\Models\Scopes\IsHealthyScope;
+use App\Models\Scopes\WherePublicIdScope;
+use App\Models\Source;
+use App\Models\User;
+use App\ValueObjects\PublicId\BookmarkSourceId;
 use Illuminate\Http\Response;
 
 final class FetchUserBookmarksService
@@ -23,8 +28,12 @@ final class FetchUserBookmarksService
     {
         $model = new Model();
 
-        $query = Model::WithQueryOptions()
-            ->where('user_id', UserId::fromAuthUser()->value())
+        $query = Model::query()
+            ->select(['bookmarks.id', 'public_id', 'description', 'title', 'url', 'preview_image_url', 'user_id', 'source_id', 'bookmarks.created_at'])
+            ->tap(new HasDuplicatesScope())
+            ->tap(new IsHealthyScope())
+            ->with(['source', 'tags'])
+            ->where('user_id', User::fromRequest($request)->id)
             ->addSelect([
                 'isUserFavorite' => Favorite::query()
                     ->select('id')
@@ -32,7 +41,7 @@ final class FetchUserBookmarksService
             ]);
 
         $request->whenHas('source_id', function (string $id) use ($query) {
-            $query->where('source_id', intval($id));
+            $query->where('source_id', Source::select('id')->tap(new WherePublicIdScope(BookmarkSourceId::fromRequest($id))));
         });
 
         $request->whenHas('tags', function (array $tags) use ($query) {

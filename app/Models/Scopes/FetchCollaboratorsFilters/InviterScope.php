@@ -13,7 +13,7 @@ final class InviterScope
     {
         $builder->withCasts(['wasInvitedBy' => 'json'])->addSelect([
             'wasInvitedBy' => User::query()
-                ->selectRaw("JSON_OBJECT('id', id, 'full_name', full_name, 'profile_image_path', profile_image_path)")
+                ->selectRaw("JSON_OBJECT('public_id', public_id, 'full_name', full_name, 'profile_image_path', profile_image_path)")
                 ->whereColumn('id', 'folders_collaborators.invited_by')
         ]);
     }

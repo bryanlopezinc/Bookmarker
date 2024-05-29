@@ -56,8 +56,6 @@ final class TransferImportsToBookmarksStore implements Contracts\ImportsEndedLis
                 });
         });
 
-        Import::query()
-            ->where('import_id', $this->data->importId())
-            ->update(['status' => ImportBookmarksStatus::SUCCESS]);
+        Import::query()->whereKey($this->data->importId())->update(['status' => ImportBookmarksStatus::SUCCESS]);
     }
 }

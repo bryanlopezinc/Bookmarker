@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\FetchFolderBookmarks;
 
-use App\Contracts\FolderRequestHandlerInterface;
-use App\Contracts\StopsRequestHandling;
 use App\DataTransferObjects\FetchFolderBookmarksRequestData as Data;
 use App\Exceptions\HttpException;
+use App\Http\Handlers\HasHandlersInterface;
 use App\Models\Folder;
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,34 +14,38 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Http\Response;
 
-final class FolderPasswordConstraint implements FolderRequestHandlerInterface, Scope, StopsRequestHandling
+final class FolderPasswordConstraint implements Scope, HasHandlersInterface
 {
     private readonly Data $data;
     private readonly Hasher $hasher;
-    private bool $stopRequestHandling = false;
+    private array $next;
 
-    public function __construct(Data $data, Hasher $hasher = null)
+    public function __construct(Data $data, array $next, Hasher $hasher = null)
     {
         $this->data = $data;
         $this->hasher = $hasher ??= app(Hasher::class);
-    }
-
-    public function apply(Builder $builder, Model $model)
-    {
-        $builder->addSelect(['visibility', 'password', 'user_id']);
-    }
-
-    public function stopRequestHandling(): bool
-    {
-        return $this->stopRequestHandling;
+        $this->next = $next;
     }
 
     /**
      * @inheritdoc
      */
-    public function handle(Folder $folder): void
+    public function apply(Builder $builder, Model $model)
     {
-        $folderBelongsToAuthUser = $folder->user_id === $this->data->authUser?->id;
+        $builder->addSelect(['visibility', 'password', 'user_id']);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getHandlers(): array
+    {
+        return $this->next;
+    }
+
+    public function __invoke(Folder $folder): void
+    {
+        $folderBelongsToAuthUser = $this->data->authUser->exists && $folder->wasCreatedBy($this->data->authUser);
 
         if ( ! $folder->visibility->isPasswordProtected() || $folderBelongsToAuthUser) {
             return;
@@ -62,6 +65,6 @@ final class FolderPasswordConstraint implements FolderRequestHandlerInterface, S
             );
         }
 
-        $this->stopRequestHandling = true;
+        $this->next = [];
     }
 }

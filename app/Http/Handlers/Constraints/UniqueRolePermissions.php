@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\Constraints;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
 use App\Models\FolderPermission;
@@ -13,15 +12,15 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class UniqueRolePermissions implements FolderRequestHandlerInterface, Scope
+final class UniqueRolePermissions implements Scope
 {
     private readonly string $permission;
-    private readonly int $roleId;
+    private readonly string $roleIdName;
 
-    public function __construct(string $permission, int $roleId)
+    public function __construct(string $permission, string $roleIdName = 'roleId')
     {
         $this->permission = $permission;
-        $this->roleId = $roleId;
+        $this->roleIdName = $roleIdName;
     }
 
     /**
@@ -32,15 +31,12 @@ final class UniqueRolePermissions implements FolderRequestHandlerInterface, Scop
         $builder->addSelect([
             'roleContainsPermission' => FolderRolePermission::query()
                 ->selectRaw('1')
-                ->where('role_id', $this->roleId)
+                ->whereColumn('role_id', $this->roleIdName)
                 ->whereIn('permission_id', FolderPermission::select('id')->where('name', $this->permission))
         ]);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         if ($folder->roleContainsPermission) {
             throw HttpException::conflict([

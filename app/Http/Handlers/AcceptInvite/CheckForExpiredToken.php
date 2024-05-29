@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\AcceptInvite;
 
-use App\Cache\FolderInviteDataRepository;
-use App\Contracts\AcceptFolderInviteRequestHandlerInterface as HandlerInterface;
+use App\Repositories\FolderInviteDataRepository;
 use App\Exceptions\AcceptFolderInviteException;
+use App\ValueObjects\InviteId;
 
 final class CheckForExpiredToken implements HandlerInterface
 {
@@ -19,7 +19,7 @@ final class CheckForExpiredToken implements HandlerInterface
         $this->repository = $repository ?: app(FolderInviteDataRepository::class);
     }
 
-    public function handle(string $inviteId): void
+    public function handle(InviteId $inviteId): void
     {
         if ( ! $this->repository->has($inviteId)) {
             throw AcceptFolderInviteException::expiredOrInvalidInvitationToken();

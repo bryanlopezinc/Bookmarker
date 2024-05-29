@@ -7,6 +7,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
+ * @property int                 $id
+ * @property int                 $folder_id
+ * @property int                 $user_id
+ * @property int                 $muted_by
  * @property \Carbon\Carbon      $muted_at
  * @property \Carbon\Carbon|null $muted_until
  */

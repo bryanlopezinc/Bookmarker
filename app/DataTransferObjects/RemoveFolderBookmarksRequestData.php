@@ -17,11 +17,8 @@ final class RemoveFolderBookmarksRequestData
 
     public static function fromRequest(Request $request): self
     {
-        /** @var User */
-        $authUser = $request->user();
-
         return new self(
-            $authUser,
+            User::fromRequest($request),
             $request->input('bookmarks', []),
         );
     }

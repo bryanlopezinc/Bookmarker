@@ -16,6 +16,8 @@ use App\Importing\Http\Requests\ImportBookmarkRequest;
 use App\Importing\Http\Resources\ImportHistoryResource;
 use App\Importing\Models\Import;
 use App\Importing\Models\ImportHistory;
+use App\Models\Scopes\WherePublicIdScope;
+use App\ValueObjects\PublicId\ImportPublicId;
 
 final class ImportController
 {
@@ -31,16 +33,17 @@ final class ImportController
         $request->validate(['filter' => ['sometimes', 'string', 'in:skipped,failed']]);
         $request->validate(PaginationData::new()->asValidationRules());
 
-        /** @var Import|null */
-        $import = Import::query()->where('import_id', $importId)->first();
+        $import = Import::query()
+            ->tap(new WherePublicIdScope(ImportPublicId::fromRequest($importId)))
+            ->firstOrNew();
 
-        if (is_null($import) || ($import->user_id !== auth()->id())) {
+        if ( ! $import->exists || ($import->user_id !== auth()->id())) {
             throw HttpException::notFound(['message' => 'RecordNotFound']);
         }
 
         /** @var Paginator */
         $result = ImportHistory::query()
-            ->where('import_id', $importId)
+            ->where('import_id', $import->id)
             ->when($request->input('filter'), function ($query, string $filterBy) {
                 if ($filterBy === 'failed') {
                     $failedCases = Status::failedCases();

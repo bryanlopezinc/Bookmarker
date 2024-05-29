@@ -4,29 +4,34 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\AddBookmarksToFolder;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
 use App\Models\FolderBookmark;
-use App\DataTransferObjects\AddBookmarksToFolderRequestData as Data;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Scope;
 
-final class UniqueFolderBookmarkConstraint implements FolderRequestHandlerInterface
+final class UniqueFolderBookmarkConstraint implements Scope
 {
-    public function __construct(private readonly Data $data)
+    public function __construct(private readonly array $bookmarkIds)
     {
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function apply(Builder $builder, Model $model): void
     {
-        $hasBookmarks = FolderBookmark::query()
-            ->where('folder_id', $folder->id)
-            ->whereIntegerInRaw('bookmark_id', $this->data->bookmarkIds)
-            ->count() > 0;
+        $builder
+            ->withCasts(['bookmarksAlreadyExists' => 'bool'])
+            ->addSelect([
+                'bookmarksAlreadyExists' => FolderBookmark::query()
+                    ->selectRaw('COUNT(*) > 0')
+                    ->whereColumn('folder_id', 'folders.id')
+                    ->whereIntegerInRaw('bookmark_id', $this->bookmarkIds)
+            ]);
+    }
 
-        if ($hasBookmarks) {
+    public function __invoke(Folder $folder): void
+    {
+        if ($folder->bookmarksAlreadyExists) {
             throw HttpException::conflict([
                 'message' => 'FolderContainsBookmarks',
                 'info' => 'The given bookmarks already exists in folder.'

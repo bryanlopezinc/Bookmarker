@@ -5,36 +5,39 @@ declare(strict_types=1);
 namespace App\Http\Handlers\RemoveCollaborator;
 
 use App\Models\Folder;
-use App\Contracts\FolderRequestHandlerInterface as HandlerInterface;
 use App\DataTransferObjects\RemoveCollaboratorData;
 use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Http\Handlers\Constraints;
 use App\Http\Handlers\CollaboratorMetricsRecorder;
+use App\Http\Handlers\ConditionallyLogActivity;
 use App\Http\Handlers\RequestHandlersQueue;
+use App\Http\Handlers\SuspendCollaborator\SuspendedCollaboratorFinder;
+use App\Models\Scopes\WherePublicIdScope;
+use App\Models\User;
 
 final class Handler
 {
     public function handle(RemoveCollaboratorData $data): void
     {
-        $query = Folder::query()->select(['id'])->whereKey($data->folderId);
+        $query = Folder::query()
+            ->select(['id'])
+            ->addSelect(['collaboratorId' => User::select('id')->tap(new WherePublicIdScope($data->collaboratorId))])
+            ->tap(new WherePublicIdScope($data->folderId));
 
         $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data));
 
         $requestHandlersQueue->scope($query);
 
-        $folder = $query->firstOrNew();
-
-        $requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
-            $handler->handle($folder);
-        });
+        $requestHandlersQueue->handle($query->firstOrNew());
     }
 
     private function getConfiguredHandlers(RemoveCollaboratorData $data): array
     {
         return [
             new Constraints\FolderExistConstraint(),
+            $suspendedCollaboratorRepository = new SuspendedCollaboratorFinder(),
             new Constraints\MustBeACollaboratorConstraint($data->authUser),
             new Constraints\PermissionConstraint($data->authUser, Permission::REMOVE_USER),
             new Constraints\FeatureMustBeEnabledConstraint($data->authUser, Feature::REMOVE_USER),
@@ -42,9 +45,13 @@ final class Handler
             new CannotRemoveFolderOwnerConstraint($data),
             new CollaboratorToBeRemovedMustBeACollaboratorConstraint($data),
             new RemoveCollaborator($data),
+            new RemoveCollaboratorFromMutedCollaboratorsList(),
+            new RemoveCollaboratorFromSuspendedCollaboratorsList($suspendedCollaboratorRepository),
+            new RevokeCollaboratorRoles(),
             new NotifyFolderOwner($data),
-            new NotifyCollaborator($data),
-            new CollaboratorMetricsRecorder(CollaboratorMetricType::COLLABORATORS_REMOVED, $data->authUser->id)
+            new NotifyCollaborator(),
+            new CollaboratorMetricsRecorder(CollaboratorMetricType::COLLABORATORS_REMOVED, $data->authUser->id),
+            new ConditionallyLogActivity(new LogActivity($data->authUser))
         ];
     }
 }

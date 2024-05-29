@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
+use App\Contracts\ResourceNotFoundExceptionInterface;
 use App\Models\Folder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
 use Throwable;
 
-final class FolderNotFoundException extends RuntimeException
+final class FolderNotFoundException extends RuntimeException implements ResourceNotFoundExceptionInterface
 {
     public function __construct(
         string $message = 'FolderNotFound',
@@ -29,7 +30,7 @@ final class FolderNotFoundException extends RuntimeException
      */
     public static function throwIfDoesNotBelongToAuthUser(Folder $folder): void
     {
-        self::throwIf($folder->user_id !== auth()->id());
+        self::throwIf( ! $folder->wasCreatedBy(auth()->user())); //@phpstan-ignore-line
     }
 
     /**

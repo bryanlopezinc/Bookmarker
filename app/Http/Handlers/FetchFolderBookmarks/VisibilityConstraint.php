@@ -4,41 +4,44 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\FetchFolderBookmarks;
 
-use App\Contracts\FolderRequestHandlerInterface;
-use App\Contracts\StopsRequestHandling;
 use App\DataTransferObjects\FetchFolderBookmarksRequestData as Data;
 use App\Exceptions\FolderNotFoundException;
+use App\Http\Handlers\HasHandlersInterface;
 use App\Models\Folder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class VisibilityConstraint implements FolderRequestHandlerInterface, Scope, StopsRequestHandling
+final class VisibilityConstraint implements Scope, HasHandlersInterface
 {
-    private bool $stopRequestHandling = false;
-
-    public function __construct(private readonly Data $data)
+    public function __construct(private readonly Data $data, private array $next)
     {
     }
 
+    /**
+     * @inheritdoc
+     */
     public function apply(Builder $builder, Model $model)
     {
         $builder->addSelect(['visibility']);
     }
 
-    public function stopRequestHandling(): bool
+    /**
+     * @inheritdoc
+     */
+    public function getHandlers(): array
     {
-        return $this->stopRequestHandling;
+        return $this->next;
     }
 
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
-        $isLoggedIn = $this->data->authUser !== null;
+        $isLoggedIn = $this->data->authUser->exists;
 
-        $folderBelongsToAuthUser = $folder->user_id === $this->data->authUser?->id;
+        $folderBelongsToAuthUser = $isLoggedIn && $folder->wasCreatedBy($this->data->authUser);
 
         if ($folder->visibility->isPublic() || $folderBelongsToAuthUser) {
-            $this->stopRequestHandling = true;
+            $this->next = [];
 
             return;
         }

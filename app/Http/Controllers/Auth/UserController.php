@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
+use App\Contracts\IdGeneratorInterface;
 use App\Enums\TwoFaMode;
 use App\Events\RegisteredEvent;
-use App\Filesystem\ProfileImageFileSystem;
+use App\Filesystem\ProfileImagesFilesystem;
 use App\Http\Requests\CreateUserRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Models\User;
@@ -16,8 +17,11 @@ use Illuminate\Http\JsonResponse;
 
 final class UserController
 {
-    public function __construct(private Hasher $hasher, private ProfileImageFileSystem $filesystem)
-    {
+    public function __construct(
+        private readonly Hasher $hasher,
+        private readonly ProfileImagesFilesystem $filesystem,
+        private readonly IdGeneratorInterface $idGenerator
+    ) {
     }
 
     public function __invoke(CreateUserRequest $request): JsonResponse
@@ -27,13 +31,14 @@ final class UserController
             null;
 
         $user = User::query()->create([
+            'public_id'          => $this->idGenerator->generate(),
             'username'           => $request->validated('username'),
-            'first_name'         => $request->validated('first_name'),
+            'first_name'          => $request->validated('first_name'),
             'last_name'          => $request->validated('last_name'),
             'email'              => $request->validated('email'),
             'password'           => $this->hasher->make($request->validated('password')),
             'two_fa_mode'        => TwoFaMode::NONE,
-            'profile_image_path' => $profileImagePath
+            'profile_image_path'  => $profileImagePath
         ]);
 
         event(new RegisteredEvent($user));

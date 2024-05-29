@@ -10,7 +10,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
-use App\Cache\EmailVerificationCodeRepository as PendingVerifications;
+use App\Repositories\EmailVerificationCodeRepository as PendingVerifications;
 
 class VerifySecondaryEmailTest extends TestCase
 {

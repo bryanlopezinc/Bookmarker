@@ -4,52 +4,61 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\AddBookmarksToFolder;
 
+use App\Collections\BookmarkPublicIdsCollection as PublicIds;
 use App\Models\Folder;
 use App\Models\Bookmark;
-use App\Contracts\FolderRequestHandlerInterface as HandlerInterface;
 use App\DataTransferObjects\AddBookmarksToFolderRequestData as Data;
 use App\Enums\CollaboratorMetricType;
 use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Http\Handlers\Constraints;
 use App\Http\Handlers\CollaboratorMetricsRecorder;
+use App\Http\Handlers\ConditionallyLogActivity;
 use App\Http\Handlers\RequestHandlersQueue;
+use App\Http\Handlers\SuspendCollaborator\SuspendedCollaboratorFinder;
+use App\Models\Scopes\WherePublicIdScope;
+use App\ValueObjects\PublicId\FolderPublicId;
+use Illuminate\Support\Collection;
 
 final class Handler
 {
-    public function handle(int $folderId, Data $data): void
+    public function handle(FolderPublicId $folderId, Data $data): void
     {
-        $query = Folder::query()->select(['id'])->whereKey($folderId);
+        $query = Folder::select(['id'])->tap(new WherePublicIdScope($folderId));
 
-        $bookmarks = Bookmark::query()->findMany($data->bookmarkIds, ['user_id', 'id', 'url'])->all();
+        $bookmarks = Bookmark::query()
+            ->tap(new WherePublicIdScope(PublicIds::fromRequest($data->bookmarksPublicIds)->values()))
+            ->get(['user_id', 'id', 'url', 'public_id']);
 
         $requestHandlersQueue = new RequestHandlersQueue($this->getConfiguredHandlers($data, $bookmarks));
 
         $requestHandlersQueue->scope($query);
 
-        $folder = $query->firstOrNew();
-
-        $requestHandlersQueue->handle(function (HandlerInterface $handler) use ($folder) {
-            $handler->handle($folder);
-        });
+        $requestHandlersQueue->handle($query->firstOrNew());
     }
 
-    private function getConfiguredHandlers(Data $data, array $bookmarks): array
+    private function getConfiguredHandlers(Data $data, Collection $bookmarks): array
     {
+        $bookmarksIds = $bookmarks->pluck('id')->all();
+
         return [
             new Constraints\FolderExistConstraint(),
-            new Constraints\MustBeACollaboratorConstraint(),
+            $suspendedCollaboratorRepository = new SuspendedCollaboratorFinder($data->authUser),
+            new Constraints\MustBeACollaboratorConstraint($data->authUser),
             new Constraints\PermissionConstraint($data->authUser, Permission::ADD_BOOKMARKS),
             new Constraints\FeatureMustBeEnabledConstraint($data->authUser, Feature::ADD_BOOKMARKS),
+            new Constraints\MustNotBeSuspendedConstraint($suspendedCollaboratorRepository),
             new MaxFolderBookmarksConstraint($data),
-            new UserOwnsBookmarksConstraint($data, $bookmarks),
-            new BookmarksExistsConstraint($data, $bookmarks),
+            new UserOwnsBookmarksConstraint($data, $bookmarks->all()),
+            new BookmarksExistsConstraint($data, $bookmarks->all()),
             new CollaboratorCannotMarkBookmarksAsHiddenConstraint($data),
-            new UniqueFolderBookmarkConstraint($data),
-            new CreateFolderBookmarks($data),
-            new SendBookmarksAddedToFolderNotification($data),
-            new CheckBookmarksHealth($bookmarks),
-            new CollaboratorMetricsRecorder(CollaboratorMetricType::BOOKMARKS_ADDED, $data->authUser->id, count($bookmarks))
+            new BookmarkMustNotBeFromABlacklistedDomainConstraint($bookmarks),
+            new UniqueFolderBookmarkConstraint($bookmarksIds),
+            new CreateFolderBookmarks($bookmarks->all(), $data),
+            new SendBookmarksAddedToFolderNotification($data, $bookmarks),
+            new CheckBookmarksHealth($bookmarks->all()),
+            new ConditionallyLogActivity(new LogActivity($data, $bookmarks)),
+            new CollaboratorMetricsRecorder(CollaboratorMetricType::BOOKMARKS_ADDED, $data->authUser->id, $bookmarks->count())
         ];
     }
 }

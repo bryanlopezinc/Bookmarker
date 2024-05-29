@@ -6,6 +6,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int $folder_id
+ * @property int $feature_id
+ */
 final class FolderDisabledFeature extends Model
 {
     /**

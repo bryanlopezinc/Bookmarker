@@ -22,7 +22,8 @@ final class FetchUserCollaborationsRepository
      */
     public function get(int $userID, PaginationData $pagination): Paginator
     {
-        $query = Folder::onlyAttributes()
+        $query = Folder::query()
+            ->withCount(['bookmarks', 'collaborators'])
             ->withCasts(['permissions' => 'json'])
             ->tap(new WhereFolderOwnerExists())
             ->addSelect([

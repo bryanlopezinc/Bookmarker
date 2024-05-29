@@ -54,7 +54,7 @@ class FetchUserFavoritesTest extends TestCase
         $response = $this->fetchUserFavoritesResponse()
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.attributes.id', $bookmark->id)
+            ->assertJsonPath('data.0.attributes.id', $bookmark->public_id->present())
             ->assertJsonPath('data.0.attributes.is_user_favorite', true)
             ->assertJsonStructure([
                 "links" => [
@@ -86,9 +86,9 @@ class FetchUserFavoritesTest extends TestCase
         $this->fetchUserFavoritesResponse()
             ->assertOk()
             ->assertJsonCount(3, 'data')
-            ->assertJsonPath('data.0.attributes.id', $bookmarks[1]->id)
-            ->assertJsonPath('data.1.attributes.id', $bookmarks[0]->id)
-            ->assertJsonPath('data.2.attributes.id', $bookmarks[2]->id);
+            ->assertJsonPath('data.0.attributes.id', $bookmarks[1]->public_id->present())
+            ->assertJsonPath('data.1.attributes.id', $bookmarks[0]->public_id->present())
+            ->assertJsonPath('data.2.attributes.id', $bookmarks[2]->public_id->present());
     }
 
     public function testWillCheckBookmarksHealth(): void

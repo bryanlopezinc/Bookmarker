@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\AddBookmarksToFolder;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Exceptions\BookmarkNotFoundException;
 use App\Models\Bookmark;
 use App\Models\Folder;
 use App\DataTransferObjects\AddBookmarksToFolderRequestData as Data;
 
-final class UserOwnsBookmarksConstraint implements FolderRequestHandlerInterface
+final class UserOwnsBookmarksConstraint
 {
     /**
      * @param array<Bookmark> $bookmarks
@@ -19,10 +18,7 @@ final class UserOwnsBookmarksConstraint implements FolderRequestHandlerInterface
     {
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         foreach ($this->bookmarks as $bookmark) {
             if ($bookmark->user_id !== $this->data->authUser->id) {

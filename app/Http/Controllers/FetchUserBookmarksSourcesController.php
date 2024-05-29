@@ -23,10 +23,10 @@ final class FetchUserBookmarksSourcesController
 
         $pagination = PaginationData::fromRequest($request);
 
-        $sources = Source::select('bookmarks_sources.id', 'host', 'name')
+        $sources = Source::select('bookmarks_sources.public_id', 'host', 'name')
             ->join('bookmarks', 'bookmarks_sources.id', '=', 'bookmarks.source_id')
             ->groupBy('bookmarks_sources.id')
-            ->where('user_id', auth('api')->id())
+            ->where('user_id', auth()->id())
             ->simplePaginate($pagination->perPage(), page: $pagination->page());
 
         return new PaginatedResourceCollection($sources, SourceResource::class);

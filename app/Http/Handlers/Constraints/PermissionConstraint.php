@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\Constraints;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Enums\Permission;
 use App\Exceptions\PermissionDeniedException;
 use App\Models\Folder;
@@ -17,19 +16,19 @@ use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
-final class PermissionConstraint implements Scope, FolderRequestHandlerInterface
+final class PermissionConstraint implements Scope
 {
     private readonly Repository $repository;
     private readonly User $user;
-    private readonly Permission $permission;
+    private readonly UAC $permissions;
 
     public function __construct(
         User $user,
-        Permission $permission,
+        Permission|array $permission,
         Repository $repository = null,
     ) {
         $this->user = $user;
-        $this->permission = $permission;
+        $this->permissions = new UAC($permission);
         $this->repository = $repository ?: new Repository();
     }
 
@@ -46,9 +45,9 @@ final class PermissionConstraint implements Scope, FolderRequestHandlerInterface
                 ->whereHas(
                     relation: 'permissions',
                     operator: '=',
-                    count: 1,
+                    count: $this->permissions->count(),
                     callback: function (Builder $builder) {
-                        $builder->where('name', $this->permission->value);
+                        $builder->whereIn('name', $this->permissions->toArray());
                     }
                 )
                 ->whereExists(
@@ -59,11 +58,9 @@ final class PermissionConstraint implements Scope, FolderRequestHandlerInterface
         ]);
     }
 
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
-        $folderBelongsToAuthUser = $folder->user_id === $this->user->id;
-
-        if ($folderBelongsToAuthUser) {
+        if ($folder->wasCreatedBy($this->user)) {
             return;
         }
 
@@ -71,9 +68,13 @@ final class PermissionConstraint implements Scope, FolderRequestHandlerInterface
             return;
         }
 
+        if ($this->permissions->isEmpty()) {
+            return;
+        }
+
         $userPermissions = $this->repository->all($this->user->id, $folder->id);
 
-        if ( ! $userPermissions->hasAny(new UAC($this->permission))) {
+        if ( ! $userPermissions->hasAll(new UAC($this->permissions->toArray()))) {
             throw new PermissionDeniedException();
         }
     }

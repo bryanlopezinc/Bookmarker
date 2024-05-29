@@ -4,15 +4,20 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Collections\BookmarkPublicIdsCollection;
+use App\Models\Bookmark;
 use App\Models\Favorite;
 use App\Repositories\FavoriteRepository;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
+use Tests\Traits\GeneratesId;
 
 class RemoveBookmarksFromFavoritesTest extends TestCase
 {
+    use GeneratesId;
+
     protected function deleteFavoriteResponse(array $parameters = []): TestResponse
     {
         return $this->deleteJson(route('deleteFavorite'), $parameters);
@@ -30,20 +35,22 @@ class RemoveBookmarksFromFavoritesTest extends TestCase
 
     public function testWillReturnUnprocessableWhenParametersAreInvalid(): void
     {
+        $bookmarksPublicIds = $this->generateBookmarkIds(51)->present();
+
         $this->loginUser(UserFactory::new()->create());
 
         $this->deleteFavoriteResponse()
             ->assertUnprocessable()
             ->assertJsonValidationErrorFor('bookmarks');
 
-        $this->deleteFavoriteResponse(['bookmarks' => '1,1,3,4,5',])
+        $this->deleteFavoriteResponse(['bookmarks' => $bookmarksPublicIds->take(5)->add($bookmarksPublicIds[0])->implode(',')])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 "bookmarks.0" => ["The bookmarks.0 field has a duplicate value."],
-                "bookmarks.1" => ["The bookmarks.1 field has a duplicate value."]
+                "bookmarks.5" => ["The bookmarks.5 field has a duplicate value."]
             ]);
 
-        $this->deleteFavoriteResponse(['bookmarks' => collect()->times(51)->implode(',')])
+        $this->deleteFavoriteResponse(['bookmarks' => $bookmarksPublicIds->implode(',')])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'bookmarks' => [
@@ -60,7 +67,7 @@ class RemoveBookmarksFromFavoritesTest extends TestCase
 
         (new FavoriteRepository())->create($bookmark->id, $user->id);
 
-        $this->deleteFavoriteResponse(['bookmarks' => (string)$bookmark->id])->assertOk();
+        $this->deleteFavoriteResponse(['bookmarks' => $bookmark->public_id->present()])->assertOk();
 
         $this->assertDatabaseMissing(Favorite::class, [
             'bookmark_id' => $bookmark->id,
@@ -72,19 +79,17 @@ class RemoveBookmarksFromFavoritesTest extends TestCase
     {
         $this->loginUser($user = UserFactory::new()->create());
 
-        $ids = BookmarkFactory::new()
-            ->count(3)
-            ->for($user)
-            ->create()
-            ->pluck('id')
-            ->all();
+        /** @var Bookmark[] */
+        $bookmarks = BookmarkFactory::new()->count(3)->for($user)->create();
 
-        (new FavoriteRepository())->createMany($ids, $user->id);
+        $bookmarksPublicIds = BookmarkPublicIdsCollection::fromObjects($bookmarks)->present();
 
-        $this->deleteFavoriteResponse(['bookmarks' => implode(',', [$ids[0], $ids[1]])])->assertOk();
+        (new FavoriteRepository())->createMany($bookmarks->pluck('id')->all(), $user->id);
+
+        $this->deleteFavoriteResponse(['bookmarks' => implode(',', [$bookmarksPublicIds[0], $bookmarksPublicIds[1]])])->assertOk();
 
         $this->assertDatabaseHas(Favorite::class, [
-            'bookmark_id' => $ids[2],
+            'bookmark_id' => $bookmarks[2]->id,
             'user_id' => $user->id
         ]);
     }
@@ -97,7 +102,7 @@ class RemoveBookmarksFromFavoritesTest extends TestCase
 
         $this->loginUser(UserFactory::new()->create());
 
-        $this->deleteFavoriteResponse(['bookmarks' => (string) $bookmark->id])
+        $this->deleteFavoriteResponse(['bookmarks' => $bookmark->public_id->present()])
             ->assertNotFound()
             ->assertExactJson(['message' => 'BookmarkNotFound']);
     }

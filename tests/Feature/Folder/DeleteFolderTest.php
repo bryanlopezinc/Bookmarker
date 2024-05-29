@@ -13,12 +13,14 @@ use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
+use Tests\Traits\GeneratesId;
 use Tests\Traits\WillCheckBookmarksHealth;
 
 class DeleteFolderTest extends TestCase
 {
     use WithFaker;
     use WillCheckBookmarksHealth;
+    use GeneratesId;
 
     private CreateFolderBookmarks $createBookmarkAction;
 
@@ -29,7 +31,7 @@ class DeleteFolderTest extends TestCase
         $this->createBookmarkAction = new CreateFolderBookmarks();
     }
 
-    protected function deleteFolderResponse($folderId = 50, array $parameters = []): TestResponse
+    protected function deleteFolderResponse(string $folderId, array $parameters = []): TestResponse
     {
         return $this->deleteJson(route('deleteFolder', ['folder_id' => $folderId]), $parameters);
     }
@@ -41,7 +43,7 @@ class DeleteFolderTest extends TestCase
 
     public function testWillReturnUnAuthorizedWhenUserIsNotLoggedIn(): void
     {
-        $this->deleteFolderResponse()->assertUnauthorized();
+        $this->deleteFolderResponse($this->generateFolderId()->present())->assertUnauthorized();
     }
 
     public function testWillReturnNotFoundWhenFolderIdIsInvalid(): void
@@ -59,9 +61,9 @@ class DeleteFolderTest extends TestCase
 
         $this->createBookmarkAction->create($folder->id, $bookmarkId = BookmarkFactory::new()->create()->id);
 
-        $this->deleteFolderResponse($folder->id)->assertOk();
+        $this->deleteFolderResponse($folder->public_id->present())->assertOk();
 
-        $this->assertDatabaseMissing(Folder::class, ['id' => $folder->id]);
+        $this->assertDatabaseMissing(Folder::class, ['id' => $folder->public_id->present()]);
         $this->assertDatabaseHas(Bookmark::class, ['id' => $bookmarkId]);
     }
 
@@ -73,7 +75,7 @@ class DeleteFolderTest extends TestCase
 
         $this->createBookmarkAction->create($folder->id, $bookmarkId = BookmarkFactory::new()->for($user)->create()->id);
 
-        $this->deleteFolderResponse($folder->id, ['delete_bookmarks' => true])->assertOk();
+        $this->deleteFolderResponse($folder->public_id->present(), ['delete_bookmarks' => true])->assertOk();
 
         $this->assertDatabaseMissing(Folder::class, ['id' => $folder->id]);
         $this->assertDatabaseMissing(Bookmark::class, ['id' => $bookmarkId]);
@@ -84,7 +86,7 @@ class DeleteFolderTest extends TestCase
     {
         $this->loginUser(UserFactory::new()->create());
 
-        $folderID = FolderFactory::new()->create()->id;
+        $folderID = FolderFactory::new()->create()->public_id->present();
 
         $this->deleteFolderResponse($folderID)->assertNotFound();
     }
@@ -95,7 +97,7 @@ class DeleteFolderTest extends TestCase
 
         $folderID = FolderFactory::new()->create()->id;
 
-        $this->deleteFolderResponse($folderID + 1)
+        $this->deleteFolderResponse($this->generateFolderId()->present())
             ->assertNotFound()
             ->assertJsonFragment(['message' => "FolderNotFound"]);
     }
@@ -104,12 +106,12 @@ class DeleteFolderTest extends TestCase
     {
         [$folderOwner, $collaborator] = UserFactory::times(2)->create();
         $collaboratorBookmark = BookmarkFactory::new()->for($collaborator)->create();
-        $folderID = FolderFactory::new()->for($folderOwner)->create(['created_at' => now()])->id;
+        $folder = FolderFactory::new()->for($folderOwner)->create(['created_at' => now()]);
 
-        $this->createBookmarkAction->create($folderID, $collaboratorBookmark->id);
+        $this->createBookmarkAction->create($folder->id, $collaboratorBookmark->id);
 
         $this->loginUser($folderOwner);
-        $this->deleteFolderResponse($folderID, ['delete_bookmarks' => true])->assertOk();
+        $this->deleteFolderResponse($folder->public_id->present(), ['delete_bookmarks' => true])->assertOk();
 
         $this->assertDatabaseHas(Bookmark::class, ['id' => $collaboratorBookmark->id]);
     }

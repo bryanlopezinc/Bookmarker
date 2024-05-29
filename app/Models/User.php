@@ -4,40 +4,45 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Contracts\HasPublicIdInterface;
 use App\Enums\TwoFaMode;
 use App\ValueObjects\FullName;
+use App\ValueObjects\PublicId\UserPublicId;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
- * @property        int                            $id
- * @property        string                         $username
- * @property        string                         $first_name
- * @property        string                         $last_name
- * @property        FullName                       $full_name
- * @property        string                         $email
- * @property        string                         $password
- * @property        int                            $bookmarks_count
- * @property        int                            $favorites_count
- * @property        int                            $folders_count
- * @property        \Carbon\Carbon|null            $email_verified_at
- * @property        \Carbon\Carbon                 $created_at
- * @property        \Carbon\Carbon                 $updated_at
- * @property        TwoFaMode                      $two_fa_mode
- * @property        string|null                    $profile_image_path
- * @property        EloquentCollection<FolderRole> $roles
- * @method   static Builder                        WithQueryOptions(array $columns = [])
+ * @property int                            $id
+ * @property UserPublicId                   $public_id
+ * @property string                         $username
+ * @property string                         $first_name
+ * @property string                         $last_name
+ * @property FullName                       $full_name
+ * @property string                         $email
+ * @property string                         $password
+ * @property int                            $bookmarks_count
+ * @property int                            $favorites_count
+ * @property int                            $folders_count
+ * @property int                            $secondary_emails_count
+ * @property EloquentCollection<Folder>     $folders
+ * @property EloquentCollection<Bookmark>   $bookmarks
+ * @property \Carbon\Carbon|null            $email_verified_at
+ * @property \Carbon\Carbon                 $created_at
+ * @property \Carbon\Carbon                 $updated_at
+ * @property TwoFaMode                      $two_fa_mode
+ * @property string|null                    $profile_image_path
+ * @property EloquentCollection<FolderRole> $roles
  */
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail, HasPublicIdInterface
 {
     use HasApiTokens;
     use HasFactory;
@@ -55,7 +60,8 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'two_fa_mode' => TwoFaMode::class
+        'two_fa_mode'      => TwoFaMode::class,
+        'public_id'        => UserPublicId::class,
     ];
 
     public static function fromRequest(Request $request): User
@@ -64,6 +70,14 @@ class User extends Authenticatable implements MustVerifyEmail
         $user = $request->user();
 
         return $user;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getPublicIdentifier(): UserPublicId
+    {
+        return $this->public_id;
     }
 
     public function roles(): HasManyThrough
@@ -76,6 +90,31 @@ class User extends Authenticatable implements MustVerifyEmail
             'id',
             'role_id'
         );
+    }
+
+    public function folders(): HasMany
+    {
+        return $this->hasMany(Folder::class, 'user_id', 'id');
+    }
+
+    public function bookmarks(): HasMany
+    {
+        return $this->hasMany(Bookmark::class, 'user_id', 'id');
+    }
+
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(Favorite::class, 'user_id', 'id');
+    }
+
+    public function secondaryEmails(): HasMany
+    {
+        return $this->hasMany(SecondaryEmail::class, 'user_id', 'id');
+    }
+
+    public function notifications(): MorphMany
+    {
+        return $this->morphMany(DatabaseNotification::class, 'notifiable')->latest();
     }
 
     public function findForPassport(string $emailOrUsername): ?self
@@ -94,6 +133,24 @@ class User extends Authenticatable implements MustVerifyEmail
         return 'email';
     }
 
+    public function getFullNameOr(User $potentiallyOutedUserRecord): FullName
+    {
+        if ($this->exists) {
+            return $this->full_name;
+        }
+
+        return $potentiallyOutedUserRecord->full_name;
+    }
+
+    public function getProfileImagePathOr(User $potentiallyOutedUserRecord): ?string
+    {
+        if ($this->exists) {
+            return $this->profile_image_path;
+        }
+
+        return $potentiallyOutedUserRecord->profile_image_path;
+    }
+
     protected function fullName(): Attribute
     {
         return new Attribute(
@@ -102,85 +159,13 @@ class User extends Authenticatable implements MustVerifyEmail
         );
     }
 
-    /**
-     * @param Builder $builder
-     *
-     * @return Builder
-     */
-    public function scopeWithQueryOptions($builder, array $columns = [])
+    public function activityLogContextVariables(): array
     {
-        $columns = collect($columns)->mapWithKeys(fn (string $value) => [$value => $value]);
-
-        $builder->addSelect($this->getQualifiedKeyName());
-
-        if ($columns->isEmpty()) {
-            $builder->addSelect('users.*');
-        }
-
-        if ( ! $columns->isEmpty()) {
-            $builder->addSelect(
-                $this->qualifyColumns($columns->except(['bookmarks_count', 'folders_count', 'favorites_count'])->all())
-            );
-        }
-
-        $this->addBookmarksCountQuery($builder, $columns);
-        $this->addFavoritesCountQuery($builder, $columns);
-        $this->addFoldersCountQuery($builder, $columns);
-
-        return $builder;
-    }
-
-    /**
-     * @param Builder $builder
-     */
-    private function addBookmarksCountQuery(&$builder, Collection $options): void
-    {
-        $wantsBookmarksCount = $options->has('bookmarks_count') ?: $options->isEmpty();
-
-        if ( ! $wantsBookmarksCount) {
-            return;
-        }
-
-        $builder->addSelect([
-            'bookmarks_count' => Bookmark::query()
-                ->selectRaw("COUNT(*)")
-                ->whereRaw("user_id = {$this->qualifyColumn('id')}")
-        ]);
-    }
-
-    /**
-     * @param Builder $builder
-     */
-    private function addFavoritesCountQuery(&$builder, Collection $options): void
-    {
-        $wantsFavoritesCount = $options->has('favorites_count') ?: $options->isEmpty();
-
-        if ( ! $wantsFavoritesCount) {
-            return;
-        }
-
-        $builder->addSelect([
-            'favorites_count' => Favorite::query()
-                ->selectRaw("COUNT(*)")
-                ->whereRaw("user_id = {$this->qualifyColumn('id')}")
-        ]);
-    }
-
-    /**
-     * @param Builder $builder
-     */
-    private function addFoldersCountQuery(&$builder, Collection $options): void
-    {
-        $wantsFoldersCount = $options->has('folders_count') ?: $options->isEmpty();
-
-        if ( ! $wantsFoldersCount) {
-            return;
-        }
-
-        $builder->addSelect([
-            'folders_count' => Folder::query()
-                ->selectRaw("COUNT(*)")
-                ->whereRaw("user_id = {$this->qualifyColumn('id')}")
-        ]);
+        return [
+            'id'                => $this->id,
+            'full_name'         => $this->full_name->value,
+            'public_id'         => $this->public_id->value,
+            'profile_image_path' => $this->profile_image_path
+        ];
     }
 }

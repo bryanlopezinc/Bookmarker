@@ -13,12 +13,14 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\CreatesCollaboration;
 use Tests\Traits\CreatesRole;
+use Tests\Traits\GeneratesId;
 
 class UpdateRoleTest extends TestCase
 {
     use WithFaker;
     use CreatesCollaboration;
     use CreatesRole;
+    use GeneratesId;
 
     protected function updateRoleResponse(array $parameters = []): TestResponse
     {
@@ -45,10 +47,18 @@ class UpdateRoleTest extends TestCase
     {
         $this->loginUser(UserFactory::new()->make(['id' => 55]));
 
-        $routeParameters = ['folder_id' => $this->faker->randomDigitNotZero(), 'role_id' => $this->faker->randomDigitNotZero()];
+        $routeParameters = [
+            'folder_id' => $this->generateFolderId()->present(),
+            'role_id'   => $this->generateFolderId()->present()
+        ];
 
-        $this->updateRoleResponse(['folder_id' => 'baz', 'role_id' => 5])->assertNotFound();
-        $this->updateRoleResponse(['folder_id' => 9, 'role_id' => 'foo'])->assertNotFound();
+        $this->updateRoleResponse(['folder_id' => 'baz', 'role_id' => $routeParameters['role_id'], 'name' => 'foo'])
+            ->assertNotFound()
+            ->assertJsonFragment(['message' => 'FolderNotFound']);
+
+        $this->updateRoleResponse(['folder_id' => $routeParameters['folder_id'], 'role_id' => 'foo', 'name' => 'bar'])
+            ->assertNotFound()
+            ->assertJsonFragment(['message' => 'RoleNotFound']);
 
         $this->updateRoleResponse($routeParameters)
             ->assertUnprocessable()
@@ -72,13 +82,13 @@ class UpdateRoleTest extends TestCase
         $userSecondFolder = FolderFactory::new()->for($folderOwner)->create();
 
         $role = $this->createRole(folder: $folder);
-        $this->createRole($anotherUserFolderRoleName = $this->faker->word);
+        $this->createRole($anotherUserFolderRoleName = 'foo');
         $this->createRole($userSecondFolderRoleName = $this->faker->word, $userSecondFolder);
 
         $parameters = collect([
-            'name'      => $this->faker->word,
-            'folder_id' => $folder->id,
-            'role_id'   => $role->id
+            'name'      => 'bar',
+            'folder_id' => $folder->public_id->present(),
+            'role_id'   => $role->public_id->present()
         ]);
 
         $this->updateRoleResponse($parameters->all())->assertOk();
@@ -99,8 +109,8 @@ class UpdateRoleTest extends TestCase
         $this->loginUser($user);
         $this->updateRoleResponse([
             'name'      => $role->name,
-            'folder_id' => $folder->id,
-            'role_id'   => $role->id
+            'folder_id' => $folder->public_id->present(),
+            'role_id'   => $role->public_id->present()
         ])->assertConflict()->assertJsonFragment(['message' => 'DuplicateRoleName']);
 
         $this->assertEquals($role->name, $role->refresh()->name);
@@ -114,11 +124,13 @@ class UpdateRoleTest extends TestCase
 
         $role = $this->createRole(folder: $folder);
 
+        $role->delete();
+
         $this->loginUser($user);
         $this->updateRoleResponse([
             'name'      => $role->name,
-            'folder_id' => $folder->id,
-            'role_id'   => $role->id + 1
+            'folder_id' => $folder->public_id->present(),
+            'role_id'   => $role->public_id->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'RoleNotFound']);
     }
 
@@ -133,14 +145,14 @@ class UpdateRoleTest extends TestCase
         $this->loginUser($user);
         $this->updateRoleResponse([
             'name'      => $userFolderRole->name,
-            'folder_id' => FolderFactory::new()->for($user)->create()->id,
-            'role_id'   => $userFolderRole->id
+            'folder_id' => FolderFactory::new()->for($user)->create()->public_id->present(),
+            'role_id'   => $userFolderRole->public_id->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'RoleNotFound']);
 
         $this->updateRoleResponse([
             'name'      => 'foo',
-            'folder_id' => $folder->id,
-            'role_id'   => $anotherUserFolderRole->id
+            'folder_id' => $folder->public_id->present(),
+            'role_id'   => $anotherUserFolderRole->public_id->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'RoleNotFound']);
     }
 
@@ -156,8 +168,8 @@ class UpdateRoleTest extends TestCase
         $this->loginUser($user);
         $this->updateRoleResponse($query = [
             'name'      => $role->name,
-            'folder_id' => $folder->id,
-            'role_id'   => $role->id
+            'folder_id' => $folder->public_id->present(),
+            'role_id'   => $role->public_id->present()
         ])->assertNotFound()->assertJsonFragment(['message' => 'FolderNotFound']);
 
         $this->loginUser($collaborator);
@@ -173,7 +185,7 @@ class UpdateRoleTest extends TestCase
 
         $this->loginUser(UserFactory::new()->create());
         $this->updateRoleResponse([
-            'role_id'   => 3,
+            'role_id'   => $this->generateRoleId()->present(),
             'name'      => $this->faker->word,
             'folder_id' => $folder->id + 1
         ])->assertNotFound()->assertJsonFragment(['message' => 'FolderNotFound']);

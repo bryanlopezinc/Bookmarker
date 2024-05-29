@@ -13,19 +13,24 @@ final class ImportStatRepository
     {
     }
 
-    public function put(string $importId, ImportStats $importStats): void
+    public function put(int $importId, ImportStats $importStats): void
     {
-        $this->repository->put($importId, $importStats->toArray(), $this->timeToLive);
+        $this->repository->put($this->key($importId), $importStats->toArray(), $this->timeToLive);
     }
 
-    public function delete(string $importId): void
+    private function key(int $importId): string
     {
-        $this->repository->delete($importId);
+        return "im_stats:{$importId}";
     }
 
-    public function get(string $importId): ImportStats
+    public function delete(int $importId): void
     {
-        $stats = $this->repository->get($importId, new ImportStats());
+        $this->repository->delete($this->key($importId));
+    }
+
+    public function get(int $importId): ImportStats
+    {
+        $stats = $this->repository->get($this->key($importId), new ImportStats());
 
         if (is_array($stats)) {
             return ImportStats::fromArray($stats);

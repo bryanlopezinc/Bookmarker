@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\RemoveCollaborator;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Models\Folder;
 use App\DataTransferObjects\RemoveCollaboratorData as Data;
 use App\Models\User;
@@ -16,7 +15,7 @@ use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Facades\Notification;
 
-final class NotifyFolderOwner implements FolderRequestHandlerInterface, Scope
+final class NotifyFolderOwner implements Scope
 {
     private readonly Application $application;
     private readonly Data $data;
@@ -37,32 +36,25 @@ final class NotifyFolderOwner implements FolderRequestHandlerInterface, Scope
             ->addSelect([
                 'name',
                 'collaboratorRemoved' => User::query()
-                    ->select(new Expression("JSON_OBJECT('id', id, 'full_name', full_name)"))
-                    ->where('id', $this->data->collaboratorId)
+                    ->select(new Expression("JSON_OBJECT('id', id, 'full_name', full_name, 'public_id', public_id)"))
+                    ->whereColumn('id', 'collaboratorId')
             ]);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
-        $dataArray = $this->data->toArray();
+        $notificationData = $this->prepareNotificationDataForClosureSerialization($folder);
 
-        $collaboratorRemoved = $folder->collaboratorRemoved;
-
-        $collaboratorWasRemovedByFolderOwner = $dataArray['authUser']->id === $folder->user_id;
-
-        if ($collaboratorWasRemovedByFolderOwner) {
+        if ($folder->wasCreatedBy($this->data->authUser)) {
             return;
         }
 
-        $pendingDispatch = dispatch(static function () use ($dataArray, $folder, $collaboratorRemoved) {
+        $pendingDispatch = dispatch(static function () use ($notificationData, $folder) {
             $notification = new CollaboratorRemovedNotification(
                 $folder,
-                new User($collaboratorRemoved),
-                $dataArray['authUser'],
-                $dataArray['ban']
+                new User($notificationData['collaboratorRemoved']),
+                new User($notificationData['removedBy']),
+                $notificationData['ban']
             );
 
             Notification::send(
@@ -74,5 +66,14 @@ final class NotifyFolderOwner implements FolderRequestHandlerInterface, Scope
         if ( ! $this->application->runningUnitTests()) {
             $pendingDispatch->afterResponse();
         }
+    }
+
+    private function prepareNotificationDataForClosureSerialization(Folder $folder): array
+    {
+        return [
+            'ban'                 => $this->data->ban,
+            'removedBy'           => $this->data->authUser->getAttributes(),
+            'collaboratorRemoved' => $folder->collaboratorRemoved
+        ];
     }
 }

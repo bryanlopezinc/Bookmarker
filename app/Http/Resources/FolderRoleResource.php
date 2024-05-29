@@ -21,7 +21,7 @@ final class FolderRoleResource extends JsonResource
         return [
             'type' => 'FolderRole',
             'attributes' => [
-                'id'                  => $this->role->id,
+                'id'                  => $this->role->public_id->present(),
                 'name'                => $this->role->name,
                 'created_at'          => $this->role->created_at->toDateTimeString(),
                 'permissions'         => $this->role->permissionNames,

@@ -10,6 +10,7 @@ use App\Models\Bookmark;
 use App\Models\Favorite;
 use App\Models\Folder;
 use App\Models\MutedCollaborator;
+use App\Models\Scopes\IsHealthyScope;
 use App\PaginationData;
 use Illuminate\Pagination\Paginator;
 use Closure;
@@ -22,7 +23,7 @@ final class GetFolderBookmarks
     public function handle(?int $authUserId, Folder $folder, PaginationData $pagination): Paginator
     {
         $isLoggedIn = $authUserId !== null;
-        $folderBelongsToAuthUser = $folder->user_id !== $authUserId;
+        $folderBelongsToAuthUser =  $isLoggedIn && ! $folder->wasCreatedBy($authUserId);
         $fetchOnlyPublicBookmarks = ! $isLoggedIn || $folderBelongsToAuthUser;
 
         $shouldNotIncludeMutedCollaboratorsBookmarks = ($folder->visibility->isPublic() ||
@@ -30,7 +31,10 @@ final class GetFolderBookmarks
             $isLoggedIn;
 
         /** @var Paginator */
-        $result = Bookmark::WithQueryOptions()
+        $result = Bookmark::query()
+            ->select(['bookmarks.id', 'public_id', 'description', 'title', 'url', 'preview_image_url', 'user_id', 'source_id', 'bookmarks.created_at'])
+            ->with(['source', 'tags'])
+            ->tap(new IsHealthyScope())
             ->join('folders_bookmarks', 'folders_bookmarks.bookmark_id', '=', 'bookmarks.id')
             ->when($fetchOnlyPublicBookmarks, fn ($query) => $query->where('visibility', FolderBookmarkVisibility::PUBLIC->value))
             ->when( ! $fetchOnlyPublicBookmarks, fn ($query) => $query->addSelect(['visibility']))

@@ -9,12 +9,13 @@ use App\Http\Requests\AddBookmarksToFolderRequest as Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use App\DataTransferObjects\AddBookmarksToFolderRequestData as Data;
+use App\ValueObjects\PublicId\FolderPublicId;
 
 final class AddBookmarksToFolderController
 {
     public function __invoke(Request $request, Handler $handler, string $folderId): JsonResponse
     {
-        $handler->handle((int)$folderId, Data::fromRequest($request));
+        $handler->handle(FolderPublicId::fromRequest($folderId), Data::fromRequest($request));
 
         return response()->json(status: Response::HTTP_CREATED);
     }

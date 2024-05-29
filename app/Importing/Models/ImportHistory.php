@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * @property int                  $id
- * @property string               $import_id
+ * @property int                  $import_id
  * @property string               $url
  * @property ImportHistoryTags    $tags
  * @property BookmarkImportStatus $status

@@ -42,7 +42,7 @@ final class UAC implements Countable, Arrayable, IteratorAggregate
             }
 
             if ($permission instanceof Permission) {
-                $permission = $permission->value;
+                return $permission->value;
             }
 
             return Permission::from($permission)->value;
@@ -84,13 +84,22 @@ final class UAC implements Countable, Arrayable, IteratorAggregate
      */
     private static function externalToInternalIdentifiersMap(): array
     {
-        return [
-            'addBookmarks'    => Permission::ADD_BOOKMARKS->value,
-            'removeBookmarks' => Permission::DELETE_BOOKMARKS->value,
-            'inviteUsers'     => Permission::INVITE_USER->value,
-            'updateFolder'    => Permission::UPDATE_FOLDER->value,
-            'removeUser'      => Permission::REMOVE_USER->value,
+        $ids = [
+            'addBookmarks'            => Permission::ADD_BOOKMARKS->value,
+            'removeBookmarks'         => Permission::DELETE_BOOKMARKS->value,
+            'inviteUsers'             => Permission::INVITE_USER->value,
+            'updateFolderName'        => Permission::UPDATE_FOLDER_NAME->value,
+            'updateFolderDescription' => Permission::UPDATE_FOLDER_DESCRIPTION->value,
+            'updateFolderIcon'        => Permission::UPDATE_FOLDER_ICON->value,
+            'removeUser'              => Permission::REMOVE_USER->value,
+            'suspendUser'             => Permission::SUSPEND_USER->value,
+            'blacklistDomain'         => Permission::BLACKLIST_DOMAIN->value,
+            'whitelistDomain'         => Permission::WHITELIST_DOMAIN->value
         ];
+
+        assert(count($ids) === count(Permission::cases()));
+
+        return $ids;
     }
 
     /**
@@ -112,6 +121,15 @@ final class UAC implements Countable, Arrayable, IteratorAggregate
     public function toCollection(): Collection
     {
         return $this->permissions;
+    }
+
+    public function except(Permission|array $permissions): UAC
+    {
+        $permissions = $this->resolvePermissions(Arr::wrap($permissions));
+
+        return new UAC(
+            $this->toCollection()->diff($permissions)->all()
+        );
     }
 
     /**

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers;
 
-use App\Contracts\StopsRequestHandling;
 use ArrayIterator;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Builder;
@@ -23,26 +22,20 @@ final class RequestHandlersQueue implements IteratorAggregate
     private readonly array $requestHandlersQueue;
 
     /**
-     * The Application instance.
-     */
-    private readonly Application $app;
-
-    /**
      * @param array<class-string<THandler>|THandler> $handlers
      */
     public function __construct(array $handlers, Application $app = null)
     {
-        $this->app = $app ?: app();
-        $this->requestHandlersQueue = $this->getHandlersInstances($handlers);
+        $this->requestHandlersQueue = $this->getHandlersInstances($handlers, $app ?: app());
     }
 
     /**
      * @return array<THandler>
      */
-    private function getHandlersInstances(array $handlers): array
+    private function getHandlersInstances(array $handlers, Application $app): array
     {
-        return array_map(function (string|object $handlerClass) {
-            return is_object($handlerClass) ? $handlerClass : $this->app->make($handlerClass);
+        return array_map(function (string|object $handlerClass) use ($app) {
+            return is_object($handlerClass) ? $handlerClass : $app->make($handlerClass);
         }, $handlers);
     }
 
@@ -54,34 +47,41 @@ final class RequestHandlersQueue implements IteratorAggregate
         return new ArrayIterator($this->requestHandlersQueue);
     }
 
-    /**
-     * @param callable(THandler): void $callback
-     */
-    public function handle(callable $callback): void
+    public function handle(mixed $args): void
     {
-        foreach ($this as $handler) {
-            $callback($handler);
+        $this->callRecursive($args, $this->requestHandlersQueue);
+    }
 
-            if ($handler instanceof StopsRequestHandling && $handler->stopRequestHandling()) {
-                break;
+    private function callRecursive(mixed $args, array $handlers): void
+    {
+        foreach ($handlers as $handler) {
+            if (is_callable($handler)) {
+                $handler($args);
+            }
+
+            if ($handler instanceof HasHandlersInterface) {
+                $this->callRecursive($args, $handler->getHandlers());
             }
         }
     }
 
     /**
-     * Apply the given scope to each handler and execute the given callback on each handler.
-     *
-     * @param callable(THandler): void $callback
+     * Apply the given scope to each handler.
      */
-    public function scope(Builder $builder, callable $callback = null): void
+    public function scope(Builder $query): void
     {
-        $callback ??= fn () => null;
+        $this->scopeRecursive($query, $this->requestHandlersQueue);
+    }
 
-        foreach ($this as $handler) {
-            $callback($handler);
-
+    private function scopeRecursive(Builder $query, array $handlers): void
+    {
+        foreach ($handlers as $handler) {
             if ($handler instanceof Scope) {
-                $handler->apply($builder, $builder->getModel());
+                $handler->apply($query, $query->getModel());
+            }
+
+            if ($handler instanceof HasHandlersInterface) {
+                $this->scopeRecursive($query, $handler->getHandlers());
             }
         }
     }

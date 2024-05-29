@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Contracts\IdGeneratorInterface;
 use App\Models\Source;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -22,11 +23,15 @@ final class SourceFactory extends Factory
      */
     public function definition()
     {
+        /** @var IdGeneratorInterface */
+        $generator = app(IdGeneratorInterface::class);
+
         $parts = explode('.', $this->faker->domainName);
 
         return [
-            'host' => $url = Str::random(6) . '.' . $parts[1],
-            'name'  => $url,
+            'public_id'       => $generator->generate(),
+            'host'            => $url = Str::random(6) . '.' . $parts[1],
+            'name'            => $url,
             'name_updated_at' => null
         ];
     }

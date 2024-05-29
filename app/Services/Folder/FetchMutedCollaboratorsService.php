@@ -6,8 +6,10 @@ namespace App\Services\Folder;
 
 use App\Exceptions\FolderNotFoundException;
 use App\Models\Folder;
+use App\Models\Scopes\WherePublicIdScope;
 use App\Models\User;
 use App\PaginationData;
+use App\ValueObjects\PublicId\FolderPublicId;
 use Illuminate\Pagination\Paginator;
 
 final class FetchMutedCollaboratorsService
@@ -15,11 +17,14 @@ final class FetchMutedCollaboratorsService
     /**
      * @return Paginator<User>
      */
-    public function __invoke(int $folderId, PaginationData $pagination, ?string $collaboratorName = null): Paginator
+    public function __invoke(FolderPublicId $folderId, PaginationData $pagination, ?string $collaboratorName = null): Paginator
     {
-        $folder = Folder::query()->find($folderId, ['id', 'user_id']);
+        $folder = Folder::query()
+            ->select(['id', 'user_id'])
+            ->tap(new WherePublicIdScope($folderId))
+            ->firstOrNew();
 
-        if (is_null($folder)) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
 
@@ -36,7 +41,7 @@ final class FetchMutedCollaboratorsService
         $currentDateTime = now();
 
         return User::query()
-            ->select(['users.id', 'full_name', 'profile_image_path'])
+            ->select(['users.public_id', 'full_name', 'profile_image_path'])
             ->join('folders_muted_collaborators', 'folders_muted_collaborators.user_id', '=', 'users.id')
             ->when($collaboratorName, function ($query, string $name) {
                 $query->where('full_name', 'like', "{$name}%");

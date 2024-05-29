@@ -12,12 +12,13 @@ use App\Importing\ImportBookmarksOutcome;
 use App\Notifications\BookmarksAddedToFolderNotification;
 use App\Notifications\BookmarksRemovedFromFolderNotification;
 use App\Notifications\CollaboratorExitNotification;
-use App\Notifications\FolderUpdatedNotification;
 use App\Importing\Notifications\ImportFailedNotification;
+use App\Notifications\FolderNameChangedNotification;
 use App\Notifications\NewCollaboratorNotification;
 use App\Notifications\YouHaveBeenBootedOutNotification;
 use Database\Factories\BookmarkFactory;
 use Database\Factories\FolderFactory;
+use Database\Factories\ImportFactory;
 use PHPUnit\Framework\Attributes\Test;
 
 class WillSortByLatestTest extends TestCase
@@ -29,16 +30,17 @@ class WillSortByLatestTest extends TestCase
     {
         [$user, $firstCollaborator, $secondCollaborator, $newCollaborator] = UserFactory::times(4)->create();
 
-        $bookmarks = BookmarkFactory::times(3)->create()->pluck('id');
+        $bookmarks = BookmarkFactory::times(3)->create();
         $userFolders = FolderFactory::times(3)->for($user)->create();
+        $import = ImportFactory::new()->create();
 
         $notifications = [
             new BookmarksAddedToFolderNotification($bookmarks->all(), $userFolders[0], $firstCollaborator),
             new BookmarksRemovedFromFolderNotification($bookmarks->all(), $userFolders[1], $secondCollaborator),
             new NewCollaboratorNotification($newCollaborator, $userFolders[2], $secondCollaborator),
             new CollaboratorExitNotification($userFolders[2], $newCollaborator),
-            new FolderUpdatedNotification($userFolders[1], $firstCollaborator, 'name'),
-            new ImportFailedNotification(fake()->uuid, ImportBookmarksOutcome::failed(ImportBookmarksStatus::FAILED_DUE_TO_SYSTEM_ERROR, new ImportStats())),
+            new FolderNameChangedNotification($userFolders[1], $firstCollaborator),
+            new ImportFailedNotification($import, ImportBookmarksOutcome::failed(ImportBookmarksStatus::FAILED_DUE_TO_SYSTEM_ERROR, new ImportStats())),
             new YouHaveBeenBootedOutNotification(FolderFactory::new()->create())
         ];
 
@@ -54,7 +56,7 @@ class WillSortByLatestTest extends TestCase
                 $this->assertEquals($types, [
                     'YouHaveBeenKickedOutNotification',
                     'ImportFailedNotification',
-                    'FolderUpdatedNotification',
+                    'FolderNameChangedNotification',
                     'CollaboratorExitNotification',
                     'CollaboratorAddedToFolderNotification',
                     'BookmarksRemovedFromFolderNotification',

@@ -4,25 +4,20 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\RemoveFolderBookmarks;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\RemoveFolderBookmarksRequestData as Data;
 use App\Exceptions\HttpException;
-use App\Models\FolderBookmark;
-use App\Models\Folder;
+use App\Models\Bookmark;
 
-final class FolderContainsBookmarksConstraint implements FolderRequestHandlerInterface
+final class FolderContainsBookmarksConstraint
 {
     /**
-     * @param array<FolderBookmark> $folderBookmarks
+     * @param array<Bookmark> $folderBookmarks
      */
     public function __construct(private readonly Data $data, private readonly array $folderBookmarks)
     {
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(): void
     {
         if (count($this->data->bookmarkIds) !== count($this->folderBookmarks)) {
             throw HttpException::notFound([

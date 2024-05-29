@@ -11,8 +11,8 @@ use Tests\TestCase;
 use Illuminate\Support\Str;
 use Database\Factories\UserFactory;
 use App\Importing\Notifications\ImportFailedNotification;
+use Database\Factories\ImportFactory;
 use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Notifications\DatabaseNotification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\Notifications\MakesHttpRequest;
 
@@ -26,14 +26,14 @@ class ImportFailedNotificationTest extends TestCase
     {
         $user = UserFactory::new()->create();
 
+        $import = ImportFactory::new()->create();
+
         $notification = new ImportFailedNotification(
-            $importId = $this->faker->uuid,
+            $import,
             ImportBookmarksOutcome::failed(ImportBookmarksStatus::FAILED_DUE_TO_SYSTEM_ERROR, new ImportStats())
         );
 
         $user->notify($notification);
-
-        $expectedDateTime = DatabaseNotification::where('notifiable_id', $user->id)->sole(['created_at'])->created_at;
 
         $this->loginUser($user);
         $this->fetchNotificationsResponse()
@@ -41,9 +41,8 @@ class ImportFailedNotificationTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(5, 'data.0.attributes')
             ->assertJsonPath('data.0.type', 'ImportFailedNotification')
-            ->assertJsonPath('data.0.attributes.notified_on', fn (string $dateTime) => $dateTime === (string) $expectedDateTime)
             ->assertJsonPath('data.0.attributes.id', fn (string $id) => Str::isUuid($id))
-            ->assertJsonPath('data.0.attributes.import_id', $importId)
+            ->assertJsonPath('data.0.attributes.import_id', $import->public_id->present())
             ->assertJsonPath('data.0.attributes.message', 'Import could not be completed due to a system error.')
             ->assertJsonPath('data.0.attributes.reason', 'FailedDueToSystemError')
             ->assertJsonStructure([

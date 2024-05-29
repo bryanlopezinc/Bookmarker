@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
+use App\DataTransferObjects\Notifications\YouHaveBeenKickedOutNotificationData;
 use App\Enums\NotificationType;
 use App\Models\Folder;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,7 +14,6 @@ use Illuminate\Bus\Queueable;
 final class YouHaveBeenBootedOutNotification extends Notification implements ShouldQueue
 {
     use Queueable;
-    use FormatDatabaseNotification;
 
     public function __construct(private Folder $folder)
     {
@@ -36,14 +36,10 @@ final class YouHaveBeenBootedOutNotification extends Notification implements Sho
      */
     public function toDatabase($notifiable): array
     {
-        return $this->formatNotificationData([
-            'N-type'      => $this->databaseType(),
-            'folder_id'   => $this->folder->id,
-            'folder_name' => $this->folder->name->value,
-        ]);
+        return (new YouHaveBeenKickedOutNotificationData($this->folder))->toArray();
     }
 
-    public function databaseType(): string
+    public function databaseType(): int
     {
         return NotificationType::YOU_HAVE_BEEN_KICKED_OUT->value;
     }

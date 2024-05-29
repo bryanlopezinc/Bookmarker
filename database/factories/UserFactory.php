@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Contracts\IdGeneratorInterface;
 use App\Enums\TwoFaMode;
 use App\Models\User;
 use App\ValueObjects\Username;
+use App\ValueObjects\PublicId\UserPublicId;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 use Override;
@@ -16,6 +18,14 @@ use Override;
  */
 class UserFactory extends Factory
 {
+    public static function publicId(): UserPublicId
+    {
+        /** @var IdGeneratorInterface */
+        $IdGenerator = app(IdGeneratorInterface::class);
+
+        return new UserPublicId($IdGenerator->generate());
+    }
+
     /**
      * Define the model's default state.
      *
@@ -26,6 +36,7 @@ class UserFactory extends Factory
         [$mailUsername, $domain] = explode('@', $this->faker->unique()->safeEmail());
 
         return [
+            'public_id'         => self::publicId()->value,
             'username'          => $this->randomUsername($firstName = $this->faker->firstName),
             'first_name'         => $firstName,
             'last_name'         => $this->faker->lastName,

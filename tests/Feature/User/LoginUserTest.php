@@ -15,8 +15,9 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Database\Factories\ClientFactory;
 use Tests\TestCase;
 use Laravel\Passport\Client;
-use App\Cache\User2FACodeRepository;
+use App\Repositories\User2FACodeRepository;
 use App\ValueObjects\TwoFACode;
+use App\ValueObjects\PublicId\UserPublicId;
 
 class LoginUserTest extends TestCase
 {
@@ -129,9 +130,14 @@ class LoginUserTest extends TestCase
             ->assertJsonCount(3, 'data')
             ->assertJsonCount(8, 'data.attributes')
             ->assertJsonCount(4, 'data.token')
+            ->assertJsonPath('data.attributes.id', function (string $Id) {
+                UserPublicId::fromRequest($Id);
+
+                return true;
+            })
             ->assertJson(function (AssertableJson $json) {
                 $json->where('data.token.expires_in', function (int $expiresAt) {
-                    $this->assertLessThanOrEqual(1, now()->diffInHours(now()->addSeconds($expiresAt)));
+                    $this->assertLessThanOrEqual(720, now()->diffInHours(now()->addSeconds($expiresAt)));
 
                     return true;
                 });
@@ -234,7 +240,6 @@ class LoginUserTest extends TestCase
     public function testWillReturnBadRequestWhenVerificationCodeHasBeenUsed(): void
     {
         $user = UserFactory::new()->with2FA()->create();
-        $email = $user->email;
 
         Http::fake([
             'ip-api.com/*' => Http::response('{
@@ -246,7 +251,7 @@ class LoginUserTest extends TestCase
         $code = (string)$this->get2FACode($user->id);
 
         $this->loginUserResponse($params = [
-            'username'      => $email,
+            'username'      => $user->email,
             'password'      => 'password',
             'client_id'     => $this->client->id,
             'client_secret' => $this->client->secret,

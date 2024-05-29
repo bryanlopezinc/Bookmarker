@@ -4,32 +4,30 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\UpdateFolder;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\UpdateFolderRequestData;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
 
-final class CanUpdateAttributesConstraint implements FolderRequestHandlerInterface
+final class CanUpdateAttributesConstraint
 {
     public function __construct(private readonly UpdateFolderRequestData $data)
     {
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
-        $folderBelongsToAuthUser = $folder->user_id === $this->data->authUser->id;
-
-        if ($folderBelongsToAuthUser) {
+        if ($folder->wasCreatedBy($this->data->authUser)) {
             return;
         }
 
-        if ($this->data->visibility !== null || ! empty($this->data->settings)) {
+        if (
+            $this->data->isUpdatingVisibility ||
+            $this->data->isUpdatingSettings ||
+            $this->data->isUpdatingFolderPassword
+        ) {
             throw HttpException::forbidden([
                 'message' => 'CannotUpdateFolderAttribute',
-                'info' => 'The request could not be completed due to inadequate permission.'
+                'info'    => 'The request could not be completed due to inadequate permission.'
             ]);
         }
     }

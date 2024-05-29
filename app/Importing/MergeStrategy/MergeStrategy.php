@@ -17,9 +17,9 @@ final class MergeStrategy
         $maxBookmarksTags = setting('MAX_BOOKMARK_TAGS');
 
         return match ($this->strategy) {
-            'ignore_all'              => collect(),
+            'ignore_all'            => collect(),
             'user_defined_tags_first' => $userDefinedTags->merge($bookmarkTags->take($maxBookmarksTags - $userDefinedTags->count())),
-            'import_file_tags_first'  => $this->mergeUsingImportFileTagsFirst($userDefinedTags, $bookmarkTags)
+            default                 => $this->mergeUsingImportFileTagsFirst($userDefinedTags, $bookmarkTags)
         };
     }
 

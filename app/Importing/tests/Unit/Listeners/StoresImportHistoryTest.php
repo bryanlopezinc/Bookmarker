@@ -24,7 +24,7 @@ class StoresImportHistoryTest extends TestCase
         $this->expectNotToPerformAssertions();
 
         $bookmark = new Bookmark('Invalid Url', new TagsCollection([]), 22);
-        $listener = new StoresImportHistory(new ImportData('foo', ImportSource::CHROME, 22, []));
+        $listener = new StoresImportHistory(new ImportData(33, ImportSource::CHROME, 22, [], '94e35144-3ab7-47c1-8109-aa1c81e590dd'));
 
         $listener->importStarted($bookmark);
         $listener->bookmarkImported($bookmark);

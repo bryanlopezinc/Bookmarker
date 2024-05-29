@@ -23,7 +23,7 @@ final class BookmarkResource extends JsonResource
         return [
             'type'       => 'bookmark',
             'attributes' => [
-                'id'                 => $this->bookmark->id,
+                'id'                 => $this->bookmark->public_id->present(),
                 'title'              => $this->bookmark->title,
                 'web_page_link'      => $this->bookmark->url,
                 'has_preview_image'  => $this->bookmark->preview_image_url !== null,

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers\Cache;
 
-use App\Cache\FolderInviteDataRepository;
+use App\Repositories\FolderInviteDataRepository;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 

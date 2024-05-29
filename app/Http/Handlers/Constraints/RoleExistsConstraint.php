@@ -4,40 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\Constraints;
 
-use App\Contracts\FolderRequestHandlerInterface;
-use App\Exceptions\HttpException;
+use App\Exceptions\RoleNotFoundException;
 use App\Models\Folder;
-use App\Models\FolderRole;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Scope;
 
-final class RoleExistsConstraint implements FolderRequestHandlerInterface, Scope
+final class RoleExistsConstraint
 {
-    public function __construct(private readonly int $roleId)
+    public function __construct(private readonly string $roleIdName = 'roleId')
     {
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function apply(Builder $builder, Model $model): void
+    public function __invoke(Folder $folder): void
     {
-        $builder->addSelect([
-            'roleExists' => FolderRole::query()
-                ->selectRaw('1')
-                ->whereColumn('folder_id', 'folders.id')
-                ->whereKey($this->roleId)
-        ]);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
-    {
-        if ( ! $folder->roleExists) {
-            throw HttpException::notFound(['message' => 'RoleNotFound']);
+        if ( ! $folder->{$this->roleIdName}) {
+            throw new RoleNotFoundException();
         }
     }
 }

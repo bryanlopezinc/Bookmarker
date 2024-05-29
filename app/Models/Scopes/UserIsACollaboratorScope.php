@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models\Scopes;
 
-use App\Models\Folder;
 use App\Models\FolderCollaborator;
+use App\Models\User;
+use App\ValueObjects\PublicId\UserPublicId;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
@@ -13,21 +14,40 @@ use Illuminate\Database\Eloquent\Scope;
 final class UserIsACollaboratorScope implements Scope
 {
     public function __construct(
-        private readonly int $userId,
+        private readonly int|UserPublicId|string $userId,
         private readonly string $as = 'userIsACollaborator'
     ) {
     }
 
     public function __invoke(Builder $query): void
     {
-        $folderModel = new Folder();
+        $query
+            ->withCasts([$this->as => 'boolean'])
+            ->addSelect([$this->as => $this->getQuery()]);
+    }
 
-        $query->withCasts([$this->as => 'boolean'])
-            ->addSelect([
-                $this->as => FolderCollaborator::select('id')
-                    ->whereColumn('folder_id', $folderModel->getQualifiedKeyName())
-                    ->where('collaborator_id', $this->userId)
-            ]);
+    private function getQuery(): Builder
+    {
+        $userIsACollaboratorQuery = FolderCollaborator::query()
+            ->selectRaw('1')
+            ->whereColumn('folder_id', 'folders.id');
+
+        if ($this->userId instanceof UserPublicId) {
+            $userIsACollaboratorQuery->where(
+                'collaborator_id',
+                User::select('id')->tap(new WherePublicIdScope($this->userId))
+            );
+        }
+
+        if (is_int($this->userId)) {
+            $userIsACollaboratorQuery->where('collaborator_id', $this->userId);
+        }
+
+        if (is_string($this->userId)) {
+            $userIsACollaboratorQuery->whereColumn('collaborator_id', $this->userId);
+        }
+
+        return $userIsACollaboratorQuery;
     }
 
     /**

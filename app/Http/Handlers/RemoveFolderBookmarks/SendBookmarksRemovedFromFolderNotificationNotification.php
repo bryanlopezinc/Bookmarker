@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\RemoveFolderBookmarks;
 
-use App\Contracts\FolderRequestHandlerInterface;
-use App\DataTransferObjects\RemoveFolderBookmarksRequestData;
+use App\DataTransferObjects\RemoveFolderBookmarksRequestData as Data;
 use App\Models\Folder;
 use App\Models\Scopes\IsMutedCollaboratorScope;
 use App\Models\User;
@@ -14,10 +13,14 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Support\Facades\Notification;
+use App\Models\Bookmark;
 
-final class SendBookmarksRemovedFromFolderNotificationNotification implements FolderRequestHandlerInterface, Scope
+final class SendBookmarksRemovedFromFolderNotificationNotification implements Scope
 {
-    public function __construct(private readonly RemoveFolderBookmarksRequestData $data)
+    /**
+     * @param array<Bookmark> $folderBookmarks
+     */
+    public function __construct(private readonly Data $data, private readonly array $folderBookmarks)
     {
     }
 
@@ -28,26 +31,33 @@ final class SendBookmarksRemovedFromFolderNotificationNotification implements Fo
         );
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         $folderSettings = $folder->settings;
-        $folderBelongsToAuthUser = $this->data->authUser->id === $folder->user_id;
+
+        [$authUser, $bookmarks] = [
+            $this->data->authUser,
+            collect($this->folderBookmarks)->map->getAttributes()
+        ];
 
         if (
-            $folderBelongsToAuthUser                                ||
-            $folderSettings->notificationsAreDisabled                ||
-            $folderSettings->bookmarksRemovedNotificationIsDisabled  ||
+            $folder->wasCreatedBy($this->data->authUser)                  ||
+            $folderSettings->notifications()->isDisabled()                 ||
+            $folderSettings->bookmarksRemovedNotification()->isDisabled()  ||
             $folder->collaboratorIsMuted
         ) {
             return;
         }
 
-        Notification::send(
-            new User(['id' => $folder->user_id]),
-            new BookmarksRemovedFromFolderNotification($this->data->bookmarkIds, $folder, $this->data->authUser)
-        );
+        $pendingDispatch = dispatch(static function () use ($folder, $authUser, $bookmarks) {
+            $bookmarks = collect($bookmarks)->mapInto(Bookmark::class)->all();
+
+            Notification::send(
+                new User(['id' => $folder->user_id]),
+                new BookmarksRemovedFromFolderNotification($bookmarks, $folder, $authUser)
+            );
+        });
+
+        $pendingDispatch->afterResponse();
     }
 }

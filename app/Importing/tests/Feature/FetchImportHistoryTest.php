@@ -12,10 +12,12 @@ use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use App\Importing\Enums\BookmarkImportStatus as Status;
+use Tests\Traits\GeneratesId;
 
 class FetchImportHistoryTest extends TestCase
 {
     use WithFaker;
+    use GeneratesId;
 
     protected function fetchImportHistoryResponse(array $parameters = []): TestResponse
     {
@@ -49,9 +51,9 @@ class FetchImportHistoryTest extends TestCase
 
         $import = ImportFactory::new()->create(['user_id' => $user->id]);
 
-        $importHistories = ImportHistoryFactory::times(3)->create(['import_id' => $import->import_id]);
+        $importHistories = ImportHistoryFactory::times(3)->create(['import_id' => $import->id]);
 
-        $this->fetchImportHistoryResponse(['import_id' => $import->import_id])
+        $this->fetchImportHistoryResponse(['import_id' => $import->public_id->present()])
             ->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJsonPath('data.0.attributes.url', $importHistories[2]->url)
@@ -79,7 +81,7 @@ class FetchImportHistoryTest extends TestCase
 
         $import = ImportFactory::new()->create(['user_id' => $user->id]);
 
-        $factory = ImportHistoryFactory::new(['import_id' => $import->import_id]);
+        $factory = ImportHistoryFactory::new(['import_id' => $import->id]);
 
         $importHistories = [
             $factory->create(),
@@ -93,7 +95,7 @@ class FetchImportHistoryTest extends TestCase
             $factory->skipped(reason: Status::SKIPPED_DUE_TO_TOO_MANY_TAGS)->create(),
         ];
 
-        $this->fetchImportHistoryResponse(['filter' => 'failed', 'import_id' => $import->import_id])
+        $this->fetchImportHistoryResponse(['filter' => 'failed', 'import_id' => $import->public_id->present()])
             ->assertOk()
             ->assertJsonCount(5, 'data')
             ->assertJsonPath('data.0.attributes.url', $importHistories[5]->url)
@@ -102,14 +104,14 @@ class FetchImportHistoryTest extends TestCase
             ->assertJsonPath('data.3.attributes.url', $importHistories[2]->url)
             ->assertJsonPath('data.4.attributes.url', $importHistories[1]->url);
 
-        $this->fetchImportHistoryResponse(['filter' => 'skipped', 'import_id' => $import->import_id])
+        $this->fetchImportHistoryResponse(['filter' => 'skipped', 'import_id' => $import->public_id->present()])
             ->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJsonPath('data.0.attributes.url', $importHistories[8]->url)
             ->assertJsonPath('data.1.attributes.url', $importHistories[7]->url)
             ->assertJsonPath('data.2.attributes.url', $importHistories[6]->url);
 
-        $this->fetchImportHistoryResponse(['filter' => 'foo', 'import_id' => $import->import_id])
+        $this->fetchImportHistoryResponse(['filter' => 'foo', 'import_id' => $import->public_id->present()])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['filter' => 'The selected filter is invalid.']);
     }
@@ -119,7 +121,7 @@ class FetchImportHistoryTest extends TestCase
     {
         $this->loginUser(UserFactory::new()->create());
 
-        $this->fetchImportHistoryResponse(['import_id' => $this->faker->uuid])->assertNotFound();
+        $this->fetchImportHistoryResponse(['import_id' => $this->generateImportId()->present()])->assertNotFound();
     }
 
     #[Test]
@@ -130,7 +132,7 @@ class FetchImportHistoryTest extends TestCase
         $import = ImportFactory::new()->create(['user_id' => UserFactory::new()->create()->id]);
 
         $this->loginUser(UserFactory::new()->create());
-        $this->fetchImportHistoryResponse(['import_id' => $import->import_id])->assertNotFound();
+        $this->fetchImportHistoryResponse(['import_id' => $import->public_id->present()])->assertNotFound();
     }
 
     #[Test]
@@ -140,9 +142,9 @@ class FetchImportHistoryTest extends TestCase
 
         $import = ImportFactory::new()->create(['user_id' => $user->id]);
 
-        ImportHistoryFactory::new()->create(['import_id' => $import->import_id]);
+        ImportHistoryFactory::new()->create(['import_id' => $import->id]);
 
-        $this->fetchImportHistoryResponse(['import_id' => $import->import_id])
+        $this->fetchImportHistoryResponse(['import_id' => $import->public_id->present()])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(4, 'data.0.attributes')
@@ -175,9 +177,9 @@ class FetchImportHistoryTest extends TestCase
 
         $import = ImportFactory::new()->create(['user_id' => $user->id]);
 
-        ImportHistoryFactory::new()->failed()->create(['import_id' => $import->import_id]);
+        ImportHistoryFactory::new()->failed()->create(['import_id' => $import->id]);
 
-        $this->fetchImportHistoryResponse(['import_id' => $import->import_id])
+        $this->fetchImportHistoryResponse(['import_id' => $import->public_id->present()])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(5, 'data.0.attributes')
@@ -206,9 +208,9 @@ class FetchImportHistoryTest extends TestCase
 
         $import = ImportFactory::new()->create(['user_id' => $user->id]);
 
-        ImportHistoryFactory::new()->skipped()->create(['import_id' => $import->import_id]);
+        ImportHistoryFactory::new()->skipped()->create(['import_id' => $import->id]);
 
-        $this->fetchImportHistoryResponse(['import_id' => $import->import_id])
+        $this->fetchImportHistoryResponse(['import_id' => $import->public_id->present()])
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(5, 'data.0.attributes')

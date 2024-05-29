@@ -54,11 +54,11 @@ final class Importer
 
         $this->event->importsStarted($importData);
 
-        if ( ! $this->filesystem->exists($userId, $importData->importId())) {
+        if ( ! $this->filesystem->exists($importData->getFileName())) {
             throw new FileNotFoundException();
         }
 
-        foreach ($this->iterator->iterate($this->filesystem->get($userId, $importData->importId()), $importData->source()) as $bookmark) {
+        foreach ($this->iterator->iterate($this->filesystem->get($importData->getFileName()), $importData->source()) as $bookmark) {
             $this->event->importStarted($bookmark);
 
             //We want to keep recording the count of bookmarks and also log the import when import has failed

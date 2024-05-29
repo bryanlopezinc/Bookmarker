@@ -4,26 +4,25 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\RemoveRolePermission;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Models\Folder;
 use App\Models\FolderPermission;
 use App\Models\FolderRolePermission;
 
-final class DeleteRolePermission implements FolderRequestHandlerInterface
+final class DeleteRolePermission
 {
-    private readonly int $roleId;
+    private readonly string $roleIdName;
     private readonly string $permission;
 
-    public function __construct(int $roleId, string $permission)
+    public function __construct(string $permission, string $roleIdName = 'roleId')
     {
-        $this->roleId = $roleId;
+        $this->roleIdName = $roleIdName;
         $this->permission = $permission;
     }
 
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         FolderRolePermission::query()
-            ->where('role_id', $this->roleId)
+            ->where('role_id', $folder->{$this->roleIdName})
             ->whereIn('permission_id', FolderPermission::select('id')->where('name', $this->permission))
             ->delete();
     }

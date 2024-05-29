@@ -4,25 +4,40 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects\Notifications;
 
+use App\DataTransferObjects\Activities\InviteAcceptedActivityLogData as ActivityLogData;
 use App\Models\Folder;
 use App\Models\User;
-use App\ValueObjects\FolderName;
-use App\ValueObjects\FullName;
+use Illuminate\Contracts\Support\Arrayable;
 
-final class NewCollaboratorNotificationData
+final class NewCollaboratorNotificationData implements Arrayable
 {
     public function __construct(
-        public readonly ?User $collaborator,
-        public readonly ?Folder $folder,
-        public readonly ?User $newCollaborator,
-        public readonly int $collaboratorId,
-        public readonly int $newCollaboratorId,
-        public readonly FullName $collaboratorFullName,
-        public readonly FullName $newCollaboratorFullName,
-        public readonly int $folderId,
-        public readonly FolderName $folderName,
-        public readonly string $uuid,
-        public readonly string $notifiedOn
+        public readonly User $collaborator,
+        public readonly Folder $folder,
+        public readonly User $newCollaborator,
     ) {
+    }
+
+    public static function fromArray(array $data): self
+    {
+        $logData = ActivityLogData::fromArray($data);
+        $folder = new Folder($data['folder']);
+
+        $folder->exists = true;
+
+        return new NewCollaboratorNotificationData($logData->inviter, $folder, $logData->invitee);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function toArray()
+    {
+        $logData = (new ActivityLogData($this->collaborator, $this->newCollaborator))->toArray();
+
+        return array_replace($logData, [
+            'version' => '1.0.0',
+            'folder'  => $this->folder->activityLogContextVariables()
+        ]);
     }
 }

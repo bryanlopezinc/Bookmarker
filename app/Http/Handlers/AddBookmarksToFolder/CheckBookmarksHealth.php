@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\AddBookmarksToFolder;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Models\Folder;
 use App\Models\Bookmark;
 use App\Jobs\CheckBookmarksHealth as CheckBookmarksHealthJob;
 
-final class CheckBookmarksHealth implements FolderRequestHandlerInterface
+final class CheckBookmarksHealth
 {
     /**
      * @param array<Bookmark> $bookmarks
@@ -18,10 +17,7 @@ final class CheckBookmarksHealth implements FolderRequestHandlerInterface
     {
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         dispatch(new CheckBookmarksHealthJob($this->bookmarks));
     }

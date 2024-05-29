@@ -19,7 +19,7 @@ class BookmarksRemovedFromFolderTest extends TestCase
     public function testFetchNotifications(): void
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
-        $collaboratorBookmarks = BookmarkFactory::times(3)->for($collaborator)->create()->pluck('id');
+        $collaboratorBookmarks = BookmarkFactory::times(3)->for($collaborator)->create();
         $folder = FolderFactory::new()->for($user)->create();
 
         $user->notify(
@@ -29,33 +29,34 @@ class BookmarksRemovedFromFolderTest extends TestCase
         $collaborator->update(['first_name' => 'bryan', 'last_name' => 'wayne']);
         $folder->update(['name' => 'Apache problems']);
 
-        $expectedDateTime = $user->notifications()->sole(['created_at'])->created_at;
-
         $this->loginUser($user);
         $this->fetchNotificationsResponse()
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonCount(7, 'data.0.attributes')
+            ->assertJsonCount(5, 'data.0.attributes')
             ->assertJsonPath('data.0.type', 'BookmarksRemovedFromFolderNotification')
-            ->assertJsonPath('data.0.attributes.collaborator_exists', true)
+            ->assertJsonPath('data.0.attributes.collaborator.exists', true)
             ->assertJsonPath('data.0.attributes.id', fn (string $id) => Str::isUuid($id))
-            ->assertJsonPath('data.0.attributes.folder_exists', true)
+            ->assertJsonPath('data.0.attributes.folder.exists', true)
             ->assertJsonPath('data.0.attributes.message', 'Bryan Wayne removed 3 bookmarks from Apache Problems folder.')
-            ->assertJsonPath('data.0.attributes.notified_on', fn (string $dateTime) => $dateTime === (string) $expectedDateTime)
-            ->assertJsonPath('data.0.attributes.collaborator_id', $collaborator->id)
-            ->assertJsonPath('data.0.attributes.folder_id', $folder->id)
+            ->assertJsonPath('data.0.attributes.collaborator.id', $collaborator->public_id->present())
+            ->assertJsonPath('data.0.attributes.folder.id', $folder->public_id->present())
             ->assertJsonStructure([
                 'data' => [
                     '*' => [
                         'type',
                         'attributes' => [
                             'id',
-                            'collaborator_exists',
-                            'folder_exists',
                             'message',
                             'notified_on',
-                            'collaborator_id',
-                            'folder_id',
+                            'collaborator' => [
+                                'id',
+                                'exists'
+                            ],
+                            'folder' => [
+                                'id',
+                                'exists',
+                            ],
                         ]
                     ]
                 ]
@@ -70,7 +71,7 @@ class BookmarksRemovedFromFolderTest extends TestCase
         $folder = FolderFactory::new()->for($user)->create();
 
         $user->notify(
-            new BookmarksRemovedFromFolderNotification([$collaboratorBookmark->id], $folder, $collaborator)
+            new BookmarksRemovedFromFolderNotification([$collaboratorBookmark], $folder, $collaborator)
         );
 
         $this->loginUser($user);
@@ -82,7 +83,7 @@ class BookmarksRemovedFromFolderTest extends TestCase
     public function testWillReturnCorrectPayloadWhenCollaboratorNoLongerExists(): void
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
-        $collaboratorBookmarks = BookmarkFactory::times(3)->for($collaborator)->create()->pluck('id');
+        $collaboratorBookmarks = BookmarkFactory::times(3)->for($collaborator)->create();
         $folder = FolderFactory::new()->for($user)->create();
 
         $user->notify(
@@ -94,14 +95,14 @@ class BookmarksRemovedFromFolderTest extends TestCase
         $this->loginUser($user);
         $this->fetchNotificationsResponse()
             ->assertOk()
-            ->assertJsonPath('data.0.attributes.collaborator_exists', false)
+            ->assertJsonPath('data.0.attributes.collaborator.exists', false)
             ->assertJsonPath('data.0.attributes.message', "{$collaborator->full_name->present()} removed 3 bookmarks from {$folder->name->present()} folder.");
     }
 
     public function testWillReturnCorrectPayloadWhenFolderNoLongerExists(): void
     {
         [$user, $collaborator] = UserFactory::times(2)->create();
-        $collaboratorBookmarks = BookmarkFactory::times(3)->for($collaborator)->create()->pluck('id');
+        $collaboratorBookmarks = BookmarkFactory::times(3)->for($collaborator)->create();
         $folder = FolderFactory::new()->for($user)->create();
 
         $user->notify(
@@ -113,7 +114,7 @@ class BookmarksRemovedFromFolderTest extends TestCase
         $this->loginUser($user);
         $this->fetchNotificationsResponse()
             ->assertOk()
-            ->assertJsonPath('data.0.attributes.folder_exists', false)
+            ->assertJsonPath('data.0.attributes.folder.exists', false)
             ->assertJsonPath('data.0.attributes.message', "{$collaborator->full_name->present()} removed 3 bookmarks from {$folder->name->present()} folder.");
     }
 }

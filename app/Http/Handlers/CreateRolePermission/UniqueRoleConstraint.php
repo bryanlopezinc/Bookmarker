@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\CreateRolePermission;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
 use App\Models\FolderPermission;
@@ -12,27 +11,24 @@ use App\Models\FolderRole;
 use App\Models\FolderRolePermission;
 use Illuminate\Support\Facades\DB;
 
-final class UniqueRoleConstraint implements FolderRequestHandlerInterface
+final class UniqueRoleConstraint
 {
     private readonly string $permission;
-    private readonly int $roleId;
+    private readonly string $roleIdName;
 
-    public function __construct(int $roleId, string $permission)
+    public function __construct(string $permission, string $roleIdName = 'roleId')
     {
         $this->permission = $permission;
-        $this->roleId = $roleId;
+        $this->roleIdName = $roleIdName;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         /** @var \Illuminate\Database\Eloquent\Builder */
         $union = FolderPermission::select('id')->where('name', $this->permission);
 
         $roleExpectedPermissions = FolderRolePermission::query()
-            ->where('role_id', $this->roleId)
+            ->where('role_id', $folder->{$this->roleIdName})
             ->unionAll($union)
             ->get(['permission_id'])
             ->pluck('permission_id');

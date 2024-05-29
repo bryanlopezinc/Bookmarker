@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
+use App\Contracts\ResourceNotFoundExceptionInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
 
-final class UserNotFoundException extends RuntimeException
+final class UserNotFoundException extends RuntimeException implements ResourceNotFoundExceptionInterface
 {
     public function report(): void
     {

@@ -34,7 +34,7 @@ enum ImportBookmarksStatus: int
         return match ($category) {
             'pending' => self::PENDING,
             'success' => self::SUCCESS,
-            'importing' => self::IMPORTING,
+            default   => self::IMPORTING,
         };
     }
 

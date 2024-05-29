@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\AcceptInvite;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\FolderInviteData;
 use App\Exceptions\AcceptFolderInviteException;
 use App\Models\Folder;
@@ -14,7 +13,7 @@ use App\Models\Scopes\UserIsACollaboratorScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class HasNotAlreadyAcceptedInviteValidator implements FolderRequestHandlerInterface, Scope
+final class HasNotAlreadyAcceptedInviteValidator implements Scope
 {
     public function __construct(private readonly FolderInviteData $invitationData)
     {
@@ -30,10 +29,7 @@ final class HasNotAlreadyAcceptedInviteValidator implements FolderRequestHandler
         $builder->tap($callback);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         if ($folder->collaboratorIsAlreadyAMember) {
             throw AcceptFolderInviteException::inviteeHasAlreadyAcceptedInvitation();

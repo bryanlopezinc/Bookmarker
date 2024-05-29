@@ -10,6 +10,10 @@ use App\Exceptions\UserNotFoundException;
 use App\Models\Folder;
 use App\Models\MutedCollaborator;
 use App\Models\Scopes\UserIsACollaboratorScope;
+use App\Models\Scopes\WherePublicIdScope;
+use App\Models\User;
+use App\ValueObjects\PublicId\FolderPublicId;
+use App\ValueObjects\PublicId\UserPublicId;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -22,29 +26,31 @@ final class MuteCollaboratorService
         $this->currentDateTime = now();
     }
 
-    public function __invoke(int $folderId, int $collaboratorId, int $authUserId, int $muteDurationInHours): void
+    public function __invoke(FolderPublicId $folderId, UserPublicId $collaboratorId, int $authUserId, int $muteDurationInHours): void
     {
         $muteDurationInHours = $muteDurationInHours === 0 ? null : $muteDurationInHours;
 
-        $folder = Folder::onlyAttributes(['user_id'])
+        $folder = Folder::query()
             ->withCasts(['mutedCollaborator' => 'array'])
+            ->select(['user_id', 'id'])
             ->tap(new UserIsACollaboratorScope($collaboratorId))
             ->addSelect([
+                'collaboratorId'    => User::select('id')->tap(new WherePublicIdScope($collaboratorId)),
                 'mutedCollaborator' => MutedCollaborator::query()
                     ->select(DB::raw("JSON_OBJECT('id', id, 'muted_until', muted_until)"))
                     ->whereColumn('folder_id', 'folders.id')
-                    ->where('user_id', $collaboratorId)
+                    ->whereColumn('user_id', 'collaboratorId')
             ])
-            ->whereKey($folderId)
-            ->first();
+            ->tap(new WherePublicIdScope($folderId))
+            ->firstOrNew();
 
-        if (is_null($folder)) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
 
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 
-        if ($folder->user_id === $collaboratorId) {
+        if ($folder->user_id === $folder->collaboratorId) {
             throw HttpException::forbidden(['message' => 'CannotMuteSelf']);
         }
 
@@ -56,7 +62,7 @@ final class MuteCollaboratorService
             $this->ensureCollaboratorIsNotAlreadyMuted($mutedCollaborator);
         }
 
-        $this->mute($folderId, $collaboratorId, $authUserId, muteDurationInHours: $muteDurationInHours);
+        $this->mute($folder->id, $folder->collaboratorId, $authUserId, muteDurationInHours: $muteDurationInHours);
     }
 
     private function ensureCollaboratorIsNotAlreadyMuted(array $mutedCollaboratorRecord): void

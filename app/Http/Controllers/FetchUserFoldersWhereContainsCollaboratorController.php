@@ -7,10 +7,11 @@ namespace App\Http\Controllers;
 use App\Http\Resources\FilterUserCollaborationResource;
 use Illuminate\Http\Request;
 use App\Http\Resources\PaginatedResourceCollection as ResourceCollection;
+use App\Models\User;
 use App\PaginationData;
 use App\Repositories\Folder\FetchUserFoldersWhereContainsCollaboratorRepository as Repository;
 use App\Rules\UserCollaborationFieldsRule;
-use App\ValueObjects\UserId;
+use App\ValueObjects\PublicId\UserPublicId;
 
 final class FetchUserFoldersWhereContainsCollaboratorController
 {
@@ -22,8 +23,8 @@ final class FetchUserFoldersWhereContainsCollaboratorController
         ]);
 
         $result = $repository->get(
-            UserId::fromAuthUser()->value(),
-            (int) $collaboratorId,
+            User::fromRequest($request)->id,
+            UserPublicId::fromRequest($collaboratorId),
             PaginationData::fromRequest($request),
         );
 

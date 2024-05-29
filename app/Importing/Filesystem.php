@@ -12,29 +12,24 @@ final class Filesystem
     {
     }
 
-    public function put(string $contents, int $userID, string $importId): void
+    public function put(string $contents, string $fileName): void
     {
-        $this->filesystem->put($this->buildFileName($userID, $importId), $contents);
+        $this->filesystem->put($fileName, $contents);
     }
 
-    private function buildFileName(int $userID, string $importId): string
+    public function delete(string $fileName): void
     {
-        return implode('_', [$userID, $importId]);
+        $this->filesystem->delete($fileName);
     }
 
-    public function delete(int $userID, string $importId): void
+    public function exists(string $fileName): bool
     {
-        $this->filesystem->delete($this->buildFileName($userID, $importId));
+        return $this->filesystem->exists($fileName);
     }
 
-    public function exists(int $userID, string $importId): bool
+    public function get(string $fileName): string
     {
-        return $this->filesystem->exists($this->buildFileName($userID, $importId));
-    }
-
-    public function get(int $userID, string $importId): string
-    {
-        $contents = $this->filesystem->get($this->buildFileName($userID, $importId));
+        $contents = $this->filesystem->get($fileName);
 
         if ($contents === null) {
             return '';

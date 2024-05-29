@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Collections\BookmarkPublicIdsCollection;
 use App\Exceptions\BookmarkNotFoundException;
 use App\Models\Bookmark;
+use App\Models\Scopes\WherePublicIdScope;
 use App\Repositories\BookmarkRepository;
+use App\Rules\PublicId\BookmarkPublicIdRule;
 use Illuminate\Http\Request;
-use App\Rules\ResourceIdRule;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Collection;
 
 final class DeleteBookmarkController
 {
@@ -20,26 +23,26 @@ final class DeleteBookmarkController
         $request->validate(
             rules: [
                 'ids'   => ['required', 'array', "max:{$maxBookmarks}"],
-                'ids.*' => [new ResourceIdRule(), 'distinct:strict']
+                'ids.*' => [new BookmarkPublicIdRule(), 'distinct:strict']
             ],
             messages: ['max' => "cannot delete more than {$maxBookmarks} bookmarks in one request"]
         );
 
-        $bookmarks = $bookmarksRepository->findManyById(
-            $bookmarkIds = $request->input('ids'),
-            ['user_id', 'id']
-        );
+        $bookmarksPublicIds = BookmarkPublicIdsCollection::fromRequest($request->input('ids'))->values();
 
-        if ($bookmarks->count() !== count($bookmarkIds)) {
-            throw new BookmarkNotFoundException();
-        }
+        Bookmark::select(['id', 'user_id'])
+            ->tap(new WherePublicIdScope($bookmarksPublicIds))
+            ->get()
+            ->tap(function (Collection $bookmarks) use ($bookmarksPublicIds) {
+                if ($bookmarks->count() !== $bookmarksPublicIds->count()) {
+                    throw new BookmarkNotFoundException();
+                }
+            })->each(function (Bookmark $bookmark) {
+                BookmarkNotFoundException::throwIfDoesNotBelongToAuthUser($bookmark);
+            })
+            ->toQuery()
+            ->delete();
 
-        $bookmarks->each(function (Bookmark $bookmark) {
-            BookmarkNotFoundException::throwIfDoesNotBelongToAuthUser($bookmark);
-        });
-
-        Bookmark::whereIn('id', $bookmarkIds)->delete();
-
-        return response()->json();
+        return new JsonResponse();
     }
 }

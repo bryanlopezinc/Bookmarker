@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Handlers\SendInvite;
 
-use App\Contracts\FolderRequestHandlerInterface;
 use App\DataTransferObjects\SendInviteRequestData;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
@@ -13,7 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-final class ValidRolesConstraint implements FolderRequestHandlerInterface, Scope
+final class ValidRolesConstraint implements Scope
 {
     public function __construct(private readonly SendInviteRequestData $data)
     {
@@ -31,10 +30,7 @@ final class ValidRolesConstraint implements FolderRequestHandlerInterface, Scope
             ]);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function handle(Folder $folder): void
+    public function __invoke(Folder $folder): void
     {
         $invalidRoles = array_diff($this->data->roles, $folder->roleNames ?? []);
 

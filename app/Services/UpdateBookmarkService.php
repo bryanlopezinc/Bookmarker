@@ -7,27 +7,30 @@ namespace App\Services;
 use App\Exceptions\BookmarkNotFoundException;
 use Illuminate\Http\Response;
 use App\Http\Requests\CreateOrUpdateBookmarkRequest as Request;
-use App\Repositories\BookmarkRepository;
 use App\Exceptions\HttpException;
 use App\Jobs\CheckBookmarksHealth;
 use App\Models\Bookmark;
+use App\Models\Scopes\WherePublicIdScope;
 use App\Models\Tag;
 use App\Repositories\TagRepository;
+use App\ValueObjects\PublicId\BookmarkPublicId;
 
 final class UpdateBookmarkService
 {
-    public function __construct(
-        private BookmarkRepository $bookmarksRepository,
-        private TagRepository $tagRepository
-    ) {
+    public function __construct(private TagRepository $tagRepository)
+    {
     }
 
-    public function fromRequest(Request $request): void
+    public function fromRequest(Request $request, BookmarkPublicId $bookmarkId): void
     {
-        $bookmark = $this->bookmarksRepository->findById(
-            $request->integer('id'),
-            ['user_id', 'tags', 'url', 'id']
-        );
+        $bookmark = Bookmark::select(['user_id', 'url', 'id'])
+            ->with(['tags'])
+            ->tap(new WherePublicIdScope($bookmarkId))
+            ->firstOrNew();
+
+        if ( ! $bookmark->exists) {
+            throw new BookmarkNotFoundException();
+        }
 
         BookmarkNotFoundException::throwIfDoesNotBelongToAuthUser($bookmark);
 

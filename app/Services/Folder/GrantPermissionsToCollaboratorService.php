@@ -8,9 +8,12 @@ use App\Exceptions\FolderNotFoundException;
 use App\Exceptions\HttpException;
 use App\Models\Folder;
 use App\Models\Scopes\UserIsACollaboratorScope;
+use App\Models\Scopes\WherePublicIdScope;
+use App\Models\User;
 use App\Repositories\Folder\CollaboratorPermissionsRepository;
 use App\UAC;
-use App\ValueObjects\UserId;
+use App\ValueObjects\PublicId\FolderPublicId;
+use App\ValueObjects\PublicId\UserPublicId;
 
 final class GrantPermissionsToCollaboratorService
 {
@@ -18,30 +21,36 @@ final class GrantPermissionsToCollaboratorService
     {
     }
 
-    public function grant(int $collaboratorId, int $folderId, UAC $permissions): void
+    public function grant(UserPublicId $collaboratorId, FolderPublicId $folderId, UAC $permissions, int $authUserId): void
     {
         $folder = Folder::query()
+            ->select([
+                'id',
+                'user_id',
+                'collaboratorId' => User::select('id')->tap(new WherePublicIdScope($collaboratorId))
+            ])
             ->tap(new UserIsACollaboratorScope($collaboratorId))
-            ->find($folderId, ['id', 'user_id']);
+            ->tap(new WherePublicIdScope($folderId))
+            ->firstOrNew();
 
-        if (is_null($folder)) {
+        if ( ! $folder->exists) {
             throw new FolderNotFoundException();
         }
 
-        $currentPermissions = $this->permissions->all($collaboratorId, $folderId);
-
         FolderNotFoundException::throwIfDoesNotBelongToAuthUser($folder);
 
-        $this->ensureIsNotGrantingPermissionsToSelf($collaboratorId, UserId::fromAuthUser()->value());
+        $this->ensureIsNotGrantingPermissionsToSelf($folder->collaboratorId, $authUserId);
 
         $this->ensureUserIsACollaborator($folder);
 
+        $currentPermissions = $this->permissions->all($folder->collaboratorId, $folder->id);
+
         $this->ensureCollaboratorDoesNotHavePermissions($currentPermissions, $permissions);
 
-        $this->permissions->create($collaboratorId, $folderId, $permissions);
+        $this->permissions->create($folder->collaboratorId, $folder->id, $permissions);
     }
 
-    private function ensureIsNotGrantingPermissionsToSelf(int $collaboratorID, int $authUserId): void
+    private function ensureIsNotGrantingPermissionsToSelf(?int $collaboratorID, int $authUserId): void
     {
         if ($authUserId === $collaboratorID) {
             throw HttpException::forbidden([

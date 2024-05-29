@@ -8,10 +8,10 @@ use App\Enums\UserFoldersSortCriteria;
 use App\Http\Requests\FetchUserFoldersRequest;
 use App\Http\Resources\FilterFolderResource;
 use App\Http\Resources\PaginatedResourceCollection as ResourceCollection;
+use App\Models\User;
 use App\PaginationData;
 use App\Repositories\Folder\UserFoldersRepository;
 use App\Rules\FolderFieldsRule;
-use App\ValueObjects\UserId;
 
 final class FetchUserFoldersController
 {
@@ -23,7 +23,7 @@ final class FetchUserFoldersController
         ]);
 
         $result = $repository->fetch(
-            UserId::fromAuthUser()->value(),
+            User::fromRequest($request)->id,
             PaginationData::fromRequest($request),
             UserFoldersSortCriteria::fromRequest($request)
         );

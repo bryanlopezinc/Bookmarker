@@ -9,8 +9,8 @@ use App\Repositories\Folder\FetchUserCollaborationsRepository as Repository;
 use Illuminate\Http\Request;
 use App\Http\Resources\PaginatedResourceCollection as ResourceCollection;
 use App\Http\Resources\FilterUserCollaborationResource;
+use App\Models\User;
 use App\Rules\UserCollaborationFieldsRule;
-use App\ValueObjects\UserId;
 
 final class FetchUserCollaborationsController
 {
@@ -22,7 +22,7 @@ final class FetchUserCollaborationsController
         ]);
 
         $result = $repository->get(
-            UserId::fromAuthUser()->value(),
+            User::fromRequest($request)->id,
             PaginationData::fromRequest($request),
         );
 
